@@ -1,0 +1,88 @@
+[project]
+name = "mtg-recognition"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "raadon96", email = "adnen.boumessouer@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.13.2",
+    "ijson>=3.4.0.post0",
+    "imagehash>=4.3.2",
+    "numpydantic>=1.7.0",
+    "pandas>=2.3.3",
+    "pillow>=12.0.0",
+    "pyarrow>=22.0.0",
+    "pydantic-settings>=2.12.0",
+    "requests>=2.32.5",
+    "sqlmodel>=0.0.31",
+    "tqdm>=4.67.1",
+    # "torch>=2.10.0",
+    # "torchvision>=0.25.0",
+    "ultralytics>=8.4.1",
+    "opencv-contrib-python==4.10.0.84",
+    "paddlepaddle==3.2.0",
+    "onnxruntime>=1.23.2",
+    "paddle2onnx>=2.1.0",
+    "paddleocr>=3.3.3",
+    "rapidfuzz>=3.14.3",
+    "icecream>=2.1.10",
+    "rich>=14.3.2",
+    "streamlit>=1.54.0",
+    "click>=8.3.1",
+    "python-dotenv>=1.2.1",
+    "streamlit-webrtc>=0.64.5",
+    "cv2-enumerate-cameras>=1.3.3",
+    "openpyxl>=3.1.5",
+    "rapidocr>=3.7.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "ipython>=9.8.0",
+    "pytest>=9.0.2",
+    "sqlacodegen>=3.2.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.7,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+paddlepaddle = { index = "paddle" }
+# # ---
+# torch = [
+#   { index = "pytorch-cpu" },
+# ]
+# torchvision = [
+#   { index = "pytorch-cpu" },
+# ]
+# # ---
+
+[[tool.uv.index]]
+# Optional name for the index.
+name = "paddle"
+# Required URL for the index.
+url = "https://www.paddlepaddle.org.cn/packages/stable/cpu/"
+# Prevent other packages from being installed from this index unless explicitly pinned to it.
+explicit = true
+
+# # ---
+# [[tool.uv.index]]
+# name = "pytorch-cpu"
+# url = "https://download.pytorch.org/whl/cpu"
+# explicit = true
+# # ---
+
+
+
+
+[tool.uv.build-backend]
+module-name = "mtg_recognition"
+module-root = "src"

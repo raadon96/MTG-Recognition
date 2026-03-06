@@ -1,0 +1,58 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.ruff_cache
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+
+# Reference cards dataset
+# data/
+# data/reference/images/*.jpg
+data/reference/images
+
+data/reference/tmp
+data/reference/download_errors.log
+
+# Segmentation models
+*.pt
+
+# Mobileclip model required by yolo models
+mobileclip_blt.ts
+mobileclip2_b.ts
+
+# Experimentation & prototyping
+notebooks/
+scratch/
+input/
+output/
+notes/
+benchmarks/results
+#benchmarks/**/*.jpg
+run_models.py
+sc_*.py
+script_*.py
+src/mtg_recognition/engine/ocr/setcodes.json
+
+src/mtg_recognition/app/playground.py
+src/mtg_recognition/app/capture.py
+src/mtg_recognition/app/app_local.py
+benchmarks/benchmark_matching.py
+
+# models
+models/
+
+# Personal notes
+notes.md
+
+# Coding agents
+ AGENTS.md
+
+session-*.md
