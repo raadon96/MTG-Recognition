@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import shutil
 import zipfile
@@ -132,23 +131,10 @@ def create_database(source_engine, dest_engine, force: bool = False):
 
     print(f"Database created at {settings.LOCAL_DB_FILE} ({total_migrated} cards)")
 
-    create_setcodes_cachefile()
-
     # # Cleanup source to save space
     # if settings.TMP_DIR.exists():
     #     shutil.rmtree(settings.TMP_DIR)
     #
-
-
-def create_setcodes_cachefile():
-    engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-    with Session(engine) as session:
-        statement = select(MobileCache.setCode).distinct()
-        rows = session.exec(statement).all()
-
-    save_path = settings.REF_DIR / "setcodes.json"
-    with open(save_path, "w") as f:
-        json.dump(rows, f)
 
 
 async def download_file_with_retry(session, url, path, retries=3):

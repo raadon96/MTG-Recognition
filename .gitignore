@@ -39,7 +39,6 @@ benchmarks/results
 run_models.py
 sc_*.py
 script_*.py
-src/mtg_recognition/engine/ocr/setcodes.json
 
 src/mtg_recognition/app/playground.py
 src/mtg_recognition/app/capture.py

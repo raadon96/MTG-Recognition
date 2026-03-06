@@ -15,8 +15,6 @@ BEST_PARAM_SET = 0
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 IMG_DIR = FIXTURES_DIR / "images"
 
-REF_SETCODES_PATH = "data/reference/setcodes.json"
-
 
 @pytest.fixture(scope="session")
 def segmentor() -> CardSegmentor:
@@ -48,10 +46,6 @@ def high_contrast_card_image() -> np.ndarray:
 @pytest.fixture(scope="session")
 def setcodes_ref() -> list[str]:
     "Load the available mtg setcodes from either cached file or database"
-    # with open(REF_SETCODES_PATH) as file:
-    #     setcodes_ref = json.load(file)
-    #     return setcodes_ref
-
     engine = create_engine("sqlite:///data/reference/MobileCache.sqlite")
     with Session(engine) as session:
         statement = select(MobileCache.setCode).distinct()

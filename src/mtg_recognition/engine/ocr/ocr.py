@@ -15,9 +15,6 @@ from mtg_recognition.jobs.schemas import MobileCache
 
 from . import ocr_utils
 
-REF_SETCODES_PATH = "data/reference/setcodes.json"
-
-
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS = [
     {"db_attr": "name", "ocr_property": "name", "weight": 1.0},
