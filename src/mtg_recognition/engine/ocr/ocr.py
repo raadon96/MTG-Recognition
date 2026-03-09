@@ -74,10 +74,10 @@ class CardOCR:
             # textline_orientation_model_name="PP-LCNet_x0_25_textline_ori",
             # text detection (locating and marking text-containing regions in images)
             text_detection_model_name="PP-OCRv5_server_det",
-            text_detection_model_dir="src/mtg_recognition/engine/ocr/models/paddlex/PP-OCRv5_server_det",
+            text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det",
             # text recognition
             text_recognition_model_name="PP-OCRv5_mobile_rec",
-            text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/paddlex/PP-OCRv5_mobile_rec",
+            text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",
             # other params
             device="cpu",
             enable_hpi=False,  # enable high-performance inference

@@ -46,7 +46,7 @@ src/mtg_recognition/app/app_local.py
 benchmarks/benchmark_matching.py
 
 # models
-models/
+**/models/test/
 
 # Personal notes
 notes.md

@@ -22,7 +22,7 @@ MAPPING_PATH = "data/reference/index/phash/index_to_uuid.json"
 HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
 
 
-class PHashCardMatcher(BaseModel):
+class PHashCardMatcher:
     """
     Initializes the pHash matcher.
     If database files exist, they are loaded.
@@ -36,20 +36,35 @@ class PHashCardMatcher(BaseModel):
         auto_build: If True, automatically build index if missing
     """
 
-    index_path: Path = Path(INDEX_PATH)
-    mapping_path: Path = Path(MAPPING_PATH)
-    img_dir: Path = Path(IMG_DIR)
-    hash_size: int = HASH_SIZE
+    def __init__(
+        self,
+        index_path: str = INDEX_PATH,
+        mapping_path: str = MAPPING_PATH,
+        img_dir: str = IMG_DIR,
+        hash_size: int = HASH_SIZE,
+        auto_build: bool = True,
+    ):
 
-    # type and shape validation using numpydantic (https://github.com/p2p-ld/numpydantic)
-    hashes: NDArray[Shape[f"* x, {hash_size * hash_size} y"], np.uint8] | None = None
-    uuid_mapping: list | None = None
-    uuid_to_idx: dict[str, int] | None = None  # Reverse mapping for O(1) lookup
-    auto_build: bool = True
+        self.index_path = Path(index_path)
+        self.mapping_path = Path(mapping_path)
+        self.img_dir_path = Path(img_dir)
+        self.hash_size = hash_size
 
-    def model_post_init(self, __context: Any) -> None:
-        # Try to load existing index
+        # type and shape validation using numpydantic (https://github.com/p2p-ld/numpydantic)
+        self.hashes: (
+            NDArray[Shape[f"* x, {hash_size * hash_size} y"], np.uint8] | None
+        ) = None
+        self.uuid_mapping: list | None = None
+        self.uuid_to_idx: dict[str, int] | None = (
+            None  # Reverse mapping for O(1) lookup
+        )
+        self.auto_build = auto_build
+
         self._load_index()
+
+    # def model_post_init(self, __context: Any) -> None:
+    #     # Try to load existing index
+    #     self._load_index()
 
     @property
     def _index_is_loaded(self):

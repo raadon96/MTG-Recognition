@@ -1,0 +1,54 @@
+# VCS
+.git
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.cache/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Local env/config
+.env
+
+# Local data and generated artifacts
+data/reference/images/
+data/reference/tmp/
+data/reference/download_errors.log
+benchmarks/results/
+notebooks/
+scratch/
+input/
+output/
+notes/
+
+# Test models
+src/mtg_recognition/engine/segmentation/models/test
+src/mtg_recognition/engine/ocr/models/test
+
+# Mobileclip models
+mobileclip2_b.ts
+mobileclip_blt.ts
+
+# Agent/session files
+session-*.md

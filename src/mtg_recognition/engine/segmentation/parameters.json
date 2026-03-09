@@ -1,14 +1,12 @@
 {
   "yoloe-11s-seg": {
     "0": {
-      "model_path": "src/mtg_recognition/engine/segmentation/models/yoloe-11s-seg.pt",
       "task": "segment",
       "conf": 0.2,
       "iou": 0.01,
       "category_allowlist": ["book"]
     },
     "1": {
-      "model_path": "src/mtg_recognition/engine/segmentation/models/yoloe-11s-seg.pt",
       "task": "segment",
       "conf": 0.1,
       "iou": 0.01,
@@ -17,14 +15,12 @@
   },
   "yolov8s-worldv2": {
     "0": {
-      "model_path": "src/mtg_recognition/engine/segmentation/models/yolov8s-worldv2.pt",
       "task": "detect",
       "conf": 0.2,
       "iou": 0.01,
       "category_allowlist": ["card"]
     },
     "1": {
-      "model_path": "src/mtg_recognition/engine/segmentation/models/yolov8s-worldv2.pt",
       "task": "detect",
       "conf": 0.2,
       "iou": 0.01,
@@ -33,7 +29,6 @@
   },
   "yoloe-26n-seg": {
     "0": {
-      "model_path": "src/mtg_recognition/engine/segmentation/models/yoloe-26n-seg.pt",
       "task": "segment",
       "conf": 0.01,
       "iou": 0.01,

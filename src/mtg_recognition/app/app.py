@@ -112,14 +112,21 @@ def create_thumbnail_grid(results, results_key="batch_results"):
             with st.container(border=True):
                 # Display best match image from reference database
                 if result.status == "success" and result.best_match:
-                    img_path = Path(IMG_DIR) / f"{result.best_match.uuid}.jpg"
-                    if img_path.exists():
-                        best_img = cv2.imread(str(img_path))
-                        if best_img is not None:
-                            st.image(
-                                cv2.cvtColor(best_img, cv2.COLOR_BGR2RGB),
-                                width="content",
-                            )
+                    # img_path = Path(IMG_DIR) / f"{result.best_match.uuid}.jpg"
+                    # if img_path.exists():
+                    #     best_img = cv2.imread(str(img_path))
+                    #     if best_img is not None:
+                    #         st.image(
+                    #             cv2.cvtColor(best_img, cv2.COLOR_BGR2RGB),
+                    #             width="content",
+                    #         )
+
+                    img_url = result.best_match.url
+                    st.image(
+                        img_url
+                        if img_url
+                        else "https://via.placeholder.com/300x420?text=No+Image",
+                    )
 
                 # Display card name
                 if result.status == "success" and result.best_match:
