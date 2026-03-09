@@ -21,6 +21,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 # All following relative paths are under /app.
 
+RUN groupadd --system --gid 10001 appuser \
+    && useradd --system --uid 10001 --gid appuser --create-home --home-dir /home/appuser appuser
+# Create unpriviledged (i.e. non-root) user for security
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 # Copies uv and uvx binaries from official uv image into your image (no separate install step needed)
 
@@ -95,8 +99,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --python /app/.venv/bin/python "git+https://github.com/ultralytics/CLIP.git"
 # Ultralytics YOLOE text embeddings require CLIP. Same mount mechanism, now caching git/pip artifacts for CLIP install.
 
+RUN chown -R appuser:appuser /app
+USER appuser
+# Run as unpriviledged (i.e. non-root) user
+
 EXPOSE 8501
 # app listens on 8501
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD /app/.venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)"
 
 CMD ["/app/.venv/bin/streamlit", "run", "src/mtg_recognition/app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
 # Container startup command:
