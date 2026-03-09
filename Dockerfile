@@ -95,10 +95,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Again uses build cache mount for uv cache.
 # This installs your local project (mtg-recognition) into the venv in runtime stage.
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --python /app/.venv/bin/python "git+https://github.com/ultralytics/CLIP.git"
-# Ultralytics YOLOE text embeddings require CLIP. Same mount mechanism, now caching git/pip artifacts for CLIP install.
-
 RUN chown -R appuser:appuser /app
 USER appuser
 # Run as unpriviledged (i.e. non-root) user
