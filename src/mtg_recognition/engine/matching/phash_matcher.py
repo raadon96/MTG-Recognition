@@ -1,13 +1,11 @@
 import json
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Any
 
 import imagehash
 import numpy as np
 from numpydantic import NDArray, Shape
 from PIL import Image
-from pydantic import BaseModel
 from sqlalchemy.engine.row import Row
 from sqlmodel import Session, col, select
 from tqdm import tqdm
@@ -47,7 +45,7 @@ class PHashCardMatcher:
 
         self.index_path = Path(index_path)
         self.mapping_path = Path(mapping_path)
-        self.img_dir_path = Path(img_dir)
+        self.img_dir = Path(img_dir)
         self.hash_size = hash_size
 
         # type and shape validation using numpydantic (https://github.com/p2p-ld/numpydantic)

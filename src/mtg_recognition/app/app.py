@@ -1,7 +1,4 @@
 import os
-
-os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
-
 from pathlib import Path
 
 import cv2
@@ -319,7 +316,7 @@ def display_batch_detail_view(results, selected_idx, engine):
 
 def export_results(results, export_format, processor):
     """Generate export file for results."""
-    import json
+
     import tempfile
 
     if export_format == "CSV":
@@ -353,7 +350,7 @@ def main():
     db_engine = load_database()
 
     # Sidebar options
-    st.sidebar.header("⚙️ Settings")
+    st.sidebar.header("⚙️ Import")
 
     # Initialize session state for batch mode
     if "batch_results" not in st.session_state:

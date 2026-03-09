@@ -1,19 +1,19 @@
 import os
-
-os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 from pathlib import Path
 from typing import NamedTuple
 
 import cv2
 import numpy as np
 import rapidfuzz
+from dotenv import load_dotenv
 from icecream import ic
-from paddleocr import PaddleOCR
 from sqlalchemy.engine.row import Row
 
-from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.engine.ocr import ocr_utils
 
-from . import ocr_utils
+load_dotenv()
+os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+from paddleocr import PaddleOCR  # noqa: E402
 
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS = [

@@ -1,16 +1,15 @@
-import os
-
-os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
-
 from pathlib import Path
 
 import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
 
-from .matching.phash_matcher import PHashCardMatcher
-from .ocr.ocr import CardOCR
-from .segmentation.segment import CardSegmentor, SegmentationResult
+from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
+from mtg_recognition.engine.ocr.ocr import CardOCR
+from mtg_recognition.engine.segmentation.segment import (
+    CardSegmentor,
+    SegmentationResult,
+)
 
 
 class Pipeline:
