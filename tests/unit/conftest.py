@@ -12,7 +12,7 @@ from mtg_recognition.jobs.schemas import MobileCache
 BEST_SEGMENTOR = "yoloe-11s-seg"
 BEST_PARAM_SET = 0
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path("tests/unit/fixtures")
 IMG_DIR = FIXTURES_DIR / "images"
 
 
@@ -41,6 +41,13 @@ def high_contrast_card_image() -> np.ndarray:
     """Load test image with one valid card with difficult lighting conditions."""
     img_path = str(IMG_DIR / "high_contrast_card.jpg")
     return cv2.imread(img_path)
+
+
+@pytest.fixture
+def two_cards_image(self):
+    """Load test image with two cards."""
+    img_path = IMG_DIR / "fixtures" / "images" / "two_cards.png"
+    return cv2.imread(str(img_path))
 
 
 @pytest.fixture(scope="session")

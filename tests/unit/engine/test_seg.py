@@ -11,56 +11,15 @@ class TestCardSegmentor:
     """Unit tests for CardSegmentor using yoloe-11s-seg model."""
 
     @pytest.fixture
-    def segmentor(self):
-        """Create CardSegmentor instance with yoloe-11s-seg model."""
-        return CardSegmentor(model_name="yoloe-11s-seg", param_set_idx=0)
-
-    @pytest.fixture
-    def valid_card_image(self):
-        """Load test image with a single valid card."""
-        img_path = (
-            Path(__file__).parent.parent.parent / "fixtures" / "images" / "valid.jpg"
-        )
-        return cv2.imread(str(img_path))
-
-    @pytest.fixture
-    def two_cards_image(self):
-        """Load test image with two cards."""
-        img_path = (
-            Path(__file__).parent.parent.parent
-            / "fixtures"
-            / "images"
-            / "two_cards.png"
-        )
-        return cv2.imread(str(img_path))
-
-    @pytest.fixture
-    def difficult_lighting_image(self):
-        """Load test image with difficult lighting conditions."""
-        img_path = (
-            Path(__file__).parent.parent.parent
-            / "fixtures"
-            / "images"
-            / "difficult_lighting.png"
-        )
-        return cv2.imread(str(img_path))
-
-    @pytest.fixture
-    def no_cards_image(self):
-        """Load test image without any cards."""
-        img_path = (
-            Path(__file__).parent.parent.parent / "fixtures" / "images" / "no_cards.png"
-        )
-        return cv2.imread(str(img_path))
-
     def test_segmentor_initialization(self, segmentor):
         """Test that CardSegmentor initializes correctly."""
         assert segmentor.model is not None
         assert segmentor.model.model_name == "yoloe-11s-seg"
         assert segmentor.target_size == (488, 680)
         assert segmentor.padding_pct == 0.1
-        assert segmentor.model.task == "segmentation"
+        assert segmentor.model.task == "segment"
 
+    @pytest.fixture
     def test_valid_card_segmentation(self, segmentor, valid_card_image):
         """Test segmentation with a single valid card."""
         assert valid_card_image is not None, "Valid card image could not be loaded"
@@ -79,6 +38,7 @@ class TestCardSegmentor:
             3,
         )  # (height, width, channels)
 
+    @pytest.fixture
     def test_valid_card_segmentation_no_warp(self, segmentor, valid_card_image):
         """Test segmentation with a single valid card without returning warped image."""
         assert valid_card_image is not None, "Valid card image could not be loaded"
@@ -94,6 +54,7 @@ class TestCardSegmentor:
         # Check that warped image is None when not requested
         assert img_warped is None
 
+    @pytest.fixture
     def test_two_cards_segmentation(self, segmentor, two_cards_image):
         """Test segmentation with two cards in the image."""
         assert two_cards_image is not None, "Two cards image could not be loaded"
@@ -108,6 +69,7 @@ class TestCardSegmentor:
         assert img_warped is not None
         assert img_warped.shape == segmentor.target_size[::-1] + (3,)
 
+    @pytest.fixture
     def test_difficult_lighting_segmentation(self, segmentor, difficult_lighting_image):
         """Test segmentation with difficult lighting conditions."""
         assert difficult_lighting_image is not None, (
@@ -126,6 +88,7 @@ class TestCardSegmentor:
         if img_warped is not None:
             assert img_warped.shape == segmentor.target_size[::-1] + (3,)
 
+    @pytest.fixture
     def test_no_cards_segmentation(self, segmentor, no_cards_image):
         """Test segmentation when no cards are present in the image."""
         assert no_cards_image is not None, "No cards image could not be loaded"
@@ -137,6 +100,7 @@ class TestCardSegmentor:
         assert img_corners.shape == no_cards_image.shape
         assert img_warped is None
 
+    @pytest.fixture
     def test_find_corners_from_mask_valid_input(self, segmentor, valid_card_image):
         """Test find_corners_from_mask method with valid input."""
         # Get mask points from model prediction
@@ -151,6 +115,7 @@ class TestCardSegmentor:
             assert corner_points.shape == (4, 1, 2)  # 4 corners in OpenCV format
             assert corner_points.dtype == np.int32
 
+    @pytest.fixture
     def test_find_corners_from_mask_invalid_input(self, segmentor):
         """Test find_corners_from_mask method with invalid input."""
         # Test with empty mask points - this should raise an exception
@@ -161,6 +126,7 @@ class TestCardSegmentor:
                 empty_mask, (100, 100, 3), erode=True, refine=True
             )
 
+    @pytest.fixture
     def test_segment_with_none_image(self, segmentor):
         """Test segment method with None input."""
         # The YOLO model handles None by using a default image path
@@ -173,6 +139,7 @@ class TestCardSegmentor:
         # Warped image should be None when no card is detected
         assert img_warped is None
 
+    @pytest.fixture
     def test_segment_with_empty_image(self, segmentor):
         """Test segment method with empty numpy array."""
         empty_img = np.array([])
@@ -181,6 +148,7 @@ class TestCardSegmentor:
         with pytest.raises(ZeroDivisionError):
             segmentor.segment(empty_img, return_warped=True)
 
+    @pytest.fixture
     def test_target_size_configuration(self):
         """Test that target size can be configured."""
         custom_size = (300, 400)
@@ -190,6 +158,7 @@ class TestCardSegmentor:
 
         assert segmentor.target_size == custom_size
 
+    @pytest.fixture
     def test_segmentation_consistency(self, segmentor, valid_card_image):
         """Test that segmentation results are consistent across multiple runs."""
         assert valid_card_image is not None, "Valid card image could not be loaded"

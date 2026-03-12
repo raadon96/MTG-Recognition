@@ -1,4 +1,6 @@
+import argparse
 import os
+import statistics
 from pathlib import Path
 
 import cv2
@@ -314,19 +316,21 @@ def display_batch_detail_view(results, selected_idx, engine):
     #                     st.caption(f"Score: {score:.2f}")
 
 
-def export_results(results, export_format, processor):
+def export_results(
+    results, export_format: str, processor: BatchProcessor, with_diagnostics=False
+):
     """Generate export file for results."""
 
     import tempfile
 
     if export_format == "CSV":
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            processor.export_to_csv(results, f.name)
+            processor.export_to_csv(results, f.name, with_diagnostics)
             return f.name, "text/csv", "results.csv"
 
     elif export_format == "Excel":
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as f:
-            processor.export_to_excel(results, f.name)
+            processor.export_to_excel(results, f.name, with_diagnostics)
             return (
                 f.name,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -335,11 +339,40 @@ def export_results(results, export_format, processor):
 
     elif export_format == "JSON":
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            processor.export_to_json(results, f.name)
+            processor.export_to_json(results, f.name, with_diagnostics)
             return f.name, "application/json", "results.json"
 
 
+def display_batch_timing_metrics(results):
+    """Display simple timing metrics for the latest batch."""
+    timing_results = [r for r in results if r.timings_ms is not None]
+    if not timing_results:
+        return
+
+    total_values = [r.timings_ms.get("total_ms", 0.0) for r in timing_results]
+    seg_values = [r.timings_ms.get("segmentation_ms", 0.0) for r in timing_results]
+    phash_values = [r.timings_ms.get("phash_ms", 0.0) for r in timing_results]
+    ocr_values = [r.timings_ms.get("ocr_ms", 0.0) for r in timing_results]
+
+    def p95(values: list[float]) -> float:
+        if len(values) < 2:
+            return values[0] if values else 0.0
+        return statistics.quantiles(values, n=20)[-1]
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📈 Batch Timing")
+    st.sidebar.caption(f"Measured images: {len(timing_results)}/{len(results)}")
+    st.sidebar.metric("Total Avg (ms)", f"{statistics.mean(total_values):.1f}")
+    st.sidebar.metric("Total P95 (ms)", f"{p95(total_values):.1f}")
+
+    with st.sidebar.expander("Stage breakdown (avg ms)"):
+        st.caption(f"Segmentation: {statistics.mean(seg_values):.1f}")
+        st.caption(f"pHash: {statistics.mean(phash_values):.1f}")
+        st.caption(f"OCR: {statistics.mean(ocr_values):.1f}")
+
+
 def main():
+    args = parse_args()
     st.title("MTG Card Recognition")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
@@ -455,7 +488,10 @@ def main():
         processor = BatchProcessor(pipeline, db_engine)
         try:
             file_path, mime_type, filename = export_results(
-                results, export_format, processor
+                results,
+                export_format,
+                processor,
+                with_diagnostics=args.with_diagnostics,
             )
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
@@ -468,6 +504,9 @@ def main():
         except Exception as e:
             st.sidebar.error(f"Export failed: {str(e)}")
 
+        if args.with_diagnostics:
+            display_batch_timing_metrics(results)
+
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", use_container_width=True):
             st.session_state.batch_results = None
@@ -475,8 +514,23 @@ def main():
             st.rerun()
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "App for MTG card recognition with batch processing, detailed results view, and export functionality."
+        )
+    )
+    parser.add_argument(
+        "--with-diagnostics",
+        action="store_true",
+        # default=False,
+        help="Show timings in the UI and include timings in export file.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     main()
 
 # Run app as a script
-# uv run streamlit run src/mtg_recognition/app/app.py
+# uv run streamlit run src/mtg_recognition/app/app.py -- --with-diagnostics

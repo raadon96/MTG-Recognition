@@ -1,6 +1,7 @@
 """Batch image processing for MTG card recognition."""
 
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -26,6 +27,7 @@ class BatchResult:
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
+    timings_ms: dict[str, float] | None = None
 
 
 class BatchProcessor:
@@ -105,15 +107,15 @@ class BatchProcessor:
         Returns:
             BatchResult object with segmentation and matching results
         """
-        image_path = Path(image_path)
+        image_file = Path(image_path)
 
         # Read image
-        if not image_path.exists():
-            raise FileNotFoundError(f"Image file not found: {image_path}")
+        if not image_file.exists():
+            raise FileNotFoundError(f"Image file not found: {image_file}")
 
-        input_img = cv2.imread(str(image_path))
+        input_img = cv2.imread(str(image_file))
         if input_img is None:
-            raise ValueError(f"Failed to read image: {image_path}")
+            raise ValueError(f"Failed to read image: {image_file}")
 
         # Save original image to temp file
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
@@ -121,20 +123,28 @@ class BatchProcessor:
             original_img_path = tmp_file.name
 
         # Segment card
+        segmentation_start = time.perf_counter()
         segmentation_result = self.pipeline.segment_card(
             input_img, return_annotated=False, return_warped=True
         )
+        segmentation_ms = (time.perf_counter() - segmentation_start) * 1000.0
 
         if not segmentation_result.success or segmentation_result.warped_image is None:
             # No card detected
             return BatchResult(
-                uploaded_filename=image_path.name,
-                original_image_path=str(image_path),
+                uploaded_filename=image_file.name,
+                original_image_path=str(image_file),
                 warped_image=None,
                 best_match=None,
                 best_match_score=None,
                 status="no_match",
                 original_image_temp_path=original_img_path,
+                timings_ms={
+                    "segmentation_ms": segmentation_ms,
+                    "phash_ms": 0.0,
+                    "ocr_ms": 0.0,
+                    "total_ms": segmentation_ms,
+                },
             )
 
         # Save warped image to temp file (reload from temp files as requested)
@@ -145,39 +155,42 @@ class BatchProcessor:
 
         try:
             # Find best matches
-            matches, scores = self.pipeline.find_best_matches(
-                warped_img,
-                k_phash_candidates=100,
-                k_final_results=5,
-                apply_segmentation=False,
+            matches, scores, diagnostics = (
+                self.pipeline.find_best_matches_with_diagnostics(
+                    warped_img,
+                    k_phash_candidates=100,
+                    k_final_results=5,
+                    apply_segmentation=False,
+                )
             )
 
-            if matches is None or len(matches) == 0:
-                # No matches found - still return the warped image path
-                return BatchResult(
-                    uploaded_filename=image_path.name,
-                    original_image_path=str(image_path),
-                    warped_image=None,
-                    best_match=None,
-                    best_match_score=None,
-                    status="no_match",
-                    original_image_temp_path=original_img_path,
-                    warped_image_temp_path=warped_img_path,
-                )
+            timings_ms = {
+                "segmentation_ms": segmentation_ms,
+                "phash_ms": diagnostics["phash_ms"],
+                "ocr_ms": diagnostics["ocr_ms"],
+                "total_ms": segmentation_ms + diagnostics["total_ms"],
+            }
 
             # Create result with best match
-            best_match = matches[0]
-            best_score = scores[0]
+            if matches is None or len(matches) == 0:
+                best_match = None
+                best_score = None
+                status = "no_match"
+            else:
+                best_match = matches[0]
+                best_score = float(scores[0])
+                status = "success"
 
             return BatchResult(
-                uploaded_filename=image_path.name,
-                original_image_path=str(image_path),
+                uploaded_filename=image_file.name,
+                original_image_path=str(image_file),
                 warped_image=None,  # Don't keep in memory
                 best_match=best_match,
-                best_match_score=float(best_score),
-                status="success",
+                best_match_score=best_score,
+                status=status,
                 original_image_temp_path=original_img_path,
                 warped_image_temp_path=warped_img_path,
+                timings_ms=timings_ms,
             )
         except Exception as e:
             # Clean up temp files on error
@@ -187,7 +200,9 @@ class BatchProcessor:
                 Path(warped_img_path).unlink()
             raise
 
-    def get_result_dataframe(self, results: list[BatchResult]):
+    def get_result_dataframe(
+        self, results: list[BatchResult], with_diagnostics: bool = False
+    ):
         """
         Convert batch results to pandas DataFrame.
 
@@ -222,11 +237,23 @@ class BatchProcessor:
                     if result.best_match
                     else None,
                 }
+                if with_diagnostics and result.timings_ms:
+                    diagnostics_row = {
+                        "Segmentation Time (ms)": result.timings_ms.get(
+                            "segmentation_ms", None
+                        ),
+                        "pHash Time (ms)": result.timings_ms.get("phash_ms", None),
+                        "OCR Time (ms)": result.timings_ms.get("ocr_ms", None),
+                        "Total Time (ms)": result.timings_ms.get("total_ms", None),
+                    }
+                    row.update(diagnostics_row)
                 data.append(row)
 
         return pd.DataFrame(data)
 
-    def export_to_csv(self, results: list[BatchResult], filepath: str) -> None:
+    def export_to_csv(
+        self, results: list[BatchResult], filepath: str, with_diagnostics: bool = False
+    ) -> None:
         """
         Export results to CSV file.
 
@@ -234,10 +261,12 @@ class BatchProcessor:
             results: List of BatchResult objects
             filepath: Output file path
         """
-        df = self.get_result_dataframe(results)
+        df = self.get_result_dataframe(results, with_diagnostics=with_diagnostics)
         df.to_csv(filepath, index=False)
 
-    def export_to_excel(self, results: list[BatchResult], filepath: str) -> None:
+    def export_to_excel(
+        self, results: list[BatchResult], filepath: str, with_diagnostics: bool = False
+    ) -> None:
         """
         Export results to Excel file with optional formatting.
 
@@ -248,10 +277,12 @@ class BatchProcessor:
         Note:
             Requires openpyxl.
         """
-        df = self.get_result_dataframe(results)
+        df = self.get_result_dataframe(results, with_diagnostics=with_diagnostics)
         df.to_excel(filepath, index=False, sheet_name="Results", engine="openpyxl")
 
-    def export_to_json(self, results: list[BatchResult], filepath: str) -> None:
+    def export_to_json(
+        self, results: list[BatchResult], filepath: str, with_diagnostics: bool = False
+    ) -> None:
         """
         Export results to JSON file.
 
@@ -278,6 +309,18 @@ class BatchProcessor:
                 "scryfall_url": result.best_match.url if result.best_match else None,
                 "error_message": result.error_message,
             }
+            if with_diagnostics and result.timings_ms:
+                item.update(
+                    {
+                        # "timings_ms": result.timings_ms,
+                        "segmentation_ms": result.timings_ms.get(
+                            "segmentation_ms", None
+                        ),
+                        "phash_ms": result.timings_ms.get("phash_ms", None),
+                        "ocr_ms": result.timings_ms.get("ocr_ms", None),
+                        "total_ms": result.timings_ms.get("total_ms", None),
+                    }
+                )
             data.append(item)
 
         with open(filepath, "w") as f:

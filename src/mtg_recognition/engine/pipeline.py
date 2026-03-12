@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 import numpy as np
 from rich import print
@@ -29,9 +30,8 @@ class Pipeline:
             self.phash_matcher.build_index(force=False)
 
     def segment_card(self, query_img: np.ndarray, **kwargs) -> SegmentationResult:
-        """Segment the card from the query image and return the warped image."""
-        result = self.segmentor.segment(query_img, **kwargs)
-        return result
+        """Segment the card from a query image."""
+        return self.segmentor.segment(query_img, **kwargs)
 
     def find_best_matches(
         self,
@@ -54,16 +54,46 @@ class Pipeline:
         Returns:
             Tuple of (matches, scores) where matches are Row objects and scores are floats
         """
+        matches, scores, _ = self.find_best_matches_with_diagnostics(
+            query_img=query_img,
+            k_phash_candidates=k_phash_candidates,
+            k_final_results=k_final_results,
+            apply_segmentation=apply_segmentation,
+        )
+        return matches, scores
+
+    def find_best_matches_with_diagnostics(
+        self,
+        query_img: np.ndarray,
+        k_phash_candidates: int = 100,
+        k_final_results: int = 1,
+        apply_segmentation: bool = True,
+    ) -> tuple[list[Row], list[float], dict[str, float]]:
+        """Find best matches and return stage timing diagnostics in milliseconds."""
+        total_start = time.perf_counter()
+
+        diagnostics = {
+            "segmentation_ms": 0.0,
+            "phash_ms": 0.0,
+            "ocr_ms": 0.0,
+            "total_ms": 0.0,
+        }
+
         # I. Segmentation
         if apply_segmentation:
+            segmentation_start = time.perf_counter()
             result = self.segment_card(query_img, return_warped=True)
             img_warped = result.warped_image
+            diagnostics["segmentation_ms"] = (
+                time.perf_counter() - segmentation_start
+            ) * 1000.0
         else:
             img_warped = query_img
 
         if img_warped is None:
             print("No image detected")
-            return [], []
+            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+            return [], [], diagnostics
 
         # II. Matching
         assert k_final_results <= k_phash_candidates, (
@@ -71,24 +101,32 @@ class Pipeline:
         )
 
         # Stage 1: Coarse search with perceptual hashing
+        phash_start = time.perf_counter()
         matches_ph, scores_ph = self.phash_matcher.find_best_matches(
             img_warped, k=k_phash_candidates
         )
+        diagnostics["phash_ms"] = (time.perf_counter() - phash_start) * 1000.0
 
         if len(matches_ph) == 0:
-            return [], []
+            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+            return [], [], diagnostics
         elif len(matches_ph) == 1:
-            return matches_ph, scores_ph
+            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+            return matches_ph, scores_ph, diagnostics
 
         # Stage 2: Accurate OCR search on reduced search space
+        ocr_start = time.perf_counter()
         matches_ocr, scores_ocr = self.ocr.find_best_matches(
             img_warped, matches_ph, k=k_final_results, thresh=0.0
         )
+        diagnostics["ocr_ms"] = (time.perf_counter() - ocr_start) * 1000.0
 
         if len(matches_ocr) == 0:
-            return [], []
+            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+            return [], [], diagnostics
 
-        return matches_ocr, scores_ocr
+        diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+        return matches_ocr, scores_ocr, diagnostics
 
     def _load_index(self):
         """Load indices for all matchers."""
