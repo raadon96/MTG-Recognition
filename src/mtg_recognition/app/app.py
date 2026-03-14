@@ -481,7 +481,7 @@ def main():
 
         export_format = st.sidebar.selectbox(
             "Select format:",
-            ["Excel", "CSV", "JSON"],
+            ["CSV", "Excel", "JSON"],
             key="export_format_batch",
         )
 

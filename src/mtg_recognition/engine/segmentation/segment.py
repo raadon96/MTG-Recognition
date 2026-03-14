@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+import click
 import cv2
 import numpy as np
 from tqdm import tqdm
@@ -311,51 +312,78 @@ class CardSegmentor:
             cv2.imwrite(img_path_dst, img_warped)
 
 
-def main():
-    model_name = "yolov8s-worldv2"
-    # model_name = "yoloe-11s-seg"
-    # model_name = "yoloe-26n-seg"
+@click.command()
+@click.option(
+    "-i",
+    "--input",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        readable=True,
+        path_type=Path,
+    ),
+    default="benchmarks/dataset/images/raw",
+)
+@click.option(
+    "-o",
+    "--output-dir",
+    type=click.Path(
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        readable=True,
+        path_type=Path,
+    ),
+    default="output/engine/segmentation/CardSegmentor",
+)
+@click.option(
+    "--model-name",
+    type=click.Choice(
+        [
+            "yoloe-11s-seg",
+            "yolov8s-worldv2",
+            "yoloe-26n-seg",
+        ]
+    ),
+    default="yoloe-11s-seg",
+)
+def main(input, output_dir, model_name):
+    segmentor = CardSegmentor(model_name, param_set_idx=0)
+    if input.is_file():
+        # Segment one raw test image
+        img_path = Path(
+            # "benchmarks/dataset/images/raw/8fe1d06a-2e8d-5352-8459-58ed34475b1a.jpg",
+            "benchmarks/dataset/images/raw/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg"
+        )
+        img = cv2.imread(str(input))
 
-    param_set = 0
-    # param_set = 1
-    # param_set = 2
+        result = segmentor.segment(img, return_warped=True)
+        img_warped = result.warped_image
 
-    segmentor = CardSegmentor(model_name, param_set)
+        if img_warped is not None:
+            print("Success!")
+            cv2.imshow("Warped", img_warped)
 
-    # Segment one raw test image
-    img_path = Path(
-        # "benchmarks/dataset/images/raw/8fe1d06a-2e8d-5352-8459-58ed34475b1a.jpg",
-        "benchmarks/dataset/images/raw/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg"
-    )
-    img = cv2.imread(str(img_path))
-
-    result = segmentor.segment(img, return_warped=True)
-    img_warped = result.warped_image
-
-    if img_warped is not None:
-        print("Success!")
-        # cv2.imshow("Corners", img_corners)
-        cv2.imshow("Warped", img_warped)
-
-        key = cv2.waitKey(0)
-        if key == ord("q"):
-            cv2.destroyAllWindows()
-        # elif key == ord("s"):
-        #     img_path_dst = Path(f"database/test/images/ready/{img_path.name}")
-        #     img_path_dst.parent.mkdir(parents=True, exist_ok=True)
-        #     cv2.imwrite(img_path_dst, img_warped)
-        #     cv2.destroyAllWindows()
+            key = cv2.waitKey(0)
+            if key == ord("q"):
+                cv2.destroyAllWindows()
+            # elif key == ord("s"):
+            #     img_path_dst = Path(f"database/test/images/ready/{img_path.name}")
+            #     img_path_dst.parent.mkdir(parents=True, exist_ok=True)
+            #     cv2.imwrite(img_path_dst, img_warped)
+            #     cv2.destroyAllWindows()
+        else:
+            print("No image detected")
     else:
-        print("No image detected")
-
-    # # Segment all raw test images
-    # src_dir = "benchmarks/dataset/images/raw"
-    # # dst_dir = "scratch/test_segmentation/approxPolyDP/images/ready"
-    # dst_dir = "scratch/test_segmentation/onnx/images/ready"
-    # segmentor.segment_from_dir(src_dir, dst_dir)
+        # Segment all raw test images
+        # src_dir = "benchmarks/dataset/images/raw"
+        # # dst_dir = "scratch/test_segmentation/approxPolyDP/images/ready"
+        # dst_dir = "scratch/test_segmentation/onnx/images/ready"
+        segmentor.segment_from_dir(input, output_dir)
 
 
 if __name__ == "__main__":
     main()
 
-# uv run python -m mtg_recognition.engine.segmentation.segment
+# uv run python -m mtg_recognition.engine.segmentation.segment -i benchmarks/dataset/images/raw -o output/engine/segmentation/CardSegmentor
