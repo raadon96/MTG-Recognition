@@ -95,6 +95,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Again uses build cache mount for uv cache.
 # This installs your local project (mtg-recognition) into the venv in runtime stage.
 
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv run paddlex --install hpi-cpu
+# Install PaddleX CPU high-performance inference plugin in the uv-managed environment.
+
 RUN chown -R appuser:appuser /app
 USER appuser
 # Run as unpriviledged (i.e. non-root) user

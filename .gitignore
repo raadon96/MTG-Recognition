@@ -33,7 +33,7 @@ benchmarks/benchmark_matching.py
 **/models/test/
 
 # Personal notes
-notes.md
+.notes
 
 # Coding agents
 AGENTS.md

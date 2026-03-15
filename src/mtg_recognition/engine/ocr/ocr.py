@@ -2,11 +2,13 @@ import os
 from pathlib import Path
 from typing import NamedTuple
 
+import click
 import cv2
 import numpy as np
 import rapidfuzz
 from dotenv import load_dotenv
 from icecream import ic
+from paddlex.inference import load_pipeline_config
 from sqlalchemy.engine.row import Row
 
 from mtg_recognition.engine.ocr import ocr_utils
@@ -16,7 +18,7 @@ os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
 from paddleocr import PaddleOCR  # noqa: E402
 
 # Attribute mapping configuration for fuzzy matching
-ATTRIBUTE_MAPPINGS = [
+ATTRIBUTE_MAPPINGS: list[dict] = [
     {"db_attr": "name", "ocr_property": "name", "weight": 1.0},
     {"db_attr": "setCode", "ocr_property": "setcode_candidates", "weight": 2.0},
     {"db_attr": "number", "ocr_property": "number", "weight": 1.0},
@@ -61,8 +63,27 @@ class CardOCR:
     INFO_ROI_LEFT = 0.05
     INFO_ROI_RIGHT = 0.76
 
-    def __init__(self):
+    def __init__(self, enable_hpi=True, det_mobile=False):
+        enable_hpi = enable_hpi
+        cfg = None
+
+        if enable_hpi:
+            cfg = load_pipeline_config("OCR")
+
+            # Use high performance onnx backend runtime for text-detection
+            cfg["SubModules"]["TextDetection"]["use_hpip"] = True
+            cfg["SubModules"]["TextDetection"]["hpi_config"] = {
+                "backend": "onnxruntime",
+            }
+            # Keep normal paddlex backend runtime for text-recognition (onnx backend does not work for rec)
+            cfg["SubModules"]["TextRecognition"]["use_hpip"] = False
+            cfg["SubModules"]["TextRecognition"]["hpi_config"] = {
+                "backend": "paddle",
+                "auto_paddle2onnx": False,  # optional but useful to prevent ONNX conversion attempts
+            }
+
         self._paddleocr = PaddleOCR(
+            paddlex_config=cfg,
             # document orientation correction (corrects orientation of document images)
             use_doc_orientation_classify=False,
             doc_orientation_classify_model_name=None,
@@ -71,16 +92,18 @@ class CardOCR:
             doc_unwarping_model_name=None,
             # textline orientation classification (corrects the orientation of text lines)
             use_textline_orientation=False,
-            # textline_orientation_model_name="PP-LCNet_x0_25_textline_ori",
+            textline_orientation_model_name="PP-LCNet_x0_25_textline_ori",
             # text detection (locating and marking text-containing regions in images)
             text_detection_model_name="PP-OCRv5_server_det",
             text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det",
+            # text_detection_model_name="PP-OCRv5_mobile_det",
+            # text_detection_model_dir="src/mtg_recognition/engine/ocr/models/test/PP-OCRv5_mobile_det",
             # text recognition
             text_recognition_model_name="PP-OCRv5_mobile_rec",
             text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",
             # other params
             device="cpu",
-            enable_hpi=False,  # enable high-performance inference
+            enable_hpi=enable_hpi,  # enable high-performance inference
             precision="fp16",  # set to "fp16" for acceleration
             lang="en",
         )
@@ -182,8 +205,8 @@ class CardOCR:
         weights = []
 
         for mapping in ATTRIBUTE_MAPPINGS:
-            db_attr = mapping["db_attr"]
-            ocr_property = mapping["ocr_property"]
+            db_attr = str(mapping["db_attr"])
+            ocr_property = str(mapping["ocr_property"])
             weight = mapping["weight"]
 
             # Get values from database candidates
@@ -233,22 +256,49 @@ class CardOCR:
         return top_candidates, top_scores
 
 
-def main():
-    img_dir = Path("benchmarks/dataset/images/ready")
-    img_paths = sorted(list(img_dir.glob("*.jpg")))
+@click.command()
+@click.option(
+    "-i",
+    "--input",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        readable=True,
+        path_type=Path,
+    ),
+    default="benchmarks/dataset/images/ready",
+    help="Path to input image or directory of images (supports .jpg)",
+)
+@click.option(
+    "--enable-hpi",
+    type=bool,
+    is_flag=True,
+    help="Enable high-performance inference (HPI) for OCR models",
+)
+def main(input, enable_hpi):
+    if input.is_file():
+        img_paths = [input]
+    elif input.is_dir():
+        img_paths = sorted(list(input.glob("*.jpg")))
 
-    ocr = CardOCR()
+    if not img_paths:
+        print(f"No .jpg images found in: {input}")
+        return
+
+    ocr = CardOCR(enable_hpi=enable_hpi)
     from ..matching.phash_matcher import PHashCardMatcher
 
     matcher = PHashCardMatcher(auto_build=True)
 
     for i, img_path in enumerate(img_paths):
         query_img = cv2.imread(str(img_path))
+        if query_img is None:
+            print(f"Failed to read image: {img_path}")
+            continue
 
         # Find candidates with deep embeddings
         candidates_dem, scores_dem = matcher.find_best_matches(query_img, k=100)
-        # ic(list(zip(candidates_embeddings, scores_dem)))
-
         properties = ocr.extract_properties(query_img)
         print(
             f"{properties.setcode_candidates} \t {properties.number} \t {properties.base_set_size} \t {properties.name} \t {properties.set_release_date} \t {properties.rec_texts_bot}"
@@ -261,16 +311,14 @@ def main():
         )
 
         if candidates_ocr:
-            # ic(list(zip(candidates_ocr, scores_ocr)))
             success = candidates_ocr[0].uuid == img_path.stem
             ic(candidates_ocr[0], scores_ocr[0])
 
         print(f"{i} {success} \t {img_path.stem}")
-
         print("\n ------------------------------------------- \n")
 
 
 if __name__ == "__main__":
     main()
 
-# uv run python -m mtg_recognition.engine.ocr.ocr
+# uv run python -m mtg_recognition.engine.ocr.ocr --enable-hpi

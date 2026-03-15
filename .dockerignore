@@ -20,6 +20,7 @@ dist/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.opencode/
 .coverage
 .cache/
 
@@ -40,7 +41,7 @@ notebooks/
 scratch/
 input/
 output/
-notes/
+.notes/
 
 # Test models
 src/mtg_recognition/engine/segmentation/models/test

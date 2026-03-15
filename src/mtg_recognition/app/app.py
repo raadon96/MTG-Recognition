@@ -1,8 +1,8 @@
-import argparse
 import os
 import statistics
 from pathlib import Path
 
+import click
 import cv2
 import requests
 import streamlit as st
@@ -371,8 +371,14 @@ def display_batch_timing_metrics(results):
         st.caption(f"OCR: {statistics.mean(ocr_values):.1f}")
 
 
-def main():
-    args = parse_args()
+@click.command()
+@click.option(
+    "--with-diagnostics",
+    type=bool,
+    is_flag=True,
+    help="Show timings in the UI and include timings in export file.",
+)
+def main(with_diagnostics):
     st.title("MTG Card Recognition")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
@@ -491,7 +497,7 @@ def main():
                 results,
                 export_format,
                 processor,
-                with_diagnostics=args.with_diagnostics,
+                with_diagnostics=with_diagnostics,
             )
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
@@ -504,7 +510,7 @@ def main():
         except Exception as e:
             st.sidebar.error(f"Export failed: {str(e)}")
 
-        if args.with_diagnostics:
+        if with_diagnostics:
             display_batch_timing_metrics(results)
 
         st.sidebar.markdown("---")
@@ -512,21 +518,6 @@ def main():
             st.session_state.batch_results = None
             # Clear the file uploader by resetting the key
             st.rerun()
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "App for MTG card recognition with batch processing, detailed results view, and export functionality."
-        )
-    )
-    parser.add_argument(
-        "--with-diagnostics",
-        action="store_true",
-        # default=False,
-        help="Show timings in the UI and include timings in export file.",
-    )
-    return parser.parse_args()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
-from pathlib import Path
 import time
+from pathlib import Path
 
+import click
 import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
@@ -139,49 +140,67 @@ class Pipeline:
         self.phash_matcher.build_index(force)
 
 
-def main(run_single_img=True, run_multiple_imgs=True):
+@click.command()
+@click.option(
+    "-i",
+    "--input",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        readable=True,
+        path_type=Path,
+    ),
+    default="benchmarks/dataset/images/raw",
+    help="Path to input image or directory of images (supports .jpg)",
+)
+@click.option(
+    "-k",
+    type=click.INT,
+    default=1,
+    help="Number of final matches to return after OCR refinement",
+)
+@click.option(
+    "-n",
+    type=click.INT,
+    default=100,
+    help="Number of candidates to retrieve from perceptual hash stage",
+)
+def main(input: Path, k: int, n: int):
+    if input.is_file():
+        img_paths = [input]
+    elif input.is_dir():
+        img_paths = sorted(list(input.glob("*.jpg")))
+
+    if not img_paths:
+        print(f"No .jpg images found in: {input}")
+        return
+
     import cv2
 
     pipeline = Pipeline(auto_build=True)
     pipeline.build_index(force=False)
 
-    if run_single_img:
-        # Test with a sample segmented test image
-        query_image_path = Path(
-            "benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg"
-        )
-        assert query_image_path.exists()
+    for i, img_path in enumerate(img_paths):
+        query_img = cv2.imread(str(img_path))
+        try:
+            best_matches, best_scores = pipeline.find_best_matches(
+                query_img, k_final_results=k, k_phash_candidates=n
+            )
 
-        k = 1
-        query_img = cv2.imread(str(query_image_path))
-        best_matches, best_scores = pipeline.find_best_matches(
-            query_img, k_final_results=k, k_phash_candidates=100
-        )
-
-        # ic(list(zip(best_matches, best_scores)))
-
-        print(f"\nTop {k} matches:")
-        for i, match in enumerate(best_matches):
-            print(f"  UUID: {match.uuid}, Name: {match.name}, Score: {best_scores[i]}")
-
-    if run_multiple_imgs:
-        img_dir = Path("benchmarks/dataset/images/raw")
-        img_paths = sorted(list(img_dir.glob("*.jpg")))
-
-        for i, img_path in enumerate(img_paths):
-            query_img = cv2.imread(str(img_path))
-            try:
-                best_matches, best_scores = pipeline.find_best_matches(
-                    query_img, k_final_results=1, k_phash_candidates=100
+            success = best_matches[0].uuid == img_path.stem
+            print(f"{i} {success} \t {img_path.stem}")
+            print(f"Top {k} matches:")
+            for i, match in enumerate(best_matches):
+                print(
+                    f"  UUID: {match.uuid}, Name: {match.name}, Score: {best_scores[i]}\n"
                 )
-
-                success = best_matches[0].uuid == img_path.stem
-                print(f"{i} {success} \t {img_path.stem} \t {best_matches}\n")
-            except Exception as e:
-                print(f"Error processing {img_path}: {e}")
+        except Exception as e:
+            print(f"Error processing {img_path}: {e}")
 
 
 if __name__ == "__main__":
-    main(run_single_img=True, run_multiple_imgs=True)
+    main()
 
 # uv run python -m mtg_recognition.engine.pipeline
+# uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 1 -n 100

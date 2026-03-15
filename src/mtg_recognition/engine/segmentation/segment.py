@@ -343,7 +343,7 @@ class CardSegmentor:
         [
             "yoloe-11s-seg",
             "yolov8s-worldv2",
-            "yoloe-26n-seg",
+            # "yoloe-26n-seg",
         ]
     ),
     default="yoloe-11s-seg",
@@ -352,10 +352,6 @@ def main(input, output_dir, model_name):
     segmentor = CardSegmentor(model_name, param_set_idx=0)
     if input.is_file():
         # Segment one raw test image
-        img_path = Path(
-            # "benchmarks/dataset/images/raw/8fe1d06a-2e8d-5352-8459-58ed34475b1a.jpg",
-            "benchmarks/dataset/images/raw/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg"
-        )
         img = cv2.imread(str(input))
 
         result = segmentor.segment(img, return_warped=True)
@@ -386,4 +382,5 @@ def main(input, output_dir, model_name):
 if __name__ == "__main__":
     main()
 
+# uv run python -m mtg_recognition.engine.segmentation.segment
 # uv run python -m mtg_recognition.engine.segmentation.segment -i benchmarks/dataset/images/raw -o output/engine/segmentation/CardSegmentor
