@@ -4,7 +4,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Protocol, Sequence
 
 import cv2
 import numpy as np
@@ -30,6 +30,14 @@ class BatchResult:
     timings_ms: dict[str, float] | None = None
 
 
+class UploadedImageLike(Protocol):
+    """Minimal interface required from uploaded file objects."""
+
+    name: str
+
+    def getbuffer(self) -> memoryview: ...
+
+
 class BatchProcessor:
     """Process multiple card images in batch mode."""
 
@@ -48,16 +56,15 @@ class BatchProcessor:
         self.pipeline = pipeline
         self.engine = engine
 
-    def process_batch(
+    def process_uploaded_batch(
         self,
-        image_paths: list[str],
+        uploaded_files: Sequence[UploadedImageLike],
         progress_callback: Callable[[int, int, str], None] | None = None,
     ) -> list[BatchResult]:
-        """
-        Process a batch of images.
+        """Process a batch of uploaded file-like objects.
 
         Args:
-            image_paths: List of file paths to process
+            uploaded_files: List of uploaded file-like objects.
             progress_callback: Optional callback for progress updates.
                               Called with (current_index, total, status_message)
 
@@ -66,21 +73,21 @@ class BatchProcessor:
         """
         results = []
 
-        for idx, image_path in enumerate(image_paths):
-            # Update progress
+        for idx, uploaded_file in enumerate(uploaded_files):
             if progress_callback:
                 progress_callback(
-                    idx, len(image_paths), f"Processing {Path(image_path).name}"
+                    idx,
+                    len(uploaded_files),
+                    f"Processing {Path(uploaded_file.name).name}",
                 )
 
             try:
-                result = self._process_single_image(image_path)
+                result = self._process_single_uploaded_file(uploaded_file)
                 results.append(result)
             except Exception as e:
-                # Create error result
                 result = BatchResult(
-                    uploaded_filename=Path(image_path).name,
-                    original_image_path=str(image_path),
+                    uploaded_filename=Path(uploaded_file.name).name,
+                    original_image_path=uploaded_file.name,
                     warped_image=None,
                     best_match=None,
                     best_match_score=None,
@@ -89,10 +96,11 @@ class BatchProcessor:
                 )
                 results.append(result)
 
-        # Final progress update
         if progress_callback:
             progress_callback(
-                len(image_paths), len(image_paths), "Processing complete!"
+                len(uploaded_files),
+                len(uploaded_files),
+                "Processing complete!",
             )
 
         return results
@@ -117,6 +125,36 @@ class BatchProcessor:
         if input_img is None:
             raise ValueError(f"Failed to read image: {image_file}")
 
+        return self._process_decoded_image(
+            input_img=input_img,
+            uploaded_filename=image_file.name,
+            original_image_path=str(image_file),
+        )
+
+    def _process_single_uploaded_file(
+        self,
+        uploaded_file: UploadedImageLike,
+    ) -> BatchResult:
+        """Process a single uploaded file directly from its in-memory buffer."""
+        image_array = np.frombuffer(uploaded_file.getbuffer(), dtype=np.uint8)
+        input_img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        if input_img is None:
+            raise ValueError(f"Failed to decode uploaded image: {uploaded_file.name}")
+
+        return self._process_decoded_image(
+            input_img=input_img,
+            uploaded_filename=Path(uploaded_file.name).name,
+            original_image_path=uploaded_file.name,
+        )
+
+    def _process_decoded_image(
+        self,
+        input_img: np.ndarray,
+        uploaded_filename: str,
+        original_image_path: str,
+    ) -> BatchResult:
+        """Run segmentation and matching for an already decoded image."""
+
         # Save original image to temp file
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
             cv2.imwrite(tmp_file.name, input_img)
@@ -132,8 +170,8 @@ class BatchProcessor:
         if not segmentation_result.success or segmentation_result.warped_image is None:
             # No card detected
             return BatchResult(
-                uploaded_filename=image_file.name,
-                original_image_path=str(image_file),
+                uploaded_filename=uploaded_filename,
+                original_image_path=original_image_path,
                 warped_image=None,
                 best_match=None,
                 best_match_score=None,
@@ -182,8 +220,8 @@ class BatchProcessor:
                 status = "success"
 
             return BatchResult(
-                uploaded_filename=image_file.name,
-                original_image_path=str(image_file),
+                uploaded_filename=uploaded_filename,
+                original_image_path=original_image_path,
                 warped_image=None,  # Don't keep in memory
                 best_match=best_match,
                 best_match_score=best_score,
@@ -192,7 +230,7 @@ class BatchProcessor:
                 warped_image_temp_path=warped_img_path,
                 timings_ms=timings_ms,
             )
-        except Exception as e:
+        except Exception:
             # Clean up temp files on error
             if Path(original_img_path).exists():
                 Path(original_img_path).unlink()
