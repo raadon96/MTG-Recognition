@@ -2,15 +2,17 @@
 .opencode
 
 # Reference cards dataset
-# data/
-# data/reference/images/*.jpg
 data/reference/images
 
 data/reference/tmp
 data/reference/download_errors.log
 
-# Segmentation models
-*.pt
+# test models
+**/models/test/
+
+# CLIP models
+mobileclip2_b.ts
+mobileclip_blt.ts
 
 # Experimentation & prototyping
 notebooks/
@@ -28,9 +30,6 @@ src/mtg_recognition/app/playground.py
 src/mtg_recognition/app/capture.py
 src/mtg_recognition/app/app_local.py
 benchmarks/benchmark_matching.py
-
-# models
-**/models/test/
 
 # Personal notes
 .notes

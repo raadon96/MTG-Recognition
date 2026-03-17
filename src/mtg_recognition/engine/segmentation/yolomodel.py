@@ -30,20 +30,16 @@ class YOLOModel:
         with open(PARAM_PATH_FILE) as file:
             self.parameters = load(file)[self.model_name][str(self.parameter_set_idx)]
 
-        onnx_model_path = (
+        model_path = (
             Path("src/mtg_recognition/engine/segmentation/models/prod")
-            / f"{self.model_name}.onnx"
+            / f"{self.model_name}.pt"
         )
         task = self.parameters["task"]
-        # try loading onnx model if found
-        if not onnx_model_path.exists():
-            # download/load pytorch model and export to onnx
-            pytorch_model = YOLO(onnx_model_path.with_suffix(".pt"), task=task)
-            if self.parameters["category_allowlist"]:
-                pytorch_model.set_classes(self.parameters["category_allowlist"])
+        pytorch_model = YOLO(model_path, task=task)
+        if self.parameters["category_allowlist"]:
+            pytorch_model.set_classes(self.parameters["category_allowlist"])
             pytorch_model.info()
-            pytorch_model.export(format="onnx")
-        return YOLO(onnx_model_path, task=task)
+        return pytorch_model
 
     @property
     def task(self):

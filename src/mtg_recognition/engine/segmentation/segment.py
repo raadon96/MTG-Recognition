@@ -338,6 +338,7 @@ class CardSegmentor:
     default="output/engine/segmentation/CardSegmentor",
 )
 @click.option(
+    "-m",
     "--model-name",
     type=click.Choice(
         [

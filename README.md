@@ -1,6 +1,6 @@
-# MTG Recognition Docker Usage Guide
+# MTG Recognition Docker Compose Guide
 
-Run the MTG Recognition Streamlit app locally with Docker.
+Run the MTG Recognition Streamlit app locally with Docker Compose.
 
 ## Prerequisites
 
@@ -33,24 +33,18 @@ git clone git@github.com:decksray/MTG-Recognition.git
 cd MTG-Recognition
 ```
 
-### 3) Build the Docker image
+### 3) Build and run with Docker Compose
 
-Standard build (uses Docker cache for faster rebuilds):
+First run (build image + start app):
 
 ```bash
-docker build -t mtg-recognition:local .
+docker compose up --build
 ```
 
-Optional clean rebuild (slower, useful for troubleshooting):
+Next runs (start app without rebuild):
 
 ```bash
-docker build --progress=plain --no-cache -t mtg-recognition:local .
-```
-
-### 4) Run the container
-
-```bash
-docker run --rm -p 8501:8501 --name mtg-recognition mtg-recognition:local
+docker compose up
 ```
 
 ### 5) Open the app
@@ -65,23 +59,31 @@ http://localhost:8501
 
 - The first startup may take longer while models and services initialize.
 - The container runs as a non-root user and includes a Docker healthcheck.
+- MobileCLIP assets are persisted in a named Docker volume (`mtg_ultra_cache`), so large files are downloaded once and reused across restarts.
+- Press `Ctrl+C` to stop when running in the foreground.
 
 ## Useful Commands
 
 View live logs:
 
 ```bash
-docker logs -f mtg-recognition
+docker compose logs -f
 ```
 
-Check health status:
+Run in background (detached):
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' mtg-recognition
+docker compose up -d
 ```
 
-Stop the app:
+Stop and remove containers/network:
 
 ```bash
-docker stop mtg-recognition
+docker compose down
+```
+
+Stop and also remove volumes (forces model re-download next run):
+
+```bash
+docker compose down -v
 ```

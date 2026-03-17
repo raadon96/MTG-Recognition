@@ -1,0 +1,13 @@
+services:
+  mtg-recognition:
+    container_name: mtg-recognition
+    image: mtg-recognition:local
+    build:
+      context: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - mtg_ultra_cache:/home/appuser/.cache/ultralytics-assets
+
+volumes:
+  mtg_ultra_cache:

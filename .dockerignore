@@ -44,8 +44,7 @@ output/
 .notes/
 
 # Test models
-src/mtg_recognition/engine/segmentation/models/test
-src/mtg_recognition/engine/ocr/models/test
+**/models/test/
 
 # Mobileclip models
 mobileclip2_b.ts

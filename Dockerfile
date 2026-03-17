@@ -67,6 +67,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM base AS runtime
 
+ENV ULTRALYTICS_ASSET_CACHE_DIR=/home/appuser/.cache/ultralytics-assets
+# Set env var directory to mount Docker volume
+
 COPY --from=deps /app/.venv /app/.venv
 # Copy prebuilt virtualenv from deps stage (fast, reusable).
 
@@ -90,6 +93,10 @@ COPY src/mtg_recognition/engine/segmentation/models/prod ./src/mtg_recognition/e
 COPY src/mtg_recognition/engine/ocr/models/prod ./src/mtg_recognition/engine/ocr/models/prod
 # Copy OCR models
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Copy startup script (entry point) into the image.
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 # Again uses build cache mount for uv cache.
@@ -99,7 +106,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv run paddlex --install hpi-cpu
 # Install PaddleX CPU high-performance inference plugin in the uv-managed environment.
 
-RUN chown -R appuser:appuser /app
+RUN mkdir -p "${ULTRALYTICS_ASSET_CACHE_DIR}" \
+    && chown -R appuser:appuser /app /home/appuser/.cache
+# Create cache directory and give ownership to appuser, so downloads can write there.
+
 USER appuser
 # Run as unpriviledged (i.e. non-root) user
 
@@ -108,6 +118,9 @@ EXPOSE 8501
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD /app/.venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)"
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Set start-up script as ENTRYPOINT, so it runs on every container start before Streamlit.
 
 CMD ["/app/.venv/bin/streamlit", "run", "src/mtg_recognition/app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
 # Container startup command:
