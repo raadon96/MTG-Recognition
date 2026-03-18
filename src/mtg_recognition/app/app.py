@@ -1,8 +1,8 @@
+import argparse
 import os
 import statistics
 from pathlib import Path
 
-import click
 import cv2
 import requests
 import streamlit as st
@@ -61,39 +61,39 @@ def load_pipeline(model_name="yoloe-11s-seg", param_set=0):
     )
 
 
-# def display_match_results(
-#     matches,
-#     scores,
-#     engine,
-# ):
-#     with Session(engine) as session:
-#         # Display top 3 candidates
-#         st.subheader("🔍 Top 3 Similar Candidates")
+def display_match_results(
+    matches,
+    scores,
+    engine,
+):
+    with Session(engine) as session:
+        # Display top 3 candidates
+        st.subheader("🔍 Top 3 Similar Candidates")
 
-#         candidate_cols = st.columns(3)
-#         next_3_matches = matches[1:4]
+        candidate_cols = st.columns(3)
+        next_3_matches = matches[1:4]
 
-#         for idx, (candidate_col, match) in enumerate(
-#             zip(candidate_cols, next_3_matches)
-#         ):
-#             with candidate_col:
-#                 img_path = os.path.join(IMG_DIR, f"{match.uuid}.jpg")
-#                 if os.path.exists(img_path):
-#                     img = cv2.imread(img_path)
-#                     if img is not None:
-#                         st.image(
-#                             cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-#                             width="content",
-#                         )
-#                         st.metric("Score", f"{scores[idx + 1]:.2f}")
+        for idx, (candidate_col, match) in enumerate(
+            zip(candidate_cols, next_3_matches)
+        ):
+            with candidate_col:
+                img_path = os.path.join(IMG_DIR, f"{match.uuid}.jpg")
+                if os.path.exists(img_path):
+                    img = cv2.imread(img_path)
+                    if img is not None:
+                        st.image(
+                            cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+                            width="content",
+                        )
+                        st.metric("Score", f"{scores[idx + 1]:.2f}")
 
-#                         # Get metadata
-#                         statement = select(MobileCache.name).where(
-#                             col(MobileCache.uuid) == match.uuid
-#                         )
-#                         name_row = session.exec(statement).first()
-#                         if name_row:
-#                             st.caption(name_row)
+                        # Get metadata
+                        statement = select(MobileCache.name).where(
+                            col(MobileCache.uuid) == match.uuid
+                        )
+                        name_row = session.exec(statement).first()
+                        if name_row:
+                            st.caption(name_row)
 
 
 def create_thumbnail_grid(results, results_key="batch_results"):
@@ -318,7 +318,7 @@ def display_batch_detail_view(results, selected_idx, engine):
 
 def export_results(
     results, export_format: str, processor: BatchProcessor, with_diagnostics=False
-) -> tuple[str, str, str]:
+):
     """Generate export file for results."""
 
     import tempfile
@@ -341,8 +341,6 @@ def export_results(
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             processor.export_to_json(results, f.name, with_diagnostics)
             return f.name, "application/json", "results.json"
-
-    raise ValueError(f"Unsupported export format: {export_format}")
 
 
 def display_batch_timing_metrics(results):
@@ -373,14 +371,8 @@ def display_batch_timing_metrics(results):
         st.caption(f"OCR: {statistics.mean(ocr_values):.1f}")
 
 
-@click.command()
-@click.option(
-    "--with-diagnostics",
-    type=bool,
-    is_flag=True,
-    help="Show timings in the UI and include timings in export file.",
-)
-def main(with_diagnostics):
+def main():
+    args = parse_args()
     st.title("MTG Card Recognition")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
@@ -424,6 +416,17 @@ def main(with_diagnostics):
 
         # Start processing button
         if st.sidebar.button("🚀 START PROCESSING", type="primary"):
+            # Save uploaded files to temporary directory
+            import tempfile
+
+            temp_dir = tempfile.mkdtemp()
+            temp_paths = []
+
+            for uploaded_file in uploaded_files:
+                temp_path = Path(temp_dir) / uploaded_file.name
+                temp_path.write_bytes(uploaded_file.getbuffer())
+                temp_paths.append(str(temp_path))
+
             # Initialize batch processor
             processor = BatchProcessor(pipeline, db_engine)
 
@@ -441,11 +444,16 @@ def main(with_diagnostics):
 
             # Process batch
             try:
-                results = processor.process_uploaded_batch(
-                    uploaded_files,
-                    progress_callback=progress_callback,
+                results = processor.process_batch(
+                    temp_paths, progress_callback=progress_callback
                 )
                 st.session_state.batch_results = results
+
+                # Clean up temp directory
+                import shutil
+
+                shutil.rmtree(temp_dir)
+
                 st.success("✅ Batch processing complete!")
                 st.rerun()
 
@@ -485,7 +493,7 @@ def main(with_diagnostics):
                 results,
                 export_format,
                 processor,
-                with_diagnostics=with_diagnostics,
+                with_diagnostics=args.with_diagnostics,
             )
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
@@ -498,7 +506,7 @@ def main(with_diagnostics):
         except Exception as e:
             st.sidebar.error(f"Export failed: {str(e)}")
 
-        if with_diagnostics:
+        if args.with_diagnostics:
             display_batch_timing_metrics(results)
 
         st.sidebar.markdown("---")
@@ -507,6 +515,21 @@ def main(with_diagnostics):
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
             st.rerun()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "App for MTG card recognition with batch processing, detailed results view, and export functionality."
+        )
+    )
+    parser.add_argument(
+        "--with-diagnostics",
+        action="store_true",
+        # default=False,
+        help="Show timings in the UI and include timings in export file.",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
