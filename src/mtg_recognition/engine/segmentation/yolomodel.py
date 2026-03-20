@@ -64,7 +64,7 @@ class YOLOModel:
             # shape = (N, 1, 2)
             return result.masks.xy[0][:, np.newaxis, :].astype(np.int32)
         else:
-            if len(result.boxes.xyxy) is None:
+            if self.task == "detect":
                 return None
             # shape = (4,)
             return result.boxes.xyxy[0].numpy().ravel().astype(np.int64)

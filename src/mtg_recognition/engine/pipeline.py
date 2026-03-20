@@ -10,6 +10,7 @@ from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
 from mtg_recognition.engine.segmentation.segment import (
     CardSegmentor,
+    MaskStrategy,
     SegmentationResult,
 )
 
@@ -18,7 +19,7 @@ class Pipeline:
     def __init__(
         self,
         auto_build: bool = True,
-        segmentor: CardSegmentor = CardSegmentor("yoloe-11s-seg", 0),
+        segmentor: CardSegmentor = CardSegmentor(MaskStrategy()),
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
         ocr: CardOCR = CardOCR(),
     ):
