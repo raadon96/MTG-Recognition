@@ -47,7 +47,7 @@ Next runs (start app without rebuild):
 docker compose up
 ```
 
-### 5) Open the app
+### 4) Open the app
 
 Open in your browser:
 

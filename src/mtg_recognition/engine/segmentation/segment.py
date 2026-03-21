@@ -1,10 +1,16 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from random import choices
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import click
 import cv2
 import numpy as np
+from rembg import new_session, remove
 from tqdm import tqdm
 
 from .geometry import (
@@ -39,6 +45,75 @@ class SegmentStrategy(ABC):
         ...
 
 
+def _corners_from_binary_mask(
+    mask: np.ndarray, erode: bool = True
+) -> np.ndarray | None:
+    """
+    Extract 4 card corners from a binary mask bitmap.
+
+    Optionally erodes the mask before finding the contour to tighten the
+    boundary away from residual background pixels, then applies polygon
+    approximation and line-intersection refinement.
+
+    Args:
+        mask: Binary mask (uint8, 0/255) in the same spatial dimensions as the source image.
+        erode: Whether to apply morphological erosion before corner extraction.
+
+    Returns:
+        np.ndarray of shape (4, 1, 2), or None if 4 corners could not be found.
+    """
+    if erode:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        mask = cv2.dilate(mask, kernel, iterations=1)
+        mask = cv2.erode(mask, kernel, iterations=3)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+    contour = max(contours, key=cv2.contourArea)
+
+    epsilon = 0.02 * cv2.arcLength(contour, True)
+    corners = cv2.approxPolyDP(contour, epsilon, True)
+
+    if len(corners) == 4:
+        return corners
+
+    corners = find_corners_lines_intersect(contour)
+    if corners is not None:
+        return corners
+
+    return None
+
+
+def _corners_from_img(img: np.ndarray) -> np.ndarray | None:
+    """Extract card corners from an image via Canny edge detection and contour approximation."""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    edges = cv2.Canny(blurred, 15, 150)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    edges = cv2.dilate(edges, kernel, iterations=1)
+
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+
+    contour = max(contours, key=cv2.contourArea)
+    mask_binary = np.zeros_like(edges)
+    mask_binary = cv2.convexHull(contour)
+    epsilon = 0.02 * cv2.arcLength(mask_binary, True)
+    corners = cv2.approxPolyDP(mask_binary, epsilon, True)
+
+    if len(corners) == 4:
+        return corners
+
+    corners = find_corners_lines_intersect(contour)
+    if corners is not None:
+        return corners
+
+    return None
+
+
 class MaskStrategy(SegmentStrategy):
     """
     Corner detection via segmentation mask.
@@ -57,45 +132,14 @@ class MaskStrategy(SegmentStrategy):
         self.erode = erode
 
     def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
-        mask_points = self.model.predict(img)
-        if mask_points is None:
-            return None
-        return self._corners_from_mask(mask_points, img.shape)
-
-    def _corners_from_mask(
-        self, mask_points: np.ndarray, img_shape: tuple
-    ) -> np.ndarray | None:
-        contour = mask_points
-
-        if self.erode:
-            h, w = img_shape[:2]
-            mask_bitmap = np.zeros((h, w), dtype=np.uint8)
-            mask_bitmap = cv2.drawContours(mask_bitmap, [mask_points], -1, 255, -1)
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-            mask_bitmap = cv2.dilate(mask_bitmap, kernel, iterations=1)
-            mask_eroded = cv2.erode(mask_bitmap, kernel, iterations=3)
-            contours, _ = cv2.findContours(
-                mask_eroded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-            contour = max(contours, key=cv2.contourArea)
-
-        epsilon = 0.02 * cv2.arcLength(contour, True)
-        corners = cv2.approxPolyDP(contour, epsilon, True)
-
-        if len(corners) != 4 and hasattr(cv2, "approxPolyN"):
-            corners = (
-                cv2.approxPolyN(contour, 4, True)
-                .astype(np.int32)
-                .reshape(4, 1, 2)
-            )
-
-        if len(corners) != 4:
-            corners = find_corners_lines_intersect(contour, corners)
-
-        if len(corners) != 4:
+        mask_contour = self.model.predict(img)
+        if mask_contour is None:
             return None
 
-        return corners
+        h, w = img.shape[:2]
+        mask_binary = np.zeros((h, w), dtype=np.uint8)
+        cv2.drawContours(mask_binary, [mask_contour], -1, 255, -1)
+        return _corners_from_binary_mask(mask_binary, self.erode)
 
 
 class BBoxStrategy(SegmentStrategy):
@@ -104,6 +148,13 @@ class BBoxStrategy(SegmentStrategy):
 
     Pipeline: img → YOLO detection → padded bbox crop → Canny edges → 4 corners.
     Robust to cluttered scenes with multiple objects in frame.
+
+    An optional fallback strategy can be provided for cases where the Canny-based
+    approach fails. The fallback receives the bbox crop (not the full image), and its
+    corners are mapped back to full-image coordinates automatically.
+
+    Example:
+        BBoxStrategy(fallback=RembgMaskStrategy())
     """
 
     def __init__(
@@ -113,58 +164,67 @@ class BBoxStrategy(SegmentStrategy):
         padding_pct: float = 0.1,
         blur_kernel: tuple[int, int] = (11, 11),
         canny_thresh: tuple[int, int] = (15, 150),
+        fallback: SegmentStrategy | None = None,
     ):
         self.model = YOLOModel(model_name, parameter_set_idx=param_set_idx)
         self.padding_pct = padding_pct
         self.blur_kernel = blur_kernel
         self.canny_thresh = canny_thresh
+        self.fallback = fallback or RembgMaskStrategy()
 
     def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
         bbox = self.model.predict(img)
         if bbox is None:
             return None
 
-        crop, offset = crop_img(img, bbox, self.padding_pct)
-        corners = self._corners_from_crop(crop)
+        crop, (cx1, cy1, _, _) = crop_img(img, bbox, self.padding_pct)
+
+        # corners = self._corners_from_crop(crop)
+        # if corners is None and self.fallback is not None:
+        #     corners = self.fallback.detect_corners(crop)
+        # if corners is None:
+        #     return None
+
+        corners = None
+        if self.fallback is not None:
+            corners = self.fallback.detect_corners(crop)
+
+        if corners is None:
+            corners = _corners_from_img(crop)
+
         if corners is None:
             return None
 
-        cx1, cy1, _, _ = offset
         return corners + [cx1, cy1]
 
-    def _corners_from_crop(self, crop: np.ndarray) -> np.ndarray | None:
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, self.blur_kernel, 0)
-        edges = cv2.Canny(blurred, *self.canny_thresh)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        edges = cv2.dilate(edges, kernel, iterations=1)
+class RembgMaskStrategy(SegmentStrategy):
+    """
+    Corner detection via background removal (rembg u2netp).
 
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    Pipeline: img → rembg u2netp → alpha mask → 4 corners.
+    Slower but robust fallback when edge-based methods fail.
+
+    Can be used standalone or as the fallback in BBoxStrategy:
+        BBoxStrategy(fallback=RembgMaskStrategy())
+    When used as a fallback, it receives the bbox crop rather than the full image.
+    """
+
+    def __init__(self, model_name: str = "u2netp"):
+
+        self._session = new_session(model_name=model_name)
+
+    def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
+        mask = remove(
+            img,
+            alpha_matting=False,
+            only_mask=True,
+            post_process_mask=True,
+            session=self._session,
         )
-        if not contours:
-            return None
-
-        contour = max(contours, key=cv2.contourArea)
-        hull = cv2.convexHull(contour)
-        epsilon = 0.02 * cv2.arcLength(hull, True)
-        corners = cv2.approxPolyDP(hull, epsilon, True)
-
-        if len(corners) == 4:
-            return corners
-
-        if hasattr(cv2, "approxPolyN"):
-            corners = (
-                cv2.approxPolyN(contour, 4, True)
-                .astype(np.int32)
-                .reshape(4, 1, 2)
-            )
-
-        if len(corners) != 4:
-            corners = find_corners_lines_intersect(contour, corners)
-
-        return corners
+        mask = np.array(mask)
+        _, mask_binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        return _corners_from_binary_mask(mask_binary, erode=False)
 
 
 class CardSegmentor:
@@ -212,13 +272,20 @@ class CardSegmentor:
         return SegmentationResult(
             corners=corners,
             warped_image=self._warp_card(img, corners) if return_warped else None,
-            annotated_image=self._annotate_corners(img, corners) if return_annotated else None,
+            annotated_image=self._annotate_corners(img, corners)
+            if return_annotated
+            else None,
             success=True,
         )
 
     def _warp_card(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
         img_warped = perspective_transform(img, corners)
-        return cv2.resize(img_warped, self.target_size, interpolation=cv2.INTER_LANCZOS4)
+        h, w = img_warped.shape[:2]
+        if w > h:
+            img_warped = cv2.rotate(img_warped, cv2.ROTATE_90_CLOCKWISE)
+        return cv2.resize(
+            img_warped, self.target_size, interpolation=cv2.INTER_LANCZOS4
+        )
 
     def _annotate_corners(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
         annotated = img.copy()
@@ -236,7 +303,9 @@ class CardSegmentor:
         dst_dir.mkdir(parents=True, exist_ok=True)
 
         image_paths = list(src_dir.glob("*.jpg"))
-        for img_path in tqdm(image_paths, total=len(image_paths), desc="Segmenting images"):
+        for img_path in tqdm(
+            image_paths, total=len(image_paths), desc="Segmenting images"
+        ):
             img = cv2.imread(str(img_path))
             result = self.segment(img, return_warped=True)
             if result.warped_image is None:
@@ -268,7 +337,7 @@ _STRATEGY_MAP: dict[str, type[SegmentStrategy]] = {
     "-o",
     "--output-dir",
     type=click.Path(
-        exists=True,
+        exists=False,
         file_okay=False,
         dir_okay=True,
         readable=True,
@@ -279,7 +348,7 @@ _STRATEGY_MAP: dict[str, type[SegmentStrategy]] = {
 @click.option(
     "-m",
     "--model-name",
-    type=click.Choice(list(_STRATEGY_MAP)),
+    type=click.Choice(list(_STRATEGY_MAP.keys())),
     default="yoloe-11s-seg",
 )
 def main(input, output_dir, model_name):

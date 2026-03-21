@@ -46,25 +46,31 @@ class YOLOModel:
         return self.parameters["task"]
 
     def predict(self, img: np.ndarray) -> np.ndarray | None:
-        result: list = self.model(
-            source=img,
-            conf=self.parameters["conf"],
-            device="cpu",
-            imgsz=640,
-            max_det=1,
-            iou=self.parameters["iou"],
-            show=False,
-            vid_stride=False,
-            verbose=False,
-        )[0]
+        conf = self.parameters["conf"]
+        conf_min = self.parameters.get("conf_min", 0.02)
 
-        if self.task == "segment":
-            if result.masks is None:
-                return None
-            # shape = (N, 1, 2)
-            return result.masks.xy[0][:, np.newaxis, :].astype(np.int32)
-        else:
-            if self.task == "detect":
-                return None
-            # shape = (4,)
-            return result.boxes.xyxy[0].numpy().ravel().astype(np.int64)
+        while conf >= conf_min:
+            result = self.model(
+                source=img,
+                conf=conf,
+                device="cpu",
+                imgsz=640,
+                max_det=1,
+                iou=self.parameters["iou"],
+                show=False,
+                vid_stride=False,
+                verbose=False,
+            )[0]
+
+            if self.task == "segment":
+                if result.masks is not None:
+                    # shape = (N, 1, 2)
+                    return result.masks.xy[0][:, np.newaxis, :].astype(np.int32)
+            else:
+                if len(result.boxes.xyxy) > 0:
+                    # shape = (4,)
+                    return result.boxes.xyxy[0].numpy().ravel().astype(np.int64)
+
+            conf /= 2
+
+        return None

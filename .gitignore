@@ -1,6 +1,7 @@
 # Opencode config
-.opencode
-.vscode
+.vscode/
+.opencode/
+.claude/
 
 # Reference cards dataset
 data/reference/images
@@ -8,7 +9,7 @@ data/test/images
 
 data/reference/tmp
 data/reference/download_errors.log
-
+data/examples/
 # test models
 **/models/test/
 
@@ -20,6 +21,8 @@ mobileclip_blt.ts
 notebooks/
 scratch/
 input/
+test/
+runs/
 output/
 notes/
 **/results

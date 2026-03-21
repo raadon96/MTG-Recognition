@@ -86,13 +86,14 @@ class CardOCR:
             paddlex_config=cfg,
             # document orientation correction (corrects orientation of document images)
             use_doc_orientation_classify=False,
-            doc_orientation_classify_model_name=None,
+            doc_orientation_classify_model_name="PP-LCNet_x1_0_doc_ori",
+            doc_orientation_classify_model_dir="src/mtg_recognition/engine/ocr/models/test/PP-LCNet_x1_0_doc_ori",
             # text image rectification (performs geometric transformations on images to correct distortions, inclinations, perspective deformations)
             use_doc_unwarping=False,
             doc_unwarping_model_name=None,
             # textline orientation classification (corrects the orientation of text lines)
             use_textline_orientation=False,
-            textline_orientation_model_name="PP-LCNet_x0_25_textline_ori",
+            # textline_orientation_model_name="PP-LCNet_x1_0_doc_ori",
             # text detection (locating and marking text-containing regions in images)
             text_detection_model_name="PP-OCRv5_server_det",
             text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det",

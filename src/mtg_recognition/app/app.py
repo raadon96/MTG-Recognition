@@ -4,11 +4,13 @@ import statistics
 from pathlib import Path
 
 import cv2
+import numpy as np
 import requests
 import streamlit as st
 from sqlmodel import Session, col, select
 
 from mtg_recognition.app.batch_processor import BatchProcessor
+from mtg_recognition.app.settings import app_settings
 from mtg_recognition.database import engine
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
@@ -21,12 +23,7 @@ from mtg_recognition.engine.segmentation.segment import (
 )
 from mtg_recognition.jobs.schemas import MobileCache
 
-# --- Configuration ---
-LOCAL_DB_FILE = "data/reference/MobileCache.sqlite"
-IMG_DIR = "data/reference/images"
-DEVICE_ID = 4
-
-# --- Streamlit Config ---
+# --- Streamlit Page Config ---
 st.set_page_config(
     page_title="MTG Card Recognition",
     page_icon="🎴",
@@ -50,7 +47,7 @@ def fetch_scryfall_data_from_url(scryfall_id):
 @st.cache_resource(scope="global")
 def load_database():
     """Load and cache the database engine."""
-    # return create_engine(f"sqlite:///{LOCAL_DB_FILE}")
+    # return create_engine(f"sqlite:///{app_settings.LOCAL_DB_FILE}")
     print("Loading database (this may take a moment)...")
     return engine
 
@@ -67,39 +64,39 @@ def load_pipeline(model_name="yoloe-11s-seg", param_set=0):
     )
 
 
-def display_match_results(
-    matches,
-    scores,
-    engine,
-):
-    with Session(engine) as session:
-        # Display top 3 candidates
-        st.subheader("🔍 Top 3 Similar Candidates")
+# def display_match_results(
+#     matches,
+#     scores,
+#     engine,
+# ):
+#     with Session(engine) as session:
+#         # Display top 3 candidates
+#         st.subheader("🔍 Top 3 Similar Candidates")
 
-        candidate_cols = st.columns(3)
-        next_3_matches = matches[1:4]
+#         candidate_cols = st.columns(3)
+#         next_3_matches = matches[1:4]
 
-        for idx, (candidate_col, match) in enumerate(
-            zip(candidate_cols, next_3_matches)
-        ):
-            with candidate_col:
-                img_path = os.path.join(IMG_DIR, f"{match.uuid}.jpg")
-                if os.path.exists(img_path):
-                    img = cv2.imread(img_path)
-                    if img is not None:
-                        st.image(
-                            cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-                            width="content",
-                        )
-                        st.metric("Score", f"{scores[idx + 1]:.2f}")
+#         for idx, (candidate_col, match) in enumerate(
+#             zip(candidate_cols, next_3_matches)
+#         ):
+#             with candidate_col:
+#                 img_path = os.path.join(IMG_DIR, f"{match.uuid}.jpg")
+#                 if os.path.exists(img_path):
+#                     img = cv2.imread(img_path)
+#                     if img is not None:
+#                         st.image(
+#                             cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+#                             width="content",
+#                         )
+#                         st.metric("Score", f"{scores[idx + 1]:.2f}")
 
-                        # Get metadata
-                        statement = select(MobileCache.name).where(
-                            col(MobileCache.uuid) == match.uuid
-                        )
-                        name_row = session.exec(statement).first()
-                        if name_row:
-                            st.caption(name_row)
+#                         # Get metadata
+#                         statement = select(MobileCache.name).where(
+#                             col(MobileCache.uuid) == match.uuid
+#                         )
+#                         name_row = session.exec(statement).first()
+#                         if name_row:
+#                             st.caption(name_row)
 
 
 def create_thumbnail_grid(results, results_key="batch_results"):
@@ -407,7 +404,7 @@ def main():
         type=["jpg", "jpeg", "png", "bmp"],
         accept_multiple_files=True,
         help="Upload multiple Magic card images",
-        max_upload_size=3,  # 3 MB limit per file
+        max_upload_size=app_settings.MAX_UPLOAD_SIZE_MB,
         key=f"batch_file_uploader{st.session_state.uploader_key}",
     )
 
@@ -429,8 +426,23 @@ def main():
             temp_paths = []
 
             for uploaded_file in uploaded_files:
-                temp_path = Path(temp_dir) / uploaded_file.name
-                temp_path.write_bytes(uploaded_file.getbuffer())
+                file_bytes = np.frombuffer(uploaded_file.getbuffer(), np.uint8)
+                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+                h, w = img.shape[:2]
+                if max(h, w) > app_settings.MAX_IMAGE_DIMENSION:
+                    scale = app_settings.MAX_IMAGE_DIMENSION / max(h, w)
+                    img = cv2.resize(
+                        img,
+                        (int(w * scale), int(h * scale)),
+                        interpolation=cv2.INTER_AREA,
+                    )
+                stem = Path(uploaded_file.name).stem
+                temp_path = Path(temp_dir) / f"{stem}.jpg"
+                cv2.imwrite(
+                    str(temp_path),
+                    img,
+                    [cv2.IMWRITE_JPEG_QUALITY, app_settings.JPEG_QUALITY],
+                )
                 temp_paths.append(str(temp_path))
 
             # Initialize batch processor

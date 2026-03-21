@@ -2,87 +2,185 @@ import cv2
 import numpy as np
 
 
-def find_corners_lines_intersect(
-    contour_points: np.ndarray, corner_points: np.ndarray
-) -> np.ndarray:
-    # Flatten arrays for vectorized operations
-    # contour_xy: (N, 2), corners_xy: (4, 2)
+def find_corners_lines_intersect(contour_points: np.ndarray) -> np.ndarray | None:
+    """
+    Detect the 4 card corners from a contour using Hough line detection.
+    Falls back to a farthest-point recursive split if Hough fails.
+
+    Parameters
+    ----------
+    contour_points : np.ndarray
+        Contour in OpenCV format, shape (N, 1, 2) or (N, 2).
+
+    Returns
+    -------
+    np.ndarray of shape (4, 1, 2) int32, or None if detection fails.
+    """
     contour_xy = contour_points.reshape(-1, 2)
-    corners_xy = corner_points.reshape(-1, 2)
+    if len(contour_xy) < 20:
+        return None
 
-    # print(f"len(contour_xy) = {len(contour_xy)}")
-    if len(contour_xy) < 20:  # Not enough points to refine meaningfully
-        return corner_points
+    corners = _corners_via_hough(contour_xy)
+    if corners is None:
+        corners = _corners_via_farthest_split(contour_xy)
+    return corners
 
-    # OPTIMIZATION 1: Vectorized Distance Calculation
-    # Instead of looping 4 times, we calculate distances in one shot using broadcasting.
-    # diff shape: (4, N, 2) -> 4 corners, N contour points, 2 coords (x,y)
-    diff = contour_xy[np.newaxis, :, :] - corners_xy[:, np.newaxis, :]
 
-    # Squared Euclidean distance (avoiding sqrt for speed)
-    # dists shape: (4, N)
-    dists_sq = np.sum(diff**2, axis=2)
+def _corners_via_hough(contour_xy: np.ndarray) -> np.ndarray | None:
+    """
+    Fit 4 edge lines to the contour via HoughLinesP and return their intersections.
 
-    # Get indices of the closest contour point for each corner
-    # indicies shape: (4,)
-    indices = np.argmin(dists_sq, axis=1)
-    indices.sort()  # Ensure they are in order of the contour
+    Strategy:
+      1. Draw the contour on a local canvas.
+      2. Run HoughLinesP to detect line segments.
+      3. Cluster segments into 2 direction groups (by angular gap).
+      4. Within each group split into 2 parallel lines by perpendicular projection.
+      5. Intersect each line from group 0 with each line from group 1 → 4 corners.
+    """
+    x_min, y_min = contour_xy.min(axis=0)
+    local_xy = (contour_xy - [x_min, y_min]).astype(np.int32).reshape(-1, 1, 2)
+    x_max, y_max = local_xy.reshape(-1, 2).max(axis=0)
 
-    # OPTIMIZATION 2: Vectorized Split (Rotation instead of wrapping loops)
-    # We rotate the array so the first segment starts at index 0
-    shift = indices[0]
+    canvas = np.zeros((y_max + 1, x_max + 1), dtype=np.uint8)
+    cv2.drawContours(canvas, [local_xy], -1, 255, 1)
+
+    diag = np.sqrt(x_max**2 + y_max**2)
+    raw = cv2.HoughLinesP(
+        canvas,
+        rho=1,
+        theta=np.pi / 180,
+        threshold=20,
+        minLineLength=int(diag * 0.1),
+        maxLineGap=int(diag * 0.05),
+    )
+    if raw is None or len(raw) < 4:
+        return None
+
+    segments = raw.reshape(-1, 4).astype(float)
+    angles = np.arctan2(
+        segments[:, 3] - segments[:, 1],
+        segments[:, 2] - segments[:, 0],
+    ) % np.pi  # undirected angle in [0, pi)
+
+    # Find the largest angular gap to split into 2 direction groups.
+    sorted_idx = np.argsort(angles)
+    sorted_angles = angles[sorted_idx]
+    gaps = np.diff(sorted_angles)
+    wrap_gap = sorted_angles[0] + np.pi - sorted_angles[-1]
+    gaps = np.append(gaps, wrap_gap)
+    split = np.argmax(gaps)
+
+    group0_idx = sorted_idx[: split + 1]
+    group1_idx = sorted_idx[split + 1 :]
+
+    if len(group0_idx) < 1 or len(group1_idx) < 1:
+        return None
+
+    edge_lines = []
+    for group_idx in [group0_idx, group1_idx]:
+        group_segs = segments[group_idx]
+        group_angles = angles[group_idx]
+
+        # Perpendicular direction to the median angle of this group.
+        perp = np.median(group_angles) + np.pi / 2
+        px, py = np.cos(perp), np.sin(perp)
+
+        midpoints = group_segs[:, :2] * 0.5 + group_segs[:, 2:] * 0.5
+        projections = midpoints[:, 0] * px + midpoints[:, 1] * py
+        median_proj = np.median(projections)
+
+        for mask in [projections <= median_proj, projections > median_proj]:
+            selected = group_segs[mask] if np.any(mask) else group_segs
+            pts = np.vstack([selected[:, :2], selected[:, 2:]]).astype(np.float32)
+            line = cv2.fitLine(pts, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
+            # Shift line origin back to original image coordinates.
+            line[2] += x_min
+            line[3] += y_min
+            edge_lines.append(line)
+
+    if len(edge_lines) != 4:
+        return None
+
+    # Intersect each line from group 0 (indices 0,1) with each from group 1 (2,3).
+    corners = []
+    for i in range(2):
+        for j in range(2, 4):
+            pt = compute_intersection(edge_lines[i], edge_lines[j])
+            if pt is None:
+                return None
+            corners.append(pt)
+
+    return np.array(corners, dtype=np.int32).reshape(4, 1, 2)
+
+
+def _corners_via_farthest_split(contour_xy: np.ndarray) -> np.ndarray | None:
+    """
+    Find 4 corners by recursively splitting the contour at its geometrically farthest
+    points, then fitting one line per edge segment and intersecting adjacent lines.
+
+    Strategy:
+      1. Find the 2 contour points farthest apart (diameter) via the convex hull.
+      2. Split the contour into 2 arcs at those points.
+      3. In each arc find the point farthest from the diameter line.
+      4. Partition the contour at the 4 resulting corner candidates.
+      5. Fit a line per segment and intersect adjacent pairs.
+    """
+    n = len(contour_xy)
+
+    # Diameter search on the convex hull vertices (much smaller than full contour).
+    hull_idx = cv2.convexHull(
+        contour_xy.astype(np.float32).reshape(-1, 1, 2), returnPoints=False
+    ).flatten()
+    hull_pts = contour_xy[hull_idx].astype(float)
+    diffs = hull_pts[:, np.newaxis, :] - hull_pts[np.newaxis, :, :]
+    dists_sq = np.sum(diffs**2, axis=2)
+    hi, hj = np.unravel_index(np.argmax(dists_sq), dists_sq.shape)
+    i, j = sorted([int(hull_idx[hi]), int(hull_idx[hj])])
+
+    A, B = contour_xy[i].astype(float), contour_xy[j].astype(float)
+    AB = B - A
+    AB_len = np.linalg.norm(AB)
+    if AB_len < 1e-6:
+        return None
+
+    def farthest_in_arc(arc_idx: np.ndarray) -> int:
+        pts = contour_xy[arc_idx].astype(float)
+        AP = pts - A
+        cross = np.abs(AP[:, 0] * AB[1] - AP[:, 1] * AB[0])
+        return int(arc_idx[np.argmax(cross)])
+
+    arc1 = np.arange(i, j + 1)
+    arc2 = np.concatenate([np.arange(j, n), np.arange(0, i + 1)])
+    p1 = farthest_in_arc(arc1)
+    p2 = farthest_in_arc(arc2)
+
+    split_indices = sorted([i, j, p1, p2])
+    if len(set(split_indices)) < 4:
+        return None
+
+    # Partition the contour and fit one line per segment.
+    shift = split_indices[0]
     contour_rolled = np.roll(contour_xy, -shift, axis=0)
+    adj_indices = [idx - shift for idx in split_indices]
+    segments = np.split(contour_rolled, adj_indices[1:])
 
-    # Adjust indices relative to the new start
-    split_indices = indices - shift
-
-    # Split into 4 segments.
-    # Note: split_indices[0] is 0, so the first split is empty (dummy),
-    # but np.split handles the rest correctly.
-    # We effectively want ranges: [0:idx1], [idx1:idx2], [idx2:idx3], [idx3:]
-    # Since we rolled, the first corner is at 0. The segments are between corners.
-    segments = np.split(contour_rolled, split_indices[1:])
-
-    # segments[0]: Corner 0 to Corner 1
-    # segments[1]: Corner 1 to Corner 2
-    # segments[2]: Corner 2 to Corner 3
-    # segments[3]: Corner 3 to Corner 0 (wrapped end)
-
-    refined_corners = []
     lines = []
-
-    # Process each segment (Fitting lines)
-    for i, seg in enumerate(segments):
-        # Safety checks for tiny segments
-        if len(seg) < 10:
-            vx, vy = seg[-1] - seg[0]
-            lines.append((vx, vy, seg[0][0], seg[0][1]))
-            continue
-
-        # Remove rounded corners (15% trim)
+    for seg in segments:
+        if len(seg) < 2:
+            return None
         trim = int(len(seg) * 0.15)
-        if trim > 0 and len(seg) > 2 * trim:
-            seg_trimmed = seg[trim:-trim]
-        else:
-            seg_trimmed = seg
-
-        # fitLine expects points in a specific shape, usually (N, 1, 2) or (N, 2)
-        # We ensure float32 for OpenCV compatibility
-        line = cv2.fitLine(seg_trimmed.astype(np.float32), cv2.DIST_L2, 0, 0.01, 0.01)
+        seg_t = seg[trim : len(seg) - trim] if len(seg) > 2 * trim + 2 else seg
+        line = cv2.fitLine(seg_t.astype(np.float32), cv2.DIST_L2, 0, 0.01, 0.01)
         lines.append(line.flatten())
 
-    # Compute intersections
-    for i in range(4):
-        line1 = lines[i]
-        line2 = lines[(i + 1) % 4]
-
-        pt = compute_intersection(line1, line2)
+    corners = []
+    for k in range(4):
+        pt = compute_intersection(lines[k], lines[(k + 1) % 4])
         if pt is None:
-            return corner_points  # Fallback
-        refined_corners.append(pt)
+            return None
+        corners.append(pt)
 
-    corner_points = np.array(refined_corners, dtype=np.int32).reshape(4, 1, 2)
-    return corner_points
+    return np.array(corners, dtype=np.int32).reshape(4, 1, 2)
 
 
 def compute_intersection(line1, line2):
