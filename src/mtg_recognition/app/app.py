@@ -4,13 +4,12 @@ import statistics
 from pathlib import Path
 
 import cv2
-import numpy as np
 import requests
 import streamlit as st
 from sqlmodel import Session, col, select
 
 from mtg_recognition.app.batch_processor import BatchProcessor
-from mtg_recognition.app.settings import app_settings
+from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.database import engine
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
@@ -22,6 +21,7 @@ from mtg_recognition.engine.segmentation.segment import (
     MaskStrategy,
 )
 from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.settings import settings
 
 # --- Streamlit Page Config ---
 st.set_page_config(
@@ -47,7 +47,7 @@ def fetch_scryfall_data_from_url(scryfall_id):
 @st.cache_resource(scope="global")
 def load_database():
     """Load and cache the database engine."""
-    # return create_engine(f"sqlite:///{app_settings.LOCAL_DB_FILE}")
+    # return create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
     print("Loading database (this may take a moment)...")
     return engine
 
@@ -404,7 +404,7 @@ def main():
         type=["jpg", "jpeg", "png", "bmp"],
         accept_multiple_files=True,
         help="Upload multiple Magic card images",
-        max_upload_size=app_settings.MAX_UPLOAD_SIZE_MB,
+        max_upload_size=settings.MAX_UPLOAD_SIZE_MB,
         key=f"batch_file_uploader{st.session_state.uploader_key}",
     )
 
@@ -426,22 +426,13 @@ def main():
             temp_paths = []
 
             for uploaded_file in uploaded_files:
-                file_bytes = np.frombuffer(uploaded_file.getbuffer(), np.uint8)
-                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-                h, w = img.shape[:2]
-                if max(h, w) > app_settings.MAX_IMAGE_DIMENSION:
-                    scale = app_settings.MAX_IMAGE_DIMENSION / max(h, w)
-                    img = cv2.resize(
-                        img,
-                        (int(w * scale), int(h * scale)),
-                        interpolation=cv2.INTER_AREA,
-                    )
+                img = load_and_resize_image(uploaded_file)
                 stem = Path(uploaded_file.name).stem
                 temp_path = Path(temp_dir) / f"{stem}.jpg"
                 cv2.imwrite(
                     str(temp_path),
                     img,
-                    [cv2.IMWRITE_JPEG_QUALITY, app_settings.JPEG_QUALITY],
+                    [cv2.IMWRITE_JPEG_QUALITY, settings.JPEG_QUALITY],
                 )
                 temp_paths.append(str(temp_path))
 

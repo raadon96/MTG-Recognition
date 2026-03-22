@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-import cv2
 import numpy as np
 import pytest
 from sqlmodel import Session, col, create_engine, select
 
+from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.segmentation.segment import CardSegmentor
 from mtg_recognition.jobs.schemas import MobileCache
 
@@ -25,29 +25,25 @@ def segmentor() -> CardSegmentor:
 @pytest.fixture(scope="session")
 def valid_card_image() -> np.ndarray:
     """Load test image with a single valid card."""
-    img_path = str(IMG_DIR / "valid_card.jpg")
-    return cv2.imread(img_path)
+    return load_and_resize_image(IMG_DIR / "valid_card.jpg")
 
 
 @pytest.fixture(scope="session")
 def no_cards_image() -> np.ndarray:
     """Load test image with that does not contain any cards."""
-    img_path = str(IMG_DIR / "no_cards.jpg")
-    return cv2.imread(img_path)
+    return load_and_resize_image(IMG_DIR / "no_cards.jpg")
 
 
 @pytest.fixture(scope="session")
 def high_contrast_card_image() -> np.ndarray:
     """Load test image with one valid card with difficult lighting conditions."""
-    img_path = str(IMG_DIR / "high_contrast_card.jpg")
-    return cv2.imread(img_path)
+    return load_and_resize_image(IMG_DIR / "high_contrast_card.jpg")
 
 
-@pytest.fixture
-def two_cards_image(self):
+@pytest.fixture(scope="session")
+def two_cards_image() -> np.ndarray:
     """Load test image with two cards."""
-    img_path = IMG_DIR / "fixtures" / "images" / "two_cards.png"
-    return cv2.imread(str(img_path))
+    return load_and_resize_image(IMG_DIR / "two_cards.png")
 
 
 @pytest.fixture(scope="session")

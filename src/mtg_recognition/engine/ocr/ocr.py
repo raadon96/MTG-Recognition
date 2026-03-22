@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import NamedTuple
 
@@ -6,16 +5,14 @@ import click
 import cv2
 import numpy as np
 import rapidfuzz
-from dotenv import load_dotenv
 from icecream import ic
+from paddleocr import PaddleOCR
 from paddlex.inference import load_pipeline_config
 from sqlalchemy.engine.row import Row
 
+import mtg_recognition.settings
+from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.ocr import ocr_utils
-
-load_dotenv()
-os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
-from paddleocr import PaddleOCR  # noqa: E402
 
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS: list[dict] = [
@@ -293,7 +290,7 @@ def main(input, enable_hpi):
     matcher = PHashCardMatcher(auto_build=True)
 
     for i, img_path in enumerate(img_paths):
-        query_img = cv2.imread(str(img_path))
+        query_img = load_and_resize_image(img_path)
         if query_img is None:
             print(f"Failed to read image: {img_path}")
             continue

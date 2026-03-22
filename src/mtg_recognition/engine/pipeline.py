@@ -6,6 +6,7 @@ import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
 
+from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
 from mtg_recognition.engine.segmentation.segment import (
@@ -183,7 +184,7 @@ def main(input: Path, k: int, n: int):
     pipeline.build_index(force=False)
 
     for i, img_path in enumerate(img_paths):
-        query_img = cv2.imread(str(img_path))
+        query_img = load_and_resize_image(img_path)
         try:
             best_matches, best_scores = pipeline.find_best_matches(
                 query_img, k_final_results=k, k_phash_candidates=n

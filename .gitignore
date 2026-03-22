@@ -5,7 +5,7 @@
 
 # Reference cards dataset
 data/reference/images
-data/test/images
+data/test/
 
 data/reference/tmp
 data/reference/download_errors.log
@@ -24,7 +24,6 @@ input/
 test/
 runs/
 output/
-notes/
 **/results
 #benchmarks/**/*.jpg
 run_models.py
@@ -38,7 +37,7 @@ src/mtg_recognition/app/app_local.py
 benchmarks/benchmark_matching.py
 
 # Personal notes
-.notes
+.notes/
 
 # Coding agents
 AGENTS.md

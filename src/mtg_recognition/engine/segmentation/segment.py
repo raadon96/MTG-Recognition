@@ -1,17 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from random import choices
-
-from dotenv import load_dotenv
-
-load_dotenv()
 
 import click
 import cv2
 import numpy as np
 from rembg import new_session, remove
 from tqdm import tqdm
+
+import mtg_recognition.settings
+from mtg_recognition.core.image_utils import load_and_resize_image
 
 from .geometry import (
     crop_img,
@@ -306,7 +304,10 @@ class CardSegmentor:
         for img_path in tqdm(
             image_paths, total=len(image_paths), desc="Segmenting images"
         ):
-            img = cv2.imread(str(img_path))
+            # img = cv2.imread(str(img_path))
+            img = load_and_resize_image(
+                img_path
+            )  # applies same resizing as Streamlit app
             result = self.segment(img, return_warped=True)
             if result.warped_image is None:
                 print(f"image {img_path} could not be segmented")
@@ -354,7 +355,7 @@ _STRATEGY_MAP: dict[str, type[SegmentStrategy]] = {
 def main(input, output_dir, model_name):
     segmentor = CardSegmentor(_STRATEGY_MAP[model_name]())
     if input.is_file():
-        img = cv2.imread(str(input))
+        img = load_and_resize_image(input)  # applies same resizing as Streamlit app
         result = segmentor.segment(img, return_warped=True)
         if result.warped_image is not None:
             print("Success!")

@@ -29,7 +29,6 @@ dist/
 .DS_Store
 .claude/
 .opencode/
-.idea/
 
 # Local env/config
 .env
@@ -46,6 +45,8 @@ scratch/
 input/
 output/
 .notes/
+runs/
+
 
 # Test models
 **/models/test/

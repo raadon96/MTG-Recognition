@@ -57,10 +57,13 @@ def _corners_via_hough(contour_xy: np.ndarray) -> np.ndarray | None:
         return None
 
     segments = raw.reshape(-1, 4).astype(float)
-    angles = np.arctan2(
-        segments[:, 3] - segments[:, 1],
-        segments[:, 2] - segments[:, 0],
-    ) % np.pi  # undirected angle in [0, pi)
+    angles = (
+        np.arctan2(
+            segments[:, 3] - segments[:, 1],
+            segments[:, 2] - segments[:, 0],
+        )
+        % np.pi
+    )  # undirected angle in [0, pi)
 
     # Find the largest angular gap to split into 2 direction groups.
     sorted_idx = np.argsort(angles)

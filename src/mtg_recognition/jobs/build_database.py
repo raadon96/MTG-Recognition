@@ -9,8 +9,9 @@ import aiohttp
 from sqlmodel import Session, SQLModel, create_engine, select
 from tqdm.asyncio import tqdm
 
+from mtg_recognition.settings import settings
+
 from .schemas import CardIdentifiers, Cards, MobileCache, Sets
-from .settings import settings
 
 SCRYFALL_HEADERS = {
     "User-Agent": "mtg-recognition/1.0 (contact: adnen.boumessouer@gmail.com)",
