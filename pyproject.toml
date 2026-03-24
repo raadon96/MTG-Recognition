@@ -87,3 +87,9 @@ explicit = true
 [tool.uv.build-backend]
 module-name = "mtg_recognition"
 module-root = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: requires the segmentation model; deselect with -m 'not slow'",
+]

@@ -67,18 +67,15 @@ class BatchProcessor:
         results = []
 
         for idx, image_path in enumerate(image_paths):
-            # Update progress
             if progress_callback:
                 progress_callback(
                     idx, len(image_paths), f"Processing {Path(image_path).name}"
                 )
 
             try:
-                result = self._process_single_image(image_path)
-                results.append(result)
+                results.extend(self._process_single_image(image_path))
             except Exception as e:
-                # Create error result
-                result = BatchResult(
+                results.append(BatchResult(
                     uploaded_filename=Path(image_path).name,
                     original_image_path=str(image_path),
                     warped_image=None,
@@ -86,10 +83,8 @@ class BatchProcessor:
                     best_match_score=None,
                     status="error",
                     error_message=str(e),
-                )
-                results.append(result)
+                ))
 
-        # Final progress update
         if progress_callback:
             progress_callback(
                 len(image_paths), len(image_paths), "Processing complete!"
@@ -97,19 +92,22 @@ class BatchProcessor:
 
         return results
 
-    def _process_single_image(self, image_path: str) -> BatchResult:
+    def _process_single_image(self, image_path: str) -> list[BatchResult]:
         """
-        Process a single image file.
+        Process a single image file. Returns one BatchResult per detected card.
+
+        For multi-card images each detected card becomes its own BatchResult,
+        all sharing the same uploaded_filename and original_image_temp_path.
 
         Args:
-            image_path: Path to image file
+            image_path: Path to image file.
 
         Returns:
-            BatchResult object with segmentation and matching results
+            List of BatchResult objects. Contains a single no_match result if
+            no cards were detected, otherwise one result per card.
         """
         image_file = Path(image_path)
 
-        # Read image
         if not image_file.exists():
             raise FileNotFoundError(f"Image file not found: {image_file}")
 
@@ -117,21 +115,16 @@ class BatchProcessor:
         if input_img is None:
             raise ValueError(f"Failed to read image: {image_file}")
 
-        # Save original image to temp file
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
             cv2.imwrite(tmp_file.name, input_img)
             original_img_path = tmp_file.name
 
-        # Segment card
         segmentation_start = time.perf_counter()
-        segmentation_result = self.pipeline.segment_card(
-            input_img, return_annotated=False, return_warped=True
-        )
+        segmentation_result = self.pipeline.segment_card(input_img)
         segmentation_ms = (time.perf_counter() - segmentation_start) * 1000.0
 
-        if not segmentation_result.success or segmentation_result.warped_image is None:
-            # No card detected
-            return BatchResult(
+        if not segmentation_result.success:
+            return [BatchResult(
                 uploaded_filename=image_file.name,
                 original_image_path=str(image_file),
                 warped_image=None,
@@ -145,60 +138,60 @@ class BatchProcessor:
                     "ocr_ms": 0.0,
                     "total_ms": segmentation_ms,
                 },
-            )
+            )]
 
-        # Save warped image to temp file (reload from temp files as requested)
-        warped_img = segmentation_result.warped_image
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-            cv2.imwrite(tmp_file.name, warped_img)
-            warped_img_path = tmp_file.name
+        results = []
+        for segment in segmentation_result.segments:
+            warped_img = segment.warped_image
+            warped_img_path = None
 
-        try:
-            # Find best matches
-            matches, scores, diagnostics = (
-                self.pipeline.find_best_matches_with_diagnostics(
-                    warped_img,
-                    k_phash_candidates=100,
-                    k_final_results=5,
-                    apply_segmentation=False,
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+                    cv2.imwrite(tmp_file.name, warped_img)
+                    warped_img_path = tmp_file.name
+
+                matches, scores, diagnostics = (
+                    self.pipeline.find_best_matches_with_diagnostics(
+                        warped_img,
+                        k_phash_candidates=100,
+                        k_final_results=5,
+                        apply_segmentation=False,
+                    )
                 )
-            )
 
-            timings_ms = {
-                "segmentation_ms": segmentation_ms,
-                "phash_ms": diagnostics["phash_ms"],
-                "ocr_ms": diagnostics["ocr_ms"],
-                "total_ms": segmentation_ms + diagnostics["total_ms"],
-            }
+                timings_ms = {
+                    "segmentation_ms": segmentation_ms,
+                    "phash_ms": diagnostics["phash_ms"],
+                    "ocr_ms": diagnostics["ocr_ms"],
+                    "total_ms": segmentation_ms + diagnostics["total_ms"],
+                }
 
-            # Create result with best match
-            if matches is None or len(matches) == 0:
-                best_match = None
-                best_score = None
-                status = "no_match"
-            else:
-                best_match = matches[0]
-                best_score = float(scores[0])
-                status = "success"
+                if matches:
+                    best_match = matches[0]
+                    best_score = float(scores[0])
+                    status = "success"
+                else:
+                    best_match = None
+                    best_score = None
+                    status = "no_match"
 
-            return BatchResult(
-                uploaded_filename=image_file.name,
-                original_image_path=str(image_file),
-                warped_image=None,  # Don't keep in memory
-                best_match=best_match,
-                best_match_score=best_score,
-                status=status,
-                original_image_temp_path=original_img_path,
-                warped_image_temp_path=warped_img_path,
-                timings_ms=timings_ms,
-            )
-        except Exception as e:
-            # Clean up temp files on error
-            if Path(original_img_path).exists():
-                Path(original_img_path).unlink()
-            if Path(warped_img_path).exists():
-                Path(warped_img_path).unlink()
-            raise
+                results.append(BatchResult(
+                    uploaded_filename=image_file.name,
+                    original_image_path=str(image_file),
+                    warped_image=None,
+                    best_match=best_match,
+                    best_match_score=best_score,
+                    status=status,
+                    original_image_temp_path=original_img_path,
+                    warped_image_temp_path=warped_img_path,
+                    timings_ms=timings_ms,
+                ))
+            except Exception:
+                if warped_img_path and Path(warped_img_path).exists():
+                    Path(warped_img_path).unlink()
+                raise
+
+        return results
 
     def get_result_dataframe(
         self, results: list[BatchResult], with_diagnostics: bool = False

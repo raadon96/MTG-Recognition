@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import click
@@ -8,54 +7,46 @@ import numpy as np
 from rembg import new_session, remove
 from tqdm import tqdm
 
-import mtg_recognition.settings
 from mtg_recognition.core.image_utils import load_and_resize_image
 
-from .geometry import (
-    crop_img,
-    find_corners_lines_intersect,
-    perspective_transform,
-)
-from .yolomodel import YOLOModel
+from .geometry import find_corners_lines_intersect, perspective_transform
+
+# MTG standard card dimensions: 63 mm × 88 mm (portrait)
+_CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
 
 
 @dataclass
-class SegmentationResult:
-    """Result of card segmentation operation."""
+class CardSegment:
+    """A single card extracted and perspective-corrected from a source image."""
 
-    corners: np.ndarray | None
-    warped_image: np.ndarray | None
-    annotated_image: np.ndarray | None
-    success: bool
+    warped_image: np.ndarray  # BGR, resized to target_size
 
 
-class SegmentStrategy(ABC):
-    """Abstract base for card corner detection strategies."""
+@dataclass
+class ImageSegmentationResult:
+    """Segmentation results for one input image. May contain multiple cards."""
 
-    @abstractmethod
-    def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
-        """
-        Detect the 4 card corners from an image.
+    segments: list[CardSegment] = field(default_factory=list)
 
-        Returns:
-            np.ndarray of shape (4, 1, 2), or None if detection failed.
-        """
-        ...
+    @property
+    def success(self) -> bool:
+        return bool(self.segments)
 
 
 def _corners_from_binary_mask(
     mask: np.ndarray, erode: bool = True
 ) -> np.ndarray | None:
     """
-    Extract 4 card corners from a binary mask bitmap.
+    Extract 4 card corners from a binary mask.
 
-    Optionally erodes the mask before finding the contour to tighten the
-    boundary away from residual background pixels, then applies polygon
-    approximation and line-intersection refinement.
+    Optionally erodes the mask to tighten the boundary away from soft rembg
+    edge pixels, then applies polygon approximation with a Hough
+    line-intersection fallback.
 
     Args:
-        mask: Binary mask (uint8, 0/255) in the same spatial dimensions as the source image.
-        erode: Whether to apply morphological erosion before corner extraction.
+        mask: Binary uint8 mask (0/255), same spatial size as the source image.
+        erode: If True, apply dilate x 1 + erode x 3 (net erosion) before contour
+               extraction. Recommended for rembg masks which tend to be bloated.
 
     Returns:
         np.ndarray of shape (4, 1, 2), or None if 4 corners could not be found.
@@ -83,288 +74,168 @@ def _corners_from_binary_mask(
     return None
 
 
-def _corners_from_img(img: np.ndarray) -> np.ndarray | None:
-    """Extract card corners from an image via Canny edge detection and contour approximation."""
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-    edges = cv2.Canny(blurred, 15, 150)
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    edges = cv2.dilate(edges, kernel, iterations=1)
-
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return None
-
-    contour = max(contours, key=cv2.contourArea)
-    mask_binary = np.zeros_like(edges)
-    mask_binary = cv2.convexHull(contour)
-    epsilon = 0.02 * cv2.arcLength(mask_binary, True)
-    corners = cv2.approxPolyDP(mask_binary, epsilon, True)
-
-    if len(corners) == 4:
-        return corners
-
-    corners = find_corners_lines_intersect(contour)
-    if corners is not None:
-        return corners
-
-    return None
-
-
-class MaskStrategy(SegmentStrategy):
-    """
-    Corner detection via segmentation mask.
-
-    Pipeline: img → YOLO segmentation → mask contour → 4 corners.
-    Best for clean backgrounds with a single card in frame.
-    """
-
-    def __init__(
-        self,
-        model_name: str = "yoloe-11s-seg",
-        param_set_idx: int = 0,
-        erode: bool = True,
-    ):
-        self.model = YOLOModel(model_name, parameter_set_idx=param_set_idx)
-        self.erode = erode
-
-    def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
-        mask_contour = self.model.predict(img)
-        if mask_contour is None:
-            return None
-
-        h, w = img.shape[:2]
-        mask_binary = np.zeros((h, w), dtype=np.uint8)
-        cv2.drawContours(mask_binary, [mask_contour], -1, 255, -1)
-        return _corners_from_binary_mask(mask_binary, self.erode)
-
-
-class BBoxStrategy(SegmentStrategy):
-    """
-    Corner detection via object detection bounding box.
-
-    Pipeline: img → YOLO detection → padded bbox crop → Canny edges → 4 corners.
-    Robust to cluttered scenes with multiple objects in frame.
-
-    An optional fallback strategy can be provided for cases where the Canny-based
-    approach fails. The fallback receives the bbox crop (not the full image), and its
-    corners are mapped back to full-image coordinates automatically.
-
-    Example:
-        BBoxStrategy(fallback=RembgMaskStrategy())
-    """
-
-    def __init__(
-        self,
-        model_name: str = "yolov8s-worldv2",
-        param_set_idx: int = 0,
-        padding_pct: float = 0.1,
-        blur_kernel: tuple[int, int] = (11, 11),
-        canny_thresh: tuple[int, int] = (15, 150),
-        fallback: SegmentStrategy | None = None,
-    ):
-        self.model = YOLOModel(model_name, parameter_set_idx=param_set_idx)
-        self.padding_pct = padding_pct
-        self.blur_kernel = blur_kernel
-        self.canny_thresh = canny_thresh
-        self.fallback = fallback or RembgMaskStrategy()
-
-    def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
-        bbox = self.model.predict(img)
-        if bbox is None:
-            return None
-
-        crop, (cx1, cy1, _, _) = crop_img(img, bbox, self.padding_pct)
-
-        # corners = self._corners_from_crop(crop)
-        # if corners is None and self.fallback is not None:
-        #     corners = self.fallback.detect_corners(crop)
-        # if corners is None:
-        #     return None
-
-        corners = None
-        if self.fallback is not None:
-            corners = self.fallback.detect_corners(crop)
-
-        if corners is None:
-            corners = _corners_from_img(crop)
-
-        if corners is None:
-            return None
-
-        return corners + [cx1, cy1]
-
-
-class RembgMaskStrategy(SegmentStrategy):
-    """
-    Corner detection via background removal (rembg u2netp).
-
-    Pipeline: img → rembg u2netp → alpha mask → 4 corners.
-    Slower but robust fallback when edge-based methods fail.
-
-    Can be used standalone or as the fallback in BBoxStrategy:
-        BBoxStrategy(fallback=RembgMaskStrategy())
-    When used as a fallback, it receives the bbox crop rather than the full image.
-    """
-
-    def __init__(self, model_name: str = "u2netp"):
-
-        self._session = new_session(model_name=model_name)
-
-    def detect_corners(self, img: np.ndarray) -> np.ndarray | None:
-        mask = remove(
-            img,
-            alpha_matting=False,
-            only_mask=True,
-            post_process_mask=True,
-            session=self._session,
-        )
-        mask = np.array(mask)
-        _, mask_binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
-        return _corners_from_binary_mask(mask_binary, erode=False)
-
-
 class CardSegmentor:
     """
-    Segments a Magic: The Gathering card from an image.
+    Segments Magic: The Gathering cards from images using background removal.
 
-    Delegates corner detection to a SegmentStrategy, then applies a
-    perspective transform to produce a canonical card image.
+    Pipeline per image:
+        rembg mask → binary threshold → connected components →
+        per-blob corner detection → aspect ratio validation →
+        perspective transform
+
+    Handles multi-card images: each connected foreground blob is treated as a
+    separate card candidate. Blobs are filtered by minimum area and aspect ratio.
+    The rembg session is loaded once and reused across all calls, making
+    segment_batch efficient for processing multiple images.
     """
 
     def __init__(
         self,
-        strategy: SegmentStrategy | None = None,
+        model_name: str = "silueta",
         target_size: tuple[int, int] = (488, 680),
+        min_area_fraction: float = 0.01,
+        aspect_ratio_tolerance: float = 0.2,
     ):
-        self.strategy = strategy or MaskStrategy()
-        self.target_size = target_size
-
-    def segment(
-        self,
-        img: np.ndarray,
-        return_annotated: bool = False,
-        return_warped: bool = False,
-    ) -> SegmentationResult:
         """
-        Detect card corners and optionally warp/annotate the image.
+        Args:
+            model_name: rembg model name. "silueta" is recommended for cards.
+            target_size: Output (width, height) of each warped card image.
+            min_area_fraction: Blobs smaller than this fraction of the total
+                               image area are discarded as noise.
+            aspect_ratio_tolerance: Allowed relative deviation from the MTG card
+                                    aspect ratio (0.716). 0.2 accepts [0.57, 0.86].
+        """
+        self._session = new_session(model_name)
+        self.target_size = target_size
+        self.min_area_fraction = min_area_fraction
+        self.aspect_ratio_tolerance = aspect_ratio_tolerance
+
+    def segment(self, img: np.ndarray) -> ImageSegmentationResult:
+        """
+        Segment all cards from a single image.
 
         Args:
-            img: Input image in BGR format
-            return_annotated: Include annotated image with drawn corners
-            return_warped: Include perspective-corrected card image
+            img: Input image in BGR format.
 
         Returns:
-            SegmentationResult with corners, optional images, and success flag
+            ImageSegmentationResult with one CardSegment per detected card.
+            segments is empty if no cards were found.
         """
-        corners = self.strategy.detect_corners(img)
-        if corners is None:
-            return SegmentationResult(
-                corners=None,
-                warped_image=None,
-                annotated_image=img if return_annotated else None,
-                success=False,
-            )
+        mask = remove(
+            img,
+            session=self._session,
+            only_mask=True,
+            post_process_mask=True,
+            alpha_matting=False,
+        )
+        _, binary = cv2.threshold(np.array(mask), 127, 255, cv2.THRESH_BINARY)
 
-        return SegmentationResult(
-            corners=corners,
-            warped_image=self._warp_card(img, corners) if return_warped else None,
-            annotated_image=self._annotate_corners(img, corners)
-            if return_annotated
-            else None,
-            success=True,
+        min_area = self.min_area_fraction * img.shape[0] * img.shape[1]
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            binary, connectivity=8
         )
 
-    def _warp_card(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
-        img_warped = perspective_transform(img, corners)
-        h, w = img_warped.shape[:2]
-        if w > h:
-            img_warped = cv2.rotate(img_warped, cv2.ROTATE_90_CLOCKWISE)
-        return cv2.resize(
-            img_warped, self.target_size, interpolation=cv2.INTER_LANCZOS4
-        )
+        segments = []
+        for label in range(1, num_labels):  # label 0 is background
+            if stats[label, cv2.CC_STAT_AREA] < min_area:
+                continue
 
-    def _annotate_corners(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
-        annotated = img.copy()
-        cv2.drawContours(annotated, [corners], -1, (0, 255, 0), 2)
-        return annotated
+            blob_mask = np.where(labels == label, 255, 0).astype(np.uint8)
+            corners = _corners_from_binary_mask(blob_mask, erode=True)
+            if corners is None:
+                continue
+
+            if not self._valid_aspect_ratio(corners):
+                continue
+
+            segments.append(CardSegment(warped_image=self._warp_card(img, corners)))
+
+        return ImageSegmentationResult(segments=segments)
+
+    def segment_batch(self, imgs: list[np.ndarray]) -> list[ImageSegmentationResult]:
+        """
+        Segment cards from multiple images, reusing the rembg session.
+
+        Args:
+            imgs: List of BGR images.
+
+        Returns:
+            One ImageSegmentationResult per input image, in the same order.
+        """
+        return [self.segment(img) for img in imgs]
 
     def segment_from_dir(self, src_dir: str | Path, dst_dir: str | Path) -> None:
         src_dir = Path(src_dir)
         if not src_dir.exists():
-            raise ValueError(f"query dir {src_dir} does not exist")
+            raise ValueError(f"source directory does not exist: {src_dir}")
 
         dst_dir = Path(dst_dir)
         assert src_dir != dst_dir
-
         dst_dir.mkdir(parents=True, exist_ok=True)
 
         image_paths = list(src_dir.glob("*.jpg"))
-        for img_path in tqdm(
-            image_paths, total=len(image_paths), desc="Segmenting images"
-        ):
-            # img = cv2.imread(str(img_path))
-            img = load_and_resize_image(
-                img_path
-            )  # applies same resizing as Streamlit app
-            result = self.segment(img, return_warped=True)
-            if result.warped_image is None:
-                print(f"image {img_path} could not be segmented")
+        for img_path in tqdm(image_paths, desc="Segmenting images"):
+            img = load_and_resize_image(img_path)
+            result = self.segment(img)
+            if not result.success:
+                print(f"no card detected: {img_path}")
                 continue
-            cv2.imwrite(str(dst_dir / img_path.name), result.warped_image)
+            for i, segment in enumerate(result.segments):
+                stem = (
+                    img_path.stem
+                    if len(result.segments) == 1
+                    else f"{img_path.stem}_{i}"
+                )
+                cv2.imwrite(str(dst_dir / f"{stem}.jpg"), segment.warped_image)
 
+    def _warp_card(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
+        warped = perspective_transform(img, corners)
+        h, w = warped.shape[:2]
+        if w > h:
+            warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
+        return cv2.resize(warped, self.target_size, interpolation=cv2.INTER_LANCZOS4)
 
-_STRATEGY_MAP: dict[str, type[SegmentStrategy]] = {
-    "yoloe-11s-seg": MaskStrategy,
-    "yolov8s-worldv2": BBoxStrategy,
-}
+    def _valid_aspect_ratio(self, corners: np.ndarray) -> bool:
+        pts = corners.reshape(4, 2).astype(float)
+        sides = [np.linalg.norm(pts[i] - pts[(i + 1) % 4]) for i in range(4)]
+        # Opposite side pairs from the contour-ordered quad: (0,2) and (1,3)
+        pair_a = (sides[0] + sides[2]) / 2
+        pair_b = (sides[1] + sides[3]) / 2
+        if max(pair_a, pair_b) < 1e-6:
+            return False
+        ratio = min(pair_a, pair_b) / max(pair_a, pair_b)
+        lo = _CARD_ASPECT_RATIO * (1 - self.aspect_ratio_tolerance)
+        hi = _CARD_ASPECT_RATIO * (1 + self.aspect_ratio_tolerance)
+        return bool(lo <= ratio <= hi)
 
 
 @click.command()
 @click.option(
     "-i",
     "--input",
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=True,
-        readable=True,
-        path_type=Path,
-    ),
+    type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path),
     default="benchmarks/dataset/images/raw",
 )
 @click.option(
     "-o",
     "--output-dir",
-    type=click.Path(
-        exists=False,
-        file_okay=False,
-        dir_okay=True,
-        readable=True,
-        path_type=Path,
-    ),
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default="output/engine/segmentation/CardSegmentor",
 )
-@click.option(
-    "-m",
-    "--model-name",
-    type=click.Choice(list(_STRATEGY_MAP.keys())),
-    default="yoloe-11s-seg",
-)
-def main(input, output_dir, model_name):
-    segmentor = CardSegmentor(_STRATEGY_MAP[model_name]())
+@click.option("-m", "--model-name", type=str, default="silueta")
+def main(input: Path, output_dir: Path, model_name: str):
+    segmentor = CardSegmentor(model_name=model_name)
     if input.is_file():
-        img = load_and_resize_image(input)  # applies same resizing as Streamlit app
-        result = segmentor.segment(img, return_warped=True)
-        if result.warped_image is not None:
-            print("Success!")
-            cv2.imshow("Warped", result.warped_image)
-            key = cv2.waitKey(0)
-            if key == ord("q"):
-                cv2.destroyAllWindows()
+        img = load_and_resize_image(input)
+        result = segmentor.segment(img)
+        if result.success:
+            print(f"Found {len(result.segments)} card(s)")
+            for i, segment in enumerate(result.segments):
+                cv2.imshow(f"Card {i}", segment.warped_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         else:
-            print("No image detected")
+            print("No card detected")
     else:
         segmentor.segment_from_dir(input, output_dir)
 

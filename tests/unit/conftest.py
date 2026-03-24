@@ -3,55 +3,51 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from sqlmodel import Session, col, create_engine, select
 
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.segmentation.segment import CardSegmentor
-from mtg_recognition.jobs.schemas import MobileCache
-
-BEST_SEGMENTOR = "yoloe-11s-seg"
-BEST_PARAM_SET = 0
 
 FIXTURES_DIR = Path("tests/unit/fixtures")
-IMG_DIR = FIXTURES_DIR / "images"
+SEG_FIXTURE_DIR = FIXTURES_DIR / "seg"
+
+SINGLE_CARD_DIR = SEG_FIXTURE_DIR / "1_imgs_single_card"
+MULTI_CARD_DIR = SEG_FIXTURE_DIR / "2_imgs_multiple_cards"
+FAILURE_CASES_DIR = SEG_FIXTURE_DIR / "0_failure_cases"
+
+BENCHMARK_RAW_DIR = Path("benchmarks/dataset/images/raw")
 
 
 @pytest.fixture(scope="session")
 def segmentor() -> CardSegmentor:
-    """Create CardSegmentor instance."""
-    return CardSegmentor(model_name=BEST_SEGMENTOR, param_set_idx=BEST_PARAM_SET)
+    """Session-scoped CardSegmentor; model is loaded once for the whole suite."""
+    return CardSegmentor()
+
+
+@pytest.fixture(scope="session")
+def single_corners_golden() -> dict:
+    """Golden corner coordinates for single-card fixtures, keyed by image stem."""
+    path = SINGLE_CARD_DIR / "corners.json"
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        return json.load(f)
+
+
+@pytest.fixture(scope="session")
+def multi_corners_golden() -> dict:
+    """Golden per-blob corner coordinates for multi-card fixtures, keyed by image stem."""
+    path = MULTI_CARD_DIR / "corners.json"
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        return json.load(f)
 
 
 @pytest.fixture(scope="session")
 def valid_card_image() -> np.ndarray:
-    """Load test image with a single valid card."""
-    return load_and_resize_image(IMG_DIR / "valid_card.jpg")
+    return load_and_resize_image(FIXTURES_DIR / "images" / "valid_card.jpg")
 
 
 @pytest.fixture(scope="session")
 def no_cards_image() -> np.ndarray:
-    """Load test image with that does not contain any cards."""
-    return load_and_resize_image(IMG_DIR / "no_cards.jpg")
-
-
-@pytest.fixture(scope="session")
-def high_contrast_card_image() -> np.ndarray:
-    """Load test image with one valid card with difficult lighting conditions."""
-    return load_and_resize_image(IMG_DIR / "high_contrast_card.jpg")
-
-
-@pytest.fixture(scope="session")
-def two_cards_image() -> np.ndarray:
-    """Load test image with two cards."""
-    return load_and_resize_image(IMG_DIR / "two_cards.png")
-
-
-@pytest.fixture(scope="session")
-def setcodes_ref() -> list[str]:
-    "Load the available mtg setcodes from either cached file or database"
-    engine = create_engine("sqlite:///data/reference/MobileCache.sqlite")
-    with Session(engine) as session:
-        statement = select(MobileCache.setCode).distinct()
-        rows = session.exec(statement).all()
-        # results = [row for row in rows]
-        return list(rows)
+    return load_and_resize_image(FIXTURES_DIR / "images" / "no_cards.jpg")

@@ -11,8 +11,7 @@ from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
 from mtg_recognition.engine.segmentation.segment import (
     CardSegmentor,
-    MaskStrategy,
-    SegmentationResult,
+    ImageSegmentationResult,
 )
 
 
@@ -20,7 +19,7 @@ class Pipeline:
     def __init__(
         self,
         auto_build: bool = True,
-        segmentor: CardSegmentor = CardSegmentor(MaskStrategy()),
+        segmentor: CardSegmentor = CardSegmentor(),
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
         ocr: CardOCR = CardOCR(),
     ):
@@ -32,9 +31,9 @@ class Pipeline:
         if auto_build:
             self.phash_matcher.build_index(force=False)
 
-    def segment_card(self, query_img: np.ndarray, **kwargs) -> SegmentationResult:
-        """Segment the card from a query image."""
-        return self.segmentor.segment(query_img, **kwargs)
+    def segment_card(self, query_img: np.ndarray) -> ImageSegmentationResult:
+        """Segment cards from a query image."""
+        return self.segmentor.segment(query_img)
 
     def find_best_matches(
         self,
@@ -85,18 +84,17 @@ class Pipeline:
         # I. Segmentation
         if apply_segmentation:
             segmentation_start = time.perf_counter()
-            result = self.segment_card(query_img, return_warped=True)
-            img_warped = result.warped_image
+            seg_result = self.segment_card(query_img)
             diagnostics["segmentation_ms"] = (
                 time.perf_counter() - segmentation_start
             ) * 1000.0
+            if not seg_result.success:
+                print("No card detected")
+                diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
+                return [], [], diagnostics
+            img_warped = seg_result.segments[0].warped_image
         else:
             img_warped = query_img
-
-        if img_warped is None:
-            print("No image detected")
-            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-            return [], [], diagnostics
 
         # II. Matching
         assert k_final_results <= k_phash_candidates, (
