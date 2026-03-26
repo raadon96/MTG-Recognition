@@ -1,7 +1,10 @@
+"""rembg-based card segmentor."""
+
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import click
 import cv2
 import numpy as np
 from rembg import new_session, remove
@@ -9,10 +12,7 @@ from tqdm import tqdm
 
 from mtg_recognition.core.image_utils import load_and_resize_image
 
-from .geometry import find_corners_lines_intersect, perspective_transform
-
-# MTG standard card dimensions: 63 mm × 88 mm (portrait)
-_CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
+from .seg_utils import _corners_from_binary_mask, valid_aspect_ratio, warp_card
 
 
 @dataclass
@@ -33,48 +33,7 @@ class ImageSegmentationResult:
         return bool(self.segments)
 
 
-def _corners_from_binary_mask(
-    mask: np.ndarray, erode: bool = True
-) -> np.ndarray | None:
-    """
-    Extract 4 card corners from a binary mask.
-
-    Optionally erodes the mask to tighten the boundary away from soft rembg
-    edge pixels, then applies polygon approximation with a Hough
-    line-intersection fallback.
-
-    Args:
-        mask: Binary uint8 mask (0/255), same spatial size as the source image.
-        erode: If True, apply dilate x 1 + erode x 3 (net erosion) before contour
-               extraction. Recommended for rembg masks which tend to be bloated.
-
-    Returns:
-        np.ndarray of shape (4, 1, 2), or None if 4 corners could not be found.
-    """
-    if erode:
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        mask = cv2.dilate(mask, kernel, iterations=1)
-        mask = cv2.erode(mask, kernel, iterations=3)
-
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return None
-    contour = max(contours, key=cv2.contourArea)
-
-    epsilon = 0.02 * cv2.arcLength(contour, True)
-    corners = cv2.approxPolyDP(contour, epsilon, True)
-
-    if len(corners) == 4:
-        return corners
-
-    corners = find_corners_lines_intersect(contour)
-    if corners is not None:
-        return corners
-
-    return None
-
-
-class CardSegmentor:
+class RembgCardSegmentor:
     """
     Segments Magic: The Gathering cards from images using background removal.
 
@@ -145,10 +104,12 @@ class CardSegmentor:
             if corners is None:
                 continue
 
-            if not self._valid_aspect_ratio(corners):
+            if not valid_aspect_ratio(corners, self.aspect_ratio_tolerance):
                 continue
 
-            segments.append(CardSegment(warped_image=self._warp_card(img, corners)))
+            segments.append(
+                CardSegment(warped_image=warp_card(img, corners, self.target_size))
+            )
 
         return ImageSegmentationResult(segments=segments)
 
@@ -188,60 +149,6 @@ class CardSegmentor:
                 )
                 cv2.imwrite(str(dst_dir / f"{stem}.jpg"), segment.warped_image)
 
-    def _warp_card(self, img: np.ndarray, corners: np.ndarray) -> np.ndarray:
-        warped = perspective_transform(img, corners)
-        h, w = warped.shape[:2]
-        if w > h:
-            warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
-        return cv2.resize(warped, self.target_size, interpolation=cv2.INTER_LANCZOS4)
 
-    def _valid_aspect_ratio(self, corners: np.ndarray) -> bool:
-        pts = corners.reshape(4, 2).astype(float)
-        sides = [np.linalg.norm(pts[i] - pts[(i + 1) % 4]) for i in range(4)]
-        # Opposite side pairs from the contour-ordered quad: (0,2) and (1,3)
-        pair_a = (sides[0] + sides[2]) / 2
-        pair_b = (sides[1] + sides[3]) / 2
-        if max(pair_a, pair_b) < 1e-6:
-            return False
-        ratio = min(pair_a, pair_b) / max(pair_a, pair_b)
-        lo = _CARD_ASPECT_RATIO * (1 - self.aspect_ratio_tolerance)
-        hi = _CARD_ASPECT_RATIO * (1 + self.aspect_ratio_tolerance)
-        return bool(lo <= ratio <= hi)
-
-
-@click.command()
-@click.option(
-    "-i",
-    "--input",
-    type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path),
-    default="benchmarks/dataset/images/raw",
-)
-@click.option(
-    "-o",
-    "--output-dir",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    default="output/engine/segmentation/CardSegmentor",
-)
-@click.option("-m", "--model-name", type=str, default="silueta")
-def main(input: Path, output_dir: Path, model_name: str):
-    segmentor = CardSegmentor(model_name=model_name)
-    if input.is_file():
-        img = load_and_resize_image(input)
-        result = segmentor.segment(img)
-        if result.success:
-            print(f"Found {len(result.segments)} card(s)")
-            for i, segment in enumerate(result.segments):
-                cv2.imshow(f"Card {i}", segment.warped_image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-        else:
-            print("No card detected")
-    else:
-        segmentor.segment_from_dir(input, output_dir)
-
-
-if __name__ == "__main__":
-    main()
-
-# uv run python -m mtg_recognition.engine.segmentation.segment
-# uv run python -m mtg_recognition.engine.segmentation.segment -i benchmarks/dataset/images/raw -o output/engine/segmentation/CardSegmentor
+# # Backward-compatible alias
+# CardSegmentor = RembgCardSegmentor

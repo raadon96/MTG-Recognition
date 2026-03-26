@@ -56,92 +56,138 @@ class BatchProcessor:
         """
         Process a batch of images.
 
+        Segmentation is performed in one batched YOLO call (mini-batches of 20)
+        rather than per-image, which significantly reduces inference time when
+        multiple images are provided.
+
         Args:
-            image_paths: List of file paths to process
-            progress_callback: Optional callback for progress updates.
-                              Called with (current_index, total, status_message)
+            image_paths: List of file paths to process.
+            progress_callback: Optional callback(current_index, total, message).
 
         Returns:
-            List of BatchResult objects
+            List of BatchResult objects (one per detected card segment).
         """
-        results = []
+        if not image_paths:
+            return []
+
+        total = len(image_paths)
+
+        # -- Stage A: load all images --------------------------------------
+        if progress_callback:
+            progress_callback(0, total, "Loading images…")
+
+        loaded: list[tuple[int, str, np.ndarray | None, str | None, str | None]] = []
+        # (original_index, image_path, img_array, original_temp_path, error)
 
         for idx, image_path in enumerate(image_paths):
+            image_file = Path(image_path)
+            try:
+                if not image_file.exists():
+                    raise FileNotFoundError(f"Image file not found: {image_file}")
+                img = cv2.imread(str(image_file))
+                if img is None:
+                    raise ValueError(f"Failed to read image: {image_file}")
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    cv2.imwrite(tmp.name, img)
+                    orig_tmp = tmp.name
+                loaded.append((idx, image_path, img, orig_tmp, None))
+            except Exception as e:
+                loaded.append((idx, image_path, None, None, str(e)))
+
+        # -- Stage B: batch segmentation -----------------------------------
+        valid_entries = [(i, p, img, orig) for i, p, img, orig, err in loaded if img is not None]
+        imgs_to_segment = [img for _, _, img, _ in valid_entries]
+
+        seg_results = []
+        if imgs_to_segment:
             if progress_callback:
-                progress_callback(
-                    idx, len(image_paths), f"Processing {Path(image_path).name}"
-                )
+                progress_callback(0, total, "Segmenting cards…")
+            seg_start = time.perf_counter()
+            seg_results = self.pipeline.segmentor.segment_batch(imgs_to_segment)
+            batch_seg_ms = (time.perf_counter() - seg_start) * 1000.0
+            amortized_seg_ms = batch_seg_ms / len(imgs_to_segment)
+        else:
+            amortized_seg_ms = 0.0
+
+        # -- Stage C: per-segment matching ---------------------------------
+        results: list[BatchResult] = []
+
+        # First, emit error results for images that failed to load
+        error_by_idx = {
+            i: (p, err) for i, p, img, orig, err in loaded if img is None
+        }
+        for idx, (image_path, err) in sorted(error_by_idx.items()):
+            results.append(BatchResult(
+                uploaded_filename=Path(image_path).name,
+                original_image_path=str(image_path),
+                warped_image=None,
+                best_match=None,
+                best_match_score=None,
+                status="error",
+                error_message=err,
+            ))
+
+        for seg_local_idx, (orig_idx, image_path, img, orig_tmp) in enumerate(valid_entries):
+            image_file = Path(image_path)
+            if progress_callback:
+                progress_callback(seg_local_idx, total, f"Matching {image_file.name}")
+
+            seg_result = seg_results[seg_local_idx]
+
+            if not seg_result.success:
+                results.append(BatchResult(
+                    uploaded_filename=image_file.name,
+                    original_image_path=str(image_file),
+                    warped_image=None,
+                    best_match=None,
+                    best_match_score=None,
+                    status="no_match",
+                    original_image_temp_path=orig_tmp,
+                    timings_ms={
+                        "segmentation_ms": amortized_seg_ms,
+                        "phash_ms": 0.0,
+                        "ocr_ms": 0.0,
+                        "total_ms": amortized_seg_ms,
+                    },
+                ))
+                continue
 
             try:
-                results.extend(self._process_single_image(image_path))
+                results.extend(
+                    self._match_segments(
+                        seg_result.segments,
+                        image_file,
+                        orig_tmp,
+                        amortized_seg_ms,
+                    )
+                )
             except Exception as e:
                 results.append(BatchResult(
-                    uploaded_filename=Path(image_path).name,
-                    original_image_path=str(image_path),
+                    uploaded_filename=image_file.name,
+                    original_image_path=str(image_file),
                     warped_image=None,
                     best_match=None,
                     best_match_score=None,
                     status="error",
                     error_message=str(e),
+                    original_image_temp_path=orig_tmp,
                 ))
 
         if progress_callback:
-            progress_callback(
-                len(image_paths), len(image_paths), "Processing complete!"
-            )
+            progress_callback(total, total, "Processing complete!")
 
         return results
 
-    def _process_single_image(self, image_path: str) -> list[BatchResult]:
-        """
-        Process a single image file. Returns one BatchResult per detected card.
-
-        For multi-card images each detected card becomes its own BatchResult,
-        all sharing the same uploaded_filename and original_image_temp_path.
-
-        Args:
-            image_path: Path to image file.
-
-        Returns:
-            List of BatchResult objects. Contains a single no_match result if
-            no cards were detected, otherwise one result per card.
-        """
-        image_file = Path(image_path)
-
-        if not image_file.exists():
-            raise FileNotFoundError(f"Image file not found: {image_file}")
-
-        input_img = cv2.imread(str(image_file))
-        if input_img is None:
-            raise ValueError(f"Failed to read image: {image_file}")
-
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-            cv2.imwrite(tmp_file.name, input_img)
-            original_img_path = tmp_file.name
-
-        segmentation_start = time.perf_counter()
-        segmentation_result = self.pipeline.segment_card(input_img)
-        segmentation_ms = (time.perf_counter() - segmentation_start) * 1000.0
-
-        if not segmentation_result.success:
-            return [BatchResult(
-                uploaded_filename=image_file.name,
-                original_image_path=str(image_file),
-                warped_image=None,
-                best_match=None,
-                best_match_score=None,
-                status="no_match",
-                original_image_temp_path=original_img_path,
-                timings_ms={
-                    "segmentation_ms": segmentation_ms,
-                    "phash_ms": 0.0,
-                    "ocr_ms": 0.0,
-                    "total_ms": segmentation_ms,
-                },
-            )]
-
+    def _match_segments(
+        self,
+        segments,
+        image_file: Path,
+        original_img_path: str | None,
+        segmentation_ms: float,
+    ) -> list[BatchResult]:
+        """Run pHash + OCR matching for each card segment from one image."""
         results = []
-        for segment in segmentation_result.segments:
+        for segment in segments:
             warped_img = segment.warped_image
             warped_img_path = None
 

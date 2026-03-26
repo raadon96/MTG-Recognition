@@ -16,12 +16,11 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.segment import (
+from mtg_recognition.engine.segmentation.rembg import (
     CardSegment,
-    CardSegmentor,
     ImageSegmentationResult,
-    _corners_from_binary_mask,
 )
+from mtg_recognition.engine.segmentation.seg_utils import _corners_from_binary_mask
 
 # ---------------------------------------------------------------------------
 # Paths  (mirrors tests/unit/fixtures/seg/ structure)
@@ -129,32 +128,32 @@ class TestCornersFromBinaryMask:
 
 
 class TestValidAspectRatio:
-    """Tests for CardSegmentor._valid_aspect_ratio using a mock session."""
-
-    @pytest.fixture(autouse=True)
-    def _seg(self):
-        with patch(
-            "mtg_recognition.engine.segmentation.segment.new_session",
-            return_value=MagicMock(),
-        ):
-            self.seg = CardSegmentor()
+    """Tests for the valid_aspect_ratio helper."""
 
     def test_mtg_card_ratio_is_valid(self):
+        from mtg_recognition.engine.segmentation.seg_utils import valid_aspect_ratio
+
         # 63 x 88 mm — exact MTG card dimensions
         corners = _make_corners((0, 0), (63, 0), (63, 88), (0, 88))
-        assert self.seg._valid_aspect_ratio(corners) is True
+        assert valid_aspect_ratio(corners) is True
 
     def test_square_is_invalid(self):
+        from mtg_recognition.engine.segmentation.seg_utils import valid_aspect_ratio
+
         corners = _make_corners((0, 0), (100, 0), (100, 100), (0, 100))
-        assert self.seg._valid_aspect_ratio(corners) is False
+        assert valid_aspect_ratio(corners) is False
 
     def test_extreme_elongation_is_invalid(self):
+        from mtg_recognition.engine.segmentation.seg_utils import valid_aspect_ratio
+
         corners = _make_corners((0, 0), (10, 0), (10, 200), (0, 200))
-        assert self.seg._valid_aspect_ratio(corners) is False
+        assert valid_aspect_ratio(corners) is False
 
     def test_degenerate_zero_area_is_invalid(self):
+        from mtg_recognition.engine.segmentation.seg_utils import valid_aspect_ratio
+
         corners = _make_corners((50, 50), (50, 50), (50, 50), (50, 50))
-        assert self.seg._valid_aspect_ratio(corners) is False
+        assert valid_aspect_ratio(corners) is False
 
 
 class TestImageSegmentationResult:

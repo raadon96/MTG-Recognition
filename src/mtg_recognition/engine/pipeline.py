@@ -9,21 +9,19 @@ from sqlalchemy.engine.row import Row
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
-from mtg_recognition.engine.segmentation.segment import (
-    CardSegmentor,
-    ImageSegmentationResult,
-)
+from mtg_recognition.engine.segmentation.rembg import ImageSegmentationResult
+from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
 
 class Pipeline:
     def __init__(
         self,
         auto_build: bool = True,
-        segmentor: CardSegmentor = CardSegmentor(),
+        segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
         ocr: CardOCR = CardOCR(),
     ):
-        self.segmentor = segmentor
+        self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
         self.phash_matcher = phash_matcher
         self.ocr = ocr
         self.auto_build = auto_build

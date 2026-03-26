@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from mtg_recognition.core.image_utils import load_and_resize_image
-from mtg_recognition.engine.segmentation.segment import CardSegmentor
+from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
 
 FIXTURES_DIR = Path("tests/unit/fixtures")
 SEG_FIXTURE_DIR = FIXTURES_DIR / "seg"
@@ -18,9 +18,9 @@ BENCHMARK_RAW_DIR = Path("benchmarks/dataset/images/raw")
 
 
 @pytest.fixture(scope="session")
-def segmentor() -> CardSegmentor:
-    """Session-scoped CardSegmentor; model is loaded once for the whole suite."""
-    return CardSegmentor()
+def segmentor() -> RembgCardSegmentor:
+    """Session-scoped RembgCardSegmentor; model is loaded once for the whole suite."""
+    return RembgCardSegmentor()
 
 
 @pytest.fixture(scope="session")

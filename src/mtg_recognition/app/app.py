@@ -14,7 +14,7 @@ from mtg_recognition.database import engine
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.engine.segmentation.segment import CardSegmentor
+from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
 
@@ -52,7 +52,7 @@ def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
     return Pipeline(
-        segmentor=CardSegmentor(),
+        segmentor=YoloCardSegmentor(),
         phash_matcher=PHashCardMatcher(),
         ocr=CardOCR(),
     )

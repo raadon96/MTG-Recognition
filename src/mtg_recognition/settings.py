@@ -22,11 +22,20 @@ class Settings(BaseSettings):
     DATA_DIR: Path = Path("data")
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
 
+    # --- Segmentation ---
+    YOLO_SEG_CLASSES: list[str] = ["book cover", "art work"]
+
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
     U2NET_HOME: str = "src/mtg_recognition/engine/segmentation/models/prod"
 
     # --- Derived paths ---
+    @property
+    def YOLO_SEG_MODEL_PATH(self) -> Path:
+        return Path(
+            "src/mtg_recognition/engine/segmentation/models/prod/yoloe-11s-seg.pt"
+        )
+
     @property
     def REF_DIR(self) -> Path:
         return self.DATA_DIR / "reference"
