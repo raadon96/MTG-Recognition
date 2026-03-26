@@ -1,24 +1,24 @@
 """
-Generate downscaled image fixtures for segmentation regression tests.
+Generate downscaled image fixtures for rembg segmentation regression tests.
 
 Run once from the project root after changing the test dataset or resizing
 settings:
 
-    uv run python tests/unit/engine/generate_fixtures.py
+    uv run python tests/regression/segmentation/generate_fixtures.py
 
-Produces under tests/unit/fixtures/seg/:
+Produces under tests/regression/segmentation/fixtures/:
 
   0_failure_cases/
     images/       - downscaled failure-case images (JPEG)
     masks/        - corresponding birefnet-general-lite masks (PNG)
     (no corners - these are all xfail scenarios)
 
-  1_imgs_single_card/
+  1_photos_single_card/
     images/       - 20 UUID images + card_and_pen, downscaled (JPEG)
     masks/        - corresponding birefnet-general-lite masks (PNG)
     corners.json  - golden corners (one 4-point set per image, largest blob)
 
-  2_imgs_multiple_cards/
+  2_photos_multiple_cards/
     images/       - 2 multi-card images, downscaled (JPEG)
     masks/        - corresponding birefnet-general-lite masks (PNG)
     corners.json  - golden corners per blob, sorted by centroid (top→bottom,
@@ -32,10 +32,10 @@ import cv2
 import numpy as np
 
 from mtg_recognition.core.image_utils import load_and_resize_image
-from mtg_recognition.engine.segmentation.segment import _corners_from_binary_mask
+from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 
 SRC_BASE = Path("data/test")
-FIXTURE_DIR = Path("tests/unit/fixtures/seg")
+FIXTURE_DIR = Path("tests/regression/segmentation/fixtures")
 
 N_SINGLE_CARD = 20  # number of UUID images to include
 MIN_AREA_FRACTION = 0.01  # blobs smaller than this fraction are ignored
@@ -77,7 +77,7 @@ def _sorted_blobs(mask: np.ndarray) -> list[tuple[float, float, np.ndarray]]:
 
 def _single_corners(mask: np.ndarray) -> list[list[int]] | None:
     """Corners from the largest contour in mask (single-card case)."""
-    corners = _corners_from_binary_mask(mask, erode=True)
+    corners = corners_from_binary_mask(mask, erode=True)
     if corners is None:
         return None
     return corners.reshape(4, 2).tolist()
@@ -87,7 +87,7 @@ def _per_blob_corners(mask: np.ndarray) -> list[list[list[int]]]:
     """Corners per blob, sorted by centroid. Returns [] if any blob yields no corners."""
     result = []
     for _, _, blob_mask in _sorted_blobs(mask):
-        corners = _corners_from_binary_mask(blob_mask, erode=True)
+        corners = corners_from_binary_mask(blob_mask, erode=True)
         if corners is None:
             return []
         result.append(corners.reshape(4, 2).tolist())
@@ -108,7 +108,7 @@ def _process(
     corners_mode: str = "none",  # "single" | "per_blob" | "none"
 ) -> None:
     """
-    Downscale images and masks from src_* into tests/unit/fixtures/seg/<fixture_subdir>/.
+    Downscale images and masks from src_* into tests/regression/segmentation/fixtures/<fixture_subdir>/.
 
     Args:
         corners_mode:
@@ -194,35 +194,6 @@ def _process(
 
 
 def main() -> None:
-    # --- 1_imgs_single_card ---
-    print("\n=== 1_imgs_single_card ===")
-    src1 = SRC_BASE / "1_imgs_single_card"
-    uuid_stems = [
-        p.stem
-        for p in sorted((src1 / "images").glob("*.jpg"))
-        if p.stem != "card_and_pen"
-    ][:N_SINGLE_CARD]
-    single_stems = uuid_stems + ["card_and_pen"]
-    _process(
-        src1 / "images",
-        src1 / "masks" / "birefnet-general-lite",
-        "1_imgs_single_card",
-        single_stems,
-        corners_mode="single",
-    )
-
-    # --- 2_imgs_multiple_cards ---
-    print("\n=== 2_imgs_multiple_cards ===")
-    src2 = SRC_BASE / "2_imgs_multiple_cards"
-    multi_stems = [p.stem for p in sorted((src2 / "images").glob("*.jpg"))]
-    _process(
-        src2 / "images",
-        src2 / "masks" / "birefnet-general-lite",
-        "2_imgs_multiple_cards",
-        multi_stems,
-        corners_mode="per_blob",
-    )
-
     # --- 0_failure_cases ---
     print("\n=== 0_failure_cases ===")
     src0 = SRC_BASE / "0_failure_cases"
@@ -233,6 +204,35 @@ def main() -> None:
         "0_failure_cases",
         failure_stems,
         corners_mode="none",
+    )
+
+    # --- 1_photos_single_card ---
+    print("\n=== 1_photos_single_card ===")
+    src1 = SRC_BASE / "1_photos_single_card"
+    uuid_stems = [
+        p.stem
+        for p in sorted((src1 / "images").glob("*.jpg"))
+        if p.stem != "card_and_pen"
+    ][:N_SINGLE_CARD]
+    single_stems = uuid_stems + ["card_and_pen"]
+    _process(
+        src1 / "images",
+        src1 / "masks" / "birefnet-general-lite",
+        "1_photos_single_card",
+        single_stems,
+        corners_mode="single",
+    )
+
+    # --- 2_photos_multiple_cards ---
+    print("\n=== 2_photos_multiple_cards ===")
+    src2 = SRC_BASE / "2_photos_multiple_cards"
+    multi_stems = [p.stem for p in sorted((src2 / "images").glob("*.jpg"))]
+    _process(
+        src2 / "images",
+        src2 / "masks" / "birefnet-general-lite",
+        "2_photos_multiple_cards",
+        multi_stems,
+        corners_mode="per_blob",
     )
 
 

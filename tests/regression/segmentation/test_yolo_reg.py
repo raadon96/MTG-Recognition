@@ -14,7 +14,13 @@ from pathlib import Path
 import cv2
 import pytest
 
-from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.engine.segmentation.seg_utils import WARPED_TARGET_SIZE
+from mtg_recognition.engine.segmentation.yolo import (
+    YOLO_SEG_CLASSES,
+    YoloCardSegmentor,
+)
+from mtg_recognition.settings import settings
 
 # ---------------------------------------------------------------------------
 # Test data directories
@@ -22,12 +28,13 @@ from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
 TEST_DATA = Path("data/test")
 
-PHOTOS_SINGLE = TEST_DATA / "1_photos_single_card" / "images"
-PHOTOS_MULTI = TEST_DATA / "2_photos_multiple_cards" / "images"
-SCANS_WITH_BG = TEST_DATA / "3_scans_single_card_with_background" / "images"
-SCANS_WITHOUT_BG = TEST_DATA / "4_scans_single_card_without_background" / "images"
+PHOTOS_SINGLE_CARD = TEST_DATA / "1_photos_single_card" / "images"
+PHOTOS_MULTI_CARD = TEST_DATA / "2_photos_multiple_cards" / "images"
+SCANS_SINGLE_BG = TEST_DATA / "3_scans_single_card_with_bg" / "images"
+SCANS_SINGLE_NO_BG = TEST_DATA / "4_scans_single_card_no_bg" / "images"
 
-_TARGET_SIZE = (488, 680)
+_TARGET_SIZE = WARPED_TARGET_SIZE
+_MAX_DIMENSION = settings.MAX_IMAGE_DIMENSION
 
 
 def _img_paths(directory: Path) -> list[Path]:
@@ -57,10 +64,10 @@ class TestScanWithoutBedBypass:
     one 488×680 segment without calling YOLO."""
 
     @pytest.mark.parametrize(
-        "img_path", _img_paths(SCANS_WITHOUT_BG), ids=lambda p: p.stem
+        "img_path", _img_paths(SCANS_SINGLE_NO_BG), ids=lambda p: p.stem
     )
     def test_bypass_produces_one_segment(self, segmentor, img_path):
-        img = cv2.imread(str(img_path))
+        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
         assert img is not None, f"Could not read {img_path}"
 
         # Verify bypass condition is met
@@ -91,10 +98,10 @@ class TestPhotoSingleCard:
     """Photos of a single card must yield exactly one segment via YOLO."""
 
     @pytest.mark.parametrize(
-        "img_path", _img_paths(PHOTOS_SINGLE), ids=lambda p: p.stem
+        "img_path", _img_paths(PHOTOS_SINGLE_CARD), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = cv2.imread(str(img_path))
+        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
         assert img is not None
 
         result = segmentor.segment(img)
@@ -115,9 +122,11 @@ class TestPhotoSingleCard:
 class TestPhotoMultipleCards:
     """Photos with multiple cards must yield ≥ 2 segments."""
 
-    @pytest.mark.parametrize("img_path", _img_paths(PHOTOS_MULTI), ids=lambda p: p.stem)
+    @pytest.mark.parametrize(
+        "img_path", _img_paths(PHOTOS_MULTI_CARD), ids=lambda p: p.stem
+    )
     def test_multiple_segments_detected(self, segmentor, img_path):
-        img = cv2.imread(str(img_path))
+        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
         assert img is not None
 
         result = segmentor.segment(img)
@@ -139,13 +148,13 @@ class TestPhotoMultipleCards:
 
 @pytest.mark.slow
 class TestScanWithBackground:
-    """Scans with visible scanner bed must yield exactly one segment via YOLO."""
+    """Scans with visible scanner bed background must yield exactly one segment via YOLO."""
 
     @pytest.mark.parametrize(
-        "img_path", _img_paths(SCANS_WITH_BG), ids=lambda p: p.stem
+        "img_path", _img_paths(SCANS_SINGLE_BG), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = cv2.imread(str(img_path))
+        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
         assert img is not None
 
         result = segmentor.segment(img)
@@ -167,11 +176,11 @@ class TestBatchInference:
     """segment_batch must return results in input order and process correctly."""
 
     def test_batch_results_ordered(self, segmentor):
-        single_paths = _img_paths(PHOTOS_SINGLE)
+        single_paths = _img_paths(PHOTOS_SINGLE_CARD)
         if len(single_paths) < 2:
             pytest.skip("Need at least 2 photos for ordering test")
 
-        imgs = [cv2.imread(str(p)) for p in single_paths[:4]]
+        imgs = [load_and_resize_image(str(p), _MAX_DIMENSION) for p in single_paths[:4]]
         results = segmentor.segment_batch(imgs)
 
         assert len(results) == len(imgs)
@@ -181,16 +190,17 @@ class TestBatchInference:
     def test_batch_larger_than_default_batch_size(self, segmentor):
         """Processing > 20 images must still produce correct results."""
         all_paths = (
-            _img_paths(PHOTOS_SINGLE)
-            + _img_paths(PHOTOS_MULTI)
-            + _img_paths(SCANS_WITH_BG)
-            + _img_paths(SCANS_WITHOUT_BG)
+            _img_paths(PHOTOS_SINGLE_CARD)
+            + _img_paths(PHOTOS_MULTI_CARD)
+            + _img_paths(SCANS_SINGLE_BG)
+            + _img_paths(SCANS_SINGLE_NO_BG)
         )
         if len(all_paths) < 21:
             pytest.skip("Need > 20 images to test mini-batch splitting")
 
         imgs = [
-            cv2.imread(str(p)) for p in all_paths[:25] if cv2.imread(str(p)) is not None
+            load_and_resize_image(str(p), settings.MAX_IMAGE_DIMENSION)
+            for p in all_paths[:25]
         ]
         results = segmentor.segment_batch(imgs)
 

@@ -15,19 +15,32 @@ computed from the original, unprocessed image.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
 
-from .box import detect_cards_cv
-from .rembg import CardSegment, ImageSegmentationResult, RembgCardSegmentor
-from .seg_utils import _corners_from_binary_mask, valid_aspect_ratio, warp_card
+from mtg_recognition.settings import settings
 
-# MTG card portrait ratio  63 / 88 ≈ 0.716
-_CARD_RATIO = 63.0 / 88.0
+from .box import detect_cards_cv
+from .rembg import RembgCardSegmentor
+from .seg_utils import (
+    CARD_ASPECT_RATIO,
+    WARPED_TARGET_SIZE,
+    CardSegment,
+    ImageSegmentationResult,
+    corners_from_binary_mask,
+    valid_aspect_ratio,
+    warp_card,
+)
+
+if TYPE_CHECKING:
+    from ultralytics.engine.results import Results
+
 # Allow ±3 % from exact ratio for bypass detection
-_BYPASS_LO = _CARD_RATIO * 0.97  # ≈ 0.694
-_BYPASS_HI = _CARD_RATIO * 1.03  # ≈ 0.737
+_RATIO_TOLERANCE = 0.03
+_BYPASS_LO = CARD_ASPECT_RATIO * (1 - _RATIO_TOLERANCE)  # ≈ 0.694
+_BYPASS_HI = CARD_ASPECT_RATIO * (1 + _RATIO_TOLERANCE)  # ≈ 0.737
 # Outer border strip width as a fraction of the smaller image dimension
 _BYPASS_BORDER_PCT = 0.05
 # Grayscale mean threshold for the border strip:
@@ -36,14 +49,33 @@ _BYPASS_BORDER_PCT = 0.05
 # A threshold of 100 sits in the middle of the 96-point gap between groups.
 _BYPASS_BORDER_MAX_MEAN = 100
 
-_DEFAULT_PREDICT_KWARGS: dict = dict(
-    conf=0.1,  # Higher confidence to filter weak overlaps
-    iou=0.0,  # Lower IoU for more aggressive suppression
-    agnostic_nms=True,  # Prevent overlaps between different classes
-    overlap_mask=False,  # Ensure masks do not overlap at the pixel level
-    max_det=50,
-    verbose=False,
-)
+YOLO_SEG_CLASSES: list[str] = ["book cover", "art work"]
+
+_DEFAULT_PREDICT_KWARGS: dict[str, object] = {
+    "conf": 0.1,  # Higher confidence to filter weak overlaps
+    "iou": 0.0,  # Lower IoU for more aggressive suppression
+    "agnostic_nms": True,  # Prevent overlaps between different classes
+    "overlap_mask": False,  # Ensure masks do not overlap at the pixel level
+    "max_det": 50,
+    "verbose": False,
+}
+
+# preprocess_for_yolo brightness thresholds (L-channel mean, 0–255)
+_L_VERY_DARK = 50
+_L_DARK = 100
+_L_VERY_BRIGHT = 200
+_L_GAMMA_BRIGHT = 180
+
+# CLAHE parameters per brightness band: (clip_limit, tile_grid_size)
+_CLAHE_VERY_DARK = (4.0, 4)
+_CLAHE_DARK = (3.5, 6)
+_CLAHE_VERY_BRIGHT = (2.5, 8)
+_CLAHE_NORMAL = (3.0, 6)
+
+# Gamma correction per brightness band
+_GAMMA_DARK = 1.15
+_GAMMA_BRIGHT = 0.95
+_GAMMA_NORMAL = 1.05
 
 
 class YoloCardSegmentor:
@@ -75,19 +107,20 @@ class YoloCardSegmentor:
         self,
         model_path: str | Path | None = None,
         classes: list[str] | None = None,
-        target_size: tuple[int, int] = (488, 680),
+        target_size: tuple[int, int] = WARPED_TARGET_SIZE,
         aspect_ratio_tolerance: float = 0.2,
         batch_size: int | None = None,
         fallback_enabled: bool = True,
     ):
-        from mtg_recognition.settings import settings
 
         _model_path = Path(model_path) if model_path else settings.YOLO_SEG_MODEL_PATH
-        _classes = classes if classes is not None else settings.YOLO_SEG_CLASSES
+        _classes = classes if classes is not None else YOLO_SEG_CLASSES
 
         from ultralytics import YOLO
 
         self._model = YOLO(str(_model_path), task="segment")
+        if self._model.model is None:
+            raise ValueError(f"Failed to load YOLO model from {_model_path}")
         self._model.set_classes(_classes)
 
         self.target_size = target_size
@@ -102,7 +135,18 @@ class YoloCardSegmentor:
     # ------------------------------------------------------------------
 
     def segment(self, img: np.ndarray) -> ImageSegmentationResult:
-        """Segment all cards from a single image."""
+        """
+        Segment all cards from a single image.
+
+        Convenience wrapper around segment_batch for single-image use.
+
+        Args:
+            img: BGR input image.
+
+        Returns:
+            ImageSegmentationResult with one CardSegment per detected card.
+            segments is empty if no cards were found.
+        """
         return self.segment_batch([img])[0]
 
     def segment_batch(
@@ -116,7 +160,7 @@ class YoloCardSegmentor:
         Args:
             imgs: List of BGR images.
             batch_size: Mini-batch size for YOLO predict calls. Defaults to
-                        self.batch_size (20).
+                        self.batch_size.
 
         Returns:
             One ImageSegmentationResult per input image, in the same order.
@@ -199,7 +243,7 @@ class YoloCardSegmentor:
     # Path 2 — YOLO mask → corners → warp
     # ------------------------------------------------------------------
 
-    def _process_yolo_result(self, img: np.ndarray, result) -> list[CardSegment]:
+    def _process_yolo_result(self, img: np.ndarray, result: Results) -> list[CardSegment]:
         if result.masks is None or len(result.masks.xy) == 0:
             return []
 
@@ -213,7 +257,7 @@ class YoloCardSegmentor:
             mask = np.zeros((h, w), dtype=np.uint8)
             cv2.fillPoly(mask, [polygon.astype(np.int32)], 255)
 
-            corners = _corners_from_binary_mask(mask, erode=False)
+            corners = corners_from_binary_mask(mask, erode=False)
             if corners is None:
                 continue
 
@@ -271,24 +315,24 @@ def preprocess_for_yolo(img: np.ndarray) -> np.ndarray:
         Enhanced BGR image (uint8), same dimensions as input.
     """
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
+    l_channel, a, b = cv2.split(lab)
 
-    l_mean = float(np.mean(l))
-    if l_mean < 50:  # very dark
-        clip, tile = 4.0, 4
-    elif l_mean < 100:  # dark
-        clip, tile = 3.5, 6
-    elif l_mean > 200:  # very bright
-        clip, tile = 2.5, 8
-    else:  # normal
-        clip, tile = 3.0, 6
+    l_mean = float(np.mean(l_channel))
+    if l_mean < _L_VERY_DARK:
+        clip, tile = _CLAHE_VERY_DARK
+    elif l_mean < _L_DARK:
+        clip, tile = _CLAHE_DARK
+    elif l_mean > _L_VERY_BRIGHT:
+        clip, tile = _CLAHE_VERY_BRIGHT
+    else:
+        clip, tile = _CLAHE_NORMAL
 
     clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(tile, tile))
-    l_enhanced = clahe.apply(l)
+    l_enhanced = clahe.apply(l_channel)
 
-    gamma = 1.15 if l_mean < 100 else (0.95 if l_mean > 180 else 1.05)
+    gamma = _GAMMA_DARK if l_mean < _L_DARK else (_GAMMA_BRIGHT if l_mean > _L_GAMMA_BRIGHT else _GAMMA_NORMAL)
     l_gamma = np.power(l_enhanced / 255.0, gamma) * 255.0
     l_gamma = np.clip(l_gamma, 0, 255).astype(np.uint8)
 
-    lab = cv2.merge([l_gamma, a, b])
-    return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    merged = cv2.merge([l_gamma, a, b])
+    return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)

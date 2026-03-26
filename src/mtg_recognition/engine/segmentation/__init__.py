@@ -1,8 +1,5 @@
-from .rembg import (
-    CardSegment,
-    ImageSegmentationResult,
-    RembgCardSegmentor,
-)
+from .rembg import RembgCardSegmentor
+from .seg_utils import CardSegment, ImageSegmentationResult
 from .yolo import YoloCardSegmentor
 
 __all__ = [

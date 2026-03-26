@@ -1,6 +1,8 @@
-"""Shared geometric helpers for card segmentation."""
+"""Shared geometric helpers and result types for card segmentation."""
 
 from __future__ import annotations
+
+from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
@@ -10,10 +12,29 @@ from .geometry import find_corners_lines_intersect, perspective_transform
 # MTG standard card dimensions: 63 mm × 88 mm (portrait)
 CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
 
+# Canonical output size for a perspective-corrected card (width × height, px)
+WARPED_TARGET_SIZE: tuple[int, int] = (488, 680)
 
-def _corners_from_binary_mask(
-    mask: np.ndarray, erode: bool = True
-) -> np.ndarray | None:
+
+@dataclass
+class CardSegment:
+    """A single card extracted and perspective-corrected from a source image."""
+
+    warped_image: np.ndarray  # BGR, resized to target_size
+
+
+@dataclass
+class ImageSegmentationResult:
+    """Segmentation results for one input image. May contain multiple cards."""
+
+    segments: list[CardSegment] = field(default_factory=list)
+
+    @property
+    def success(self) -> bool:
+        return bool(self.segments)
+
+
+def corners_from_binary_mask(mask: np.ndarray, erode: bool = True) -> np.ndarray | None:
     """
     Extract 4 card corners from a binary mask.
 
@@ -55,7 +76,7 @@ def _corners_from_binary_mask(
 def warp_card(
     img: np.ndarray,
     corners: np.ndarray,
-    target_size: tuple[int, int] = (488, 680),
+    target_size: tuple[int, int] = WARPED_TARGET_SIZE,
 ) -> np.ndarray:
     """Perspective-transform, orient to portrait, and resize to target_size."""
     warped = perspective_transform(img, corners)

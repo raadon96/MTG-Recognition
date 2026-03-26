@@ -10,11 +10,20 @@ import cv2
 import numpy as np
 import pytest
 
+from mtg_recognition.engine.segmentation.seg_utils import (
+    CARD_ASPECT_RATIO,
+    WARPED_TARGET_SIZE,
+)
+from mtg_recognition.engine.segmentation.yolo import (
+    _RATIO_TOLERANCE,
+    YoloCardSegmentor,
+)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-_TARGET_SIZE = (488, 680)
+_TARGET_SIZE = WARPED_TARGET_SIZE  # (488, 680)
 
 
 def _make_poly_result(h: int, w: int, card_h: int = 440, card_w: int = 315):
@@ -38,26 +47,30 @@ def _make_empty_result():
 
 
 def _make_segmentor():
-    from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
-
-    seg = YoloCardSegmentor.__new__(YoloCardSegmentor)
+    seg = YoloCardSegmentor.__new__(
+        YoloCardSegmentor
+    )  # allocates the object without calling __init__
     seg.target_size = _TARGET_SIZE
-    seg.aspect_ratio_tolerance = 0.2
+    seg.aspect_ratio_tolerance = _RATIO_TOLERANCE
     seg.batch_size = 20
     seg.fallback_enabled = True
     seg._rembg_segmentor = None
-    seg._model = MagicMock()
+    seg._model = MagicMock()  # fake YOLO model
     return seg
 
 
-def _photo_img(h: int = 900, w: int = 1200):
+def _non_bypass_img():
     """Return a synthetic image whose aspect ratio is NOT in bypass range."""
-    return np.zeros((h, w, 3), dtype=np.uint8)
+    height = 900
+    width = int(height * CARD_ASPECT_RATIO * (1 + 2 * _RATIO_TOLERANCE))
+    return np.zeros((height, width, 3), dtype=np.uint8)
 
 
 def _bypass_img():
     """Return a synthetic image whose aspect ratio IS in bypass range."""
-    return np.zeros((880, 630, 3), dtype=np.uint8)
+    height = 880
+    width = int(height * CARD_ASPECT_RATIO)
+    return np.zeros((height, width, 3), dtype=np.uint8)
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +87,7 @@ class TestBypassPath:
         imgs = [_bypass_img()]
         self.seg._model.predict.return_value = []
         self.seg.segment_batch(imgs)
+        # self.seg._model.predict.return_value = []
         self.seg._model.predict.assert_not_called()
 
     def test_bypass_returns_one_segment(self):
@@ -101,14 +115,14 @@ class TestYoloPath:
         self.seg = _make_segmentor()
 
     def test_yolo_called_for_non_bypass_image(self):
-        imgs = [_photo_img()]
+        imgs = [_non_bypass_img()]
         self.seg._model.predict.return_value = [_make_empty_result()]
         with patch.object(self.seg, "_fallback_segment", return_value=[]):
             self.seg.segment_batch(imgs)
         self.seg._model.predict.assert_called_once()
 
     def test_yolo_returns_one_segment_per_detection(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         h, w = img.shape[:2]
         self.seg._model.predict.return_value = [_make_poly_result(h, w)]
         results = self.seg.segment_batch([img])
@@ -116,7 +130,7 @@ class TestYoloPath:
         assert len(results[0].segments) == 1
 
     def test_segment_output_size(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         h, w = img.shape[:2]
         self.seg._model.predict.return_value = [_make_poly_result(h, w)]
         results = self.seg.segment_batch([img])
@@ -124,7 +138,7 @@ class TestYoloPath:
         assert (out_w, out_h) == _TARGET_SIZE
 
     def test_single_image_convenience_method(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         h, w = img.shape[:2]
         self.seg._model.predict.return_value = [_make_poly_result(h, w)]
         result = self.seg.segment(img)
@@ -143,7 +157,7 @@ class TestMiniBatching:
         self.seg.batch_size = 20
 
     def test_25_images_produce_two_predict_calls(self):
-        imgs = [_photo_img() for _ in range(25)]
+        imgs = [_non_bypass_img() for _ in range(25)]
         self.seg._model.predict.return_value = [_make_empty_result()]
 
         # return value will be recycled; patch to return correct count per call
@@ -162,7 +176,7 @@ class TestMiniBatching:
         assert second_batch_size == 5
 
     def test_20_images_produce_one_predict_call(self):
-        imgs = [_photo_img() for _ in range(20)]
+        imgs = [_non_bypass_img() for _ in range(20)]
 
         def predict_side_effect(batch, **kwargs):
             return [_make_empty_result() for _ in batch]
@@ -177,7 +191,7 @@ class TestMiniBatching:
     def test_result_order_preserved(self):
         """Results must align with input order despite bypass/YOLO splitting."""
         bypass = _bypass_img()
-        photo = _photo_img()
+        photo = _non_bypass_img()
 
         # Arrange: bypass, photo, bypass (indices 0, 1, 2)
         imgs = [bypass, photo, bypass]
@@ -203,7 +217,7 @@ class TestFallbackPath:
         self.seg = _make_segmentor()
 
     def test_fallback_called_when_yolo_returns_no_masks(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         self.seg._model.predict.return_value = [_make_empty_result()]
         with patch.object(self.seg, "_fallback_segment", return_value=[]) as mock_fb:
             self.seg.segment_batch([img])
@@ -211,7 +225,7 @@ class TestFallbackPath:
             assert mock_fb.call_args[0][0] is img  # first arg is original image
 
     def test_fallback_not_called_when_yolo_succeeds(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         h, w = img.shape[:2]
         self.seg._model.predict.return_value = [_make_poly_result(h, w)]
         with patch.object(self.seg, "_fallback_segment", return_value=[]) as mock_fb:
@@ -220,7 +234,7 @@ class TestFallbackPath:
 
     def test_fallback_skipped_when_disabled(self):
         self.seg.fallback_enabled = False
-        img = _photo_img()
+        img = _non_bypass_img()
         self.seg._model.predict.return_value = [_make_empty_result()]
         with patch.object(self.seg, "_fallback_segment", return_value=[]) as mock_fb:
             results = self.seg.segment_batch([img])
@@ -229,7 +243,7 @@ class TestFallbackPath:
 
     def test_rembg_lazy_loaded_only_on_fallback(self):
         assert self.seg._rembg_segmentor is None
-        img = _photo_img()
+        img = _non_bypass_img()
         self.seg._model.predict.return_value = [_make_empty_result()]
 
         with (
@@ -248,7 +262,7 @@ class TestFallbackPath:
             mock_cs.assert_called_once()
 
     def test_cv_fallback_tried_before_rembg(self):
-        img = _photo_img()
+        img = _non_bypass_img()
         self.seg._model.predict.return_value = [_make_empty_result()]
 
         call_order = []

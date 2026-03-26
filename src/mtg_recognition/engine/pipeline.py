@@ -9,7 +9,7 @@ from sqlalchemy.engine.row import Row
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
-from mtg_recognition.engine.segmentation.rembg import ImageSegmentationResult
+from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
 

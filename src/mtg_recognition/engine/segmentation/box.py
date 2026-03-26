@@ -10,8 +10,12 @@ edge cases well.
 import cv2
 import numpy as np
 
-from .rembg import CardSegment
-from .seg_utils import _corners_from_binary_mask, valid_aspect_ratio, warp_card
+from .seg_utils import (
+    CardSegment,
+    corners_from_binary_mask,
+    valid_aspect_ratio,
+    warp_card,
+)
 
 _MIN_SOLIDITY = 0.85
 
@@ -77,7 +81,7 @@ def detect_cards_cv(
             blob_mask = np.zeros(img.shape[:2], dtype=np.uint8)
             cv2.drawContours(blob_mask, [contour], -1, 255, thickness=cv2.FILLED)
 
-            corners = _corners_from_binary_mask(blob_mask, erode=False)
+            corners = corners_from_binary_mask(blob_mask, erode=False)
             if corners is None:
                 continue
 

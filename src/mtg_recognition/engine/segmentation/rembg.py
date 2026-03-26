@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
@@ -12,25 +11,13 @@ from tqdm import tqdm
 
 from mtg_recognition.core.image_utils import load_and_resize_image
 
-from .seg_utils import _corners_from_binary_mask, valid_aspect_ratio, warp_card
-
-
-@dataclass
-class CardSegment:
-    """A single card extracted and perspective-corrected from a source image."""
-
-    warped_image: np.ndarray  # BGR, resized to target_size
-
-
-@dataclass
-class ImageSegmentationResult:
-    """Segmentation results for one input image. May contain multiple cards."""
-
-    segments: list[CardSegment] = field(default_factory=list)
-
-    @property
-    def success(self) -> bool:
-        return bool(self.segments)
+from .seg_utils import (
+    CardSegment,
+    ImageSegmentationResult,
+    corners_from_binary_mask,
+    valid_aspect_ratio,
+    warp_card,
+)
 
 
 class RembgCardSegmentor:
@@ -100,7 +87,7 @@ class RembgCardSegmentor:
                 continue
 
             blob_mask = np.where(labels == label, 255, 0).astype(np.uint8)
-            corners = _corners_from_binary_mask(blob_mask, erode=True)
+            corners = corners_from_binary_mask(blob_mask, erode=True)
             if corners is None:
                 continue
 
@@ -148,7 +135,3 @@ class RembgCardSegmentor:
                     else f"{img_path.stem}_{i}"
                 )
                 cv2.imwrite(str(dst_dir / f"{stem}.jpg"), segment.warped_image)
-
-
-# # Backward-compatible alias
-# CardSegmentor = RembgCardSegmentor
