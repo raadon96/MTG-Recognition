@@ -20,7 +20,7 @@ from mtg_recognition.settings import settings
 
 # --- Streamlit Page Config ---
 st.set_page_config(
-    page_title="MTG Card Recognition",
+    page_title="MTGC Recognizer",
     page_icon="🎴",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -370,7 +370,7 @@ def display_batch_timing_metrics(results):
 
 def main():
     args = parse_args()
-    st.title("MTG Card Recognition")
+    st.title("Decksray MTGC Recognizer")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
     )

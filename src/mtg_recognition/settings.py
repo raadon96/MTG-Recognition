@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     DATA_DIR: Path = Path("data")
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
 
+    # --- Batch processing ---
+    BATCH_SIZE: int = 20  # images per YOLO predict call and per load/match mini-batch
+
     # --- Segmentation ---
     YOLO_SEG_CLASSES: list[str] = ["book cover", "art work"]
 

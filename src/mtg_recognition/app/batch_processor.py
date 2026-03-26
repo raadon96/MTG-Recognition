@@ -11,6 +11,7 @@ import numpy as np
 from sqlalchemy.engine.row import Row
 from sqlmodel import Session
 
+from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.pipeline import Pipeline
 
 
@@ -54,15 +55,24 @@ class BatchProcessor:
         progress_callback: Callable[[int, int, str], None] | None = None,
     ) -> list[BatchResult]:
         """
-        Process a batch of images.
+        Process a batch of images in memory-bounded mini-batches.
 
-        Segmentation is performed in one batched YOLO call (mini-batches of 20)
-        rather than per-image, which significantly reduces inference time when
-        multiple images are provided.
+        Images are loaded, segmented, and matched in chunks of
+        ``settings.BATCH_SIZE`` so that peak memory usage is
+        O(BATCH_SIZE × image_size) regardless of how many images are uploaded.
+
+        Within each mini-batch:
+          1. Load & resize images (longest edge ≤ MAX_IMAGE_DIMENSION).
+          2. Run YOLO batch segmentation.
+          3. Run pHash + OCR matching per segment.
+
+        Results are emitted in the same order as ``image_paths``, with errors
+        appearing inline at their original position.
 
         Args:
             image_paths: List of file paths to process.
-            progress_callback: Optional callback(current_index, total, message).
+            progress_callback: Optional callback(current_index, total, message)
+                               where current_index counts images processed so far.
 
         Returns:
             List of BatchResult objects (one per detected card segment).
@@ -70,108 +80,104 @@ class BatchProcessor:
         if not image_paths:
             return []
 
+        from mtg_recognition.settings import settings
+
         total = len(image_paths)
-
-        # -- Stage A: load all images --------------------------------------
-        if progress_callback:
-            progress_callback(0, total, "Loading images…")
-
-        loaded: list[tuple[int, str, np.ndarray | None, str | None, str | None]] = []
-        # (original_index, image_path, img_array, original_temp_path, error)
-
-        for idx, image_path in enumerate(image_paths):
-            image_file = Path(image_path)
-            try:
-                if not image_file.exists():
-                    raise FileNotFoundError(f"Image file not found: {image_file}")
-                img = cv2.imread(str(image_file))
-                if img is None:
-                    raise ValueError(f"Failed to read image: {image_file}")
-                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                    cv2.imwrite(tmp.name, img)
-                    orig_tmp = tmp.name
-                loaded.append((idx, image_path, img, orig_tmp, None))
-            except Exception as e:
-                loaded.append((idx, image_path, None, None, str(e)))
-
-        # -- Stage B: batch segmentation -----------------------------------
-        valid_entries = [(i, p, img, orig) for i, p, img, orig, err in loaded if img is not None]
-        imgs_to_segment = [img for _, _, img, _ in valid_entries]
-
-        seg_results = []
-        if imgs_to_segment:
-            if progress_callback:
-                progress_callback(0, total, "Segmenting cards…")
-            seg_start = time.perf_counter()
-            seg_results = self.pipeline.segmentor.segment_batch(imgs_to_segment)
-            batch_seg_ms = (time.perf_counter() - seg_start) * 1000.0
-            amortized_seg_ms = batch_seg_ms / len(imgs_to_segment)
-        else:
-            amortized_seg_ms = 0.0
-
-        # -- Stage C: per-segment matching ---------------------------------
         results: list[BatchResult] = []
+        processed = 0
 
-        # First, emit error results for images that failed to load
-        error_by_idx = {
-            i: (p, err) for i, p, img, orig, err in loaded if img is None
-        }
-        for idx, (image_path, err) in sorted(error_by_idx.items()):
-            results.append(BatchResult(
-                uploaded_filename=Path(image_path).name,
-                original_image_path=str(image_path),
-                warped_image=None,
-                best_match=None,
-                best_match_score=None,
-                status="error",
-                error_message=err,
-            ))
+        for batch_start in range(0, total, settings.BATCH_SIZE):
+            batch_paths = image_paths[batch_start : batch_start + settings.BATCH_SIZE]
 
-        for seg_local_idx, (orig_idx, image_path, img, orig_tmp) in enumerate(valid_entries):
-            image_file = Path(image_path)
-            if progress_callback:
-                progress_callback(seg_local_idx, total, f"Matching {image_file.name}")
+            # -- Stage A: load mini-batch --------------------------------------
+            loaded: list[tuple[str, np.ndarray | None, str | None, str | None]] = []
+            # (image_path, img_array, original_temp_path, error)
 
-            seg_result = seg_results[seg_local_idx]
+            for image_path in batch_paths:
+                image_file = Path(image_path)
+                try:
+                    img = load_and_resize_image(image_file)
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                        cv2.imwrite(tmp.name, img)
+                        orig_tmp = tmp.name
+                    loaded.append((image_path, img, orig_tmp, None))
+                except Exception as e:
+                    loaded.append((image_path, None, None, str(e)))
 
-            if not seg_result.success:
-                results.append(BatchResult(
-                    uploaded_filename=image_file.name,
-                    original_image_path=str(image_file),
-                    warped_image=None,
-                    best_match=None,
-                    best_match_score=None,
-                    status="no_match",
-                    original_image_temp_path=orig_tmp,
-                    timings_ms={
-                        "segmentation_ms": amortized_seg_ms,
-                        "phash_ms": 0.0,
-                        "ocr_ms": 0.0,
-                        "total_ms": amortized_seg_ms,
-                    },
-                ))
-                continue
+            # -- Stage B: batch segmentation -----------------------------------
+            valid = [(p, img, orig) for p, img, orig, err in loaded if img is not None]
+            imgs_to_segment = [img for _, img, _ in valid]
 
-            try:
-                results.extend(
-                    self._match_segments(
-                        seg_result.segments,
-                        image_file,
-                        orig_tmp,
-                        amortized_seg_ms,
+            if imgs_to_segment:
+                seg_start = time.perf_counter()
+                seg_results = self.pipeline.segmentor.segment_batch(imgs_to_segment)
+                batch_seg_ms = (time.perf_counter() - seg_start) * 1000.0
+                amortized_seg_ms = batch_seg_ms / len(imgs_to_segment)
+            else:
+                seg_results = []
+                amortized_seg_ms = 0.0
+
+            # -- Stage C: emit results in input order --------------------------
+            seg_idx = 0
+            for image_path, img, orig_tmp, err in loaded:
+                image_file = Path(image_path)
+                processed += 1
+                if progress_callback:
+                    progress_callback(processed, total, f"Matching {image_file.name}")
+
+                if err is not None:
+                    results.append(BatchResult(
+                        uploaded_filename=image_file.name,
+                        original_image_path=str(image_path),
+                        warped_image=None,
+                        best_match=None,
+                        best_match_score=None,
+                        status="error",
+                        error_message=err,
+                    ))
+                    continue
+
+                seg_result = seg_results[seg_idx]
+                seg_idx += 1
+
+                if not seg_result.success:
+                    results.append(BatchResult(
+                        uploaded_filename=image_file.name,
+                        original_image_path=str(image_path),
+                        warped_image=None,
+                        best_match=None,
+                        best_match_score=None,
+                        status="no_match",
+                        original_image_temp_path=orig_tmp,
+                        timings_ms={
+                            "segmentation_ms": amortized_seg_ms,
+                            "phash_ms": 0.0,
+                            "ocr_ms": 0.0,
+                            "total_ms": amortized_seg_ms,
+                        },
+                    ))
+                    continue
+
+                try:
+                    results.extend(
+                        self._match_segments(
+                            seg_result.segments,
+                            image_file,
+                            orig_tmp,
+                            amortized_seg_ms,
+                        )
                     )
-                )
-            except Exception as e:
-                results.append(BatchResult(
-                    uploaded_filename=image_file.name,
-                    original_image_path=str(image_file),
-                    warped_image=None,
-                    best_match=None,
-                    best_match_score=None,
-                    status="error",
-                    error_message=str(e),
-                    original_image_temp_path=orig_tmp,
-                ))
+                except Exception as e:
+                    results.append(BatchResult(
+                        uploaded_filename=image_file.name,
+                        original_image_path=str(image_path),
+                        warped_image=None,
+                        best_match=None,
+                        best_match_score=None,
+                        status="error",
+                        error_message=str(e),
+                        original_image_temp_path=orig_tmp,
+                    ))
 
         if progress_callback:
             progress_callback(total, total, "Processing complete!")
@@ -351,7 +357,6 @@ class BatchProcessor:
             if with_diagnostics and result.timings_ms:
                 item.update(
                     {
-                        # "timings_ms": result.timings_ms,
                         "segmentation_ms": result.timings_ms.get(
                             "segmentation_ms", None
                         ),

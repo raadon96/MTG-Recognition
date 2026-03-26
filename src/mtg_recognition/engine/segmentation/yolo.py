@@ -77,7 +77,7 @@ class YoloCardSegmentor:
         classes: list[str] | None = None,
         target_size: tuple[int, int] = (488, 680),
         aspect_ratio_tolerance: float = 0.2,
-        batch_size: int = 20,
+        batch_size: int | None = None,
         fallback_enabled: bool = True,
     ):
         from mtg_recognition.settings import settings
@@ -92,7 +92,7 @@ class YoloCardSegmentor:
 
         self.target_size = target_size
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
-        self.batch_size = batch_size
+        self.batch_size = batch_size if batch_size is not None else settings.BATCH_SIZE
         self.fallback_enabled = fallback_enabled
 
         self._rembg_segmentor: RembgCardSegmentor | None = None  # lazy
