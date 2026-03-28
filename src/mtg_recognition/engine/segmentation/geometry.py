@@ -1,5 +1,23 @@
+"""Geometric helpers for card corner detection and perspective correction.
+
+All coordinates follow OpenCV's ``(x, y)`` convention. Corner arrays use the
+OpenCV contour format: shape ``(N, 1, 2)`` int32 unless stated otherwise.
+The canonical four-corner order throughout is: top-left, top-right,
+bottom-right, bottom-left (as produced by :func:`order_points`).
+"""
+
 import cv2
 import numpy as np
+
+# ---------------------------------------------------------------------------
+# Module-level constants
+# ---------------------------------------------------------------------------
+
+_MIN_CONTOUR_POINTS: int = 20           # below this, Hough corner detection is unreliable
+_HOUGH_MIN_LENGTH_RATIO: float = 0.10   # minLineLength as a fraction of the canvas diagonal
+_HOUGH_MAX_GAP_RATIO: float = 0.05      # maxLineGap as a fraction of the canvas diagonal
+_ARC_TRIM_FRACTION: float = 0.15        # fraction of arc endpoints trimmed before line fit
+_PARALLEL_DET_THRESHOLD: float = 1e-6   # determinant threshold for near-parallel lines
 
 
 def find_corners_lines_intersect(contour_points: np.ndarray) -> np.ndarray | None:
@@ -17,7 +35,7 @@ def find_corners_lines_intersect(contour_points: np.ndarray) -> np.ndarray | Non
     np.ndarray of shape (4, 1, 2) int32, or None if detection fails.
     """
     contour_xy = contour_points.reshape(-1, 2)
-    if len(contour_xy) < 20:
+    if len(contour_xy) < _MIN_CONTOUR_POINTS:
         return None
 
     corners = _corners_via_hough(contour_xy)
@@ -41,6 +59,9 @@ def _corners_via_hough(contour_xy: np.ndarray) -> np.ndarray | None:
     local_xy = (contour_xy - [x_min, y_min]).astype(np.int32).reshape(-1, 1, 2)
     x_max, y_max = local_xy.reshape(-1, 2).max(axis=0)
 
+    if x_max < 2 or y_max < 2:
+        return None
+
     canvas = np.zeros((y_max + 1, x_max + 1), dtype=np.uint8)
     cv2.drawContours(canvas, [local_xy], -1, 255, 1)
 
@@ -50,8 +71,8 @@ def _corners_via_hough(contour_xy: np.ndarray) -> np.ndarray | None:
         rho=1,
         theta=np.pi / 180,
         threshold=20,
-        minLineLength=int(diag * 0.1),
-        maxLineGap=int(diag * 0.05),
+        minLineLength=int(diag * _HOUGH_MIN_LENGTH_RATIO),
+        maxLineGap=int(diag * _HOUGH_MAX_GAP_RATIO),
     )
     if raw is None or len(raw) < 4:
         return None
@@ -171,7 +192,7 @@ def _corners_via_farthest_split(contour_xy: np.ndarray) -> np.ndarray | None:
     for seg in segments:
         if len(seg) < 2:
             return None
-        trim = int(len(seg) * 0.15)
+        trim = int(len(seg) * _ARC_TRIM_FRACTION)
         seg_t = seg[trim : len(seg) - trim] if len(seg) > 2 * trim + 2 else seg
         line = cv2.fitLine(seg_t.astype(np.float32), cv2.DIST_L2, 0, 0.01, 0.01)
         lines.append(line.flatten())
@@ -186,10 +207,16 @@ def _corners_via_farthest_split(contour_xy: np.ndarray) -> np.ndarray | None:
     return np.array(corners, dtype=np.int32).reshape(4, 1, 2)
 
 
-def compute_intersection(line1, line2):
+def compute_intersection(
+    line1: np.ndarray, line2: np.ndarray
+) -> list[float] | None:
     """
     Finds the intersection point of two lines.
     Each line is given by (vx, vy, x0, y0) from cv2.fitLine.
+
+    Returns
+    -------
+    [x, y] intersection point, or None if the lines are parallel.
     """
     vx1, vy1, x1, y1 = line1
     vx2, vy2, x2, y2 = line2
@@ -204,7 +231,7 @@ def compute_intersection(line1, line2):
     # Solving using determinants (Cramer's Rule equivalent)
     det = vx1 * -vy2 - vy1 * -vx2
 
-    if abs(det) < 1e-6:
+    if abs(det) < _PARALLEL_DET_THRESHOLD:
         return None  # Parallel lines
 
     dx = x2 - x1
@@ -218,14 +245,33 @@ def compute_intersection(line1, line2):
     return [float(x), float(y)]
 
 
-def crop_img(img, bbox, padding_pct=0.1):
+def crop_img(
+    img: np.ndarray,
+    bbox: tuple[int, int, int, int],
+    padding_pct: float = 0.1,
+) -> tuple[np.ndarray, tuple[int, int, int, int]]:
     """
     Crops the image with padding based on the bbox.
-    """
-    # bbox = results[0].boxes.xyxy.numpy().ravel().astype(np.int64)
 
+    Parameters
+    ----------
+    img : np.ndarray
+        Source BGR image.
+    bbox : tuple[int, int, int, int]
+        Bounding box as (x1, y1, x2, y2). Must satisfy x1 < x2 and y1 < y2.
+    padding_pct : float
+        Fractional padding applied to each axis relative to the bbox dimensions.
+
+    Returns
+    -------
+    Cropped image and the actual (cx1, cy1, cx2, cy2) crop coordinates.
+    """
     h_img, w_img = img.shape[:2]
     x1, y1, x2, y2 = bbox
+
+    if x1 >= x2 or y1 >= y2:
+        raise ValueError(f"Invalid bbox: {bbox} — must satisfy x1 < x2 and y1 < y2")
+
     w = x2 - x1
     h = y2 - y1
 
@@ -237,7 +283,6 @@ def crop_img(img, bbox, padding_pct=0.1):
     cx2 = min(w_img, x2 + pad_w)
     cy2 = min(h_img, y2 + pad_h)
 
-    # Return crop and the offset coordinates (to map back later)
     return img[cy1:cy2, cx1:cx2].copy(), (cx1, cy1, cx2, cy2)
 
 
@@ -251,7 +296,7 @@ def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
     Returns:
         List[List[int]]: List of 4 points in the format of [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
     """
-    rect = np.zeros((4, 2), dtype="float32")
+    rect = np.zeros((4, 2), dtype=np.float32)
     pts_arr = np.array(pts)
     s = pts_arr.sum(axis=1)
 
@@ -259,17 +304,28 @@ def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
     rect[0] = pts_arr[np.argmin(s)]
     rect[2] = pts_arr[np.argmax(s)]
 
-    diff = np.diff(pts_arr, axis=1)
+    diff = np.diff(pts_arr, axis=1).ravel()
     # Top-right has smallest diff, Bottom-left has largest
     rect[1] = pts_arr[np.argmin(diff)]
     rect[3] = pts_arr[np.argmax(diff)]
 
-    return rect.astype("int").tolist()
+    return rect.astype(np.intp).tolist()
 
 
-def find_dest(pts):
+def find_dest(pts: list[list[int]]) -> list[list[int]]:
     """
-    Calculate the destination dimensions (width/height) for perspective transform
+    Calculate the destination dimensions (width/height) for perspective transform.
+
+    Parameters
+    ----------
+    pts : list[list[int]]
+        Four corner points in top-left, top-right, bottom-right, bottom-left order
+        (as returned by :func:`order_points`).
+
+    Returns
+    -------
+    list[list[int]]
+        Destination corners in the same canonical order.
     """
     (tl, tr, br, bl) = pts
 
@@ -287,9 +343,9 @@ def find_dest(pts):
         [maxWidth, maxHeight],
         [0, maxHeight],
     ]
-    destination_corners = order_points(destination_corners)
-
-    return destination_corners
+    # order_points is redundant here (corners are already canonical), but kept
+    # to ensure the output contract is satisfied even for degenerate inputs.
+    return order_points(destination_corners)
 
 
 def perspective_transform(
@@ -304,17 +360,19 @@ def perspective_transform(
     img : np.ndarray
         Input image
     corners : np.ndarray
-        4 corner points of the contour in the image
+        4 corner points of the contour in the image, shape (4, 1, 2).
 
     Returns
     -------
     np.ndarray
         Warped image
     """
-    assert corners.shape == (4, 1, 2)
+    if corners.shape != (4, 1, 2):
+        raise ValueError(
+            f"corners must have shape (4, 1, 2), got {corners.shape}"
+        )
 
-    corners = sorted(np.concatenate(corners).tolist())
-    corners = order_points(corners)
+    corners = order_points(np.concatenate(corners).tolist())
 
     dest_corners = find_dest(corners)
     w, h = dest_corners[2][0], dest_corners[2][1]
@@ -325,7 +383,6 @@ def perspective_transform(
     return warped
 
 
-def sharpen(img_bgr):
+def sharpen(img_bgr: np.ndarray) -> np.ndarray:
     kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-    img_bgr = cv2.filter2D(img_bgr, -1, kernel)
-    return img_bgr
+    return cv2.filter2D(img_bgr, -1, kernel)
