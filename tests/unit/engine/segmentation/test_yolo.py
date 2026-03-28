@@ -12,6 +12,7 @@ import pytest
 
 from mtg_recognition.engine.segmentation.seg_utils import (
     CARD_ASPECT_RATIO,
+    WARPED_MAX_SIZE,
     WARPED_MIN_SIZE,
 )
 from mtg_recognition.engine.segmentation.yolo import (
@@ -22,8 +23,6 @@ from mtg_recognition.engine.segmentation.yolo import (
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-_TARGET_SIZE = WARPED_MIN_SIZE
 
 
 def _make_poly_result(h: int, w: int, card_h: int = 440, card_w: int = 315):
@@ -50,7 +49,6 @@ def _make_segmentor():
     seg = YoloCardSegmentor.__new__(
         YoloCardSegmentor
     )  # allocates the object without calling __init__
-    seg.target_size = _TARGET_SIZE
     seg.aspect_ratio_tolerance = _RATIO_TOLERANCE
     seg.batch_size = 20
     seg.fallback_enabled = True
@@ -98,10 +96,17 @@ class TestBypassPath:
         assert len(results[0].segments) == 1
 
     def test_bypass_segment_output_size(self):
+        # The bypass image (630×880) is already within [WARPED_MIN_SIZE, WARPED_MAX_SIZE],
+        # so its natural size is preserved — it is NOT forced to WARPED_MIN_SIZE.
         imgs = [_bypass_img()]
         results = self.seg.segment_batch(imgs)
         h, w = results[0].segments[0].warped_image.shape[:2]
-        assert (w, h) == _TARGET_SIZE
+        from mtg_recognition.engine.segmentation.seg_utils import WARPED_MAX_SIZE
+
+        min_w, min_h = WARPED_MIN_SIZE
+        max_w, max_h = WARPED_MAX_SIZE
+        assert min_w <= w <= max_w and min_h <= h <= max_h
+        assert h >= w  # output is portrait
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +140,9 @@ class TestYoloPath:
         self.seg._model.predict.return_value = [_make_poly_result(h, w)]
         results = self.seg.segment_batch([img])
         out_h, out_w = results[0].segments[0].warped_image.shape[:2]
-        assert (out_w, out_h) == _TARGET_SIZE
+        min_w, min_h = WARPED_MIN_SIZE
+        max_w, max_h = WARPED_MAX_SIZE
+        assert min_w <= out_w <= max_w and min_h <= out_h <= max_h
 
     def test_single_image_convenience_method(self):
         img = _non_bypass_img()

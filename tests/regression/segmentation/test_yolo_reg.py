@@ -15,7 +15,10 @@ import cv2
 import pytest
 
 from mtg_recognition.core.image_utils import load_and_resize_image
-from mtg_recognition.engine.segmentation.seg_utils import WARPED_MIN_SIZE
+from mtg_recognition.engine.segmentation.seg_utils import (
+    WARPED_MAX_SIZE,
+    WARPED_MIN_SIZE,
+)
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.settings import settings
 
@@ -79,10 +82,10 @@ class TestScanWithoutBedBypass:
         assert len(result.segments) == 1, (
             f"{img_path.stem}: expected 1 segment, got {len(result.segments)}"
         )
-        # out_h, out_w = result.segments[0].warped_image.shape[:2]
-        # assert (out_w, out_h) == _TARGET_SIZE, (
-        #     f"{img_path.stem}: expected {_TARGET_SIZE}, got ({out_w}, {out_h})"
-        # )
+        out_h, out_w = result.segments[0].warped_image.shape[:2]
+        min_w, min_h = WARPED_MIN_SIZE
+        max_w, max_h = WARPED_MAX_SIZE
+        assert min_w <= out_w <= max_w and min_h <= out_h <= max_h
 
 
 # ---------------------------------------------------------------------------
@@ -106,8 +109,10 @@ class TestPhotoSingleCard:
         assert len(result.segments) == 1, (
             f"{img_path.stem}: expected 1 segment, got {len(result.segments)}"
         )
-        # out_h, out_w = result.segments[0].warped_image.shape[:2]
-        # assert (out_w, out_h) == _TARGET_SIZE
+        out_h, out_w = result.segments[0].warped_image.shape[:2]
+        min_w, min_h = WARPED_MIN_SIZE
+        max_w, max_h = WARPED_MAX_SIZE
+        assert min_w <= out_w <= max_w and min_h <= out_h <= max_h
 
 
 # ---------------------------------------------------------------------------
@@ -131,11 +136,13 @@ class TestPhotoMultipleCards:
         assert len(result.segments) >= 2, (
             f"{img_path.stem}: expected ≥2 segments, got {len(result.segments)}"
         )
-        # for i, seg in enumerate(result.segments):
-        #     out_h, out_w = seg.warped_image.shape[:2]
-        #     assert (out_w, out_h) == _TARGET_SIZE, (
-        #         f"{img_path.stem} segment {i}: unexpected size ({out_w}, {out_h})"
-        #     )
+        for i, seg in enumerate(result.segments):
+            out_h, out_w = seg.warped_image.shape[:2]
+            min_w, min_h = WARPED_MIN_SIZE
+            max_w, max_h = WARPED_MAX_SIZE
+            assert min_w <= out_w <= max_w and min_h <= out_h <= max_h, (
+                f"{img_path.stem} segment {i}: unexpected size ({out_w}, {out_h})"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -159,8 +166,12 @@ class TestScanWithBackground:
         assert len(result.segments) == 1, (
             f"{img_path.stem}: expected 1 segment, got {len(result.segments)}"
         )
-        # out_h, out_w = result.segments[0].warped_image.shape[:2]
-        # assert (out_w, out_h) == _TARGET_SIZE
+        out_h, out_w = result.segments[0].warped_image.shape[:2]
+        min_w, min_h = WARPED_MIN_SIZE
+        max_w, max_h = WARPED_MAX_SIZE
+        assert min_w <= out_w <= max_w and min_h <= out_h <= max_h, (
+            f"{img_path.stem}: unexpected size ({out_w}, {out_h})"
+        )
 
 
 # ---------------------------------------------------------------------------

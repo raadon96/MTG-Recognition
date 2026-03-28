@@ -252,17 +252,17 @@ def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
         List[List[int]]: List of 4 points in the format of [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
     """
     rect = np.zeros((4, 2), dtype="float32")
-    pts = np.array(pts)
-    s = pts.sum(axis=1)
+    pts_arr = np.array(pts)
+    s = pts_arr.sum(axis=1)
 
     # Top-left has smallest sum, Bottom-right has largest
-    rect[0] = pts[np.argmin(s)]
-    rect[2] = pts[np.argmax(s)]
+    rect[0] = pts_arr[np.argmin(s)]
+    rect[2] = pts_arr[np.argmax(s)]
 
-    diff = np.diff(pts, axis=1)
+    diff = np.diff(pts_arr, axis=1)
     # Top-right has smallest diff, Bottom-left has largest
-    rect[1] = pts[np.argmin(diff)]
-    rect[3] = pts[np.argmax(diff)]
+    rect[1] = pts_arr[np.argmin(diff)]
+    rect[3] = pts_arr[np.argmax(diff)]
 
     return rect.astype("int").tolist()
 

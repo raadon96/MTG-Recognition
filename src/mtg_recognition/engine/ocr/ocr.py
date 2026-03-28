@@ -163,8 +163,12 @@ class CardOCR:
         ]
 
         if self._use_preprocessing:
-            name_roi_img = preprocess_for_ocr(name_roi_img, upscale=False, enhance=False, deblur=False)
-            info_roi_img = preprocess_for_ocr(info_roi_img, upscale=True, enhance=True, deblur=True)
+            name_roi_img = preprocess_for_ocr(
+                name_roi_img, upscale=False, enhance=False, deblur=False
+            )
+            info_roi_img = preprocess_for_ocr(
+                info_roi_img, upscale=True, enhance=False, deblur=False
+            )
 
         # Perform OCR on both ROIs in a single batched predict call
         batch_result = self._paddleocr.predict(

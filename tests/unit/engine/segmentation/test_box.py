@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from mtg_recognition.engine.segmentation.box import detect_cards_cv
+from mtg_recognition.engine.segmentation.seg_utils import WARPED_MIN_SIZE
 
 
 def _make_card_on_background(
@@ -34,12 +35,14 @@ class TestDetectCardsCv:
         segments = detect_cards_cv(img)
         assert len(segments) == 1
 
-    def test_output_size_matches_target(self):
+    def test_small_card_output_clamped_to_min_size(self):
+        # Synthetic card (315×440) is smaller than WARPED_MIN_SIZE on both axes,
+        # so the natural warp is clamped up to WARPED_MIN_SIZE.
         img = _make_card_on_background()
-        segments = detect_cards_cv(img, target_size=(488, 680))
+        segments = detect_cards_cv(img)
         assert len(segments) == 1
         h, w = segments[0].warped_image.shape[:2]
-        assert (w, h) == (488, 680)
+        assert (w, h) == WARPED_MIN_SIZE
 
     def test_blank_image_returns_empty(self):
         img = np.full((900, 700, 3), 200, dtype=np.uint8)

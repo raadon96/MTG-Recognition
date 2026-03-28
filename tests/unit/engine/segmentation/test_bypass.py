@@ -129,16 +129,19 @@ class TestBypassWarp:
         return _make_segmentor()
 
     def test_portrait_output_size(self, seg):
+        # 630×880 is within [WARPED_MIN_SIZE, WARPED_MAX_SIZE] — natural size preserved
         img = np.zeros((880, 630, 3), dtype=np.uint8)
         segment = seg._bypass_warp(img)
         h, w = segment.warped_image.shape[:2]
-        assert (w, h) == WARPED_MIN_SIZE
+        assert (w, h) == (630, 880)
 
     def test_landscape_rotated_to_portrait(self, seg):
+        # 880×630 landscape → rotated to 630×880 portrait, then natural size preserved
         img = np.zeros((630, 880, 3), dtype=np.uint8)
         segment = seg._bypass_warp(img)
         h, w = segment.warped_image.shape[:2]
-        assert (w, h) == WARPED_MIN_SIZE
+        assert h > w  # portrait orientation
+        assert (w, h) == (630, 880)
 
     def test_output_is_3_channel(self, seg):
         img = np.zeros((880, 630, 3), dtype=np.uint8)
