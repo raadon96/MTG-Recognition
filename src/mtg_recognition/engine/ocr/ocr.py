@@ -1,3 +1,17 @@
+"""
+# A: baseline (server det, no preprocessing)
+uv run python -m mtg_recognition.engine.ocr.ocr
+
+# B: server det + preprocessing (sanity check overhead)
+uv run python -m mtg_recognition.engine.ocr.ocr --preprocess
+
+# C: mobile det, no preprocessing
+uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile
+
+# D: mobile det + preprocessing (target config)
+uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile --preprocess
+"""
+
 from pathlib import Path
 from typing import NamedTuple
 
@@ -13,6 +27,7 @@ from sqlalchemy.engine.row import Row
 import mtg_recognition.settings
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.ocr import ocr_utils
+from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS: list[dict] = [
@@ -60,9 +75,9 @@ class CardOCR:
     INFO_ROI_LEFT = 0.05
     INFO_ROI_RIGHT = 0.76
 
-    def __init__(self, enable_hpi=True, det_mobile=False):
-        enable_hpi = enable_hpi
+    def __init__(self, enable_hpi=False, det_mobile=False, use_preprocessing=False):
         cfg = None
+        self._use_preprocessing = use_preprocessing
 
         if enable_hpi:
             cfg = load_pipeline_config("OCR")
@@ -79,6 +94,17 @@ class CardOCR:
                 "auto_paddle2onnx": False,  # optional but useful to prevent ONNX conversion attempts
             }
 
+        if det_mobile:
+            det_model_name = "PP-OCRv5_mobile_det"
+            det_model_dir = (
+                "src/mtg_recognition/engine/ocr/models/test/PP-OCRv5_mobile_det"
+            )
+        else:
+            det_model_name = "PP-OCRv5_server_det"
+            det_model_dir = (
+                "src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det"
+            )
+
         self._paddleocr = PaddleOCR(
             paddlex_config=cfg,
             # document orientation correction (corrects orientation of document images)
@@ -90,12 +116,9 @@ class CardOCR:
             doc_unwarping_model_name=None,
             # textline orientation classification (corrects the orientation of text lines)
             use_textline_orientation=False,
-            # textline_orientation_model_name="PP-LCNet_x1_0_doc_ori",
             # text detection (locating and marking text-containing regions in images)
-            text_detection_model_name="PP-OCRv5_server_det",
-            text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det",
-            # text_detection_model_name="PP-OCRv5_mobile_det",
-            # text_detection_model_dir="src/mtg_recognition/engine/ocr/models/test/PP-OCRv5_mobile_det",
+            text_detection_model_name=det_model_name,
+            text_detection_model_dir=det_model_dir,
             # text recognition
             text_recognition_model_name="PP-OCRv5_mobile_rec",
             text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",
@@ -139,9 +162,18 @@ class CardOCR:
             int(w * self.INFO_ROI_LEFT) : int(w * self.INFO_ROI_RIGHT),
         ]
 
-        # Perform OCR on each ROI
-        texts_name_roi, scores_name_roi = self.predict(name_roi_img)
-        texts_info_roi, scores_info_roi = self.predict(info_roi_img)
+        if self._use_preprocessing:
+            name_roi_img = preprocess_for_ocr(name_roi_img, upscale=False, enhance=False, deblur=False)
+            info_roi_img = preprocess_for_ocr(info_roi_img, upscale=True, enhance=True, deblur=True)
+
+        # Perform OCR on both ROIs in a single batched predict call
+        batch_result = self._paddleocr.predict(
+            [name_roi_img, info_roi_img], text_det_thresh=0.0
+        )
+        texts_name_roi = batch_result[0]["rec_texts"]
+        scores_name_roi = batch_result[0]["rec_scores"]
+        texts_info_roi = batch_result[1]["rec_texts"]
+        scores_info_roi = batch_result[1]["rec_scores"]
 
         # Extract structured properties from OCR texts
         name = ocr_utils.extract_card_name(texts_name_roi)
@@ -271,10 +303,22 @@ class CardOCR:
 @click.option(
     "--enable-hpi",
     type=bool,
-    is_flag=True,
+    is_flag=False,
     help="Enable high-performance inference (HPI) for OCR models",
 )
-def main(input, enable_hpi):
+@click.option(
+    "--det-mobile",
+    is_flag=True,
+    default=False,
+    help="Use PP-OCRv5_mobile_det instead of PP-OCRv5_server_det",
+)
+@click.option(
+    "--preprocess",
+    is_flag=True,
+    default=False,
+    help="Apply lightweight preprocessing (2x upscale + CLAHE + unsharp mask) to ROI crops before OCR",
+)
+def main(input, enable_hpi, det_mobile, preprocess):
     if input.is_file():
         img_paths = [input]
     elif input.is_dir():
@@ -284,7 +328,9 @@ def main(input, enable_hpi):
         print(f"No .jpg images found in: {input}")
         return
 
-    ocr = CardOCR(enable_hpi=enable_hpi)
+    ocr = CardOCR(
+        enable_hpi=enable_hpi, det_mobile=det_mobile, use_preprocessing=preprocess
+    )
     from ..matching.phash_matcher import PHashCardMatcher
 
     matcher = PHashCardMatcher(auto_build=True)
@@ -318,5 +364,3 @@ def main(input, enable_hpi):
 
 if __name__ == "__main__":
     main()
-
-# uv run python -m mtg_recognition.engine.ocr.ocr --enable-hpi

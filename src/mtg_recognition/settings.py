@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # --- Upload / preprocessing ---
     MAX_UPLOAD_SIZE_MB: int = 25
-    MAX_IMAGE_DIMENSION: int = 1280  # Constrain longest edge (720p)
+    MAX_IMAGE_DIMENSION: int = 2048  # Constrain longest edge
     JPEG_QUALITY: int = 90
 
     # --- Data paths ---

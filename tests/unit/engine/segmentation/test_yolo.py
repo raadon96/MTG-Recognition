@@ -12,7 +12,7 @@ import pytest
 
 from mtg_recognition.engine.segmentation.seg_utils import (
     CARD_ASPECT_RATIO,
-    WARPED_TARGET_SIZE,
+    WARPED_MIN_SIZE,
 )
 from mtg_recognition.engine.segmentation.yolo import (
     _RATIO_TOLERANCE,
@@ -23,7 +23,7 @@ from mtg_recognition.engine.segmentation.yolo import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-_TARGET_SIZE = WARPED_TARGET_SIZE  # (488, 680)
+_TARGET_SIZE = WARPED_MIN_SIZE
 
 
 def _make_poly_result(h: int, w: int, card_h: int = 440, card_w: int = 315):

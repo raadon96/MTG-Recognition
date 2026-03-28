@@ -12,8 +12,14 @@ from .geometry import find_corners_lines_intersect, perspective_transform
 # MTG standard card dimensions: 63 mm × 88 mm (portrait)
 CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
 
-# Canonical output size for a perspective-corrected card (width × height, px)
-WARPED_TARGET_SIZE: tuple[int, int] = (488, 680)
+# Canonical minimum output size for a perspective-corrected card (width × height),
+# consistent with Scryfall "medium" card size and the precomputed pHash index.
+WARPED_MIN_SIZE: tuple[int, int] = (488, 680)
+
+# Maximum output size for a warped card. Natural warp resolution is clamped to
+# this ceiling so that close-up phone photos don't produce unbounded images.
+# 2× WARPED_MIN_SIZE keeps per-card memory and temp-file sizes predictable.
+WARPED_MAX_SIZE: tuple[int, int] = (976, 1360)
 
 
 @dataclass
@@ -73,16 +79,44 @@ def corners_from_binary_mask(mask: np.ndarray, erode: bool = True) -> np.ndarray
     return None
 
 
+def clamp_size(
+    size: tuple[int, int],
+    min_size: tuple[int, int],
+    max_size: tuple[int, int],
+) -> tuple[int, int]:
+    """Clamp a (width, height) size to be within the given min and max bounds."""
+    w, h = size
+    min_w, min_h = min_size
+    max_w, max_h = max_size
+    out_w = min(max(w, min_w), max_w)
+    out_h = min(max(h, min_h), max_h)
+    return out_w, out_h
+
+
 def warp_card(
     img: np.ndarray,
     corners: np.ndarray,
-    target_size: tuple[int, int] = WARPED_TARGET_SIZE,
+    target_size: tuple[int, int] | None = None,
 ) -> np.ndarray:
-    """Perspective-transform, orient to portrait, and resize to target_size."""
+    """Perspective-transform, orient to portrait, and size the output.
+
+    If target_size is None (default), the output resolution is the natural size
+    derived from the corner distances (as computed by perspective_transform),
+    clamped between WARPED_MIN_SIZE (minimum) and WARPED_MAX_SIZE (maximum).
+    Pass an explicit target_size to force a specific output resolution.
+    """
     warped = perspective_transform(img, corners)
     h, w = warped.shape[:2]
     if w > h:
         warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
+        h, w = w, h
+
+    if target_size is None:
+        out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+        if (out_w, out_h) == (w, h):
+            return warped
+        return cv2.resize(warped, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+
     return cv2.resize(warped, target_size, interpolation=cv2.INTER_LANCZOS4)
 
 

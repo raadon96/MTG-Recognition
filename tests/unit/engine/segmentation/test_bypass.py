@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.seg_utils import WARPED_TARGET_SIZE
+from mtg_recognition.engine.segmentation.seg_utils import WARPED_MIN_SIZE
 from mtg_recognition.engine.segmentation.yolo import (
     _BYPASS_HI,
     _BYPASS_LO,
@@ -15,7 +15,7 @@ from mtg_recognition.engine.segmentation.yolo import (
 
 def _make_segmentor() -> YoloCardSegmentor:
     seg = YoloCardSegmentor.__new__(YoloCardSegmentor)
-    seg.target_size = WARPED_TARGET_SIZE
+    seg.target_size = WARPED_MIN_SIZE
     seg.aspect_ratio_tolerance = 0.2
     seg.batch_size = 20
     seg.fallback_enabled = True
@@ -91,10 +91,10 @@ class TestIsScanWithoutBg:
         # Isolates the border brightness check from the all-zeros ratio tests above.
         img = np.full((880, 630, 3), 128, dtype=np.uint8)  # bright interior
         bh, bw = int(880 * 0.05), int(630 * 0.05)
-        img[:bh, :] = 0    # top border: black
-        img[-bh:, :] = 0   # bottom border: black
-        img[:, :bw] = 0    # left border: black
-        img[:, -bw:] = 0   # right border: black
+        img[:bh, :] = 0  # top border: black
+        img[-bh:, :] = 0  # bottom border: black
+        img[:, :bw] = 0  # left border: black
+        img[:, -bw:] = 0  # right border: black
         assert seg._is_scan_without_bg(img) is True
 
     def test_bright_border_rejected(self, seg):
@@ -132,13 +132,13 @@ class TestBypassWarp:
         img = np.zeros((880, 630, 3), dtype=np.uint8)
         segment = seg._bypass_warp(img)
         h, w = segment.warped_image.shape[:2]
-        assert (w, h) == WARPED_TARGET_SIZE
+        assert (w, h) == WARPED_MIN_SIZE
 
     def test_landscape_rotated_to_portrait(self, seg):
         img = np.zeros((630, 880, 3), dtype=np.uint8)
         segment = seg._bypass_warp(img)
         h, w = segment.warped_image.shape[:2]
-        assert (w, h) == WARPED_TARGET_SIZE
+        assert (w, h) == WARPED_MIN_SIZE
 
     def test_output_is_3_channel(self, seg):
         img = np.zeros((880, 630, 3), dtype=np.uint8)

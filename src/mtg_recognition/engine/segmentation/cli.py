@@ -2,11 +2,24 @@
 CLI for card segmentation.
 
 Usage examples:
-    uv run python -m mtg_recognition.engine.segmentation.cli \\
-        -i data/test/1_photos_single_card/images -o output/seg --mode auto
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i data/test/1_photos_single_card/images -o output/1.0_seg/1_photos_single_card --mode auto
 
-    uv run python -m mtg_recognition.engine.segmentation.cli \\
-        -i photo.jpg -o output/seg --mode yolo
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i data/test/2_photos_multiple_cards/images -o output/1.0_seg/2_photos_multiple_cards --mode auto
+
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i data/test/3_scans_single_card_with_bg/images -o output/1.0_seg/3_scans_single_card_with_bg --mode auto
+
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i data/test/4_scans_single_card_no_bg/images -o output/1.0_seg/4_scans_single_card_no_bg --mode auto
+
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i data/test/5_scans_multiple_cards/images -o output/1.0_seg/5_scans_multiple_cards --mode auto
+
+
+    uv run python -m mtg_recognition.engine.segmentation.cli \
+        -i photo.jpg -o output/1.0_seg --mode yolo
 """
 
 from __future__ import annotations
@@ -65,7 +78,8 @@ def main(input_path: Path, output_dir: Path, mode: str) -> None:
 
     saved = 0
     for img_path in tqdm(img_paths, desc="Segmenting"):
-        img = load_and_resize_image(img_path)
+        # img = load_and_resize_image(img_path)
+        img = cv2.imread(img_path)
         result = segmentor.segment(img)
         if not result.success:
             click.echo(f"  no card detected: {img_path.name}", err=True)

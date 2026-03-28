@@ -1,83 +1,109 @@
 import cv2
 import numpy as np
 
+# Module-level CLAHE — tileGridSize (4, 4) works better than (8, 8) for small text
+# on dark card borders where local contrast regions are narrow.
+_CLAHE = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
 
-def enhance_image(img: np.ndarray) -> np.ndarray:
-    """Internal method: Enhance image quality with text-optimized preprocessing."""
-    # Step 1: Light denoising - preserve sharpness
-    denoised = cv2.bilateralFilter(img, d=5, sigmaColor=50, sigmaSpace=50)
+# Adaptive upscaling constants for info ROI.
+# PP-OCRv5_mobile_rec native input height is 48 px; text below ~32 px degrades.
+# RATIO_TEXT_TO_CROP: approximate fraction of the crop height occupied by text lines.
+TARGET_TEXT_HEIGHT: int = 48
+RATIO_TEXT_TO_CROP: float = 0.15
+MIN_UPSCALE: float = 1.0
+MAX_UPSCALE: float = 4.0
 
-    # Step 2: Convert to LAB color space
-    lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
 
-    # Step 3: Adaptive CLAHE optimized for text clarity
-    l_mean = np.mean(l)
-    if l_mean < 50:  # Very dark
-        clahe_clip_limit = 4.0  # Higher for dark images
-        clahe_tile_size = 4  # Smaller tiles for text
-    elif l_mean < 100:  # Dark
-        clahe_clip_limit = 3.5
-        clahe_tile_size = 6  # Smaller tiles for text
-    elif l_mean > 200:  # Very bright
-        clahe_clip_limit = 2.5
-        clahe_tile_size = 8
-    else:  # Normal
-        clahe_clip_limit = 3.0  # Higher for text contrast
-        clahe_tile_size = 6  # Smaller tiles for text
+def _wiener_deconvolve(
+    channel: np.ndarray, sigma: float = 1.5, snr: float = 40.0
+) -> np.ndarray:
+    """Wiener deconvolution with an isotropic Gaussian PSF on a single-channel image.
 
-    clahe = cv2.createCLAHE(
-        clipLimit=clahe_clip_limit, tileGridSize=(clahe_tile_size, clahe_tile_size)
-    )
-    l_enhanced = clahe.apply(l)
+    Operates entirely in the frequency domain (FFT). The Gaussian PSF models the
+    mild, diffuse softness observed in phone-camera card crops. snr controls the
+    sharpening/artifact trade-off: lower = more conservative.
 
-    # Step 4: Contrast stretching for text regions
-    p2, p98 = np.percentile(l_enhanced, (2, 98))
-    if p98 > p2:
-        l_contrast = np.clip((l_enhanced - p2) * 255.0 / (p98 - p2), 0, 255).astype(
-            np.uint8
-        )
+    Args:
+        channel: Single-channel uint8 image (H×W)
+        sigma: Gaussian PSF standard deviation in pixels (in the upscaled image space)
+        snr: Signal-to-noise ratio; lower values produce gentler deconvolution
+
+    Returns:
+        Deconvolved single-channel uint8 image
+    """
+    rows, cols = channel.shape
+
+    # Build Gaussian PSF centered at the image centre, then shift to (0, 0)
+    # so it aligns with numpy's FFT frequency-zero convention.
+    cy, cx = rows // 2, cols // 2
+    y, x = np.ogrid[-cy : rows - cy, -cx : cols - cx]
+    psf = np.exp(-(x**2 + y**2) / (2 * sigma**2)).astype(np.float32)
+    psf /= psf.sum()
+    psf = np.fft.ifftshift(psf)
+
+    H = np.fft.fft2(psf)
+    G = np.fft.fft2(channel.astype(np.float32) / 255.0)
+
+    # Wiener formula: H* / (|H|² + 1/SNR) · G
+    noise_power = 1.0 / snr
+    F_hat = np.conj(H) / (np.abs(H) ** 2 + noise_power) * G
+
+    restored = np.fft.ifft2(F_hat).real
+    return np.clip(restored * 255.0, 0, 255).astype(np.uint8)
+
+
+def preprocess_for_ocr(
+    img: np.ndarray, upscale: bool = True, enhance: bool = False, deblur: bool = False
+) -> np.ndarray:
+    """Lightweight preprocessing to improve OCR text detection on card ROI crops.
+
+    Pipeline:
+    1. [upscale=True only] Adaptive upscale — scales so text reaches TARGET_TEXT_HEIGHT px,
+       clamped to [MIN_UPSCALE, MAX_UPSCALE]. Skip for name ROI (text is already large).
+    2. [deblur=True only] Wiener deconvolution on L channel — reduces mild camera softness.
+    3. CLAHE on L channel — normalises local contrast (fine tiles for dark borders).
+    4. Mild unsharp mask — sharpens text edges.
+
+    Args:
+        img: BGR image (numpy array)
+        upscale: Adaptively upscale so text reaches TARGET_TEXT_HEIGHT pixels.
+                 Enable for info ROI (small text). Skip for name ROI (large text).
+        enhance: Apply CLAHE and unsharp mask (steps 2–4). When False, only
+                 the upscale step runs (or nothing if upscale is also False).
+        deblur: Apply Gaussian Wiener deconvolution before CLAHE. Only has
+                effect when enhance=True. Enable for info ROI (small text,
+                prone to blur). Skip for name ROI (large text).
+
+    Returns:
+        Preprocessed BGR image (upscaled if upscale=True, otherwise same size as input)
+    """
+    h, w = img.shape[:2]
+
+    # Step 1: Adaptive upscale (info ROI only)
+    if upscale:
+        s = TARGET_TEXT_HEIGHT / (h * RATIO_TEXT_TO_CROP)
+        s = max(MIN_UPSCALE, min(s, MAX_UPSCALE))
+        new_w, new_h = int(round(w * s)), int(round(h * s))
+        enhanced = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
     else:
-        l_contrast = l_enhanced
+        enhanced = img
 
-    # Step 5: Gamma correction optimized for text readability
-    gamma = 1.15 if l_mean < 100 else (0.95 if l_mean > 180 else 1.05)
-    l_gamma = np.power(l_contrast / 255.0, gamma) * 255.0
-    l_gamma = np.clip(l_gamma, 0, 255).astype(np.uint8)
+    if enhance:
+        # Step 2: Convert to LAB, extract L channel
+        lab = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
 
-    # Step 6: Text-specific sharpening
-    # Kernel-based sharpening
-    kernel_sharpen = np.array(
-        [[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]], dtype=np.float32
-    )
-    l_sharpened_kernel = cv2.filter2D(l_gamma, -1, kernel_sharpen)
-    l_sharpened_kernel = np.clip(l_sharpened_kernel, 0, 255).astype(np.uint8)
+        # Step 3 (info ROI only): Wiener deconvolution before contrast enhancement
+        if deblur:
+            l = _wiener_deconvolve(l, sigma=1.5, snr=40.0)
 
-    # Unsharp masking with moderate parameters (avoid over-sharpening)
-    l_blurred = cv2.GaussianBlur(l_gamma, (0, 0), 1.2)
-    l_sharpened = cv2.addWeighted(l_gamma, 1.6, l_blurred, -0.6, 0)
-    l_sharpened = np.clip(l_sharpened, 0, 255).astype(np.uint8)
+        # Step 4: CLAHE on L channel
+        l_enhanced = _CLAHE.apply(l)
 
-    # Combine both sharpening methods with lighter weights
-    l_sharpened = cv2.addWeighted(l_sharpened, 0.7, l_sharpened_kernel, 0.3, 0)
-    l_sharpened = np.clip(l_sharpened, 0, 255).astype(np.uint8)
-
-    # Step 7: White balance correction (simple gray world assumption)
-    enhanced_bgr_temp = cv2.cvtColor(cv2.merge([l_sharpened, a, b]), cv2.COLOR_LAB2BGR)
-    b_ch, g_ch, r_ch = cv2.split(enhanced_bgr_temp)
-    b_mean, g_mean, r_mean = np.mean(b_ch), np.mean(g_ch), np.mean(r_ch)
-    gray_mean = (b_mean + g_mean + r_mean) / 3.0
-
-    if gray_mean > 0:
-        b_balanced = np.clip(b_ch * (gray_mean / b_mean), 0, 255).astype(np.uint8)
-        g_balanced = np.clip(g_ch * (gray_mean / g_mean), 0, 255).astype(np.uint8)
-        r_balanced = np.clip(r_ch * (gray_mean / r_mean), 0, 255).astype(np.uint8)
-        enhanced_bgr_temp = cv2.merge([b_balanced, g_balanced, r_balanced])
-
-    # Merge and convert back
-    lab = cv2.cvtColor(enhanced_bgr_temp, cv2.COLOR_BGR2LAB)
-    l_final, a_final, b_final = cv2.split(lab)
-    lab = cv2.merge([l_sharpened, a_final, b_final])
-    enhanced = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+        # Step 5: Merge back and mild unsharp mask
+        lab = cv2.merge([l_enhanced, a, b])
+        enhanced = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+        blurred = cv2.GaussianBlur(enhanced, (0, 0), 1.0)
+        enhanced = cv2.addWeighted(enhanced, 1.5, blurred, -0.5, 0)
 
     return enhanced

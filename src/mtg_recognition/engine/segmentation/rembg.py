@@ -38,21 +38,18 @@ class RembgCardSegmentor:
     def __init__(
         self,
         model_name: str = "silueta",
-        target_size: tuple[int, int] = (488, 680),
         min_area_fraction: float = 0.01,
         aspect_ratio_tolerance: float = 0.2,
     ):
         """
         Args:
             model_name: rembg model name. "silueta" is recommended for cards.
-            target_size: Output (width, height) of each warped card image.
             min_area_fraction: Blobs smaller than this fraction of the total
                                image area are discarded as noise.
             aspect_ratio_tolerance: Allowed relative deviation from the MTG card
                                     aspect ratio (0.716). 0.2 accepts [0.57, 0.86].
         """
         self._session = new_session(model_name)
-        self.target_size = target_size
         self.min_area_fraction = min_area_fraction
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
 
@@ -94,9 +91,7 @@ class RembgCardSegmentor:
             if not valid_aspect_ratio(corners, self.aspect_ratio_tolerance):
                 continue
 
-            segments.append(
-                CardSegment(warped_image=warp_card(img, corners, self.target_size))
-            )
+            segments.append(CardSegment(warped_image=warp_card(img, corners)))
 
         return ImageSegmentationResult(segments=segments)
 

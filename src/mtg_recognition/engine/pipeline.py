@@ -19,7 +19,9 @@ class Pipeline:
         auto_build: bool = True,
         segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
-        ocr: CardOCR = CardOCR(),
+        ocr: CardOCR = CardOCR(
+            det_mobile=True, enable_hpi=False, use_preprocessing=False
+        ),
     ):
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
         self.phash_matcher = phash_matcher
@@ -169,6 +171,9 @@ def main(input: Path, k: int, n: int):
         img_paths = [input]
     elif input.is_dir():
         img_paths = sorted(list(input.glob("*.jpg")))
+    else:
+        print(f"Input path does not exist: {input}")
+        return
 
     if not img_paths:
         print(f"No .jpg images found in: {input}")

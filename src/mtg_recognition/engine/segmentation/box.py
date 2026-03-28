@@ -22,7 +22,6 @@ _MIN_SOLIDITY = 0.85
 
 def detect_cards_cv(
     img: np.ndarray,
-    target_size: tuple[int, int] = (488, 680),
     min_area_fraction: float = 0.01,
     max_area_fraction: float = 0.90,
     aspect_ratio_tolerance: float = 0.2,
@@ -37,7 +36,6 @@ def detect_cards_cv(
 
     Args:
         img: BGR input image (used for detection; may be preprocessed).
-        target_size: Output (width, height) for each warped card.
         min_area_fraction: Contours whose area is below this fraction of the
                            total image area are discarded as noise.
         max_area_fraction: Contours whose area exceeds this fraction are
@@ -89,7 +87,7 @@ def detect_cards_cv(
                 continue
 
             segments.append(
-                CardSegment(warped_image=warp_card(warp_from, corners, target_size))
+                CardSegment(warped_image=warp_card(warp_from, corners))
             )
 
         if segments:

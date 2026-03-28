@@ -26,9 +26,11 @@ from .box import detect_cards_cv
 from .rembg import RembgCardSegmentor
 from .seg_utils import (
     CARD_ASPECT_RATIO,
-    WARPED_TARGET_SIZE,
+    WARPED_MAX_SIZE,
+    WARPED_MIN_SIZE,
     CardSegment,
     ImageSegmentationResult,
+    clamp_size,
     corners_from_binary_mask,
     valid_aspect_ratio,
     warp_card,
@@ -60,7 +62,7 @@ _DEFAULT_PREDICT_KWARGS: dict[str, object] = {
     "verbose": False,
 }
 
-# preprocess_for_yolo brightness thresholds (L-channel mean, 0–255)
+# enhance_contrast brightness thresholds (L-channel mean, 0–255)
 _L_VERY_DARK = 50
 _L_DARK = 100
 _L_VERY_BRIGHT = 200
@@ -107,7 +109,6 @@ class YoloCardSegmentor:
         self,
         model_path: str | Path | None = None,
         classes: list[str] | None = None,
-        target_size: tuple[int, int] = WARPED_TARGET_SIZE,
         aspect_ratio_tolerance: float = 0.2,
         batch_size: int | None = None,
         fallback_enabled: bool = True,
@@ -123,7 +124,6 @@ class YoloCardSegmentor:
             raise ValueError(f"Failed to load YOLO model from {_model_path}")
         self._model.set_classes(_classes)
 
-        self.target_size = target_size
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
         self.batch_size = batch_size if batch_size is not None else settings.BATCH_SIZE
         self.fallback_enabled = fallback_enabled
@@ -185,7 +185,7 @@ class YoloCardSegmentor:
         for start in range(0, len(yolo_indices), _batch_size):
             batch_idx = yolo_indices[start : start + _batch_size]
             batch_imgs = [imgs[i] for i in batch_idx]
-            proc_imgs = [preprocess_for_yolo(img) for img in batch_imgs]
+            proc_imgs = [enhance_contrast(img) for img in batch_imgs]
 
             yolo_results = self._model.predict(proc_imgs, **_DEFAULT_PREDICT_KWARGS)
 
@@ -199,7 +199,7 @@ class YoloCardSegmentor:
         # -- Pass 3: fallback (CV → rembg) for 0-detection images ---------
         for i in fallback_indices:
             if self.fallback_enabled:
-                proc_img = preprocess_for_yolo(imgs[i])
+                proc_img = enhance_contrast(imgs[i])
                 segments = self._fallback_segment(imgs[i], proc_img)
             else:
                 segments = []
@@ -232,18 +232,22 @@ class YoloCardSegmentor:
         return bool(np.mean(border) < _BYPASS_BORDER_MAX_MEAN)
 
     def _bypass_warp(self, img: np.ndarray) -> CardSegment:
-        h, w = img.shape[:2]
         out = img
-        if w > h:
-            out = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-        out = cv2.resize(out, self.target_size, interpolation=cv2.INTER_LANCZOS4)
+        if out.shape[1] > out.shape[0]:
+            out = cv2.rotate(out, cv2.ROTATE_90_CLOCKWISE)
+        h, w = out.shape[:2]
+        out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+        if (out_w, out_h) != (w, h):
+            out = cv2.resize(out, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
         return CardSegment(warped_image=out)
 
     # ------------------------------------------------------------------
     # Path 2 — YOLO mask → corners → warp
     # ------------------------------------------------------------------
 
-    def _process_yolo_result(self, img: np.ndarray, result: Results) -> list[CardSegment]:
+    def _process_yolo_result(
+        self, img: np.ndarray, result: Results
+    ) -> list[CardSegment]:
         if result.masks is None or len(result.masks.xy) == 0:
             return []
 
@@ -264,9 +268,7 @@ class YoloCardSegmentor:
             if not valid_aspect_ratio(corners, self.aspect_ratio_tolerance):
                 continue
 
-            segments.append(
-                CardSegment(warped_image=warp_card(img, corners, self.target_size))
-            )
+            segments.append(CardSegment(warped_image=warp_card(img, corners)))
 
         return segments
 
@@ -280,7 +282,6 @@ class YoloCardSegmentor:
         # Sub-path A: classical CV (sub-millisecond, good for uniform backgrounds)
         segments = detect_cards_cv(
             proc_img,
-            self.target_size,
             aspect_ratio_tolerance=self.aspect_ratio_tolerance,
             warp_img=img,
         )
@@ -295,13 +296,12 @@ class YoloCardSegmentor:
     def _get_rembg_segmentor(self) -> RembgCardSegmentor:
         if self._rembg_segmentor is None:
             self._rembg_segmentor = RembgCardSegmentor(
-                target_size=self.target_size,
                 aspect_ratio_tolerance=self.aspect_ratio_tolerance,
             )
         return self._rembg_segmentor
 
 
-def preprocess_for_yolo(img: np.ndarray) -> np.ndarray:
+def enhance_contrast(img: np.ndarray) -> np.ndarray:
     """
     Enhance contrast and brightness for YOLO inference and CV box detection.
 
@@ -330,7 +330,11 @@ def preprocess_for_yolo(img: np.ndarray) -> np.ndarray:
     clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(tile, tile))
     l_enhanced = clahe.apply(l_channel)
 
-    gamma = _GAMMA_DARK if l_mean < _L_DARK else (_GAMMA_BRIGHT if l_mean > _L_GAMMA_BRIGHT else _GAMMA_NORMAL)
+    gamma = (
+        _GAMMA_DARK
+        if l_mean < _L_DARK
+        else (_GAMMA_BRIGHT if l_mean > _L_GAMMA_BRIGHT else _GAMMA_NORMAL)
+    )
     l_gamma = np.power(l_enhanced / 255.0, gamma) * 255.0
     l_gamma = np.clip(l_gamma, 0, 255).astype(np.uint8)
 
