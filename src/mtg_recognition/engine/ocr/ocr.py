@@ -37,6 +37,8 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
     {"db_attr": "baseSetSize", "ocr_property": "base_set_size", "weight": 1.0},
     {"db_attr": "artist", "ocr_property": "artist", "weight": 0.5},
     {"db_attr": "setReleaseDate", "ocr_property": "set_release_date", "weight": 0.5},
+    {"db_attr": "power", "ocr_property": "power", "weight": 1.0},
+    {"db_attr": "toughness", "ocr_property": "toughness", "weight": 1.0},
 ]
 
 
@@ -57,6 +59,8 @@ class Properties(NamedTuple):
     base_set_size: str | None
     artist: list[str]
     set_release_date: str | None
+    power: str | None
+    toughness: str | None
 
 
 class CardOCR:
@@ -70,10 +74,10 @@ class CardOCR:
     NAME_ROI_RIGHT = 0.9
 
     # Info ROI: card information at bottom (set code, number, artist, date)
-    INFO_ROI_TOP = 0.87
+    INFO_ROI_TOP = 0.88
     INFO_ROI_BOTTOM = 1.0
     INFO_ROI_LEFT = 0.05
-    INFO_ROI_RIGHT = 0.76
+    INFO_ROI_RIGHT = 0.95
 
     def __init__(self, enable_hpi=False, det_mobile=False, use_preprocessing=False):
         cfg = None
@@ -97,7 +101,7 @@ class CardOCR:
         if det_mobile:
             det_model_name = "PP-OCRv5_mobile_det"
             det_model_dir = (
-                "src/mtg_recognition/engine/ocr/models/test/PP-OCRv5_mobile_det"
+                "src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_det"
             )
         else:
             det_model_name = "PP-OCRv5_server_det"
@@ -186,7 +190,8 @@ class CardOCR:
             texts_info_roi
         )
         artist = texts_info_roi
-        set_release_date = ocr_utils.extract_copyright_year(texts_info_roi)
+        set_release_date = ocr_utils.extract_set_release_year(texts_info_roi)
+        power, toughness = ocr_utils.extract_power_toughness(texts_info_roi)
 
         properties = Properties(
             # Raw PaddleOCR results
@@ -201,6 +206,8 @@ class CardOCR:
             base_set_size=base_set_size,
             artist=artist,
             set_release_date=set_release_date,
+            power=power,
+            toughness=toughness,
         )
 
         return properties
@@ -320,7 +327,8 @@ class CardOCR:
     "--preprocess",
     is_flag=True,
     default=False,
-    help="Apply lightweight preprocessing (2x upscale + CLAHE + unsharp mask) to ROI crops before OCR",
+    help="Apply lightweight preprocessing (adaptive upscale + CLAHE + \\"
+    "deblur + unsharp mask) to ROI crops before OCR",
 )
 def main(input, enable_hpi, det_mobile, preprocess):
     if input.is_file():
@@ -349,7 +357,9 @@ def main(input, enable_hpi, det_mobile, preprocess):
         candidates_dem, scores_dem = matcher.find_best_matches(query_img, k=100)
         properties = ocr.extract_properties(query_img)
         print(
-            f"{properties.setcode_candidates} \t {properties.number} \t {properties.base_set_size} \t {properties.name} \t {properties.set_release_date} \t {properties.rec_texts_bot}"
+            f"{properties.setcode_candidates} \t {properties.number} \t \
+                {properties.base_set_size} \t {properties.name} \t {properties.set_release_date} \
+                    \t {properties.power} \t {properties.toughness}"
         )
 
         # Find best matches with OCR

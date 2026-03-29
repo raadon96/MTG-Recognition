@@ -126,9 +126,9 @@ class Sets(SQLModel, table=True):
         max_length=8,
         description="Unique set code",
     )
-    name: Optional[str] = Field(None, description="Set name")
-    baseSetSize: Optional[int] = Field(default=None, description="Base size of the set")
-    releaseDate: Optional[str] = Field(None, description="Release date as string")
+    name: str | None = Field(None, description="Set name")
+    baseSetSize: int | None = Field(default=None, description="Base size of the set")
+    releaseDate: str | None = Field(None, description="Release date as string")
     # block: Optional[str] = Field(None, description="Block name the set belongs to")
     # cardsphereSetId: Optional[int] = Field(
     #     None, description="External cardsphere set id"
@@ -179,7 +179,7 @@ class MobileCache(
     # number: str = Field(default=None) # Use with composite index
     # baseSetSize: str = Field(default=None) # Use with composite index
 
-    setReleaseDate: Optional[str] = Field(None, index=False)  # Copyright year
+    setReleaseDate: str | None = Field(None, index=False)  # Copyright year
     artist: str | None = Field(default=None)
     url: str | None = Field(default=None)
     manaCost: str | None = Field(default=None)
@@ -193,7 +193,7 @@ class MobileCache(
     # scryfallId: str
     # mtgoId: str | None = Field(default=None)
     language: str | None = Field(default=None)
-    frameVersion: str | None = Field(default=None)
+    # frameVersion: str | None = Field(default=None) # removed, useless
 
     # # AllPrintings, table: cards
     # uuid: str | None = Field(primary_key=True)

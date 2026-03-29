@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 
 import click
+import cv2
 import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
@@ -20,7 +21,7 @@ class Pipeline:
         segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
         ocr: CardOCR = CardOCR(
-            det_mobile=True, enable_hpi=False, use_preprocessing=False
+            det_mobile=True, enable_hpi=False, use_preprocessing=True
         ),
     ):
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
@@ -179,13 +180,12 @@ def main(input: Path, k: int, n: int):
         print(f"No .jpg images found in: {input}")
         return
 
-    import cv2
-
     pipeline = Pipeline(auto_build=True)
     pipeline.build_index(force=False)
 
     for i, img_path in enumerate(img_paths):
         query_img = load_and_resize_image(img_path)
+        print(f"image size = {query_img.shape[:2]} (h x w)")
         try:
             best_matches, best_scores = pipeline.find_best_matches(
                 query_img, k_final_results=k, k_phash_candidates=n

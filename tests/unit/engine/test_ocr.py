@@ -4,7 +4,7 @@ import pytest
 from mtg_recognition.engine.ocr.ocr_utils import (
     extract_card_name,
     extract_collector_number,
-    extract_copyright_year,
+    extract_set_release_year,
     extract_setcode_by_artifact,
     sort_scores_with_indices,
 )
@@ -132,61 +132,61 @@ class TestExtractCopyrightYear:
     # Basic functionality
     def test_no_year_present(self):
         """Returns None when no copyright year exists"""
-        assert extract_copyright_year(["Illus. © Dan Frazier"]) is None
-        assert extract_copyright_year([]) is None
+        assert extract_set_release_year(["Illus. © Dan Frazier"]) is None
+        assert extract_set_release_year([]) is None
 
     def test_single_year(self):
         """Extracts single copyright year"""
-        assert extract_copyright_year(["©1995 Wizards of the Coast"]) == "1995"
-        assert extract_copyright_year(["TM &2020 Wizards"]) == "2020"
+        assert extract_set_release_year(["©1995 Wizards of the Coast"]) == "1995"
+        assert extract_set_release_year(["TM &2020 Wizards"]) == "2020"
 
     def test_year_range_returns_end_year(self):
         """Returns second year from hyphenated range"""
-        assert extract_copyright_year(["©1993-1999 Wizards of the Coast"]) == "1999"
-        assert extract_copyright_year(["TM & 1993-2009 Wizards LLC"]) == "2009"
+        assert extract_set_release_year(["©1993-1999 Wizards of the Coast"]) == "1999"
+        assert extract_set_release_year(["TM & 1993-2009 Wizards LLC"]) == "2009"
 
     # OCR normalization
     def test_letter_o_as_zero_prefix(self):
         """Handles 'O' before year (common OCR error)"""
-        assert extract_copyright_year(["&O2020 Wizards"]) == "2020"
-        assert extract_copyright_year(["O1995 Wizards"]) == "1995"
-        assert extract_copyright_year(["TM&O2009 Coast"]) == "2009"
+        assert extract_set_release_year(["&O2020 Wizards"]) == "2020"
+        assert extract_set_release_year(["O1995 Wizards"]) == "1995"
+        assert extract_set_release_year(["TM&O2009 Coast"]) == "2009"
 
     def test_letter_o_as_zero_within_year(self):
         """Handles 'O' within year digits"""
-        assert extract_copyright_year(["TM &2O20 Wizards"]) == "2020"
-        assert extract_copyright_year(["©2O1O Wizards"]) == "2010"
-        assert extract_copyright_year(["TM & 1993-20O9 Wizards LLC"]) == "2009"
+        assert extract_set_release_year(["TM &2O20 Wizards"]) == "2020"
+        assert extract_set_release_year(["©2O1O Wizards"]) == "2010"
+        assert extract_set_release_year(["TM & 1993-20O9 Wizards LLC"]) == "2009"
 
     def test_compact_text_no_spaces(self):
         """Handles merged text without spaces"""
-        assert extract_copyright_year(["TM&1993-2009WizardsoftheCoast"]) == "2009"
-        assert extract_copyright_year(["©1995WizardsoftheCoast"]) == "1995"
+        assert extract_set_release_year(["TM&1993-2009WizardsoftheCoast"]) == "2009"
+        assert extract_set_release_year(["©1995WizardsoftheCoast"]) == "1995"
 
     # Priority and selection logic
     def test_range_priority_over_single_year(self):
         """Prefers end year from range when both range and singles exist"""
-        assert extract_copyright_year(["©1993-1999 Wizards"]) == "1999"  # Not 1993
+        assert extract_set_release_year(["©1993-1999 Wizards"]) == "1999"  # Not 1993
 
     def test_copyright_context_preferred(self):
         """Prefers years near copyright keywords"""
-        assert extract_copyright_year(["Random 1994 text", "©1995 Wizards"]) == "1995"
+        assert extract_set_release_year(["Random 1994 text", "©1995 Wizards"]) == "1995"
 
     # Edge cases and validation
     def test_ignores_invalid_years(self):
         """Rejects years outside 1993-2030 range"""
-        assert extract_copyright_year(["Copyright 1990 Invalid"]) is None
-        assert extract_copyright_year(["Copyright 2050 Future"]) is None
-        assert extract_copyright_year(["©1992 Before MTG"]) is None
+        assert extract_set_release_year(["Copyright 1990 Invalid"]) is None
+        assert extract_set_release_year(["Copyright 2050 Future"]) is None
+        assert extract_set_release_year(["©1992 Before MTG"]) is None
 
     def test_ignores_card_stats(self):
         """Doesn't confuse power/toughness with years"""
-        assert extract_copyright_year(["1/1", "3/3", "Illus. Artist"]) is None
-        assert extract_copyright_year(["*/5", "2/2"]) is None
+        assert extract_set_release_year(["1/1", "3/3", "Illus. Artist"]) is None
+        assert extract_set_release_year(["*/5", "2/2"]) is None
 
     def test_ignores_partial_numbers(self):
         """Doesn't extract years from longer numbers"""
-        assert extract_copyright_year(["112020", "502009"]) is None
+        assert extract_set_release_year(["112020", "502009"]) is None
 
     # Real-world examples (representative samples from each batch)
     @pytest.mark.parametrize(
@@ -213,7 +213,7 @@ class TestExtractCopyrightYear:
     )
     def test_real_world_examples(self, rect_texts, expected):
         """Representative real-world OCR outputs from each batch"""
-        assert extract_copyright_year(rect_texts) == expected
+        assert extract_set_release_year(rect_texts) == expected
 
 
 class TestSortScoresWithIndices:

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 import cv2
 import numpy as np
@@ -32,7 +32,30 @@ def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
     return []
 
 
-def extract_collector_number(rec_texts: List[str]) -> Optional[str]:
+def extract_power_toughness(
+    rec_texts: list[str],
+) -> tuple[str, str] | tuple[None, None]:
+    """
+    Extract power/toughness in format <power>/<toughness>.
+
+    Args:
+        rec_texts: List of OCR-recognized text strings
+    Returns:
+        Power/toughness tuple (e.g., ("3", "2")) or (None, None) if not found
+    """
+    pattern = r"\b(\d{1,1}/\d{1,1})\b"
+    string = " ".join(rec_texts)
+    normalized = string.replace("\\", "/").replace("|", "/")
+    normalized = re.sub(r"\s*/\s*", "/", normalized)
+
+    match = re.search(pattern, normalized)
+    if match:
+        return tuple(match.group(1).split("/"))
+
+    return None, None
+
+
+def extract_collector_number(rec_texts: list[str]) -> str | None:
     """
     Extract MTG collector number in format <card_number>/<base_set_size>.
 
@@ -106,7 +129,7 @@ def extract_collector_number(rec_texts: List[str]) -> Optional[str]:
 
 
 def extract_number_and_base_set_size(
-    rec_texts: List[str],
+    rec_texts: list[str],
 ) -> tuple[str | None, str | None]:
     """
     Extratc card number and base set size ocr texts.
@@ -156,9 +179,9 @@ def extract_card_name(texts: list[str]) -> str | None:
     return card_name
 
 
-def extract_copyright_year(rect_texts: List[str]) -> Optional[str]:
+def extract_set_release_year(rect_texts: list[str]) -> str | None:
     """
-    Extract copyright year from OCR results of Magic: The Gathering card images.
+    Extract release date year from OCR results of Magic: The Gathering card images.
 
     Rules:
     1. Single four-digit year → return that year
@@ -226,7 +249,7 @@ def extract_copyright_year(rect_texts: List[str]) -> Optional[str]:
                 # Validate reasonable year range for MTG (1993-2030)
                 if 1993 <= year <= 2030:
                     logger.debug(
-                        f"    Found year range: {start_year}-{end_year}, using end year: {year}"
+                        f"Found year range: {start_year}-{end_year}, using end year: {year}"
                     )
                     candidates.append(
                         (year, has_copyright_context, 2)
@@ -242,7 +265,7 @@ def extract_copyright_year(rect_texts: List[str]) -> Optional[str]:
             # Filter reasonable years for MTG cards (1993-2030)
             if 1993 <= year <= 2030:
                 logger.debug(
-                    f"    Found single year: {year}, copyright context: {has_copyright_context}"
+                    f"Found single year: {year}, copyright context: {has_copyright_context}"
                 )
                 candidates.append(
                     (year, has_copyright_context, 1)

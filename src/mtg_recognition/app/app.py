@@ -54,7 +54,7 @@ def load_pipeline():
     return Pipeline(
         segmentor=YoloCardSegmentor(),
         phash_matcher=PHashCardMatcher(),
-        ocr=CardOCR(),
+        ocr=CardOCR(det_mobile=True, use_preprocessing=True, enable_hpi=False),
     )
 
 

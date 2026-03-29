@@ -394,7 +394,8 @@ def main():
 
     print(f"\nTop {k} matches:")
     for i, match in enumerate(best_matches):
-        print(f"  UUID: {match.uuid}, name: {match.name}, Score: {best_scores[i]}")
+        # print(f"  UUID: {match.uuid}, name: {match.name}, Score: {best_scores[i]}")
+        print(match, sep="\n", end="\n\n")
 
 
 # --- Example Usage ---
