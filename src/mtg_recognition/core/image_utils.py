@@ -22,6 +22,18 @@ ImageSource = Union[
 ]
 
 
+def get_image_files_in_directory(
+    directory: Path, extensions: list[str] | None = None
+) -> list[Path]:
+    """Find all image files in a directory, matching settings.IMG_EXT."""
+    if extensions is None:
+        extensions = settings.IMG_EXT
+    img_paths = []
+    for ext in extensions:
+        img_paths.extend(directory.glob(ext))
+    return sorted(img_paths)
+
+
 def _resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     """Downscale img so its longest edge does not exceed max_dimension.
 
@@ -35,6 +47,17 @@ def _resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     return cv2.resize(
         img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA
     )
+
+
+def _ensure_min_dim(img: np.ndarray, min_dim: int) -> np.ndarray:
+    """Upscale img so both dimensions are >= min_dim (aspect ratio preserved)."""
+    h, w = img.shape[:2]
+    if h >= min_dim and w >= min_dim:
+        return img
+    scale = max(min_dim / h, min_dim / w)
+    new_h = max(min_dim, round(h * scale))
+    new_w = max(min_dim, round(w * scale))
+    return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
 
 
 def _pil_to_bgr(pil_img: Image.Image) -> np.ndarray:

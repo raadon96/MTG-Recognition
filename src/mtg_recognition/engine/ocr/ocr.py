@@ -12,19 +12,22 @@ uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile
 uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile --preprocess
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
 import click
 import cv2
 import numpy as np
+import pandas as pd
 import rapidfuzz
 from icecream import ic
 from paddleocr import PaddleOCR
 from paddlex.inference import load_pipeline_config
+from PIL import Image
 from sqlalchemy.engine.row import Row
 
-from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.core.image_utils import _ensure_min_dim, load_and_resize_image
 from mtg_recognition.engine.ocr import ocr_utils
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 
@@ -42,17 +45,9 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
 
 
 class Properties(NamedTuple):
-    """Extracted card properties from OCR results."""
+    """Card properties extracted from OCR results."""
 
-    # Raw PaddleOCR results on bottom crop (ROI for setcode, collector, year, artist)
-    rec_texts_bot: list[str] | None
-    rec_scores_bot: list[float] | None
-    # Raw PaddleOCR results on top crop (ROI for card name)
-    rec_texts_top: list[str] | None
-    rec_scores_top: list[float] | None
-    # Extracted candidate setcodes
     setcode_candidates: list[str]
-    # Extracted properties from raw PaddleOCR texts
     name: str | None
     number: str | None
     base_set_size: str | None
@@ -60,6 +55,27 @@ class Properties(NamedTuple):
     set_release_date: str | None
     power: str | None
     toughness: str | None
+
+
+@dataclass(frozen=True)
+class OCRDebugData:
+    """Intermediate OCR artefacts for mismatch root-cause investigation.
+
+    Only populated when extract_properties / find_best_matches is called with
+    debug=True. Never used in the production code path.
+    """
+
+    # Annotated info ROI image from PaddleOCR (side-by-side: original + text labels).
+    # None if .img API is unavailable for this PaddleOCR version.
+    annotated_info: Image.Image | None
+    # Raw info-ROI OCR output: columns ["text", "score"], one row per detected fragment.
+    raw_texts_df: pd.DataFrame
+    # Extracted card properties (for Table 2: extracted vs. best match comparison).
+    properties: "Properties"
+    # Per-attribute fuzzy scores for the top-k candidates.
+    # Index = candidate card names, columns = ATTRIBUTE_MAPPINGS db_attr keys.
+    # None until find_best_matches populates it.
+    score_matrix: pd.DataFrame | None
 
 
 class CardOCR:
@@ -143,15 +159,21 @@ class CardOCR:
         rec_scores = result[0]["rec_scores"]  # scores from paddleOCR
         return rec_texts, rec_scores
 
-    def extract_properties(self, query_img: np.ndarray) -> Properties:
+    def extract_properties(
+        self, query_img: np.ndarray, debug: bool = False
+    ) -> tuple[Properties, OCRDebugData | None]:
         """
         Extract card properties from an image using OCR on specific ROIs.
 
         Args:
             query_img: Card image (BGR format from OpenCV)
+            debug: When True, also returns an OCRDebugData with the annotated
+                   info ROI image and raw OCR texts/scores. score_matrix is
+                   None here — it is populated by find_best_matches.
 
         Returns:
-            Properties namedtuple with extracted card information
+            Tuple of (Properties, OCRDebugData | None). Second element is None
+            when debug=False.
         """
         h, w, _ = query_img.shape
 
@@ -173,14 +195,27 @@ class CardOCR:
                 info_roi_img, upscale=True, enhance=False, deblur=False
             )
 
-        # Perform OCR on both ROIs in a single batched predict call
-        batch_result = self._paddleocr.predict(
-            [name_roi_img, info_roi_img], text_det_thresh=0.0
-        )
-        texts_name_roi = batch_result[0]["rec_texts"]
-        scores_name_roi = batch_result[0]["rec_scores"]
-        texts_info_roi = batch_result[1]["rec_texts"]
-        scores_info_roi = batch_result[1]["rec_scores"]
+        # Perform OCR on both ROIs in a single batched predict call.
+        # Paddle's text-detection model requires both dimensions >= 32 px; upscale
+        # any ROI that falls below this threshold before inference.
+        _MIN_DIM = 32
+        name_roi_img = _ensure_min_dim(name_roi_img, _MIN_DIM)
+        info_roi_img = _ensure_min_dim(info_roi_img, _MIN_DIM)
+
+        texts_name_roi: list[str] = []
+        texts_info_roi: list[str] = []
+        scores_info_roi: list[float] = []
+        batch_result = None
+
+        try:
+            batch_result = self._paddleocr.predict(
+                [name_roi_img, info_roi_img], text_det_thresh=0.0
+            )
+            texts_name_roi = batch_result[0]["rec_texts"]
+            texts_info_roi = batch_result[1]["rec_texts"]
+            scores_info_roi = batch_result[1]["rec_scores"]
+        except Exception:
+            pass  # leave all text lists empty; scoring will use zero vectors
 
         # Extract structured properties from OCR texts
         name = ocr_utils.extract_card_name(texts_name_roi)
@@ -193,12 +228,6 @@ class CardOCR:
         power, toughness = ocr_utils.extract_power_toughness(texts_info_roi)
 
         properties = Properties(
-            # Raw PaddleOCR results
-            rec_texts_bot=texts_info_roi,
-            rec_scores_bot=scores_info_roi,
-            rec_texts_top=texts_name_roi,
-            rec_scores_top=scores_name_roi,
-            # Extracted properties
             setcode_candidates=setcodes,
             name=name,
             number=number,
@@ -209,7 +238,66 @@ class CardOCR:
             toughness=toughness,
         )
 
-        return properties
+        if not debug:
+            return properties, None
+
+        annotated_info: Image.Image | None = None
+        if batch_result is not None:
+            try:
+                annotated_info = batch_result[1].img["ocr_res_img"]
+            except Exception:
+                pass
+
+        raw_texts_df = pd.DataFrame({"text": texts_info_roi, "score": scores_info_roi})
+
+        ocr_debug = OCRDebugData(
+            annotated_info=annotated_info,
+            raw_texts_df=raw_texts_df,
+            properties=properties,
+            score_matrix=None,  # populated by find_best_matches
+        )
+        return properties, ocr_debug
+
+    def _compute_scores(
+        self, properties: Properties, candidates: list[Row]
+    ) -> tuple[np.ndarray, list[str], list[str]]:
+        """Compute per-attribute fuzzy scores for all candidates.
+
+        Returns:
+            scores_matrix: np.ndarray of shape [n_attributes, n_candidates]
+            attribute_names: list of db_attr names from ATTRIBUTE_MAPPINGS
+            candidate_labels: list of candidate card names for display
+        """
+        n_candidates = len(candidates)
+        scores_list: list[np.ndarray] = []
+        attribute_names: list[str] = []
+
+        for mapping in ATTRIBUTE_MAPPINGS:
+            db_attr = str(mapping["db_attr"])
+            ocr_property = str(mapping["ocr_property"])
+
+            choices = [getattr(candidate, db_attr) for candidate in candidates]
+            queries = getattr(properties, ocr_property)
+            queries = queries if isinstance(queries, list) else [queries]
+
+            if queries and choices:
+                dist_matrix = rapidfuzz.process.cdist(
+                    queries=queries,
+                    choices=choices,
+                    scorer=rapidfuzz.fuzz.ratio,
+                    score_cutoff=0,
+                    workers=-1,
+                )
+                scores = np.amax(dist_matrix, axis=0)
+            else:
+                scores = np.zeros(n_candidates, dtype=np.float32)
+
+            scores_list.append(scores)
+            attribute_names.append(db_attr)
+
+        scores_matrix = np.vstack(scores_list)  # [n_attrs, n_candidates]
+        candidate_labels = [str(c.name) for c in candidates]
+        return scores_matrix, attribute_names, candidate_labels
 
     def find_best_matches(
         self,
@@ -218,7 +306,8 @@ class CardOCR:
         properties: Properties | None = None,
         k: int | None = 10,
         thresh: float = 0.0,
-    ) -> tuple[list[Row], list[float]]:
+        debug: bool = False,
+    ) -> tuple[list[Row], list[float], OCRDebugData | None]:
         """
         Find best matching cards by comparing OCR-extracted properties against candidates.
 
@@ -231,51 +320,20 @@ class CardOCR:
             properties: Pre-extracted properties (if None, will extract from query_img)
             k: Number of top matches to return (None = return all)
             thresh: Minimum score threshold (0.0 to 100.0)
+            debug: When True, returns a populated OCRDebugData as the third element.
 
         Returns:
-            Tuple of (best_matches, best_scores)
+            Tuple of (best_matches, best_scores, OCRDebugData | None). Third element
+            is None when debug=False.
         """
+        ocr_debug: OCRDebugData | None = None
         if properties is None:
-            properties = self.extract_properties(query_img)
+            properties, ocr_debug = self.extract_properties(query_img, debug=debug)
 
-        n_candidates = len(candidates)
-
-        # Compute fuzzy match scores for each attribute
-        scores_list = []
-        weights = []
-
-        for mapping in ATTRIBUTE_MAPPINGS:
-            db_attr = str(mapping["db_attr"])
-            ocr_property = str(mapping["ocr_property"])
-            weight = mapping["weight"]
-
-            # Get values from database candidates
-            choices = [getattr(candidate, db_attr) for candidate in candidates]
-
-            # Get values from OCR properties (normalize to list)
-            queries = getattr(properties, ocr_property)
-            queries = queries if isinstance(queries, list) else [queries]
-
-            # Compute fuzzy matching scores
-            if queries and choices:
-                # Use cdist for efficient pairwise comparison
-                dist_matrix = rapidfuzz.process.cdist(
-                    queries=queries,  # cdist correctly handles [None] or [""]
-                    choices=choices,
-                    scorer=rapidfuzz.fuzz.ratio,
-                    score_cutoff=0,
-                    workers=-1,
-                )
-                # Take max score across all query variants (e.g., multiple setcode candidates)
-                scores = np.amax(dist_matrix, axis=0)
-            else:
-                scores = np.zeros(n_candidates, dtype=np.float32)
-
-            scores_list.append(scores)
-            weights.append(weight)
-
-        # Aggregate scores with weighted average
-        scores_matrix = np.vstack(scores_list)
+        weights = [float(m["weight"]) for m in ATTRIBUTE_MAPPINGS]
+        scores_matrix, attribute_names, candidate_labels = self._compute_scores(
+            properties, candidates
+        )
         scores_aggregate = np.average(a=scores_matrix, axis=0, weights=weights)
 
         # Sort candidates based on score (descending)
@@ -289,11 +347,31 @@ class CardOCR:
                 f"No candidates found with k={k} and threshold={thresh}. "
                 "Try lowering k or thresh.\nReturning input candidates without filtering..."
             )
-            return candidates, scores_aggregate.tolist()
+            return candidates, scores_aggregate.tolist(), ocr_debug
 
         top_candidates = [candidates[i] for i in top_indices]
 
-        return top_candidates, top_scores
+        if debug and ocr_debug is not None:
+            # Prefix each label with its rank so duplicate card names (reprints)
+            # don't produce a non-unique index, which breaks pandas Styler.
+            top_labels = [
+                f"#{rank + 1} {candidate_labels[i]}"
+                for rank, i in enumerate(top_indices)
+            ]
+            top_scores_matrix = scores_matrix[:, top_indices]
+            score_matrix_df = pd.DataFrame(
+                top_scores_matrix.T,
+                index=top_labels,
+                columns=attribute_names,
+            )
+            ocr_debug = OCRDebugData(
+                annotated_info=ocr_debug.annotated_info,
+                raw_texts_df=ocr_debug.raw_texts_df,
+                properties=ocr_debug.properties,
+                score_matrix=score_matrix_df,
+            )
+
+        return top_candidates, top_scores, ocr_debug
 
 
 @click.command()
@@ -354,7 +432,7 @@ def main(input, enable_hpi, det_mobile, preprocess):
 
         # Find candidates with deep embeddings
         candidates_dem, scores_dem = matcher.find_best_matches(query_img, k=100)
-        properties = ocr.extract_properties(query_img)
+        properties, _ = ocr.extract_properties(query_img, debug=True)
         print(
             f"{properties.setcode_candidates} \t {properties.number} \t \
                 {properties.base_set_size} \t {properties.name} \t {properties.set_release_date} \
@@ -363,7 +441,7 @@ def main(input, enable_hpi, det_mobile, preprocess):
 
         # Find best matches with OCR
         success = False
-        candidates_ocr, scores_ocr = ocr.find_best_matches(
+        candidates_ocr, scores_ocr, _ = ocr.find_best_matches(
             query_img, candidates_dem, properties, k=10, thresh=0.0
         )
 

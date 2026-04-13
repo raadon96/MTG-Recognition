@@ -42,6 +42,7 @@ class Pipeline:
         k_phash_candidates: int = 100,  # top k candidates from PHash Matcher
         k_final_results: int = 1,  # top k final results after OCR
         apply_segmentation: bool = True,
+        debug: bool = False,
     ) -> tuple[list[Row], list[float]]:
         """
         Find best matching cards using a two-stage pipeline:
@@ -53,6 +54,8 @@ class Pipeline:
             k_phash_candidates: Number of candidates to retrieve from perceptual hash stage
             k_final_results: Number of final results to return after OCR refinement
             apply_segmentation: Whether to apply card segmentation first
+            debug: When True, the third element of the diagnostics dict contains
+                   an OCRDebugData under key "ocr_debug".
 
         Returns:
             Tuple of (matches, scores) where matches are Row objects and scores are floats
@@ -62,6 +65,7 @@ class Pipeline:
             k_phash_candidates=k_phash_candidates,
             k_final_results=k_final_results,
             apply_segmentation=apply_segmentation,
+            debug=debug,
         )
         return matches, scores
 
@@ -71,8 +75,12 @@ class Pipeline:
         k_phash_candidates: int = 100,
         k_final_results: int = 1,
         apply_segmentation: bool = True,
-    ) -> tuple[list[Row], list[float], dict[str, float]]:
-        """Find best matches and return stage timing diagnostics in milliseconds."""
+        debug: bool = False,
+    ) -> tuple[list[Row], list[float], dict]:
+        """Find best matches and return stage timing diagnostics in milliseconds.
+
+        When debug=True, diagnostics also contains key "ocr_debug" (OCRDebugData).
+        """
         total_start = time.perf_counter()
 
         diagnostics = {
@@ -118,10 +126,13 @@ class Pipeline:
 
         # Stage 2: Accurate OCR search on reduced search space
         ocr_start = time.perf_counter()
-        matches_ocr, scores_ocr = self.ocr.find_best_matches(
-            img_warped, matches_ph, k=k_final_results, thresh=0.0
+        matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
+            img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
         )
         diagnostics["ocr_ms"] = (time.perf_counter() - ocr_start) * 1000.0
+
+        if debug and ocr_debug is not None:
+            diagnostics["ocr_debug"] = ocr_debug
 
         if len(matches_ocr) == 0:
             diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0

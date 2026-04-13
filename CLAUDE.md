@@ -27,7 +27,7 @@ docker compose logs -f
 
 # Tests
 uv run pytest
-uv run pytest tests/unit/engine/test_ocr.py
+uv run pytest tests/unit/engine/segmentation/
 uv run pytest tests/unit/engine/test_ocr.py::TestExtractCollectorNumber::test_simple_collector_number
 uv run pytest -k "collector_number" -x -vv
 
@@ -43,7 +43,12 @@ No linter/formatter is configured — match the style of surrounding code.
 Recognition runs as a two-stage pipeline:
 
 **Stage 1 — Segmentation** (`engine/segmentation/`):
-YOLO model detects card boundaries → Canny edge detection → corner finding → perspective transform to 488×680px canonical card size.
+Three-path pipeline per image, tried in order:
+1. **Bypass** (`yolo.py`): if the image aspect ratio ≈ MTG card ratio (63/88 ± 3 %) and the border is dark → resize only. Handles pre-cropped scans without running any model.
+2. **YOLO** (`yolo.py`): `yoloe-11s-seg` batch inference. Each YOLO polygon mask is converted to 4 corners via `corners_from_binary_mask` → perspective warp to `WARPED_TARGET_SIZE` (488 × 680 px).
+3. **Fallback** (`box.py` then `rembg.py`): classical Otsu CV detector first (fast, good for uniform scanner beds); rembg background removal last resort (slow, works on photos with clear backgrounds).
+
+Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_TARGET_SIZE`, `warp_card`, `valid_aspect_ratio`, `corners_from_binary_mask`, and the `CardSegment` / `ImageSegmentationResult` dataclasses. All segmentors import from here to avoid circular dependencies.
 
 **Stage 2 — Matching** (`engine/matching/`, `engine/ocr/`):
 1. **PHash matcher**: Perceptual hash (256-bit, 16×16) compared against precomputed numpy index to get top-k candidates fast.
@@ -77,6 +82,7 @@ All reference data lives under `data/reference/` (not in git):
 | End-to-end pipeline | `src/mtg_recognition/engine/pipeline.py` |
 | OCR logic + fuzzy ranking | `src/mtg_recognition/engine/ocr/ocr.py` |
 | OCR parsing helpers | `src/mtg_recognition/engine/ocr/ocr_utils.py` |
-| Segmentation | `src/mtg_recognition/engine/segmentation/segment.py` |
+| Segmentation (YOLO primary) | `src/mtg_recognition/engine/segmentation/yolo.py` |
+| Segmentation (shared helpers) | `src/mtg_recognition/engine/segmentation/seg_utils.py` |
 | pHash matcher | `src/mtg_recognition/engine/matching/phash_matcher.py` |
 | Database job | `src/mtg_recognition/jobs/build_database.py` |

@@ -22,6 +22,7 @@ notebooks/
 scratch/
 input/
 test/
+scripts/
 runs/
 output/
 **/results

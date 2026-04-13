@@ -2,7 +2,6 @@ import argparse
 import os
 import statistics
 from pathlib import Path
-from unittest import result
 
 import cv2
 import requests
@@ -18,6 +17,9 @@ from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
+
+# Number of top matches to retrieve and display in the detail view
+K_TOP_MATCHES = 5
 
 # --- Streamlit Page Config ---
 st.set_page_config(
@@ -150,7 +152,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                     if st.button(
                         "Details",
                         key=f"detail_btn_{idx}_{results_key}",
-                        use_container_width=True,
+                        width="stretch",
                     ):
                         st.session_state.selected_result_idx = idx
                         st.session_state.selected_results_key = results_key
@@ -183,12 +185,33 @@ def display_batch_detail_view(results, selected_idx, engine):
         st.error("Cannot display details for this result")
         return
 
+    debug = st.session_state.get("debug_mode", False)
+
     # Back button at top
-    if st.button("← Back to Results", use_container_width=False):
+    if st.button("← Back to Results", width="content"):
         st.session_state.selected_result_idx = None
         st.rerun()
 
     st.subheader(f"📋 {result.uploaded_filename}")
+
+    # Run pipeline once at the top — ocr_debug shared by all debug expanders below
+    pipeline = load_pipeline()
+    warped_img = None
+    matches: list = []
+    scores: list = []
+    ocr_debug = None
+
+    if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
+        warped_img = cv2.imread(result.warped_image_temp_path)
+        if warped_img is not None:
+            matches, scores, diagnostics = pipeline.find_best_matches_with_diagnostics(
+                warped_img,
+                k_phash_candidates=20,
+                k_final_results=K_TOP_MATCHES,
+                apply_segmentation=False,
+                debug=debug,
+            )
+            ocr_debug = diagnostics.get("ocr_debug")
 
     # Main layout: 3 columns for images + 1 column for metadata
     col1, col2, col3, col4 = st.columns([1.2, 1.2, 1.2, 1])
@@ -212,23 +235,16 @@ def display_batch_detail_view(results, selected_idx, engine):
     # Column 2: Warped Image
     with col2:
         st.caption("**Warped Image**")
-        if (
-            result.warped_image_temp_path
-            and Path(result.warped_image_temp_path).exists()
-        ):
-            warped_img = cv2.imread(result.warped_image_temp_path)
-            if warped_img is not None:
-                st.image(
-                    cv2.cvtColor(warped_img, cv2.COLOR_BGR2RGB),
-                    # use_column_width=True,
-                )
+        if warped_img is not None:
+            st.image(cv2.cvtColor(warped_img, cv2.COLOR_BGR2RGB))
         else:
             st.info("Warped image not available")
 
-    # Column 3: Best Match Image
+    # Column 3: Best Match Image — uses matches[0] for consistency with debug data
+    best_match = matches[0] if matches else result.best_match
     with col3:
         st.caption("**Best Match**")
-        img_url = result.best_match.url
+        img_url = best_match.url
         st.image(
             img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
         )
@@ -236,10 +252,10 @@ def display_batch_detail_view(results, selected_idx, engine):
     # Column 4: Metadata
     with col4:
         st.caption("**Card Info**")
-        st.markdown(f"**{result.best_match.name}**")
+        st.markdown(f"**{best_match.name}**")
 
         # Color-coded score (darker for better contrast)
-        score = result.best_match_score
+        score = scores[0] if scores else result.best_match_score
         if score >= 0.85:
             st.markdown(
                 f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.4f}</div>',
@@ -257,48 +273,73 @@ def display_batch_detail_view(results, selected_idx, engine):
             )
 
         st.divider()
-        st.caption(f"**Set:** {result.best_match.setCode}")
-        # st.caption(f"**#:** {result.best_match.number}")
-        # st.caption(f"**Base Set:** {result.best_match.baseSetSize}")
+        st.caption(f"**Set:** {best_match.setCode}")
         st.caption(
-            f"**Collector Number:** {result.best_match.number}/{result.best_match.baseSetSize}"
+            f"**Collector Number:** {best_match.number}/{best_match.baseSetSize}"
         )
-        st.caption(f"**Artist:** {result.best_match.artist or 'Unknown'}")
+        st.caption(f"**Artist:** {best_match.artist or 'Unknown'}")
 
-        if result.best_match.url:
-            st.markdown(f"[Scryfall]({result.best_match.url})")
+        if best_match.url:
+            st.markdown(f"[Scryfall]({best_match.url})")
+
+    # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
+    if debug and ocr_debug is not None:
+        if ocr_debug.annotated_info is not None:
+            with st.expander("🔬 Annotated Info ROI", expanded=True):
+                st.image(ocr_debug.annotated_info, width="stretch")
+
+        with st.expander("📄 Table 1 — Raw OCR Output (Info ROI)", expanded=True):
+            st.dataframe(ocr_debug.raw_texts_df, width="stretch")
+
+        with st.expander(
+            "📊 Table 2 — Extracted Properties vs. Best Match", expanded=True
+        ):
+            import pandas as pd
+
+            from mtg_recognition.engine.ocr.ocr import ATTRIBUTE_MAPPINGS
+
+            rows = []
+            for mapping in ATTRIBUTE_MAPPINGS:
+                ocr_prop = mapping["ocr_property"]
+                db_attr = mapping["db_attr"]
+                ocr_val = getattr(ocr_debug.properties, ocr_prop, "—")
+                rows.append(
+                    {
+                        "attribute": db_attr,
+                        "OCR extracted": ocr_val,
+                        "best match": getattr(best_match, db_attr, "—"),
+                    }
+                )
+            st.dataframe(pd.DataFrame(rows).set_index("attribute"), width="stretch")
 
     # Show top matches below
     st.markdown("---")
-    st.subheader("Next Top Matches")
+    st.subheader(f"Top {K_TOP_MATCHES} Matches")
 
-    # Get top 5 matches by re-processing the warped image
-    if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
-        warped_img = cv2.imread(result.warped_image_temp_path)
-        if warped_img is not None:
-            # Get the pipeline for matching
-            pipeline = load_pipeline()
+    if matches:
+        match_cols = st.columns(K_TOP_MATCHES)
+        for col_idx, (match, score) in enumerate(
+            zip(matches[:K_TOP_MATCHES], scores[:K_TOP_MATCHES])
+        ):
+            with match_cols[col_idx]:
+                img_url = match.url
+                st.image(
+                    img_url
+                    if img_url
+                    else "https://via.placeholder.com/300x420?text=No+Image",
+                )
+                st.caption(f"**{match.name}**")
+                st.caption(f"Score: {score:.2f}")
 
-            matches, scores = pipeline.find_best_matches(
-                warped_img,
-                k_phash_candidates=100,
-                k_final_results=5,
-                apply_segmentation=False,
+    # Debug: score matrix below "Next Top Matches"
+    if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
+        with st.expander("📈 Table 3 — Score Matrix (top 5 candidates)", expanded=True):
+            st.dataframe(
+                ocr_debug.score_matrix.style.background_gradient(
+                    cmap="RdYlGn", vmin=0, vmax=100
+                ),
+                width="stretch",
             )
-
-            if matches and len(matches) > 0:
-                # Display top matches in a grid
-                match_cols = st.columns(5)
-                for col_idx, (match, score) in enumerate(zip(matches[:5], scores[:5])):
-                    with match_cols[col_idx]:
-                        img_url = match.url
-                        st.image(
-                            img_url
-                            if img_url
-                            else "https://via.placeholder.com/300x420?text=No+Image",
-                        )
-                        st.caption(f"**{match.name}**")
-                        st.caption(f"Score: {score:.2f}")
 
 
 def export_results(
@@ -369,6 +410,7 @@ def main():
 
     # Sidebar options
     st.sidebar.header("⚙️ Import")
+    st.sidebar.toggle("🔬 Debug Mode", key="debug_mode", value=True)
 
     # Initialize session state for batch mode
     if "batch_results" not in st.session_state:
@@ -492,7 +534,7 @@ def main():
                     data=f.read(),
                     file_name=filename,
                     mime=mime_type,
-                    use_container_width=True,
+                    width="stretch",
                 )
         except Exception as e:
             st.sidebar.error(f"Export failed: {str(e)}")
@@ -501,7 +543,7 @@ def main():
             display_batch_timing_metrics(results)
 
         st.sidebar.markdown("---")
-        if st.sidebar.button("🗑️ Clear All Results", use_container_width=True):
+        if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
             st.session_state.batch_results = None
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
