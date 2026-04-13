@@ -72,7 +72,7 @@ class Pipeline:
     def find_best_matches_with_diagnostics(
         self,
         query_img: np.ndarray,
-        k_phash_candidates: int = 100,
+        k_phash_candidates: int = 20,
         k_final_results: int = 1,
         apply_segmentation: bool = True,
         debug: bool = False,

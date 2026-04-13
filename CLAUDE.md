@@ -45,18 +45,22 @@ Recognition runs as a two-stage pipeline:
 **Stage 1 — Segmentation** (`engine/segmentation/`):
 Three-path pipeline per image, tried in order:
 1. **Bypass** (`yolo.py`): if the image aspect ratio ≈ MTG card ratio (63/88 ± 3 %) and the border is dark → resize only. Handles pre-cropped scans without running any model.
-2. **YOLO** (`yolo.py`): `yoloe-11s-seg` batch inference. Each YOLO polygon mask is converted to 4 corners via `corners_from_binary_mask` → perspective warp to `WARPED_TARGET_SIZE` (488 × 680 px).
+2. **YOLO** (`yolo.py`): `yoloe-11s-seg` batch inference. Each YOLO polygon mask is converted to 4 corners via `corners_from_binary_mask` → perspective warp.
 3. **Fallback** (`box.py` then `rembg.py`): classical Otsu CV detector first (fast, good for uniform scanner beds); rembg background removal last resort (slow, works on photos with clear backgrounds).
 
-Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_TARGET_SIZE`, `warp_card`, `valid_aspect_ratio`, `corners_from_binary_mask`, and the `CardSegment` / `ImageSegmentationResult` dataclasses. All segmentors import from here to avoid circular dependencies.
+Warped output size is clamped between `WARPED_MIN_SIZE = (488, 680)` and `WARPED_MAX_SIZE = (976, 1360)` (width × height in pixels) so that close-up phone photos don't produce unbounded images while scans aren't unnecessarily downscaled.
+
+Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`, `WARPED_MAX_SIZE`, `clamp_size`, `warp_card`, `valid_aspect_ratio`, `corners_from_binary_mask`, and the `CardSegment` / `ImageSegmentationResult` dataclasses. All segmentors import from here to avoid circular dependencies.
 
 **Stage 2 — Matching** (`engine/matching/`, `engine/ocr/`):
 1. **PHash matcher**: Perceptual hash (256-bit, 16×16) compared against precomputed numpy index to get top-k candidates fast.
-2. **OCR fuzzy matcher**: PaddleOCR (HPI/ONNX mode) extracts text from the card's top ~11% (name) and bottom ~13% (set code, collector number, artist). `rapidfuzz` scores OCR attributes against candidates with weights (set code = 2.0, name = 1.0, etc.) to select the best match.
+2. **OCR fuzzy matcher**: PaddleOCR extracts text from the card's top ~11% (name ROI) and bottom ~13% (info ROI: set code, collector number, artist). `rapidfuzz` scores OCR attributes against candidates with weights (set code = 2.0, name = 1.0, etc.) to select the best match. The predict call is wrapped in `try/except` — PaddlePaddle's C++ backend throws intermittent `RuntimeError: std::exception` on some inputs; catching it degrades to zero-vector scoring so the phash ranking holds.
+
+`ocr.py` exposes a `debug=False` flag on `extract_properties` and `find_best_matches`. When `True`, both return an `OCRDebugData` frozen dataclass containing the annotated info-ROI image (PaddleOCR bounding boxes), raw OCR texts/scores, extracted `Properties`, and a per-attribute score matrix for the top candidates.
 
 **App layer** (`app/`):
-- `app.py` — Streamlit UI for single and batch uploads.
-- `batch_processor.py` — orchestrates per-image pipeline, returns `BatchResult` dataclasses with match + diagnostic timings.
+- `app.py` — Streamlit UI for single and batch uploads. Sidebar toggle `"🔬 Debug Mode"` enables the `OCRDebugData` expanders in the detail view (annotated ROI, raw OCR table, extracted vs. best-match table, score matrix).
+- `batch_processor.py` — orchestrates per-image pipeline, returns `BatchResult` dataclasses with match + diagnostic timings. Owns `K_PHASH_CANDIDATES` and `K_TOP_MATCHES` constants (imported by `app.py`) so both batch processing and the detail view always use the same pipeline parameters.
 
 **Data jobs** (`jobs/`):
 - `build_database.py` — ingests MTGJson/Scryfall data into `MobileCache.sqlite`.

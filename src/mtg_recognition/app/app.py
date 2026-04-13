@@ -8,7 +8,11 @@ import requests
 import streamlit as st
 from sqlmodel import Session, col, select
 
-from mtg_recognition.app.batch_processor import BatchProcessor
+from mtg_recognition.app.batch_processor import (
+    K_PHASH_CANDIDATES,
+    K_TOP_MATCHES,
+    BatchProcessor,
+)
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.database import engine
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
@@ -17,9 +21,6 @@ from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
-
-# Number of top matches to retrieve and display in the detail view
-K_TOP_MATCHES = 5
 
 # --- Streamlit Page Config ---
 st.set_page_config(
@@ -206,7 +207,7 @@ def display_batch_detail_view(results, selected_idx, engine):
         if warped_img is not None:
             matches, scores, diagnostics = pipeline.find_best_matches_with_diagnostics(
                 warped_img,
-                k_phash_candidates=20,
+                k_phash_candidates=K_PHASH_CANDIDATES,
                 k_final_results=K_TOP_MATCHES,
                 apply_segmentation=False,
                 debug=debug,

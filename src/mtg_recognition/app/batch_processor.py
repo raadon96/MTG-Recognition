@@ -2,9 +2,9 @@
 
 import tempfile
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import cv2
 import numpy as np
@@ -13,6 +13,11 @@ from sqlmodel import Session
 
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.pipeline import Pipeline
+
+# Pipeline retrieval parameters shared between batch processing and the detail view.
+# Keep these in one place so both code paths always agree.
+K_PHASH_CANDIDATES = 20  # pHash candidates passed to OCR refinement
+K_TOP_MATCHES = 5  # final matches returned after OCR
 
 
 @dataclass
@@ -97,7 +102,9 @@ class BatchProcessor:
                 image_file = Path(image_path)
                 try:
                     img = load_and_resize_image(image_file)
-                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".png", delete=False
+                    ) as tmp:
                         cv2.imwrite(tmp.name, img)
                         orig_tmp = tmp.name
                     loaded.append((image_path, img, orig_tmp, None))
@@ -126,36 +133,40 @@ class BatchProcessor:
                     progress_callback(processed, total, f"Matching {image_file.name}")
 
                 if err is not None:
-                    results.append(BatchResult(
-                        uploaded_filename=image_file.name,
-                        original_image_path=str(image_path),
-                        warped_image=None,
-                        best_match=None,
-                        best_match_score=None,
-                        status="error",
-                        error_message=err,
-                    ))
+                    results.append(
+                        BatchResult(
+                            uploaded_filename=image_file.name,
+                            original_image_path=str(image_path),
+                            warped_image=None,
+                            best_match=None,
+                            best_match_score=None,
+                            status="error",
+                            error_message=err,
+                        )
+                    )
                     continue
 
                 seg_result = seg_results[seg_idx]
                 seg_idx += 1
 
                 if not seg_result.success:
-                    results.append(BatchResult(
-                        uploaded_filename=image_file.name,
-                        original_image_path=str(image_path),
-                        warped_image=None,
-                        best_match=None,
-                        best_match_score=None,
-                        status="no_match",
-                        original_image_temp_path=orig_tmp,
-                        timings_ms={
-                            "segmentation_ms": amortized_seg_ms,
-                            "phash_ms": 0.0,
-                            "ocr_ms": 0.0,
-                            "total_ms": amortized_seg_ms,
-                        },
-                    ))
+                    results.append(
+                        BatchResult(
+                            uploaded_filename=image_file.name,
+                            original_image_path=str(image_path),
+                            warped_image=None,
+                            best_match=None,
+                            best_match_score=None,
+                            status="no_match",
+                            original_image_temp_path=orig_tmp,
+                            timings_ms={
+                                "segmentation_ms": amortized_seg_ms,
+                                "phash_ms": 0.0,
+                                "ocr_ms": 0.0,
+                                "total_ms": amortized_seg_ms,
+                            },
+                        )
+                    )
                     continue
 
                 try:
@@ -168,16 +179,18 @@ class BatchProcessor:
                         )
                     )
                 except Exception as e:
-                    results.append(BatchResult(
-                        uploaded_filename=image_file.name,
-                        original_image_path=str(image_path),
-                        warped_image=None,
-                        best_match=None,
-                        best_match_score=None,
-                        status="error",
-                        error_message=str(e),
-                        original_image_temp_path=orig_tmp,
-                    ))
+                    results.append(
+                        BatchResult(
+                            uploaded_filename=image_file.name,
+                            original_image_path=str(image_path),
+                            warped_image=None,
+                            best_match=None,
+                            best_match_score=None,
+                            status="error",
+                            error_message=str(e),
+                            original_image_temp_path=orig_tmp,
+                        )
+                    )
 
         if progress_callback:
             progress_callback(total, total, "Processing complete!")
@@ -198,15 +211,17 @@ class BatchProcessor:
             warped_img_path = None
 
             try:
-                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+                with tempfile.NamedTemporaryFile(
+                    suffix=".png", delete=False
+                ) as tmp_file:
                     cv2.imwrite(tmp_file.name, warped_img)
                     warped_img_path = tmp_file.name
 
                 matches, scores, diagnostics = (
                     self.pipeline.find_best_matches_with_diagnostics(
                         warped_img,
-                        k_phash_candidates=100,
-                        k_final_results=5,
+                        k_phash_candidates=K_PHASH_CANDIDATES,
+                        k_final_results=K_TOP_MATCHES,
                         apply_segmentation=False,
                     )
                 )
@@ -227,17 +242,19 @@ class BatchProcessor:
                     best_score = None
                     status = "no_match"
 
-                results.append(BatchResult(
-                    uploaded_filename=image_file.name,
-                    original_image_path=str(image_file),
-                    warped_image=None,
-                    best_match=best_match,
-                    best_match_score=best_score,
-                    status=status,
-                    original_image_temp_path=original_img_path,
-                    warped_image_temp_path=warped_img_path,
-                    timings_ms=timings_ms,
-                ))
+                results.append(
+                    BatchResult(
+                        uploaded_filename=image_file.name,
+                        original_image_path=str(image_file),
+                        warped_image=None,
+                        best_match=best_match,
+                        best_match_score=best_score,
+                        status=status,
+                        original_image_temp_path=original_img_path,
+                        warped_image_temp_path=warped_img_path,
+                        timings_ms=timings_ms,
+                    )
+                )
             except Exception:
                 if warped_img_path and Path(warped_img_path).exists():
                     Path(warped_img_path).unlink()
