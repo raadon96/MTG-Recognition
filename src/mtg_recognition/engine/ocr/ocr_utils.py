@@ -11,9 +11,13 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-# Build pattern: match anything before any artifact
-LANGUAGE = "EN"  # Environment Variable would be better suited, so that artifatcs can be computed for every language
-ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=]{LANGUAGE}")  #  "·",".","+","-","=",
+# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR")
+_SUPPORTED_LANG_CODES = frozenset({
+    "EN", "FR", "DE", "ES", "IT", "PT",
+    "JA", "JP", "KO", "RU", "ZH", "TW",
+})
+_LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
+ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
 
 
 def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
@@ -30,6 +34,27 @@ def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
             result = [match.group(1)]
             return result
     return []
+
+
+def extract_setcode_candidates(texts: list[str]) -> list[str]:
+    """
+    Cleans raw texts output from PaddleOCR.
+    """
+    texts = extract_setcode_by_artifact(texts)
+
+    # remove whitespace
+    stripped = list(map(str.strip, texts))
+
+    # remove non ascii characters
+    cleaned = stripped
+
+    # Filter out texts without the desired length
+    setcodes = list(filter(lambda text: 3 <= len(text) <= 6, cleaned))
+
+    # Replace commonly misread OCR setcodes
+    # setcodes = replace_ocr_mistakes(filtered)
+
+    return setcodes
 
 
 def extract_power_toughness(
@@ -140,27 +165,6 @@ def extract_number_and_base_set_size(
     number, base_set_size = collector_number.split("/")
     number = number.lstrip("0")
     return number, base_set_size
-
-
-def extract_setcode_candidates(texts: list[str]) -> list[str]:
-    """
-    Cleans raw texts output from PaddleOCR.
-    """
-    texts = extract_setcode_by_artifact(texts)
-
-    # remove whitespace
-    stripped = list(map(str.strip, texts))
-
-    # remove non ascii characters
-    cleaned = stripped
-
-    # Filter out texts without the desired length
-    setcodes = list(filter(lambda text: 3 <= len(text) <= 6, cleaned))
-
-    # Replace commonly misread OCR setcodes
-    # setcodes = replace_ocr_mistakes(filtered)
-
-    return setcodes
 
 
 def extract_card_name(texts: list[str]) -> str | None:
