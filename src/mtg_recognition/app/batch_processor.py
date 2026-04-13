@@ -3,15 +3,15 @@
 import tempfile
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
 import numpy as np
 from sqlalchemy.engine.row import Row
-from sqlmodel import Session
 
 from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline
 
 # Pipeline retrieval parameters shared between batch processing and the detail view.
@@ -26,14 +26,14 @@ class BatchResult:
 
     uploaded_filename: str
     original_image_path: str
-    warped_image: np.ndarray | None
-    best_match: Row | None
-    best_match_score: float | None
-    status: str  # "success", "no_match", "error"
+    matches: list[Row] = field(default_factory=list)
+    scores: list[float] = field(default_factory=list)
+    status: str = "no_match"  # "success", "no_match", "error"
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
     timings_ms: dict[str, float] | None = None
+    ocr_debug: OCRDebugData | None = None
 
 
 class BatchProcessor:
@@ -137,9 +137,6 @@ class BatchProcessor:
                         BatchResult(
                             uploaded_filename=image_file.name,
                             original_image_path=str(image_path),
-                            warped_image=None,
-                            best_match=None,
-                            best_match_score=None,
                             status="error",
                             error_message=err,
                         )
@@ -154,9 +151,6 @@ class BatchProcessor:
                         BatchResult(
                             uploaded_filename=image_file.name,
                             original_image_path=str(image_path),
-                            warped_image=None,
-                            best_match=None,
-                            best_match_score=None,
                             status="no_match",
                             original_image_temp_path=orig_tmp,
                             timings_ms={
@@ -183,9 +177,6 @@ class BatchProcessor:
                         BatchResult(
                             uploaded_filename=image_file.name,
                             original_image_path=str(image_path),
-                            warped_image=None,
-                            best_match=None,
-                            best_match_score=None,
                             status="error",
                             error_message=str(e),
                             original_image_temp_path=orig_tmp,
@@ -223,6 +214,7 @@ class BatchProcessor:
                         k_phash_candidates=K_PHASH_CANDIDATES,
                         k_final_results=K_TOP_MATCHES,
                         apply_segmentation=False,
+                        debug=True,
                     )
                 )
 
@@ -233,26 +225,17 @@ class BatchProcessor:
                     "total_ms": segmentation_ms + diagnostics["total_ms"],
                 }
 
-                if matches:
-                    best_match = matches[0]
-                    best_score = float(scores[0])
-                    status = "success"
-                else:
-                    best_match = None
-                    best_score = None
-                    status = "no_match"
-
                 results.append(
                     BatchResult(
                         uploaded_filename=image_file.name,
                         original_image_path=str(image_file),
-                        warped_image=None,
-                        best_match=best_match,
-                        best_match_score=best_score,
-                        status=status,
+                        matches=matches,
+                        scores=[float(s) for s in scores],
+                        status="success" if matches else "no_match",
                         original_image_temp_path=original_img_path,
                         warped_image_temp_path=warped_img_path,
                         timings_ms=timings_ms,
+                        ocr_debug=diagnostics.get("ocr_debug"),
                     )
                 )
             except Exception:
@@ -277,39 +260,31 @@ class BatchProcessor:
         import pandas as pd
 
         data = []
-        with Session(self.engine) as session:
-            for result in results:
-                row = {
-                    "Uploaded Filename": result.uploaded_filename,
-                    "Status": result.status,
-                    "Card Name": result.best_match.name if result.best_match else None,
-                    "UUID": result.best_match.uuid if result.best_match else None,
-                    "Score": result.best_match_score,
-                    "Set Code": result.best_match.setCode
-                    if result.best_match
-                    else None,
-                    "Card Number": result.best_match.number
-                    if result.best_match
-                    else None,
-                    "Base Set Size": result.best_match.baseSetSize
-                    if result.best_match
-                    else None,
-                    "Artist": result.best_match.artist if result.best_match else None,
-                    "Scryfall URL": result.best_match.url
-                    if result.best_match
-                    else None,
+        for result in results:
+            best = result.matches[0] if result.matches else None
+            row = {
+                "Uploaded Filename": result.uploaded_filename,
+                "Status": result.status,
+                "Card Name": best.name if best else None,
+                "UUID": best.uuid if best else None,
+                "Score": result.scores[0] if result.scores else None,
+                "Set Code": best.setCode if best else None,
+                "Card Number": best.number if best else None,
+                "Base Set Size": best.baseSetSize if best else None,
+                "Artist": best.artist if best else None,
+                "Scryfall URL": best.url if best else None,
+            }
+            if with_diagnostics and result.timings_ms:
+                diagnostics_row = {
+                    "Segmentation Time (ms)": result.timings_ms.get(
+                        "segmentation_ms", None
+                    ),
+                    "pHash Time (ms)": result.timings_ms.get("phash_ms", None),
+                    "OCR Time (ms)": result.timings_ms.get("ocr_ms", None),
+                    "Total Time (ms)": result.timings_ms.get("total_ms", None),
                 }
-                if with_diagnostics and result.timings_ms:
-                    diagnostics_row = {
-                        "Segmentation Time (ms)": result.timings_ms.get(
-                            "segmentation_ms", None
-                        ),
-                        "pHash Time (ms)": result.timings_ms.get("phash_ms", None),
-                        "OCR Time (ms)": result.timings_ms.get("ocr_ms", None),
-                        "Total Time (ms)": result.timings_ms.get("total_ms", None),
-                    }
-                    row.update(diagnostics_row)
-                data.append(row)
+                row.update(diagnostics_row)
+            data.append(row)
 
         return pd.DataFrame(data)
 
@@ -356,19 +331,18 @@ class BatchProcessor:
 
         data = []
         for result in results:
+            best = result.matches[0] if result.matches else None
             item = {
                 "uploaded_filename": result.uploaded_filename,
                 "status": result.status,
-                "card_name": result.best_match.name if result.best_match else None,
-                "uuid": result.best_match.uuid if result.best_match else None,
-                "score": result.best_match_score,
-                "set_code": result.best_match.setCode if result.best_match else None,
-                "card_number": result.best_match.number if result.best_match else None,
-                "base_set_size": result.best_match.baseSetSize
-                if result.best_match
-                else None,
-                "artist": result.best_match.artist if result.best_match else None,
-                "scryfall_url": result.best_match.url if result.best_match else None,
+                "card_name": best.name if best else None,
+                "uuid": best.uuid if best else None,
+                "score": result.scores[0] if result.scores else None,
+                "set_code": best.setCode if best else None,
+                "card_number": best.number if best else None,
+                "base_set_size": best.baseSetSize if best else None,
+                "artist": best.artist if best else None,
+                "scryfall_url": best.url if best else None,
                 "error_message": result.error_message,
             }
             if with_diagnostics and result.timings_ms:

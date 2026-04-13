@@ -6,10 +6,8 @@ from pathlib import Path
 import cv2
 import requests
 import streamlit as st
-from sqlmodel import Session, col, select
 
 from mtg_recognition.app.batch_processor import (
-    K_PHASH_CANDIDATES,
     K_TOP_MATCHES,
     BatchProcessor,
 )
@@ -19,7 +17,6 @@ from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
-from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
 
 # --- Streamlit Page Config ---
@@ -62,39 +59,6 @@ def load_pipeline():
     )
 
 
-def display_match_results(
-    matches,
-    scores,
-    engine,
-):
-    with Session(engine) as session:
-        # Display top 3 candidates
-        st.subheader("🔍 Top 3 Similar Candidates")
-
-        candidate_cols = st.columns(3)
-        next_3_matches = matches[1:4]
-
-        for idx, (candidate_col, match) in enumerate(
-            zip(candidate_cols, next_3_matches)
-        ):
-            with candidate_col:
-                img_url = match.url
-                st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
-                )
-                st.metric("Score", f"{scores[idx + 1]:.2f}")
-
-                # Get metadata
-                statement = select(MobileCache.name).where(
-                    col(MobileCache.uuid) == match.uuid
-                )
-                name_row = session.exec(statement).first()
-                if name_row:
-                    st.caption(name_row)
-
-
 def create_thumbnail_grid(results, results_key="batch_results"):
     """Create an interactive grid view of batch results with improved UX."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
@@ -109,8 +73,8 @@ def create_thumbnail_grid(results, results_key="batch_results"):
         with cols[col_idx]:
             with st.container(border=True):
                 # Display best match image from reference database
-                if result.status == "success" and result.best_match:
-                    img_url = result.best_match.url
+                if result.status == "success" and result.matches:
+                    img_url = result.matches[0].url
                     st.image(
                         img_url
                         if img_url
@@ -118,11 +82,11 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                     )
 
                 # Display card name
-                if result.status == "success" and result.best_match:
-                    st.markdown(f"**{result.best_match.name}**")
+                if result.status == "success" and result.matches:
+                    st.markdown(f"**{result.matches[0].name}**")
 
                     # Color-coded score indicator (darker for better contrast)
-                    score = result.best_match_score
+                    score = result.scores[0]
                     if score >= 0.75:
                         st.markdown(
                             f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.2f}</div>',
@@ -140,7 +104,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                         )
 
                     st.caption(
-                        f"{result.best_match.setCode} #{result.best_match.number}"
+                        f"{result.matches[0].setCode} #{result.matches[0].number}"
                     )
 
                     # Filename (truncated)
@@ -182,7 +146,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     """Display detailed view of a selected batch result with all improvements."""
     result = results[selected_idx]
 
-    if result.status != "success" or result.best_match is None:
+    if result.status != "success" or not result.matches:
         st.error("Cannot display details for this result")
         return
 
@@ -195,24 +159,13 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     st.subheader(f"📋 {result.uploaded_filename}")
 
-    # Run pipeline once at the top — ocr_debug shared by all debug expanders below
-    pipeline = load_pipeline()
-    warped_img = None
-    matches: list = []
-    scores: list = []
-    ocr_debug = None
+    matches = result.matches
+    scores = result.scores
+    ocr_debug = result.ocr_debug
 
+    warped_img = None
     if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
         warped_img = cv2.imread(result.warped_image_temp_path)
-        if warped_img is not None:
-            matches, scores, diagnostics = pipeline.find_best_matches_with_diagnostics(
-                warped_img,
-                k_phash_candidates=K_PHASH_CANDIDATES,
-                k_final_results=K_TOP_MATCHES,
-                apply_segmentation=False,
-                debug=debug,
-            )
-            ocr_debug = diagnostics.get("ocr_debug")
 
     # Main layout: 3 columns for images + 1 column for metadata
     col1, col2, col3, col4 = st.columns([1.2, 1.2, 1.2, 1])
@@ -241,8 +194,8 @@ def display_batch_detail_view(results, selected_idx, engine):
         else:
             st.info("Warped image not available")
 
-    # Column 3: Best Match Image — uses matches[0] for consistency with debug data
-    best_match = matches[0] if matches else result.best_match
+    # Column 3: Best Match Image
+    best_match = matches[0]
     with col3:
         st.caption("**Best Match**")
         img_url = best_match.url
@@ -256,7 +209,7 @@ def display_batch_detail_view(results, selected_idx, engine):
         st.markdown(f"**{best_match.name}**")
 
         # Color-coded score (darker for better contrast)
-        score = scores[0] if scores else result.best_match_score
+        score = scores[0]
         if score >= 0.85:
             st.markdown(
                 f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.4f}</div>',

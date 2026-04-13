@@ -217,4 +217,4 @@ if __name__ == "__main__":
     main()
 
 # uv run python -m mtg_recognition.engine.pipeline
-# uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 1 -n 100
+# uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 1 -n 20
