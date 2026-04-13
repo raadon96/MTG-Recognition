@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # --- Data paths ---
     DATA_DIR: Path = Path("data")
+    # DATA_DIR: Path = Path("scratch/test_download")
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
 
     # --- Batch processing ---

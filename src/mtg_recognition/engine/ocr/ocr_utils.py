@@ -12,12 +12,44 @@ logger = logging.getLogger(__name__)
 
 
 # Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR")
-_SUPPORTED_LANG_CODES = frozenset({
-    "EN", "FR", "DE", "ES", "IT", "PT",
-    "JA", "JP", "KO", "RU", "ZH", "TW",
-})
+_SUPPORTED_LANG_CODES = frozenset(
+    {
+        "EN",
+        "FR",
+        "DE",
+        "ES",
+        "IT",
+        "PT",
+        "JA",
+        "JP",
+        "KO",
+        "RU",
+        "ZH",
+        "TW",
+    }
+)
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
 ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
+
+# Artist name extraction
+# Keep tokens that look like name parts: letters (incl. accented), spaces, hyphens,
+# apostrophes, periods. Anything with a digit or symbol is rejected.
+_ARTIST_KEEP = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ '\-\.]+$")
+_ARTIST_BLOCKLIST = frozenset(
+    {
+        "illus",
+        "wizards",
+        "coast",
+        "llc",
+        "inc",
+        "reserved",
+        "rights",
+        "tm",
+        "by",
+        "the",
+        "of",
+    }
+)
 
 
 def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
@@ -93,9 +125,9 @@ def extract_collector_number(rec_texts: list[str]) -> str | None:
     Returns:
         Collector number string (e.g., "011/264") or None if not found
     """
-    # Pattern: 1-4 digits, slash, 1-4 digits
-    pattern = r"\b(\d{1,4}/\d{1,4})\b"
-    pattern_no_boundary = r"(\d{1,4}/\d{1,4})"
+    # Pattern: 1-4 digits, slash, 2-4 digits
+    pattern = r"\b(\d{1,4}/\d{2,4})\b"
+    pattern_no_boundary = r"(\d{1,4}/\d{2,4})"
 
     candidates = []
 
@@ -181,6 +213,29 @@ def extract_card_name(texts: list[str]) -> str | None:
 
     card_name = " ".join(filtered_list)
     return card_name
+
+
+def extract_artist_name(texts: list[str]) -> str | None:
+    """Extract the artist name from info-ROI OCR tokens.
+
+    Keeps only tokens that look like name parts (letters, spaces, hyphens,
+    apostrophes, periods) and discards tokens containing digits, copyright
+    symbols, or known non-artist words. The surviving tokens are joined into
+    a single string suitable for fuzzy matching against candidate artist names.
+
+    Args:
+        texts: Raw OCR text tokens from the info ROI.
+
+    Returns:
+        Joined artist name string, or None if no name-like tokens survive.
+    """
+    words = " ".join(texts).split()
+    kept = [
+        w
+        for w in words
+        if len(w) >= 2 and _ARTIST_KEEP.match(w) and w.lower() not in _ARTIST_BLOCKLIST
+    ]
+    return " ".join(kept) if kept else None
 
 
 def extract_set_release_year(rect_texts: list[str]) -> str | None:

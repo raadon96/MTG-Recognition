@@ -38,10 +38,12 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
     {"db_attr": "number", "ocr_property": "number", "weight": 1.0},
     {"db_attr": "baseSetSize", "ocr_property": "base_set_size", "weight": 1.0},
     {"db_attr": "artist", "ocr_property": "artist", "weight": 0.5},
-    {"db_attr": "setReleaseDate", "ocr_property": "set_release_date", "weight": 0.5},
+    {"db_attr": "setReleaseYear", "ocr_property": "set_release_year", "weight": 0.5},
     {"db_attr": "power", "ocr_property": "power", "weight": 1.0},
     {"db_attr": "toughness", "ocr_property": "toughness", "weight": 1.0},
 ]
+
+_MIN_DIM = 32
 
 
 class Properties(NamedTuple):
@@ -51,8 +53,8 @@ class Properties(NamedTuple):
     name: str | None
     number: str | None
     base_set_size: str | None
-    artist: list[str]
-    set_release_date: str | None
+    artist: str | None
+    set_release_year: str | None
     power: str | None
     toughness: str | None
 
@@ -198,7 +200,7 @@ class CardOCR:
         # Perform OCR on both ROIs in a single batched predict call.
         # Paddle's text-detection model requires both dimensions >= 32 px; upscale
         # any ROI that falls below this threshold before inference.
-        _MIN_DIM = 32
+
         name_roi_img = _ensure_min_dim(name_roi_img, _MIN_DIM)
         info_roi_img = _ensure_min_dim(info_roi_img, _MIN_DIM)
 
@@ -214,7 +216,8 @@ class CardOCR:
             texts_name_roi = batch_result[0]["rec_texts"]
             texts_info_roi = batch_result[1]["rec_texts"]
             scores_info_roi = batch_result[1]["rec_scores"]
-        except Exception:
+        except RuntimeError as e:
+            print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
             pass  # leave all text lists empty; scoring will use zero vectors
 
         # Extract structured properties from OCR texts
@@ -223,8 +226,8 @@ class CardOCR:
         number, base_set_size = ocr_utils.extract_number_and_base_set_size(
             texts_info_roi
         )
-        artist = texts_info_roi
-        set_release_date = ocr_utils.extract_set_release_year(texts_info_roi)
+        artist = ocr_utils.extract_artist_name(texts_info_roi)
+        set_release_year = ocr_utils.extract_set_release_year(texts_info_roi)
         power, toughness = ocr_utils.extract_power_toughness(texts_info_roi)
 
         properties = Properties(
@@ -233,7 +236,7 @@ class CardOCR:
             number=number,
             base_set_size=base_set_size,
             artist=artist,
-            set_release_date=set_release_date,
+            set_release_year=set_release_year,
             power=power,
             toughness=toughness,
         )
@@ -245,7 +248,10 @@ class CardOCR:
         if batch_result is not None:
             try:
                 annotated_info = batch_result[1].img["ocr_res_img"]
-            except Exception:
+            except Exception as e:
+                print(
+                    f"Failed to extract annotated image from OCR result: {e}\nContinuing without annotated image..."
+                )
                 pass
 
         raw_texts_df = pd.DataFrame({"text": texts_info_roi, "score": scores_info_roi})
@@ -435,7 +441,7 @@ def main(input, enable_hpi, det_mobile, preprocess):
         properties, _ = ocr.extract_properties(query_img, debug=True)
         print(
             f"{properties.setcode_candidates} \t {properties.number} \t \
-                {properties.base_set_size} \t {properties.name} \t {properties.set_release_date} \
+                {properties.base_set_size} \t {properties.name} \t {properties.set_release_year} \
                     \t {properties.power} \t {properties.toughness}"
         )
 

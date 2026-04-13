@@ -179,7 +179,7 @@ class MobileCache(
     # number: str = Field(default=None) # Use with composite index
     # baseSetSize: str = Field(default=None) # Use with composite index
 
-    setReleaseDate: str | None = Field(None, index=False)  # Copyright year
+    setReleaseYear: str | None = Field(None, index=False)  # Copyright year
     artist: str | None = Field(default=None)
     url: str | None = Field(default=None)
     manaCost: str | None = Field(default=None)
@@ -192,7 +192,7 @@ class MobileCache(
     # flavorText: str | None = Field(default=None)
     # scryfallId: str
     # mtgoId: str | None = Field(default=None)
-    language: str | None = Field(default=None)
+    # language: str | None = Field(default=None)
     # frameVersion: str | None = Field(default=None) # removed, useless
 
     # # AllPrintings, table: cards

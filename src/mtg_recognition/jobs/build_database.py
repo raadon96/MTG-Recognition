@@ -36,6 +36,12 @@ def generate_image_uri(
     return f"https://cards.scryfall.io/{fileType}/{fileFace}/{scryfallId[0]}/{scryfallId[1]}/{scryfallId}.{fileFormat}"
 
 
+def extract_year(releaseDate: str) -> str | None:
+    if not releaseDate:
+        return None
+    return releaseDate.split("-")[0]
+
+
 def create_database(source_engine, dest_engine, force: bool = False):
     """Migrate data from Source to Destination with streaming."""
 
@@ -70,12 +76,10 @@ def create_database(source_engine, dest_engine, force: bool = False):
                 Cards.power,
                 Cards.toughness,
                 Cards.borderColor,
-                Cards.frameVersion,
                 CardIdentifiers.scryfallId,
                 # Cards.text,
                 # Cards.flavorText,
                 # CardIdentifiers.mtgoId,
-                Cards.language,
                 Sets.releaseDate,
             )
             .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
@@ -106,12 +110,10 @@ def create_database(source_engine, dest_engine, force: bool = False):
                 power=row.power,
                 toughness=row.toughness,
                 borderColor=row.borderColor,
-                setReleaseDate=row.releaseDate,
+                setReleaseYear=extract_year(row.releaseDate),
                 # text=row.text,
                 # flavorText=row.flavorText,
                 # mtgoId=row.mtgoId,
-                language=row.language,
-                frameVersion=row.frameVersion,
                 # scryfallId=row.scryfallId,
             )
             batch.append(new_card)
@@ -257,7 +259,7 @@ def download_raw_images(dest_engine):
 
 
 def main():
-    # settings.REF_DIR = "scratch/test_download/reference"
+    # settings.DATA_DIR = Path("scratch/test_download")
 
     print("--- Step 1: Retrieving Data ---")
     if not settings.MTGO_DB_FILE_ZIP.exists():
