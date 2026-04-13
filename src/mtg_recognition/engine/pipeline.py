@@ -1,5 +1,8 @@
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Generator
 
 import click
 import cv2
@@ -9,9 +12,29 @@ from sqlalchemy.engine.row import Row
 
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
-from mtg_recognition.engine.ocr.ocr import CardOCR
+from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
 from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+
+
+@dataclass
+class PipelineDiagnostics:
+    """Per-stage timing for a single pipeline run (milliseconds)."""
+
+    segmentation_ms: float = 0.0
+    phash_ms: float = 0.0
+    ocr_ms: float = 0.0
+    total_ms: float = 0.0
+
+
+@contextmanager
+def _timer(diag: PipelineDiagnostics, attr: str) -> Generator[None, None, None]:
+    """Context manager that measures elapsed time and stores it on a PipelineDiagnostics field."""
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        setattr(diag, attr, (time.perf_counter() - start) * 1000.0)
 
 
 class Pipeline:
@@ -39,68 +62,42 @@ class Pipeline:
     def find_best_matches(
         self,
         query_img: np.ndarray,
-        k_phash_candidates: int = 100,  # top k candidates from PHash Matcher
-        k_final_results: int = 1,  # top k final results after OCR
-        apply_segmentation: bool = True,
-        debug: bool = False,
-    ) -> tuple[list[Row], list[float]]:
-        """
-        Find best matching cards using a two-stage pipeline:
-        1. Perceptual hashing for fast coarse search
-        2. OCR-based fuzzy matching for accurate refinement
-
-        Args:
-            query_img: Query image (BGR format from OpenCV)
-            k_phash_candidates: Number of candidates to retrieve from perceptual hash stage
-            k_final_results: Number of final results to return after OCR refinement
-            apply_segmentation: Whether to apply card segmentation first
-            debug: When True, the third element of the diagnostics dict contains
-                   an OCRDebugData under key "ocr_debug".
-
-        Returns:
-            Tuple of (matches, scores) where matches are Row objects and scores are floats
-        """
-        matches, scores, _ = self.find_best_matches_with_diagnostics(
-            query_img=query_img,
-            k_phash_candidates=k_phash_candidates,
-            k_final_results=k_final_results,
-            apply_segmentation=apply_segmentation,
-            debug=debug,
-        )
-        return matches, scores
-
-    def find_best_matches_with_diagnostics(
-        self,
-        query_img: np.ndarray,
         k_phash_candidates: int = 20,
         k_final_results: int = 1,
         apply_segmentation: bool = True,
         debug: bool = False,
-    ) -> tuple[list[Row], list[float], dict]:
-        """Find best matches and return stage timing diagnostics in milliseconds.
+    ) -> tuple[list[Row], list[float], OCRDebugData | None, PipelineDiagnostics]:
+        """Find best matching cards using a two-stage pipeline.
 
-        When debug=True, diagnostics also contains key "ocr_debug" (OCRDebugData).
+        Stage 1: Perceptual hashing for fast coarse candidate retrieval.
+        Stage 2: OCR-based fuzzy matching for accurate refinement.
+
+        Timing diagnostics are always collected (near-zero overhead).
+        OCRDebugData is only populated when debug=True.
+
+        Args:
+            query_img: Query image (BGR format from OpenCV).
+            k_phash_candidates: Number of candidates from the pHash stage.
+            k_final_results: Number of final results after OCR refinement.
+            apply_segmentation: Whether to run card segmentation first.
+            debug: When True, ocr_debug in the return value is populated.
+
+        Returns:
+            Tuple of (matches, scores, ocr_debug, diag).
+            ocr_debug is None when debug=False.
+            Use _ to discard either trailing value when not needed.
         """
         total_start = time.perf_counter()
-
-        diagnostics = {
-            "segmentation_ms": 0.0,
-            "phash_ms": 0.0,
-            "ocr_ms": 0.0,
-            "total_ms": 0.0,
-        }
+        diag = PipelineDiagnostics()
 
         # I. Segmentation
         if apply_segmentation:
-            segmentation_start = time.perf_counter()
-            seg_result = self.segment_card(query_img)
-            diagnostics["segmentation_ms"] = (
-                time.perf_counter() - segmentation_start
-            ) * 1000.0
+            with _timer(diag, "segmentation_ms"):
+                seg_result = self.segment_card(query_img)
             if not seg_result.success:
                 print("No card detected")
-                diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-                return [], [], diagnostics
+                diag.total_ms = (time.perf_counter() - total_start) * 1000.0
+                return [], [], None, diag
             img_warped = seg_result.segments[0].warped_image
         else:
             img_warped = query_img
@@ -111,35 +108,30 @@ class Pipeline:
         )
 
         # Stage 1: Coarse search with perceptual hashing
-        phash_start = time.perf_counter()
-        matches_ph, scores_ph = self.phash_matcher.find_best_matches(
-            img_warped, k=k_phash_candidates
-        )
-        diagnostics["phash_ms"] = (time.perf_counter() - phash_start) * 1000.0
+        with _timer(diag, "phash_ms"):
+            matches_ph, scores_ph = self.phash_matcher.find_best_matches(
+                img_warped, k=k_phash_candidates
+            )
 
         if len(matches_ph) == 0:
-            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-            return [], [], diagnostics
+            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
+            return [], [], None, diag
         elif len(matches_ph) == 1:
-            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-            return matches_ph, scores_ph, diagnostics
+            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
+            return matches_ph, scores_ph, None, diag
 
         # Stage 2: Accurate OCR search on reduced search space
-        ocr_start = time.perf_counter()
-        matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
-            img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
-        )
-        diagnostics["ocr_ms"] = (time.perf_counter() - ocr_start) * 1000.0
-
-        if debug and ocr_debug is not None:
-            diagnostics["ocr_debug"] = ocr_debug
+        with _timer(diag, "ocr_ms"):
+            matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
+                img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
+            )
 
         if len(matches_ocr) == 0:
-            diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-            return [], [], diagnostics
+            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
+            return [], [], ocr_debug if debug else None, diag
 
-        diagnostics["total_ms"] = (time.perf_counter() - total_start) * 1000.0
-        return matches_ocr, scores_ocr, diagnostics
+        diag.total_ms = (time.perf_counter() - total_start) * 1000.0
+        return matches_ocr, scores_ocr, ocr_debug if debug else None, diag
 
     def _load_index(self):
         """Load indices for all matchers."""
@@ -198,7 +190,7 @@ def main(input: Path, k: int, n: int):
         query_img = load_and_resize_image(img_path)
         print(f"image size = {query_img.shape[:2]} (h x w)")
         try:
-            best_matches, best_scores = pipeline.find_best_matches(
+            best_matches, best_scores, _, _ = pipeline.find_best_matches(
                 query_img, k_final_results=k, k_phash_candidates=n
             )
 

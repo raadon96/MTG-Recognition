@@ -71,8 +71,8 @@ class TestExtractCollectorNumber:
         assert extract_collector_number(["2/2", "99/99", "112/280"]) == "112/280"
 
     def test_only_power_toughness_available(self):
-        """Return power/toughness if it's the only match"""
-        assert extract_collector_number(["1/2", "SOMETEXT"]) == "1/2"
+        """Single-digit P/T values are not mistaken for collector numbers"""
+        assert extract_collector_number(["1/2", "SOMETEXT"]) is None
 
     # Embedded/substring cases
     def test_embedded_with_trailing_letter(self):
