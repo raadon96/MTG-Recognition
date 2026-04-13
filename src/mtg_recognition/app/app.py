@@ -2,6 +2,7 @@ import argparse
 import os
 import statistics
 from pathlib import Path
+from unittest import result
 
 import cv2
 import requests
@@ -58,39 +59,37 @@ def load_pipeline():
     )
 
 
-# def display_match_results(
-#     matches,
-#     scores,
-#     engine,
-# ):
-#     with Session(engine) as session:
-#         # Display top 3 candidates
-#         st.subheader("🔍 Top 3 Similar Candidates")
+def display_match_results(
+    matches,
+    scores,
+    engine,
+):
+    with Session(engine) as session:
+        # Display top 3 candidates
+        st.subheader("🔍 Top 3 Similar Candidates")
 
-#         candidate_cols = st.columns(3)
-#         next_3_matches = matches[1:4]
+        candidate_cols = st.columns(3)
+        next_3_matches = matches[1:4]
 
-#         for idx, (candidate_col, match) in enumerate(
-#             zip(candidate_cols, next_3_matches)
-#         ):
-#             with candidate_col:
-#                 img_path = os.path.join(IMG_DIR, f"{match.uuid}.jpg")
-#                 if os.path.exists(img_path):
-#                     img = cv2.imread(img_path)
-#                     if img is not None:
-#                         st.image(
-#                             cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-#                             width="content",
-#                         )
-#                         st.metric("Score", f"{scores[idx + 1]:.2f}")
+        for idx, (candidate_col, match) in enumerate(
+            zip(candidate_cols, next_3_matches)
+        ):
+            with candidate_col:
+                img_url = match.url
+                st.image(
+                    img_url
+                    if img_url
+                    else "https://via.placeholder.com/300x420?text=No+Image",
+                )
+                st.metric("Score", f"{scores[idx + 1]:.2f}")
 
-#                         # Get metadata
-#                         statement = select(MobileCache.name).where(
-#                             col(MobileCache.uuid) == match.uuid
-#                         )
-#                         name_row = session.exec(statement).first()
-#                         if name_row:
-#                             st.caption(name_row)
+                # Get metadata
+                statement = select(MobileCache.name).where(
+                    col(MobileCache.uuid) == match.uuid
+                )
+                name_row = session.exec(statement).first()
+                if name_row:
+                    st.caption(name_row)
 
 
 def create_thumbnail_grid(results, results_key="batch_results"):
@@ -108,15 +107,6 @@ def create_thumbnail_grid(results, results_key="batch_results"):
             with st.container(border=True):
                 # Display best match image from reference database
                 if result.status == "success" and result.best_match:
-                    # img_path = Path(IMG_DIR) / f"{result.best_match.uuid}.jpg"
-                    # if img_path.exists():
-                    #     best_img = cv2.imread(str(img_path))
-                    #     if best_img is not None:
-                    #         st.image(
-                    #             cv2.cvtColor(best_img, cv2.COLOR_BGR2RGB),
-                    #             width="content",
-                    #         )
-
                     img_url = result.best_match.url
                     st.image(
                         img_url
@@ -278,39 +268,37 @@ def display_batch_detail_view(results, selected_idx, engine):
         if result.best_match.url:
             st.markdown(f"[Scryfall]({result.best_match.url})")
 
-    # # Show top matches below
-    # st.markdown("---")
-    # st.subheader("Next Top Matches")
+    # Show top matches below
+    st.markdown("---")
+    st.subheader("Next Top Matches")
 
-    # # Get top 5 matches by re-processing the warped image
-    # if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
-    #     warped_img = cv2.imread(result.warped_image_temp_path)
-    #     if warped_img is not None:
-    #         # Get the pipeline for matching
-    #         pipeline = load_pipeline()
+    # Get top 5 matches by re-processing the warped image
+    if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
+        warped_img = cv2.imread(result.warped_image_temp_path)
+        if warped_img is not None:
+            # Get the pipeline for matching
+            pipeline = load_pipeline()
 
-    #         matches, scores = pipeline.find_best_matches(
-    #             warped_img,
-    #             k_phash_candidates=100,
-    #             k_final_results=5,
-    #             apply_segmentation=False,
-    #         )
+            matches, scores = pipeline.find_best_matches(
+                warped_img,
+                k_phash_candidates=100,
+                k_final_results=5,
+                apply_segmentation=False,
+            )
 
-    #         if matches and len(matches) > 0:
-    #             # Display top matches in a grid
-    #             match_cols = st.columns(5)
-    #             for col_idx, (match, score) in enumerate(zip(matches[:5], scores[:5])):
-    #                 with match_cols[col_idx]:
-    #                     img_path = Path(IMG_DIR) / f"{match.uuid}.jpg"
-    #                     if img_path.exists():
-    #                         match_img = cv2.imread(str(img_path))
-    #                         if match_img is not None:
-    #                             st.image(
-    #                                 cv2.cvtColor(match_img, cv2.COLOR_BGR2RGB),
-    #                                 # use_column_width=True,
-    #                             )
-    #                     st.caption(f"**{match.name}**")
-    #                     st.caption(f"Score: {score:.2f}")
+            if matches and len(matches) > 0:
+                # Display top matches in a grid
+                match_cols = st.columns(5)
+                for col_idx, (match, score) in enumerate(zip(matches[:5], scores[:5])):
+                    with match_cols[col_idx]:
+                        img_url = match.url
+                        st.image(
+                            img_url
+                            if img_url
+                            else "https://via.placeholder.com/300x420?text=No+Image",
+                        )
+                        st.caption(f"**{match.name}**")
+                        st.caption(f"Score: {score:.2f}")
 
 
 def export_results(

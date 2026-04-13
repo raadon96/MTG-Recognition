@@ -24,7 +24,6 @@ from paddleocr import PaddleOCR
 from paddlex.inference import load_pipeline_config
 from sqlalchemy.engine.row import Row
 
-import mtg_recognition.settings
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.ocr import ocr_utils
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
