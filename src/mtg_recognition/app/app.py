@@ -243,7 +243,11 @@ def display_batch_detail_view(results, selected_idx, engine):
                 st.image(ocr_debug.annotated_info, width="stretch")
 
         with st.expander("📄 Table 1 — Raw OCR Output (Info ROI)", expanded=True):
-            st.dataframe(ocr_debug.raw_texts_df, width="stretch")
+            st.dataframe(
+                ocr_debug.raw_texts_df,
+                column_config={"score": st.column_config.NumberColumn(format="%.1f")},
+                width="stretch",
+            )
 
         with st.expander(
             "📊 Table 2 — Extracted Properties vs. Best Match", expanded=True
@@ -291,7 +295,7 @@ def display_batch_detail_view(results, selected_idx, engine):
             st.dataframe(
                 ocr_debug.score_matrix.style.background_gradient(
                     cmap="RdYlGn", vmin=0, vmax=100
-                ),
+                ).format("{:.1f}"),
                 width="stretch",
             )
 

@@ -109,19 +109,23 @@ def extract_power_toughness(
     """
     Extract power/toughness in format <power>/<toughness>.
 
+    Handles numeric values (e.g. "3/3", "2/5") and star values (e.g. "*/*", "2/*").
+    Uses lookaround anchors instead of \\b so that '*' (a non-word char) is matched
+    correctly alongside digits.
+
     Args:
         rec_texts: List of OCR-recognized text strings
     Returns:
-        Power/toughness tuple (e.g., ("3", "2")) or (None, None) if not found
+        Power/toughness tuple (e.g., ("3", "2"), ("*", "*")) or (None, None) if not found
     """
-    pattern = r"\b(\d{1,1}/\d{1,1})\b"
-    string = " ".join(rec_texts)
-    normalized = string.replace("\\", "/").replace("|", "/")
-    normalized = re.sub(r"\s*/\s*", "/", normalized)
+    _PT_SLOT = r"(\*|\d)"
+    pattern = rf"(?<!\w){_PT_SLOT}/{_PT_SLOT}(?!\w)"
+
+    normalized = _normalize_slash_variants(" ".join(rec_texts))
 
     match = re.search(pattern, normalized)
     if match:
-        return tuple(match.group(1).split("/"))
+        return match.group(1), match.group(2)
 
     return None, None
 

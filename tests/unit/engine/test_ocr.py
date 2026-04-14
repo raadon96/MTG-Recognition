@@ -4,6 +4,7 @@ import pytest
 from mtg_recognition.engine.ocr.ocr_utils import (
     extract_card_name,
     extract_number_and_base_set_size,
+    extract_power_toughness,
     extract_set_release_year,
     extract_setcode_by_artifact,
     sort_scores_with_indices,
@@ -180,6 +181,59 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
     def test_leading_letter_year_still_rejected(self):
         """Digit part of a prefixed token is still rejected if it looks like a year"""
         assert extract_number_and_base_set_size(["LCI", "L2023", "Artist"]) == (None, None)
+
+
+class TestExtractPowerToughness:
+    def test_empty(self):
+        assert extract_power_toughness([]) == (None, None)
+
+    def test_no_match(self):
+        assert extract_power_toughness(["TEXT", "ONLY"]) == (None, None)
+
+    # Digit / digit (existing behaviour — must not regress)
+    def test_digit_digit(self):
+        assert extract_power_toughness(["3/3"]) == ("3", "3")
+
+    def test_digit_digit_asymmetric(self):
+        assert extract_power_toughness(["2/5"]) == ("2", "5")
+
+    def test_digit_digit_not_confused_with_collector_number(self):
+        """Single-digit P/T is returned even when a multi-digit collector number is present"""
+        assert extract_power_toughness(["3/3", "173/361", "CMR-EN"]) == ("3", "3")
+
+    def test_collector_number_alone_not_mistaken_for_pt(self):
+        """Multi-digit collector number is not matched as P/T"""
+        assert extract_power_toughness(["173/361", "CMR-EN"]) == (None, None)
+
+    # Star values (new)
+    def test_star_star(self):
+        assert extract_power_toughness(["*/*"]) == ("*", "*")
+
+    def test_digit_star(self):
+        assert extract_power_toughness(["2/*"]) == ("2", "*")
+
+    def test_star_digit(self):
+        assert extract_power_toughness(["*/3"]) == ("*", "3")
+
+    # OCR normalisation
+    def test_star_star_spaced_slash(self):
+        assert extract_power_toughness(["* / *"]) == ("*", "*")
+
+    def test_star_star_backslash(self):
+        assert extract_power_toughness(["*\\*"]) == ("*", "*")
+
+    # Real-world info-ROI context
+    @pytest.mark.parametrize(
+        "rec_texts,expected",
+        [
+            (["*/*", "338", "LCI-EN", "MICHAEL KOMARCK"], ("*", "*")),
+            (["2/*", "042/280", "MH2-EN", "ARTIST"], ("2", "*")),
+            (["3/3", "112/280", "M20-EN", "ARTIST"], ("3", "3")),
+            (["338", "LCI-EN", "MICHAEL KOMARCK", "©2023"], (None, None)),
+        ],
+    )
+    def test_real_world_examples(self, rec_texts, expected):
+        assert extract_power_toughness(rec_texts) == expected
 
 
 class TestExtractCopyrightYear:

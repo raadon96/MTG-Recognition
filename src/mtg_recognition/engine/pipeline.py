@@ -1,8 +1,10 @@
+import json
 import time
+import uuid as _uuid
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Generator
 
 import click
 import cv2
@@ -10,6 +12,7 @@ import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
 
+from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
@@ -144,69 +147,172 @@ class Pipeline:
         self.phash_matcher.build_index(force)
 
 
+def _stem_uuid(stem: str) -> str | None:
+    """Return stem if it is a valid UUID string, else None."""
+    try:
+        _uuid.UUID(stem)
+        return stem
+    except ValueError:
+        return None
+
+
 @click.command()
 @click.option(
     "-i",
     "--input",
+    "input_path",
     type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=True,
-        readable=True,
-        path_type=Path,
+        exists=True, file_okay=True, dir_okay=True, readable=True, path_type=Path
     ),
-    default="benchmarks/dataset/images/raw",
-    help="Path to input image or directory of images (supports .jpg)",
+    required=True,
+    help="Path to a single image file or a directory of image files.",
+)
+@click.option(
+    "-o",
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Directory where JSON result files are written (one per image). "
+    "When omitted, results are printed to the terminal only.",
+)
+@click.option(
+    "--k-phash",
+    type=click.INT,
+    default=20,
+    show_default=True,
+    help="Number of pHash candidates for the coarse retrieval stage.",
 )
 @click.option(
     "-k",
     type=click.INT,
     default=1,
-    help="Number of final matches to return after OCR refinement",
+    show_default=True,
+    help="Number of top matches to return after OCR refinement.",
 )
-@click.option(
-    "-n",
-    type=click.INT,
-    default=100,
-    help="Number of candidates to retrieve from perceptual hash stage",
-)
-def main(input: Path, k: int, n: int):
-    if input.is_file():
-        img_paths = [input]
-    elif input.is_dir():
-        img_paths = sorted(list(input.glob("*.jpg")))
+def main(input_path: Path, output_dir: Path | None, k_phash: int, k: int) -> None:
+    """Run the full MTG card recognition pipeline on one image or a directory.
+
+    Always segments the input image (the segmentor's bypass path handles
+    pre-cropped scans without running any model). Results are printed
+    incrementally. Pass -o to also save a JSON file per image.
+
+    Examples:
+
+    \b
+    uv run python -m mtg_recognition.engine.pipeline -i card.jpg
+    uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
+    uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results
+    """
+    if input_path.is_file():
+        img_paths = [input_path]
     else:
-        print(f"Input path does not exist: {input}")
-        return
+        img_paths = image_utils.get_image_files_in_directory(input_path)
 
     if not img_paths:
-        print(f"No .jpg images found in: {input}")
-        return
+        click.echo(f"No image files found in: {input_path}", err=True)
+        raise SystemExit(1)
+
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     pipeline = Pipeline(auto_build=True)
-    pipeline.build_index(force=False)
+    total = len(img_paths)
 
-    for i, img_path in enumerate(img_paths):
-        query_img = load_and_resize_image(img_path)
-        print(f"image size = {query_img.shape[:2]} (h x w)")
+    for idx, img_path in enumerate(img_paths, 1):
+        img_abs = str(img_path.resolve())
         try:
-            best_matches, best_scores, _, _ = pipeline.find_best_matches(
-                query_img, k_final_results=k, k_phash_candidates=n
-            )
+            img_display = str(img_path.resolve().relative_to(Path.cwd()))
+        except ValueError:
+            img_display = img_abs
 
-            success = best_matches[0].uuid == img_path.stem
-            print(f"{i} {success} \t {img_path.stem}")
-            print(f"Top {k} matches:")
-            for i, match in enumerate(best_matches):
-                print(
-                    f"  UUID: {match.uuid}, Name: {match.name}, Score: {best_scores[i]}\n"
-                )
-        except Exception as e:
-            print(f"Error processing {img_path}: {e}")
+        query_img = load_and_resize_image(img_path)
+        if query_img is None:
+            click.echo(
+                f"[{idx}/{total}] {img_display}  ERROR: failed to load image", err=True
+            )
+            continue
+
+        matches, scores, ocr_debug, diag = pipeline.find_best_matches(
+            query_img,
+            k_phash_candidates=k_phash,
+            k_final_results=k,
+            apply_segmentation=True,
+            debug=True,
+        )
+
+        # UUID-based success check
+        stem_uuid = _stem_uuid(img_path.stem)
+        if stem_uuid is None:
+            success: bool | None = None
+        elif matches:
+            success = matches[0].uuid == stem_uuid
+        else:
+            success = False
+
+        # Status label
+        if success is None:
+            status = "—"
+        elif success:
+            status = "✓ MATCH"
+        else:
+            got = matches[0].uuid if matches else "no match"
+            status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
+
+        # Raw OCR texts and scores
+        raw_texts: list[str] = []
+        raw_scores: list[float] = []
+        if ocr_debug is not None:
+            raw_texts = ocr_debug.raw_texts_df["text"].tolist()
+            raw_scores = [
+                round(float(s), 3) for s in ocr_debug.raw_texts_df["score"].tolist()
+            ]
+
+        # --- Terminal output (incremental) ---
+        click.echo(f"[{idx}/{total}] {img_display}  {status}")
+        if not matches:
+            click.echo("  no matches found")
+        for rank, (match, score) in enumerate(zip(matches, scores), 1):
+            click.echo(
+                f"  #{rank}  {match.name}  |  {match.setCode} · {match.number}  |  score: {score:.1f}"
+            )
+        click.echo(f"  raw_texts:  {raw_texts}")
+        click.echo(f"  raw_scores: {raw_scores}")
+        click.echo(
+            f"  timings: seg={diag.segmentation_ms:.0f}ms  "
+            f"phash={diag.phash_ms:.0f}ms  "
+            f"ocr={diag.ocr_ms:.0f}ms  "
+            f"total={diag.total_ms:.0f}ms"
+        )
+        click.echo("")
+
+        # --- JSON output ---
+        if output_dir is not None:
+            result: dict = {
+                "image": img_abs,
+                "success": success,
+                "matches": [
+                    {
+                        "rank": rank,
+                        "name": match.name,
+                        "uuid": match.uuid,
+                        "setCode": match.setCode,
+                        "number": match.number,
+                        "score": round(score, 1),
+                    }
+                    for rank, (match, score) in enumerate(zip(matches, scores), 1)
+                ],
+                "raw_texts": raw_texts,
+                "raw_scores": raw_scores,
+                "timings_ms": {
+                    "segmentation_ms": round(diag.segmentation_ms, 1),
+                    "phash_ms": round(diag.phash_ms, 1),
+                    "ocr_ms": round(diag.ocr_ms, 1),
+                    "total_ms": round(diag.total_ms, 1),
+                },
+            }
+            out_path = output_dir / f"{img_path.stem}.json"
+            out_path.write_text(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
     main()
-
-# uv run python -m mtg_recognition.engine.pipeline
-# uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 1 -n 20

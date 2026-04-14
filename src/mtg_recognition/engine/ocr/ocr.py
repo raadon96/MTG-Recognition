@@ -1,33 +1,22 @@
-"""
-# A: baseline (server det, no preprocessing)
-uv run python -m mtg_recognition.engine.ocr.ocr
+"""OCR-based card property extraction and fuzzy matching against pHash candidates.
 
-# B: server det + preprocessing (sanity check overhead)
-uv run python -m mtg_recognition.engine.ocr.ocr --preprocess
-
-# C: mobile det, no preprocessing
-uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile
-
-# D: mobile det + preprocessing (target config)
-uv run python -m mtg_recognition.engine.ocr.ocr --det-mobile --preprocess
+Use `engine/pipeline.py` (or `python -m mtg_recognition.engine.pipeline`) for
+the full end-to-end pipeline including segmentation and pHash coarse search.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import NamedTuple
 
-import click
 import cv2
 import numpy as np
 import pandas as pd
 import rapidfuzz
-from icecream import ic
 from paddleocr import PaddleOCR
 from paddlex.inference import load_pipeline_config
 from PIL import Image
 from sqlalchemy.engine.row import Row
 
-from mtg_recognition.core.image_utils import _ensure_min_dim, load_and_resize_image
+from mtg_recognition.core.image_utils import _ensure_min_dim
 from mtg_recognition.engine.ocr import ocr_utils
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 
@@ -378,86 +367,3 @@ class CardOCR:
             )
 
         return top_candidates, top_scores, ocr_debug
-
-
-@click.command()
-@click.option(
-    "-i",
-    "--input",
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=True,
-        readable=True,
-        path_type=Path,
-    ),
-    default="benchmarks/dataset/images/ready",
-    help="Path to input image or directory of images (supports .jpg)",
-)
-@click.option(
-    "--enable-hpi",
-    type=bool,
-    is_flag=False,
-    help="Enable high-performance inference (HPI) for OCR models",
-)
-@click.option(
-    "--det-mobile",
-    is_flag=True,
-    default=False,
-    help="Use PP-OCRv5_mobile_det instead of PP-OCRv5_server_det",
-)
-@click.option(
-    "--preprocess",
-    is_flag=True,
-    default=False,
-    help="Apply lightweight preprocessing (adaptive upscale + CLAHE + \\"
-    "deblur + unsharp mask) to ROI crops before OCR",
-)
-def main(input, enable_hpi, det_mobile, preprocess):
-    if input.is_file():
-        img_paths = [input]
-    elif input.is_dir():
-        img_paths = sorted(list(input.glob("*.jpg")))
-
-    if not img_paths:
-        print(f"No .jpg images found in: {input}")
-        return
-
-    ocr = CardOCR(
-        enable_hpi=enable_hpi, det_mobile=det_mobile, use_preprocessing=preprocess
-    )
-    from ..matching.phash_matcher import PHashCardMatcher
-
-    matcher = PHashCardMatcher(auto_build=True)
-
-    for i, img_path in enumerate(img_paths):
-        query_img = load_and_resize_image(img_path)
-        if query_img is None:
-            print(f"Failed to read image: {img_path}")
-            continue
-
-        # Find candidates with deep embeddings
-        candidates_dem, scores_dem = matcher.find_best_matches(query_img, k=100)
-        properties, _ = ocr.extract_properties(query_img, debug=True)
-        print(
-            f"{properties.setcode_candidates} \t {properties.number} \t \
-                {properties.base_set_size} \t {properties.name} \t {properties.set_release_year} \
-                    \t {properties.power} \t {properties.toughness}"
-        )
-
-        # Find best matches with OCR
-        success = False
-        candidates_ocr, scores_ocr, _ = ocr.find_best_matches(
-            query_img, candidates_dem, properties, k=10, thresh=0.0
-        )
-
-        if candidates_ocr:
-            success = candidates_ocr[0].uuid == img_path.stem
-            ic(candidates_ocr[0], scores_ocr[0])
-
-        print(f"{i} {success} \t {img_path.stem}")
-        print("\n ------------------------------------------- \n")
-
-
-if __name__ == "__main__":
-    main()
