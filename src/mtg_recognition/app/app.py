@@ -85,21 +85,21 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                 if result.status == "success" and result.matches:
                     st.markdown(f"**{result.matches[0].name}**")
 
-                    # Color-coded score indicator (darker for better contrast)
+                    # Color-coded score indicator (scores are 0–100)
                     score = result.scores[0]
-                    if score >= 0.75:
+                    if score >= 75:
                         st.markdown(
-                            f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.2f}</div>',
+                            f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
                             unsafe_allow_html=True,
                         )
-                    elif score >= 0.50:
+                    elif score >= 50:
                         st.markdown(
-                            f'<div style="background-color: #CC9900; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.2f}</div>',
+                            f'<div style="background-color: #CC9900; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
                             unsafe_allow_html=True,
                         )
                     else:
                         st.markdown(
-                            f'<div style="background-color: #CC6600; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.2f}</div>',
+                            f'<div style="background-color: #CC6600; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
                             unsafe_allow_html=True,
                         )
 
@@ -152,10 +152,36 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     debug = st.session_state.get("debug_mode", False)
 
-    # Back button at top
-    if st.button("← Back to Results", width="content"):
-        st.session_state.selected_result_idx = None
-        st.rerun()
+    # Build ordered list of navigable (success) result indices for prev/next
+    success_indices = [i for i, r in enumerate(results) if r.status == "success" and r.matches]
+    try:
+        pos = success_indices.index(selected_idx)
+    except ValueError:
+        pos = None
+
+    def _nav_bar(key_suffix: str) -> None:
+        col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
+        with col_back:
+            if st.button("← Back to Results", key=f"back_{key_suffix}", use_container_width=True):
+                st.session_state.selected_result_idx = None
+                st.rerun()
+        if pos is not None:
+            with col_prev:
+                if st.button("◀", key=f"prev_{key_suffix}", disabled=pos == 0, use_container_width=True):
+                    st.session_state.selected_result_idx = success_indices[pos - 1]
+                    st.rerun()
+            with col_pos:
+                st.markdown(
+                    f"<p style='text-align:center; margin:0; padding-top:6px; color:gray;'>"
+                    f"{pos + 1} / {len(success_indices)}</p>",
+                    unsafe_allow_html=True,
+                )
+            with col_next:
+                if st.button("▶", key=f"next_{key_suffix}", disabled=pos == len(success_indices) - 1, use_container_width=True):
+                    st.session_state.selected_result_idx = success_indices[pos + 1]
+                    st.rerun()
+
+    _nav_bar("top")
 
     st.subheader(f"📋 {result.uploaded_filename}")
 
@@ -208,21 +234,21 @@ def display_batch_detail_view(results, selected_idx, engine):
         st.caption("**Card Info**")
         st.markdown(f"**{best_match.name}**")
 
-        # Color-coded score (darker for better contrast)
+        # Color-coded score (scores are 0–100)
         score = scores[0]
-        if score >= 0.85:
+        if score >= 85:
             st.markdown(
-                f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.4f}</div>',
+                f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
                 unsafe_allow_html=True,
             )
-        elif score >= 0.70:
+        elif score >= 70:
             st.markdown(
-                f'<div style="background-color: #CC9900; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.4f}</div>',
+                f'<div style="background-color: #CC9900; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
-                f'<div style="background-color: #CC6600; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.4f}</div>',
+                f'<div style="background-color: #CC6600; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -298,6 +324,10 @@ def display_batch_detail_view(results, selected_idx, engine):
                 ).format("{:.1f}"),
                 width="stretch",
             )
+
+    # Bottom navigation bar — same controls as top, so no scrolling required
+    st.markdown("---")
+    _nav_bar("bottom")
 
 
 def export_results(
