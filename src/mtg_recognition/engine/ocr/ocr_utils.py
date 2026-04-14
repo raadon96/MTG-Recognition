@@ -14,7 +14,7 @@ _SUPPORTED_LANG_CODES = frozenset(
     {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
-ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
+_ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
 
 # Artist name extraction
 # Keep tokens that look like name parts: letters (incl. accented), spaces, hyphens,
@@ -66,36 +66,25 @@ def _normalize_slash_variants(text: str) -> str:
     return re.sub(r"\s*/\s*", "/", text)
 
 
-def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
-    """
-    Extract setcode from text containing language artifacts like '-EN', '·EN', etc."
-
-    Examples input -> output:
-    ['011/264', 'WAR-EN', 'B0AG'] -> ['WAR']
-    ['132/269', 'ELD-EN', 'MTEHELL MEALIN', 'C'] -> ['ELD']
-    """
-    for text in texts:
-        match = ARTIFACT_PATTERN.search(text)
-        if match:
-            result = [match.group(1)]
-            return result
-    return []
-
-
 def extract_setcode_candidates(texts: list[str]) -> list[str]:
     """
     Cleans raw texts output from PaddleOCR.
     """
-    texts = extract_setcode_by_artifact(texts)
+    for text in texts:
+        match = _ARTIFACT_PATTERN.search(text)
+        if match:
+            return [match.group(1)]
+
+    # split all substrings by whitespace and flatten into a single list of tokens
+    split = []
+    for text in texts:
+        split.extend(text.split())
 
     # remove whitespace
-    stripped = list(map(str.strip, texts))
-
-    # remove non ascii characters
-    cleaned = stripped
+    stripped = list(map(str.strip, split))
 
     # Filter out texts without the desired length
-    setcodes = list(filter(lambda text: 3 <= len(text) <= 6, cleaned))
+    setcodes = list(filter(lambda text: 3 <= len(text) <= 8, stripped))
 
     # Replace commonly misread OCR setcodes
     # setcodes = replace_ocr_mistakes(filtered)
