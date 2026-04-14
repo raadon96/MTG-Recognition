@@ -3,7 +3,7 @@ import pytest
 
 from mtg_recognition.engine.ocr.ocr_utils import (
     extract_card_name,
-    extract_collector_number,
+    extract_number_and_base_set_size,
     extract_set_release_year,
     extract_setcode_by_artifact,
     sort_scores_with_indices,
@@ -45,85 +45,141 @@ class TestExtractCardName:
         assert extract_card_name(texts) == expected
 
 
-class TestExtractCollectorNumber:
-    """Minimal focused test suite for extract_collector_number with longest-match strategy"""
+class TestExtractNumberAndBaseSetSize:
+    """Tests for extract_number_and_base_set_size.
+
+    Returns (collector_number, base_set_size) where collector_number has leading
+    zeros stripped (matching the DB representation). base_set_size is None for
+    old sets that print only a standalone card number with no /baseSetSize.
+    """
 
     # Core functionality
-    def test_simple_collector_number(self):
-        """Basic collector number extraction"""
-        assert extract_collector_number(["011/264", "WAR-EN"]) == "011/264"
+    def test_simple(self):
+        assert extract_number_and_base_set_size(["011/264", "WAR-EN"]) == ("11", "264")
 
     def test_empty_list(self):
-        """Empty input returns None"""
-        assert extract_collector_number([]) is None
+        assert extract_number_and_base_set_size([]) == (None, None)
 
     def test_no_match(self):
-        """No collector number present"""
-        assert extract_collector_number(["WAR-EN", "SOMETEXT"]) is None
+        assert extract_number_and_base_set_size(["WAR-EN", "SOMETEXT"]) == (None, None)
 
-    # Longest-match strategy (key feature)
+    def test_leading_zeros_stripped(self):
+        assert extract_number_and_base_set_size(["099/280", "A"]) == ("99", "280")
+
+    # Longest-match strategy: prefer collector number over P/T
     def test_prefers_longer_over_power_toughness(self):
-        """Prefer collector number over power/toughness when both present"""
-        assert extract_collector_number(["1/2", "112/280", "M20.EN"]) == "112/280"
+        assert extract_number_and_base_set_size(["1/2", "112/280", "M20.EN"]) == ("112", "280")
 
     def test_multiple_candidates_returns_longest(self):
-        """When multiple digit/digit patterns exist, return longest"""
-        assert extract_collector_number(["2/2", "99/99", "112/280"]) == "112/280"
+        assert extract_number_and_base_set_size(["2/2", "99/99", "112/280"]) == ("112", "280")
 
     def test_only_power_toughness_available(self):
-        """Single-digit P/T values are not mistaken for collector numbers"""
-        assert extract_collector_number(["1/2", "SOMETEXT"]) is None
+        """Single-digit P/T values are not mistaken for a card number"""
+        assert extract_number_and_base_set_size(["1/2", "SOMETEXT"]) == (None, None)
 
-    # Embedded/substring cases
+    # Embedded / substring cases
     def test_embedded_with_trailing_letter(self):
-        """Collector number embedded with trailing letter"""
-        assert extract_collector_number(["055/280C", "M2O-EN"]) == "055/280"
+        """Trailing uppercase letter (OCR noise) is not included in the number"""
+        assert extract_number_and_base_set_size(["055/280C", "M2O-EN"]) == ("55", "280")
 
     def test_embedded_in_longer_string(self):
-        """Collector number as substring"""
-        assert extract_collector_number(["C330/361EN", "TEXT"]) == "330/361"
+        assert extract_number_and_base_set_size(["C330/361EN", "TEXT"]) == ("330", "361")
 
-    # Split token cases
+    # Split-token cases
     def test_split_three_tokens(self):
-        """Collector number split across three tokens"""
-        assert extract_collector_number(["011", "/", "264", "WAR-EN"]) == "011/264"
+        assert extract_number_and_base_set_size(["011", "/", "264", "WAR-EN"]) == ("11", "264")
 
     def test_split_two_tokens(self):
-        """Collector number split across two tokens"""
-        assert extract_collector_number(["011/", "264", "WAR-EN"]) == "011/264"
+        assert extract_number_and_base_set_size(["011/", "264", "WAR-EN"]) == ("11", "264")
 
-    def test_split_with_power_toughness(self):
-        """Split collector number preferred over power/toughness"""
-        assert extract_collector_number(["1/2", "011/", "264"]) == "011/264"
+    def test_split_preferred_over_power_toughness(self):
+        assert extract_number_and_base_set_size(["1/2", "011/", "264"]) == ("11", "264")
 
-    # OCR errors
-    def test_backslash_normalization(self):
-        """Handle backslash misread as slash"""
-        assert extract_collector_number(["011\\264", "TEXT"]) == "011/264"
+    # OCR normalisation
+    def test_backslash_normalised_to_slash(self):
+        assert extract_number_and_base_set_size(["011\\264", "TEXT"]) == ("11", "264")
 
-    def test_spaces_around_slash(self):
-        """Handle spaces around slash"""
-        assert extract_collector_number(["011 / 264", "TEXT"]) == "011/264"
+    def test_spaces_around_slash_normalised(self):
+        assert extract_number_and_base_set_size(["011 / 264", "TEXT"]) == ("11", "264")
 
-    # Real-world examples
+    # Real-world OCR examples
     @pytest.mark.parametrize(
         "rec_texts,expected",
         [
-            (["011/264", "WAR-EN", "B0AG"], "011/264"),
-            (["1/2", "112/280", "M20.EN", "KEE"], "112/280"),
-            (["3/3", "173/361", "CMR-EN", "ACWANE"], "173/361"),
-            (["055/280C", "M2O=ENVKH TWON"], "055/280"),
-            (["1/1", "105/264", "C", "WaR=EN"], "105/264"),
-            (["236/269 <", "ELD-EN"], "236/269"),
-            (["099/280", "A"], "099/280"),
-            (["330/361C", "CMR-EN"], "330/361"),
-            (["269/289C", "TSR-EN"], "269/289"),
-            (["2/2", "134/280C", "M2O+EN"], "134/280"),
+            (["011/264", "WAR-EN", "B0AG"], ("11", "264")),
+            (["1/2", "112/280", "M20.EN", "KEE"], ("112", "280")),
+            (["3/3", "173/361", "CMR-EN", "ACWANE"], ("173", "361")),
+            (["055/280C", "M2O=ENVKH TWON"], ("55", "280")),
+            (["1/1", "105/264", "C", "WaR=EN"], ("105", "264")),
+            (["236/269 <", "ELD-EN"], ("236", "269")),
+            (["099/280", "A"], ("99", "280")),
+            (["330/361C", "CMR-EN"], ("330", "361")),
+            (["269/289C", "TSR-EN"], ("269", "289")),
+            (["2/2", "134/280C", "M2O+EN"], ("134", "280")),
         ],
     )
     def test_real_world_examples(self, rec_texts, expected):
-        """Real-world OCR outputs with power/toughness and collector numbers"""
-        assert extract_collector_number(rec_texts) == expected
+        assert extract_number_and_base_set_size(rec_texts) == expected
+
+
+class TestExtractNumberAndBaseSetSizeSuffix:
+    """Stage 1 extensions: letter/star suffixes and T/C token prefixes."""
+
+    def test_letter_suffix(self):
+        """Lowercase letter suffix is preserved (DFC / variant marker)"""
+        assert extract_number_and_base_set_size(["100a/302", "NEO-EN"]) == ("100a", "302")
+
+    def test_star_suffix(self):
+        """Star suffix is preserved (foil / special treatment)"""
+        assert extract_number_and_base_set_size(["67★/350", "TEXT"]) == ("67★", "350")
+
+    def test_token_prefix_both_sides(self):
+        """T prefix on both sides of slash is preserved (token card numbering)"""
+        assert extract_number_and_base_set_size(["T001/T030", "CMR-EN"]) == ("T001", "T030")
+
+    def test_single_letter_before_digits_not_captured(self):
+        """Uppercase OCR set-code bleed before digits is not captured as a prefix"""
+        assert extract_number_and_base_set_size(["C330/361EN", "TEXT"]) == ("330", "361")
+
+
+class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
+    """Stage 2: standalone card number for sets that omit /baseSetSize."""
+
+    def test_leading_zero_standalone(self):
+        """CE/IE style 4-digit card number with leading zero"""
+        assert extract_number_and_base_set_size(["CE", "0214", "Artist", "©1993"]) == ("214", None)
+
+    def test_three_digit_standalone(self):
+        """3-digit standalone card number"""
+        assert extract_number_and_base_set_size(["ARN", "338", "Artist", "©1993"]) == ("338", None)
+
+    def test_year_not_mistaken_for_card_number(self):
+        """4-digit copyright year is rejected"""
+        assert extract_number_and_base_set_size(["FBB", "Artist", "©1994"]) == (None, None)
+
+    def test_single_digit_rejected(self):
+        """Single digit is too ambiguous (P/T bleed etc.)"""
+        assert extract_number_and_base_set_size(["MIR", "5", "Artist", "©2020"]) == (None, None)
+
+    def test_two_digit_without_leading_zero_rejected(self):
+        """2-digit value without leading zero is too noisy"""
+        assert extract_number_and_base_set_size(["ARN", "38", "Artist"]) == (None, None)
+
+    def test_stage1_takes_priority(self):
+        """Full cardNumber/baseSetSize result is returned when both stages could match"""
+        assert extract_number_and_base_set_size(["214", "011/264", "WAR-EN"]) == ("11", "264")
+
+    def test_leading_letter_with_ocr_zero_artifact(self):
+        """Single uppercase letter prefix with OCR zero artifact (e.g. 'L0398' from 'L 398')"""
+        assert extract_number_and_base_set_size(["LCI", "L0398", "Artist", "©2023"]) == ("398", None)
+
+    def test_leading_letter_no_artifact(self):
+        """Single uppercase letter prefix without OCR artifact (e.g. 'L398')"""
+        assert extract_number_and_base_set_size(["LCI", "L398", "Artist"]) == ("398", None)
+
+    def test_leading_letter_year_still_rejected(self):
+        """Digit part of a prefixed token is still rejected if it looks like a year"""
+        assert extract_number_and_base_set_size(["LCI", "L2023", "Artist"]) == (None, None)
 
 
 class TestExtractCopyrightYear:

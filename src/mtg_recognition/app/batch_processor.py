@@ -16,7 +16,7 @@ from mtg_recognition.engine.pipeline import Pipeline
 
 # Pipeline retrieval parameters shared between batch processing and the detail view.
 # Keep these in one place so both code paths always agree.
-K_PHASH_CANDIDATES = 20  # pHash candidates passed to OCR refinement
+K_PHASH_CANDIDATES = 50  # pHash candidates passed to OCR refinement
 K_TOP_MATCHES = 5  # final matches returned after OCR
 
 

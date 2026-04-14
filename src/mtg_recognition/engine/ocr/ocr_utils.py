@@ -1,10 +1,8 @@
+import datetime
 import logging
 import re
-from collections.abc import Callable
 
-import cv2
 import numpy as np
-import rapidfuzz
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -13,20 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR")
 _SUPPORTED_LANG_CODES = frozenset(
-    {
-        "EN",
-        "FR",
-        "DE",
-        "ES",
-        "IT",
-        "PT",
-        "JA",
-        "JP",
-        "KO",
-        "RU",
-        "ZH",
-        "TW",
-    }
+    {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
 ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
@@ -38,10 +23,13 @@ _ARTIST_KEEP = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ '\-\.]+$")
 _ARTIST_BLOCKLIST = frozenset(
     {
         "illus",
+        "illus.",
         "wizards",
         "coast",
+        "coast,",
         "llc",
         "inc",
+        "inc.",
         "reserved",
         "rights",
         "tm",
@@ -51,6 +39,32 @@ _ARTIST_BLOCKLIST = frozenset(
     }
 )
 
+# Collector number extraction — Stage 1 (full cardNumber/baseSetSize)
+# Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo markers
+_COLL_SUFFIX = r"[a-z★†✦]?"
+# Symmetric T/C prefix variant (T=token, C=commander): both sides must carry the same prefix class
+_S1_BOUNDARY_PREFIX = re.compile(
+    rf"\b([TC]\d{{1,4}}{_COLL_SUFFIX}/[TC]\d{{2,4}}{_COLL_SUFFIX})\b"
+)
+_S1_BOUNDARY_STD = re.compile(rf"\b(\d{{1,4}}{_COLL_SUFFIX}/\d{{2,4}}{_COLL_SUFFIX})\b")
+_S1_NB_PREFIX = re.compile(
+    rf"([TC]\d{{1,4}}{_COLL_SUFFIX}/[TC]\d{{2,4}}{_COLL_SUFFIX})"
+)
+_S1_NB_STD = re.compile(rf"(\d{{1,4}}{_COLL_SUFFIX}/\d{{2,4}}{_COLL_SUFFIX})")
+
+# Collector number extraction — Stage 2 (standalone cardNumber, no /baseSetSize)
+_S2_PATTERN = re.compile(r"\b(\d{1,4})\b")
+# Handles OCR noise where a single uppercase letter is glued to the digits
+# (e.g. "L0398" from a basic-land "L 398" marker, or "L398")
+_S2_LEADING_LETTER_PATTERN = re.compile(r"(?<!\w)[A-Z](\d{1,4})\b")
+_S2_YEAR_MIN = 1993  # First MTG set (Alpha, August 1993)
+
+
+def _normalize_slash_variants(text: str) -> str:
+    """Normalise OCR slash variants (backslash, pipe, surrounding spaces) to '/'."""
+    text = text.replace("\\", "/").replace("|", "/")
+    return re.sub(r"\s*/\s*", "/", text)
+
 
 def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
     """
@@ -58,7 +72,7 @@ def extract_setcode_by_artifact(texts: list[str]) -> list[str]:
 
     Examples input -> output:
     ['011/264', 'WAR-EN', 'B0AG'] -> ['WAR']
-    ['132/269', 'ELD-EN', 'MTEHELL MEALIN', 'C'] -> ['ELD]
+    ['132/269', 'ELD-EN', 'MTEHELL MEALIN', 'C'] -> ['ELD']
     """
     for text in texts:
         match = ARTIFACT_PATTERN.search(text)
@@ -112,89 +126,148 @@ def extract_power_toughness(
     return None, None
 
 
-def extract_collector_number(rec_texts: list[str]) -> str | None:
+def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
     """
-    Extract MTG collector number in format <card_number>/<base_set_size>.
+    Stage 2: extract a standalone card number when no cardNumber/baseSetSize pattern
+    was found.
 
-    Uses longest-match strategy to distinguish collector numbers from
-    power/toughness values (e.g., "112/280" vs "1/2").
+    Accepts:
+    - 3-4 digit values
+    - 2-digit values that start with a leading zero (CE/IE style, e.g. "02")
+
+    Rejects:
+    - 1-digit values (too ambiguous — P/T bleed, noise)
+    - 2-digit values without a leading zero
+    - 4-digit values in the MTG copyright year range [1993, current_year+1]
+
+    Ranking (best first):
+    1. Leading-zero tokens (strong signal for old-set card numbers)
+    2. Earlier position in reading order (closer to set code, farther from copyright)
+    3. Longer digit count
+    """
+    year_max = datetime.date.today().year + 1
+    candidates: list[tuple[str, int]] = []
+
+    def _accept(num_str: str) -> bool:
+        n = len(num_str)
+        if n == 1:
+            return False
+        if n == 2 and not num_str.startswith("0"):
+            return False
+        if n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max:
+            return False
+        return True
+
+    # Primary pass: bare digit tokens (e.g. "338", "0214")
+    for idx, text in enumerate(rec_texts):
+        for m in _S2_PATTERN.finditer(text):
+            num_str = m.group(1)
+            if _accept(num_str):
+                candidates.append((num_str, idx))
+
+    # Secondary pass: single uppercase letter prefix glued to digits
+    # (e.g. "L0398" / "L398" from a basic-land "L 398" marker read by OCR)
+    for idx, text in enumerate(rec_texts):
+        for m in _S2_LEADING_LETTER_PATTERN.finditer(text):
+            num_str = m.group(1)
+            if _accept(num_str):
+                candidates.append((num_str, idx))
+
+    if not candidates:
+        return None
+
+    best, _ = min(
+        candidates,
+        key=lambda item: (0 if item[0].startswith("0") else 1, item[1], -len(item[0])),
+    )
+    return best
+
+
+def _extract_number_field(rec_texts: list[str]) -> str | None:
+    """
+    Extract the raw printed number field from OCR tokens.
+
+    Returns the field exactly as printed on the card — either
+    "<cardNumber>/<baseSetSize>" (e.g. "011/264", "100a/302", "T001/T030")
+    or a bare "<cardNumber>" for sets that omit the set size (e.g. "0214").
+
+    Two-stage extraction:
+
+    Stage 1 — full <cardNumber>/<baseSetSize>:
+    - Standard: 1-4 digits / 2-4 digits
+    - Optional lowercase/star suffix on either side (a-z, ★, †, ✦)
+    - Symmetric T/C prefix on both sides (T=token, C=commander)
+    Uses longest-match strategy to prefer collector numbers over P/T values.
+
+    Stage 2 — standalone <cardNumber>:
+    Activated only when Stage 1 finds nothing. See _extract_standalone_card_number.
 
     Args:
         rec_texts: List of OCR-recognized text strings
 
     Returns:
-        Collector number string (e.g., "011/264") or None if not found
+        Raw number field string or None
     """
-    # Pattern: 1-4 digits, slash, 2-4 digits
-    pattern = r"\b(\d{1,4}/\d{2,4})\b"
-    pattern_no_boundary = r"(\d{1,4}/\d{2,4})"
+    candidates: list[str] = []
 
-    candidates = []
+    def _search(text: str, boundary: bool) -> None:
+        prefix_re = _S1_BOUNDARY_PREFIX if boundary else _S1_NB_PREFIX
+        std_re = _S1_BOUNDARY_STD if boundary else _S1_NB_STD
+        m = prefix_re.search(text)
+        if m:
+            candidates.append(m.group(1))
+        m = std_re.search(text)
+        if m:
+            candidates.append(m.group(1))
 
-    # Try to find pattern in each token
+    # Pass 1: per-token with word boundaries
     for text in rec_texts:
-        if not text:
-            continue
+        if text:
+            _search(_normalize_slash_variants(text), boundary=True)
 
-        # Normalize potential slash variants
-        normalized = text.replace("\\", "/").replace("|", "/")
-        normalized = re.sub(r"\s*/\s*", "/", normalized)
-
-        match = re.search(pattern, normalized)
-        if match:
-            candidates.append(match.group(1))
-
-    # Fallback: try concatenating adjacent tokens (handles split cases)
+    # Pass 2: two-token concatenation (handles split across tokens)
     for i in range(len(rec_texts) - 1):
-        combined = rec_texts[i] + rec_texts[i + 1]
-        normalized = combined.replace("\\", "/").replace("|", "/")
-        normalized = re.sub(r"\s*/\s*", "/", normalized)
+        _search(
+            _normalize_slash_variants(rec_texts[i] + rec_texts[i + 1]), boundary=True
+        )
 
-        match = re.search(pattern, normalized)
-        if match:
-            candidates.append(match.group(1))
-
-    # Additional fallback: try concatenating three consecutive tokens
-    # Handles cases like ["011", "/", "264"]
+    # Pass 3: three-token concatenation (handles e.g. ["011", "/", "264"])
     for i in range(len(rec_texts) - 2):
-        combined = rec_texts[i] + rec_texts[i + 1] + rec_texts[i + 2]
-        normalized = combined.replace("\\", "/").replace("|", "/")
-        normalized = re.sub(r"\s*/\s*", "/", normalized)
+        _search(
+            _normalize_slash_variants(
+                rec_texts[i] + rec_texts[i + 1] + rec_texts[i + 2]
+            ),
+            boundary=True,
+        )
 
-        match = re.search(pattern, normalized)
-        if match:
-            candidates.append(match.group(1))
-
-    # Fallback: search without word boundaries (for embedded cases)
+    # Pass 4: per-token without word boundaries (handles embedded, e.g. "C330/361EN")
     for text in rec_texts:
-        if not text:
-            continue
+        if text:
+            _search(_normalize_slash_variants(text), boundary=False)
 
-        normalized = text.replace("\\", "/").replace("|", "/")
-        normalized = re.sub(r"\s*/\s*", "/", normalized)
-
-        match = re.search(pattern_no_boundary, normalized)
-        if match:
-            candidates.append(match.group(1))
-
-    # Return the longest match (collector numbers are longer than power/toughness)
     if candidates:
-        result = str(max(candidates, key=len))
-        return result
+        return max(candidates, key=len)
 
-    return None
+    return _extract_standalone_card_number(rec_texts)
 
 
 def extract_number_and_base_set_size(
     rec_texts: list[str],
 ) -> tuple[str | None, str | None]:
     """
-    Extratc card number and base set size ocr texts.
+    Extract card number and base set size from OCR texts.
+
+    Returns (number, base_set_size). When only a standalone card number is found
+    (Stage 2, no /baseSetSize), base_set_size is None.
     """
-    collector_number = extract_collector_number(rec_texts)
-    if collector_number is None:
+    number_field = _extract_number_field(rec_texts)
+    if number_field is None:
         return None, None
-    number, base_set_size = collector_number.split("/")
+    if "/" not in number_field:
+        # Stage 2 result: standalone card number, no set size printed on card
+        number = number_field.lstrip("0") or number_field
+        return number, None
+    number, base_set_size = number_field.split("/")
     number = number.lstrip("0")
     return number, base_set_size
 
