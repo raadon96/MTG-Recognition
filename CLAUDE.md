@@ -38,7 +38,7 @@ uv run python -m compileall src tests
 # Pipeline CLI (recognition on one image or a directory)
 uv run python -m mtg_recognition.engine.pipeline -i card.jpg
 uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
-uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results
+uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results.json
 uv run python -m mtg_recognition.engine.pipeline --help
 
 # Segmentation CLI
@@ -77,7 +77,7 @@ Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`
 
 `pipeline.py` exposes a single `Pipeline.find_best_matches` method returning a 4-tuple `(matches, scores, ocr_debug, diag)`. `diag` is a `PipelineDiagnostics` dataclass (four timing floats: `segmentation_ms`, `phash_ms`, `ocr_ms`, `total_ms`) — always populated, near-zero overhead. `ocr_debug` is `OCRDebugData | None`, populated only when `debug=True`. These two are intentionally separate: timing is performance monitoring, `OCRDebugData` is OCR inspection data. A `_timer(diag, attr)` context manager handles per-stage measurement without boilerplate.
 
-`pipeline.py` also exposes a `@click.command()` CLI (`python -m mtg_recognition.engine.pipeline`). Options: `-i` (required, file or dir), `-o` (optional output dir for per-image JSON results), `--k-phash` (pHash candidates, default 20), `-k` (top-k final results, default 1). Results are printed incrementally; when `-o` is given a `<stem>.json` is written per image. If an image filename is a valid UUID, the CLI compares it against the top match and reports `✓ MATCH` / `✗ MISS` / `—`. The CLI always runs with `debug=True` so `raw_texts` and `raw_scores` are included in both terminal and JSON output.
+`pipeline.py` also exposes a `@click.command()` CLI (`python -m mtg_recognition.engine.pipeline`). Options: `-i` (required, file or dir), `-o` (optional output file path for JSON results), `--k-phash` (pHash candidates, default 20), `-k` (top-k final results, default 1). Results are printed incrementally; when `-o` is given all results are written as a JSON array to that single file after processing completes. If an image filename is a valid UUID, the CLI compares it against the top match and reports `✓ MATCH` / `✗ MISS` / `—`. The CLI always runs with `debug=True` so `raw_texts` and `raw_scores` are included in both terminal and JSON output.
 
 **App layer** (`app/`):
 - `app.py` — Streamlit UI for batch uploads. Sidebar toggle `"🔬 Debug Mode"` enables the `OCRDebugData` expanders in the detail view (annotated ROI, raw OCR table, extracted vs. best-match table, score matrix). The detail view reads all data directly from `BatchResult` — it does **not** re-run the pipeline.

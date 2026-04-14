@@ -169,10 +169,10 @@ def _stem_uuid(stem: str) -> str | None:
 )
 @click.option(
     "-o",
-    "--output-dir",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    "--output-file",
+    type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Directory where JSON result files are written (one per image). "
+    help="Path to a JSON file where all results are written as a list. "
     "When omitted, results are printed to the terminal only.",
 )
 @click.option(
@@ -189,19 +189,19 @@ def _stem_uuid(stem: str) -> str | None:
     show_default=True,
     help="Number of top matches to return after OCR refinement.",
 )
-def main(input_path: Path, output_dir: Path | None, k_phash: int, k: int) -> None:
+def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> None:
     """Run the full MTG card recognition pipeline on one image or a directory.
 
     Always segments the input image (the segmentor's bypass path handles
     pre-cropped scans without running any model). Results are printed
-    incrementally. Pass -o to also save a JSON file per image.
+    incrementally. Pass -o to also save all results to a single JSON file.
 
     Examples:
 
     \b
     uv run python -m mtg_recognition.engine.pipeline -i card.jpg
     uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
-    uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results
+    uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results.json
     """
     if input_path.is_file():
         img_paths = [input_path]
@@ -212,11 +212,12 @@ def main(input_path: Path, output_dir: Path | None, k_phash: int, k: int) -> Non
         click.echo(f"No image files found in: {input_path}", err=True)
         raise SystemExit(1)
 
-    if output_dir is not None:
-        output_dir.mkdir(parents=True, exist_ok=True)
+    if output_file is not None:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
 
     pipeline = Pipeline(auto_build=True)
     total = len(img_paths)
+    all_results: list[dict] = []
 
     for idx, img_path in enumerate(img_paths, 1):
         img_abs = str(img_path.resolve())
@@ -285,33 +286,37 @@ def main(input_path: Path, output_dir: Path | None, k_phash: int, k: int) -> Non
         )
         click.echo("")
 
-        # --- JSON output ---
-        if output_dir is not None:
-            result: dict = {
-                "image": img_abs,
-                "success": success,
-                "matches": [
-                    {
-                        "rank": rank,
-                        "name": match.name,
-                        "uuid": match.uuid,
-                        "setCode": match.setCode,
-                        "number": match.number,
-                        "score": round(score, 1),
-                    }
-                    for rank, (match, score) in enumerate(zip(matches, scores), 1)
-                ],
-                "raw_texts": raw_texts,
-                "raw_scores": raw_scores,
-                "timings_ms": {
-                    "segmentation_ms": round(diag.segmentation_ms, 1),
-                    "phash_ms": round(diag.phash_ms, 1),
-                    "ocr_ms": round(diag.ocr_ms, 1),
-                    "total_ms": round(diag.total_ms, 1),
-                },
-            }
-            out_path = output_dir / f"{img_path.stem}.json"
-            out_path.write_text(json.dumps(result, indent=2))
+        # --- Accumulate for JSON output ---
+        if output_file is not None:
+            all_results.append(
+                {
+                    "image": img_abs,
+                    "success": success,
+                    "matches": [
+                        {
+                            "rank": rank,
+                            "name": match.name,
+                            "uuid": match.uuid,
+                            "setCode": match.setCode,
+                            "number": match.number,
+                            "score": round(score, 1),
+                        }
+                        for rank, (match, score) in enumerate(zip(matches, scores), 1)
+                    ],
+                    "raw_texts": raw_texts,
+                    # "raw_scores": raw_scores,
+                    "timings_ms": {
+                        "segmentation_ms": round(diag.segmentation_ms, 1),
+                        "phash_ms": round(diag.phash_ms, 1),
+                        "ocr_ms": round(diag.ocr_ms, 1),
+                        "total_ms": round(diag.total_ms, 1),
+                    },
+                }
+            )
+
+    if output_file is not None:
+        output_file.write_text(json.dumps(all_results, indent=2))
+        click.echo(f"Results written to {output_file}")
 
 
 if __name__ == "__main__":
