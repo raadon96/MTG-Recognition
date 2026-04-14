@@ -85,7 +85,7 @@ class CardOCR:
     INFO_ROI_LEFT = 0.05
     INFO_ROI_RIGHT = 0.95
 
-    def __init__(self, enable_hpi=False, det_mobile=False, use_preprocessing=False):
+    def __init__(self, enable_hpi=False, use_preprocessing=False):
         cfg = None
         self._use_preprocessing = use_preprocessing
 
@@ -104,17 +104,6 @@ class CardOCR:
                 "auto_paddle2onnx": False,  # optional but useful to prevent ONNX conversion attempts
             }
 
-        if det_mobile:
-            det_model_name = "PP-OCRv5_mobile_det"
-            det_model_dir = (
-                "src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_det"
-            )
-        else:
-            det_model_name = "PP-OCRv5_server_det"
-            det_model_dir = (
-                "src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_server_det"
-            )
-
         self._paddleocr = PaddleOCR(
             paddlex_config=cfg,
             # document orientation correction (corrects orientation of document images)
@@ -127,8 +116,8 @@ class CardOCR:
             # textline orientation classification (corrects the orientation of text lines)
             use_textline_orientation=False,
             # text detection (locating and marking text-containing regions in images)
-            text_detection_model_name=det_model_name,
-            text_detection_model_dir=det_model_dir,
+            text_detection_model_name="PP-OCRv5_mobile_det",
+            text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_det",
             # text recognition
             text_recognition_model_name="PP-OCRv5_mobile_rec",
             text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",

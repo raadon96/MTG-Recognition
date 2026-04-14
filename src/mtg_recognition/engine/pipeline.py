@@ -56,9 +56,7 @@ class Pipeline:
         auto_build: bool = True,
         segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
-        ocr: CardOCR = CardOCR(
-            det_mobile=True, enable_hpi=False, use_preprocessing=True
-        ),
+        ocr: CardOCR = CardOCR(enable_hpi=False, use_preprocessing=True),
     ):
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
         self.phash_matcher = phash_matcher
@@ -119,7 +117,13 @@ class Pipeline:
         results: list[SegmentResult] = []
         for img_warped in warped_images:
             results.append(
-                self._match_one(img_warped, k_phash_candidates, k_final_results, debug, segmentation_ms)
+                self._match_one(
+                    img_warped,
+                    k_phash_candidates,
+                    k_final_results,
+                    debug,
+                    segmentation_ms,
+                )
             )
         return results
 
@@ -142,12 +146,18 @@ class Pipeline:
             )
 
         if len(matches_ph) == 0:
-            diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
+            diag.total_ms = (
+                time.perf_counter() - total_start
+            ) * 1000.0 + segmentation_ms
             return SegmentResult(matches=[], scores=[], ocr_debug=None, diag=diag)
 
         if len(matches_ph) == 1:
-            diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
-            return SegmentResult(matches=matches_ph, scores=scores_ph, ocr_debug=None, diag=diag)
+            diag.total_ms = (
+                time.perf_counter() - total_start
+            ) * 1000.0 + segmentation_ms
+            return SegmentResult(
+                matches=matches_ph, scores=scores_ph, ocr_debug=None, diag=diag
+            )
 
         # Stage 2: Accurate OCR search on reduced search space
         with _timer(diag, "ocr_ms"):
@@ -320,29 +330,33 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             )
 
             if output_file is not None:
-                segments_json.append({
-                    "segment_idx": seg_idx,
-                    "success": success,
-                    "matches": [
-                        {
-                            "rank": rank,
-                            "name": match.name,
-                            "uuid": match.uuid,
-                            "setCode": match.setCode,
-                            "number": match.number,
-                            "score": round(score, 1),
-                        }
-                        for rank, (match, score) in enumerate(zip(seg.matches, seg.scores), 1)
-                    ],
-                    "raw_texts": raw_texts,
-                    "raw_scores": raw_scores,
-                    "timings_ms": {
-                        "segmentation_ms": round(seg.diag.segmentation_ms, 1),
-                        "phash_ms": round(seg.diag.phash_ms, 1),
-                        "ocr_ms": round(seg.diag.ocr_ms, 1),
-                        "total_ms": round(seg.diag.total_ms, 1),
-                    },
-                })
+                segments_json.append(
+                    {
+                        "segment_idx": seg_idx,
+                        "success": success,
+                        "matches": [
+                            {
+                                "rank": rank,
+                                "name": match.name,
+                                "uuid": match.uuid,
+                                "setCode": match.setCode,
+                                "number": match.number,
+                                "score": round(score, 1),
+                            }
+                            for rank, (match, score) in enumerate(
+                                zip(seg.matches, seg.scores), 1
+                            )
+                        ],
+                        "raw_texts": raw_texts,
+                        "raw_scores": raw_scores,
+                        "timings_ms": {
+                            "segmentation_ms": round(seg.diag.segmentation_ms, 1),
+                            "phash_ms": round(seg.diag.phash_ms, 1),
+                            "ocr_ms": round(seg.diag.ocr_ms, 1),
+                            "total_ms": round(seg.diag.total_ms, 1),
+                        },
+                    }
+                )
 
         click.echo("")
 

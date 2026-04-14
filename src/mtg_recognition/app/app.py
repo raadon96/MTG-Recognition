@@ -55,7 +55,7 @@ def load_pipeline():
     return Pipeline(
         segmentor=YoloCardSegmentor(),
         phash_matcher=PHashCardMatcher(),
-        ocr=CardOCR(det_mobile=True, use_preprocessing=True, enable_hpi=False),
+        ocr=CardOCR(use_preprocessing=True, enable_hpi=False),
     )
 
 
@@ -87,12 +87,12 @@ def create_thumbnail_grid(results, results_key="batch_results"):
 
                     # Color-coded score indicator (scores are 0–100)
                     score = result.scores[0]
-                    if score >= 75:
+                    if score >= 50:
                         st.markdown(
                             f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
                             unsafe_allow_html=True,
                         )
-                    elif score >= 50:
+                    elif score >= 25:
                         st.markdown(
                             f'<div style="background-color: #CC9900; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
                             unsafe_allow_html=True,
@@ -153,7 +153,9 @@ def display_batch_detail_view(results, selected_idx, engine):
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [i for i, r in enumerate(results) if r.status == "success" and r.matches]
+    success_indices = [
+        i for i, r in enumerate(results) if r.status == "success" and r.matches
+    ]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -162,12 +164,19 @@ def display_batch_detail_view(results, selected_idx, engine):
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
-            if st.button("← Back to Results", key=f"back_{key_suffix}", use_container_width=True):
+            if st.button(
+                "← Back to Results", key=f"back_{key_suffix}", use_container_width=True
+            ):
                 st.session_state.selected_result_idx = None
                 st.rerun()
         if pos is not None:
             with col_prev:
-                if st.button("◀", key=f"prev_{key_suffix}", disabled=pos == 0, use_container_width=True):
+                if st.button(
+                    "◀",
+                    key=f"prev_{key_suffix}",
+                    disabled=pos == 0,
+                    use_container_width=True,
+                ):
                     st.session_state.selected_result_idx = success_indices[pos - 1]
                     st.rerun()
             with col_pos:
@@ -177,7 +186,12 @@ def display_batch_detail_view(results, selected_idx, engine):
                     unsafe_allow_html=True,
                 )
             with col_next:
-                if st.button("▶", key=f"next_{key_suffix}", disabled=pos == len(success_indices) - 1, use_container_width=True):
+                if st.button(
+                    "▶",
+                    key=f"next_{key_suffix}",
+                    disabled=pos == len(success_indices) - 1,
+                    use_container_width=True,
+                ):
                     st.session_state.selected_result_idx = success_indices[pos + 1]
                     st.rerun()
 
@@ -236,12 +250,12 @@ def display_batch_detail_view(results, selected_idx, engine):
 
         # Color-coded score (scores are 0–100)
         score = scores[0]
-        if score >= 85:
+        if score >= 50:
             st.markdown(
                 f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
                 unsafe_allow_html=True,
             )
-        elif score >= 70:
+        elif score >= 25:
             st.markdown(
                 f'<div style="background-color: #CC9900; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
                 unsafe_allow_html=True,
