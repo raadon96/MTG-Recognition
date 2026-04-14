@@ -56,7 +56,7 @@ class Pipeline:
         auto_build: bool = True,
         segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
-        ocr: CardOCR = CardOCR(enable_hpi=False, use_preprocessing=True),
+        ocr: CardOCR = CardOCR(use_preprocessing=True),
     ):
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
         self.phash_matcher = phash_matcher

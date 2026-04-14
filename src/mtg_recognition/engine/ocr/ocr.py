@@ -85,31 +85,9 @@ class CardOCR:
     INFO_ROI_LEFT = 0.05
     INFO_ROI_RIGHT = 0.95
 
-    def __init__(self, enable_hpi=False, use_preprocessing=False):
-        cfg = None
+    def __init__(self, use_preprocessing=False):
         self._use_preprocessing = use_preprocessing
-
-        if enable_hpi:
-            cfg = load_pipeline_config("OCR")
-
-            # Use high performance onnx backend runtime for text-detection
-            cfg["SubModules"]["TextDetection"]["use_hpip"] = True
-            cfg["SubModules"]["TextDetection"]["hpi_config"] = {
-                "backend": "onnxruntime",
-            }
-            # Keep normal paddlex backend runtime for text-recognition (onnx backend does not work for rec)
-            cfg["SubModules"]["TextRecognition"]["use_hpip"] = False
-            cfg["SubModules"]["TextRecognition"]["hpi_config"] = {
-                "backend": "paddle",
-                "auto_paddle2onnx": False,  # optional but useful to prevent ONNX conversion attempts
-            }
-
         self._paddleocr = PaddleOCR(
-            paddlex_config=cfg,
-            # document orientation correction (corrects orientation of document images)
-            use_doc_orientation_classify=False,
-            doc_orientation_classify_model_name="PP-LCNet_x1_0_doc_ori",
-            doc_orientation_classify_model_dir="src/mtg_recognition/engine/ocr/models/test/PP-LCNet_x1_0_doc_ori",
             # text image rectification (performs geometric transformations on images to correct distortions, inclinations, perspective deformations)
             use_doc_unwarping=False,
             doc_unwarping_model_name=None,
@@ -123,7 +101,7 @@ class CardOCR:
             text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",
             # other params
             device="cpu",
-            enable_hpi=enable_hpi,  # enable high-performance inference
+            enable_hpi=False,  # enable high-performance inference
             precision="fp16",  # set to "fp16" for acceleration
             lang="en",
         )
