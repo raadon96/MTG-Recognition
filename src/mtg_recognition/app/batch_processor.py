@@ -208,32 +208,33 @@ class BatchProcessor:
                     cv2.imwrite(tmp_file.name, warped_img)
                     warped_img_path = tmp_file.name
 
-                matches, scores, ocr_debug, diag = self.pipeline.find_best_matches(
+                seg_results = self.pipeline.find_best_matches(
                     warped_img,
                     k_phash_candidates=K_PHASH_CANDIDATES,
                     k_final_results=K_TOP_MATCHES,
                     apply_segmentation=False,
                     debug=True,
                 )
+                seg = seg_results[0]
 
                 timings_ms = {
                     "segmentation_ms": segmentation_ms,
-                    "phash_ms": diag.phash_ms,
-                    "ocr_ms": diag.ocr_ms,
-                    "total_ms": segmentation_ms + diag.total_ms,
+                    "phash_ms": seg.diag.phash_ms,
+                    "ocr_ms": seg.diag.ocr_ms,
+                    "total_ms": segmentation_ms + seg.diag.total_ms,
                 }
 
                 results.append(
                     BatchResult(
                         uploaded_filename=image_file.name,
                         original_image_path=str(image_file),
-                        matches=matches,
-                        scores=[float(s) for s in scores],
-                        status="success" if matches else "no_match",
+                        matches=seg.matches,
+                        scores=[float(s) for s in seg.scores],
+                        status="success" if seg.matches else "no_match",
                         original_image_temp_path=original_img_path,
                         warped_image_temp_path=warped_img_path,
                         timings_ms=timings_ms,
-                        ocr_debug=ocr_debug,
+                        ocr_debug=seg.ocr_debug,
                     )
                 )
             except Exception:

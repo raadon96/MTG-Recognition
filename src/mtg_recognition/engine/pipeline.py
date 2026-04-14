@@ -3,7 +3,7 @@ import time
 import uuid as _uuid
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -28,6 +28,16 @@ class PipelineDiagnostics:
     phash_ms: float = 0.0
     ocr_ms: float = 0.0
     total_ms: float = 0.0
+
+
+@dataclass(frozen=True)
+class SegmentResult:
+    """Recognition result for a single detected card segment."""
+
+    matches: list[Row]
+    scores: list[float]
+    ocr_debug: OCRDebugData | None
+    diag: PipelineDiagnostics
 
 
 @contextmanager
@@ -69,46 +79,61 @@ class Pipeline:
         k_final_results: int = 1,
         apply_segmentation: bool = True,
         debug: bool = False,
-    ) -> tuple[list[Row], list[float], OCRDebugData | None, PipelineDiagnostics]:
+    ) -> list[SegmentResult]:
         """Find best matching cards using a two-stage pipeline.
 
         Stage 1: Perceptual hashing for fast coarse candidate retrieval.
         Stage 2: OCR-based fuzzy matching for accurate refinement.
 
-        Timing diagnostics are always collected (near-zero overhead).
-        OCRDebugData is only populated when debug=True.
-
         Args:
             query_img: Query image (BGR format from OpenCV).
             k_phash_candidates: Number of candidates from the pHash stage.
             k_final_results: Number of final results after OCR refinement.
-            apply_segmentation: Whether to run card segmentation first.
-            debug: When True, ocr_debug in the return value is populated.
+            apply_segmentation: When True, runs YOLO segmentation first and
+                returns one SegmentResult per detected card. When False, treats
+                query_img as a pre-warped single card and returns a list of one.
+            debug: When True, ocr_debug inside each SegmentResult is populated.
 
         Returns:
-            Tuple of (matches, scores, ocr_debug, diag).
-            ocr_debug is None when debug=False.
-            Use _ to discard either trailing value when not needed.
+            List of SegmentResult, one per detected card segment.
+            Empty list when no cards are detected.
         """
-        total_start = time.perf_counter()
-        diag = PipelineDiagnostics()
-
-        # I. Segmentation
-        if apply_segmentation:
-            with _timer(diag, "segmentation_ms"):
-                seg_result = self.segment_card(query_img)
-            if not seg_result.success:
-                print("No card detected")
-                diag.total_ms = (time.perf_counter() - total_start) * 1000.0
-                return [], [], None, diag
-            img_warped = seg_result.segments[0].warped_image
-        else:
-            img_warped = query_img
-
-        # II. Matching
         assert k_final_results <= k_phash_candidates, (
             "k_final_results must be <= k_phash_candidates"
         )
+
+        if apply_segmentation:
+            seg_total_start = time.perf_counter()
+            seg_result = self.segment_card(query_img)
+            segmentation_ms = (time.perf_counter() - seg_total_start) * 1000.0
+
+            if not seg_result.success:
+                print("No card detected")
+                return []
+
+            warped_images = [s.warped_image for s in seg_result.segments]
+        else:
+            segmentation_ms = 0.0
+            warped_images = [query_img]
+
+        results: list[SegmentResult] = []
+        for img_warped in warped_images:
+            results.append(
+                self._match_one(img_warped, k_phash_candidates, k_final_results, debug, segmentation_ms)
+            )
+        return results
+
+    def _match_one(
+        self,
+        img_warped: np.ndarray,
+        k_phash_candidates: int,
+        k_final_results: int,
+        debug: bool,
+        segmentation_ms: float,
+    ) -> SegmentResult:
+        """Run pHash + OCR matching on a single pre-warped card image."""
+        diag = PipelineDiagnostics(segmentation_ms=segmentation_ms)
+        total_start = time.perf_counter()
 
         # Stage 1: Coarse search with perceptual hashing
         with _timer(diag, "phash_ms"):
@@ -117,11 +142,12 @@ class Pipeline:
             )
 
         if len(matches_ph) == 0:
-            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
-            return [], [], None, diag
-        elif len(matches_ph) == 1:
-            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
-            return matches_ph, scores_ph, None, diag
+            diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
+            return SegmentResult(matches=[], scores=[], ocr_debug=None, diag=diag)
+
+        if len(matches_ph) == 1:
+            diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
+            return SegmentResult(matches=matches_ph, scores=scores_ph, ocr_debug=None, diag=diag)
 
         # Stage 2: Accurate OCR search on reduced search space
         with _timer(diag, "ocr_ms"):
@@ -129,12 +155,13 @@ class Pipeline:
                 img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
             )
 
-        if len(matches_ocr) == 0:
-            diag.total_ms = (time.perf_counter() - total_start) * 1000.0
-            return [], [], ocr_debug if debug else None, diag
-
-        diag.total_ms = (time.perf_counter() - total_start) * 1000.0
-        return matches_ocr, scores_ocr, ocr_debug if debug else None, diag
+        diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
+        return SegmentResult(
+            matches=matches_ocr,
+            scores=scores_ocr,
+            ocr_debug=ocr_debug if debug else None,
+            diag=diag,
+        )
 
     def _load_index(self):
         """Load indices for all matchers."""
@@ -233,7 +260,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             )
             continue
 
-        matches, scores, ocr_debug, diag = pipeline.find_best_matches(
+        segment_results = pipeline.find_best_matches(
             query_img,
             k_phash_candidates=k_phash,
             k_final_results=k,
@@ -241,56 +268,60 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             debug=True,
         )
 
-        # UUID-based success check
         stem_uuid = _stem_uuid(img_path.stem)
-        if stem_uuid is None:
-            success: bool | None = None
-        elif matches:
-            success = matches[0].uuid == stem_uuid
-        else:
-            success = False
+        n_segs = len(segment_results)
+        click.echo(f"[{idx}/{total}] {img_display}  ({n_segs} segment(s) detected)")
 
-        # Status label
-        if success is None:
-            status = "—"
-        elif success:
-            status = "✓ MATCH"
-        else:
-            got = matches[0].uuid if matches else "no match"
-            status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
+        segments_json: list[dict] = []
+        for seg_idx, seg in enumerate(segment_results):
+            # UUID-based success check (only meaningful for single-card images)
+            if stem_uuid is None:
+                success: bool | None = None
+            elif seg.matches:
+                success = seg.matches[0].uuid == stem_uuid
+            else:
+                success = False
 
-        # Raw OCR texts and scores
-        raw_texts: list[str] = []
-        raw_scores: list[float] = []
-        if ocr_debug is not None:
-            raw_texts = ocr_debug.raw_texts_df["text"].tolist()
-            raw_scores = [
-                round(float(s), 3) for s in ocr_debug.raw_texts_df["score"].tolist()
-            ]
+            # Status label
+            if success is None:
+                status = "—"
+            elif success:
+                status = "✓ MATCH"
+            else:
+                got = seg.matches[0].uuid if seg.matches else "no match"
+                status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
 
-        # --- Terminal output (incremental) ---
-        click.echo(f"[{idx}/{total}] {img_display}  {status}")
-        if not matches:
-            click.echo("  no matches found")
-        for rank, (match, score) in enumerate(zip(matches, scores), 1):
+            # Raw OCR texts and scores
+            raw_texts: list[str] = []
+            raw_scores: list[float] = []
+            if seg.ocr_debug is not None:
+                raw_texts = seg.ocr_debug.raw_texts_df["text"].tolist()
+                raw_scores = [
+                    round(float(s), 3)
+                    for s in seg.ocr_debug.raw_texts_df["score"].tolist()
+                ]
+
+            # Terminal output
+            prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "
+            click.echo(f"{prefix} {status}")
+            if not seg.matches:
+                click.echo(f"{prefix}  no matches found")
+            for rank, (match, score) in enumerate(zip(seg.matches, seg.scores), 1):
+                click.echo(
+                    f"{prefix}  #{rank}  {match.name}  |  {match.setCode} · {match.number}  |  score: {score:.1f}"
+                )
+            click.echo(f"{prefix}  raw_texts:  {raw_texts}")
+            click.echo(f"{prefix}  raw_scores: {raw_scores}")
             click.echo(
-                f"  #{rank}  {match.name}  |  {match.setCode} · {match.number}  |  score: {score:.1f}"
+                f"{prefix}  timings: seg={seg.diag.segmentation_ms:.0f}ms  "
+                f"phash={seg.diag.phash_ms:.0f}ms  "
+                f"ocr={seg.diag.ocr_ms:.0f}ms  "
+                f"total={seg.diag.total_ms:.0f}ms"
             )
-        click.echo(f"  raw_texts:  {raw_texts}")
-        click.echo(f"  raw_scores: {raw_scores}")
-        click.echo(
-            f"  timings: seg={diag.segmentation_ms:.0f}ms  "
-            f"phash={diag.phash_ms:.0f}ms  "
-            f"ocr={diag.ocr_ms:.0f}ms  "
-            f"total={diag.total_ms:.0f}ms"
-        )
-        click.echo("")
 
-        # --- Accumulate for JSON output ---
-        if output_file is not None:
-            all_results.append(
-                {
-                    "image": img_abs,
+            if output_file is not None:
+                segments_json.append({
+                    "segment_idx": seg_idx,
                     "success": success,
                     "matches": [
                         {
@@ -301,18 +332,22 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                             "number": match.number,
                             "score": round(score, 1),
                         }
-                        for rank, (match, score) in enumerate(zip(matches, scores), 1)
+                        for rank, (match, score) in enumerate(zip(seg.matches, seg.scores), 1)
                     ],
                     "raw_texts": raw_texts,
-                    # "raw_scores": raw_scores,
+                    "raw_scores": raw_scores,
                     "timings_ms": {
-                        "segmentation_ms": round(diag.segmentation_ms, 1),
-                        "phash_ms": round(diag.phash_ms, 1),
-                        "ocr_ms": round(diag.ocr_ms, 1),
-                        "total_ms": round(diag.total_ms, 1),
+                        "segmentation_ms": round(seg.diag.segmentation_ms, 1),
+                        "phash_ms": round(seg.diag.phash_ms, 1),
+                        "ocr_ms": round(seg.diag.ocr_ms, 1),
+                        "total_ms": round(seg.diag.total_ms, 1),
                     },
-                }
-            )
+                })
+
+        click.echo("")
+
+        if output_file is not None:
+            all_results.append({"image": img_abs, "segments": segments_json})
 
     if output_file is not None:
         output_file.write_text(json.dumps(all_results, indent=2))
