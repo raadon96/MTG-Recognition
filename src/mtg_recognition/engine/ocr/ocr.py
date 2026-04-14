@@ -23,11 +23,11 @@ from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS: list[dict] = [
     {"db_attr": "name", "ocr_property": "name", "weight": 1.0},
-    {"db_attr": "setCode", "ocr_property": "setcode_candidates", "weight": 2.0},
+    {"db_attr": "setCode", "ocr_property": "setcode_candidates", "weight": 1.0},
     {"db_attr": "number", "ocr_property": "number", "weight": 1.0},
     {"db_attr": "baseSetSize", "ocr_property": "base_set_size", "weight": 1.0},
     {"db_attr": "artist", "ocr_property": "artist", "weight": 0.5},
-    {"db_attr": "setReleaseYear", "ocr_property": "set_release_year", "weight": 0.5},
+    {"db_attr": "setReleaseYear", "ocr_property": "set_release_year", "weight": 1.0},
     {"db_attr": "power", "ocr_property": "power", "weight": 1.0},
     {"db_attr": "toughness", "ocr_property": "toughness", "weight": 1.0},
 ]

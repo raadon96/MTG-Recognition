@@ -9,12 +9,14 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR")
+# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR", "ECC ★EN")
 _SUPPORTED_LANG_CODES = frozenset(
     {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
-_ARTIFACT_PATTERN = re.compile(rf"^(.+?)[·.+\-=](?:{_LANG_GROUP})")
+# Separators: ·  .  +  -  =  ★  (optional whitespace on both sides)
+# No word boundary at end: lang code may be glued to trailing OCR noise (e.g. "M2O=ENVKH")
+_ARTIFACT_PATTERN = re.compile(rf"(.+?)\s*[·.+\-=★]\s*(?:{_LANG_GROUP})")
 
 # Artist name extraction
 # Keep tokens that look like name parts: letters (incl. accented), spaces, hyphens,
@@ -67,29 +69,52 @@ def _normalize_slash_variants(text: str) -> str:
 
 
 def extract_setcode_candidates(texts: list[str]) -> list[str]:
+    """Extract set code candidates from raw PaddleOCR info-ROI tokens.
+
+    Searches for language-code artifacts (e.g. "WAR·EN", "ECC ★EN", "ECL · EN")
+    and returns the prefix as the set code. When no artifact is found, falls back
+    to returning uppercase-only tokens (2-5 chars) that look like set codes, and
+    finally to all tokens with length 3-8.
+
+    Args:
+        texts: Raw OCR text tokens from the info ROI.
+
+    Returns:
+        List of set code candidates (may be empty).
     """
-    Cleans raw texts output from PaddleOCR.
-    """
+    candidates: list[str] = []
+    seen: set[str] = set()
+
+    def _try(text: str) -> None:
+        m = _ARTIFACT_PATTERN.search(text)
+        if m:
+            code = m.group(1).strip()
+            # Validate: set codes are 2-6 uppercase alphanumeric characters
+            if code and re.fullmatch(r"[A-Z0-9]{2,6}", code) and code not in seen:
+                seen.add(code)
+                candidates.append(code)
+
+    # Pass 1: per-token
     for text in texts:
-        match = _ARTIFACT_PATTERN.search(text)
-        if match:
-            return [match.group(1)]
+        _try(text)
 
-    # split all substrings by whitespace and flatten into a single list of tokens
-    split = []
-    for text in texts:
-        split.extend(text.split())
+    # Pass 2: two-token concat — only when pass 1 found nothing.
+    # Handles e.g. ["TDM", "·DE"] split across tokens. Skipped when pass 1
+    # already succeeded to avoid false positives like "U"+"DMR·JP" → "UDMR".
+    if not candidates:
+        for i in range(len(texts) - 1):
+            _try(texts[i] + texts[i + 1])
 
-    # remove whitespace
-    stripped = list(map(str.strip, split))
+    if candidates:
+        return candidates
 
-    # Filter out texts without the desired length
-    setcodes = list(filter(lambda text: 3 <= len(text) <= 8, stripped))
+    # Fallback — prefer tokens that look like set codes (uppercase letters only, 2-5 chars)
+    tokens = [t.strip() for text in texts for t in text.split() if t.strip()]
+    setcode_like = [t for t in tokens if re.fullmatch(r"[A-Z]{2,5}", t)]
+    if setcode_like:
+        return setcode_like
 
-    # Replace commonly misread OCR setcodes
-    # setcodes = replace_ocr_mistakes(filtered)
-
-    return setcodes
+    return [t for t in tokens if 3 <= len(t) <= 8]
 
 
 def extract_power_toughness(

@@ -18,14 +18,28 @@ class TestExtractSetCodeByArtifact:
     @pytest.mark.parametrize(
         "texts,expected",
         [
+            # Existing cases — must not regress
             (["011/264", "WAR-EN", "B0AG"], ["WAR"]),
             (["266/281", "SNC.EN", "CHSTIAN DMIEON"], ["SNC"]),
             (["063/264", "M2O+EN", "EA"], ["M2O"]),
             (["221/269", "ELD·EN", "T"], ["ELD"]),
-            (["221/269", "ELDEN", "T"], ["221/269", "ELDEN"]),
-            (["047/264", "C", "WAR", "MIB"], ["047/264", "WAR", "MIB"]),
+            (["221/269", "ELDEN", "T"], ["ELDEN"]),
+            (["047/264", "C", "WAR", "MIB"], ["WAR", "MIB"]),
             (["055/280C", "M2O=ENVKH TWON"], ["M2O"]),
             (["269/289C", "TSR·ENOANTRAZI"], ["TSR"]),
+            # ★ separator (newer sets ~2023+)
+            (["M0004", "ECC ★EN ZACKSTELLA", "TM & 2026 Wizards"], ["ECC"]),
+            (["U0306", "LCI★EN CABROL", "TM & 2023 Wizards"], ["LCI"]),
+            (["M0001", "MKC★EN VOLKAN BAGA", "M& 2024 Wizards"], ["MKC"]),
+            # Spaces around separator
+            (["L0273", "TM & C 2026 Wizards", "ECL · EN IORGE IACINTO"], ["ECL"]),
+            (["L0398", "TM & C 2023 Wizards", "LCI· EN ADAM PAOUETTE"], ["LCI"]),
+            # Multi-token split: setcode and lang artifact in adjacent tokens
+            (["3/3", "C0061", "MARINA ORTEGA", "TDM", "·DE"], ["TDM"]),
+            (["3/3", "C 0061", "TDM·DE MARINA ORTEGA", "TM&2025 Wizards"], ["TDM"]),
+            # Non-EN language codes
+            (["093/261", "U", "DMR·JP", "ALEXANDER", "MOKHOV"], ["DMR"]),
+            (["U0341", "CMM·DE", "WESLEY BURT", "&O2023Wizards"], ["CMM"]),
         ],
     )
     def test_extract_setcode_various_artifacts(self, texts, expected):
