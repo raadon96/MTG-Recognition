@@ -5,6 +5,7 @@ the full end-to-end pipeline including segmentation and pHash coarse search.
 """
 
 from dataclasses import dataclass
+from multiprocessing import cpu_count
 from typing import NamedTuple
 
 import numpy as np
@@ -15,19 +16,59 @@ from PIL import Image
 from sqlalchemy.engine.row import Row
 
 from mtg_recognition.core.image_utils import _ensure_min_dim
-from mtg_recognition.engine.ocr import ocr_utils
+from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 
 # Attribute mapping configuration for fuzzy matching
 ATTRIBUTE_MAPPINGS: list[dict] = [
-    {"db_attr": "name", "ocr_property": "name", "weight": 1.0},
-    {"db_attr": "setCode", "ocr_property": "setcode_candidates", "weight": 1.0},
-    {"db_attr": "number", "ocr_property": "number", "weight": 1.0},
-    {"db_attr": "baseSetSize", "ocr_property": "base_set_size", "weight": 1.0},
-    {"db_attr": "artist", "ocr_property": "artist", "weight": 0.5},
-    {"db_attr": "setReleaseYear", "ocr_property": "set_release_year", "weight": 1.0},
-    {"db_attr": "power", "ocr_property": "power", "weight": 1.0},
-    {"db_attr": "toughness", "ocr_property": "toughness", "weight": 1.0},
+    {
+        "db_attr": "name",
+        "ocr_property": "name",
+        "weight": 2.0,
+        "preprocessor": rapidfuzz.utils.default_process,
+    },
+    {
+        "db_attr": "setCode",
+        "ocr_property": "setcode_candidates",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
+    {
+        "db_attr": "number",
+        "ocr_property": "number",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
+    {
+        "db_attr": "baseSetSize",
+        "ocr_property": "base_set_size",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
+    {
+        "db_attr": "artist",
+        "ocr_property": "artist",
+        "weight": 0.5,
+        "preprocessor": rapidfuzz.utils.default_process,
+    },
+    {
+        "db_attr": "setReleaseYear",
+        "ocr_property": "set_release_year",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
+    {
+        "db_attr": "power",
+        "ocr_property": "power",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
+    {
+        "db_attr": "toughness",
+        "ocr_property": "toughness",
+        "weight": 1.0,
+        "preprocessor": None,
+    },
 ]
 
 # ROI coordinates as fractions of image dimensions (H x W)
@@ -178,15 +219,24 @@ class CardOCR:
             print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
             pass  # leave all text lists empty; scoring will use zero vectors
 
+        # # Remove tokens in the flavor-text bleedthrough zone before extraction.
+        # # Tokens near the TOP of the info ROI and not in the far-right column
+        # # (where P/T lives) are flavor text that bled into the ROI.
+        # texts_info_roi, boxes_info_roi, scores_info_roi = (
+        #     ocr_extraction.filter_flavor_text_zone(
+        #         texts_info_roi, boxes_info_roi, scores_info_roi
+        #     )
+        # )
+
         # Extract structured properties from OCR texts
-        name = ocr_utils.extract_card_name(texts_name_roi)
-        setcodes = ocr_utils.extract_setcode_candidates(texts_info_roi)
-        number, base_set_size = ocr_utils.extract_number_and_base_set_size(
+        name = ocr_extraction.extract_card_name(texts_name_roi)
+        setcodes = ocr_extraction.extract_setcode_candidates(texts_info_roi)
+        number, base_set_size = ocr_extraction.extract_number_and_base_set_size(
             texts_info_roi
         )
-        artist = ocr_utils.extract_artist_name(texts_info_roi)
-        set_release_year = ocr_utils.extract_set_release_year(texts_info_roi)
-        power, toughness = ocr_utils.extract_power_toughness(texts_info_roi)
+        artist = ocr_extraction.extract_artist_name(texts_info_roi)
+        set_release_year = ocr_extraction.extract_set_release_year(texts_info_roi)
+        power, toughness = ocr_extraction.extract_power_toughness(texts_info_roi)
 
         properties = Properties(
             setcode_candidates=setcodes,
@@ -242,6 +292,7 @@ class CardOCR:
         for mapping in ATTRIBUTE_MAPPINGS:
             db_attr = str(mapping["db_attr"])
             ocr_property = str(mapping["ocr_property"])
+            preprocessor = mapping["preprocessor"]
 
             choices = [getattr(candidate, db_attr) for candidate in candidates]
             queries = getattr(properties, ocr_property)
@@ -252,8 +303,9 @@ class CardOCR:
                     queries=queries,
                     choices=choices,
                     scorer=rapidfuzz.fuzz.ratio,
+                    processor=preprocessor,
                     score_cutoff=0,
-                    workers=-1,
+                    workers=max(1, cpu_count() - 1),
                 )
                 scores = np.amax(dist_matrix, axis=0)
             else:
@@ -304,7 +356,7 @@ class CardOCR:
         scores_aggregate = np.average(a=scores_matrix, axis=0, weights=weights)
 
         # Sort candidates based on score (descending)
-        top_scores, top_indices = ocr_utils.sort_scores_with_indices(
+        top_scores, top_indices = ocr_extraction.sort_scores_with_indices(
             scores_aggregate, k, thresh
         )
 

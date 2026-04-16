@@ -10,7 +10,7 @@ from sqlalchemy.engine.row import Row
 from sqlmodel import Session, col, select
 from tqdm import tqdm
 
-from mtg_recognition.engine.ocr.ocr_utils import sort_scores_with_indices
+from mtg_recognition.engine.ocr.ocr_extraction import sort_scores_with_indices
 from mtg_recognition.jobs.schemas import MobileCache
 
 # --- Configuration ---

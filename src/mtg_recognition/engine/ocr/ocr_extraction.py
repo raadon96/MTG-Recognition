@@ -14,9 +14,10 @@ _SUPPORTED_LANG_CODES = frozenset(
     {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
-# Separators: ·  .  +  -  =  ★  (optional whitespace on both sides)
+# Separators: ·  .  +  -  =  ★  *  ,  (optional whitespace on both sides)
+# ★ = Unicode BLACK STAR (U+2605); * = ASCII asterisk (U+002A) — OCR may output either.
 # No word boundary at end: lang code may be glued to trailing OCR noise (e.g. "M2O=ENVKH")
-_ARTIFACT_PATTERN = re.compile(rf"(.+?)\s*[·.+\-=★]\s*(?:{_LANG_GROUP})")
+_ARTIFACT_PATTERN = re.compile(rf"(.+?)\s*[·.+\-=★*,]\s*(?:{_LANG_GROUP})")
 
 # Artist name extraction
 # Keep tokens that look like name parts: letters (incl. accented), spaces, hyphens,
@@ -27,6 +28,7 @@ _ARTIST_BLOCKLIST = frozenset(
         "illus",
         "illus.",
         "wizards",
+        "wizants",
         "coast",
         "coast,",
         "llc",
@@ -39,6 +41,12 @@ _ARTIST_BLOCKLIST = frozenset(
         "the",
         "of",
     }
+)
+
+# Words that are 2-5 uppercase letters and could pass the setcode regex but are
+# clearly not MTG set codes (copyright boilerplate, common English words, etc.).
+_SETCODE_BLOCKLIST = frozenset(
+    {"ILLUS", "COAST", "INC", "LLC", "TM", "BY", "THE", "OF", "AND", "ALL", "ARE"}
 )
 
 # Collector number extraction — Stage 1 (full cardNumber/baseSetSize)
@@ -68,13 +76,69 @@ def _normalize_slash_variants(text: str) -> str:
     return re.sub(r"\s*/\s*", "/", text)
 
 
+def filter_flavor_text_zone(
+    texts: list[str],
+    boxes: list[tuple[int, int, int, int]],
+    scores: list[float],
+    y_thresh_frac: float = 0.35,
+    x_right_frac: float = 0.80,
+) -> tuple[list[str], list[tuple[int, int, int, int]], list[float]]:
+    """Discard tokens that appear in the flavor-text bleedthrough zone.
+
+    Modern cards with flavor text have their last line(s) partially overlap the
+    info ROI. Those tokens appear near the TOP of the ROI. Actual collector line
+    tokens (set code, collector number, artist, copyright) sit in the BOTTOM
+    portion. P/T — the one useful token that can appear higher up — always sits
+    in the far-RIGHT column of the card, so tokens with a large x2 are preserved.
+
+    Rule: discard token i if  y1 < y_thresh_frac * roi_height
+                         AND  x2 < x_right_frac  * roi_width
+
+    Args:
+        texts:         OCR text tokens from the info ROI.
+        boxes:         Bounding boxes [[x1, y1, x2, y2], ...] parallel to texts.
+        scores:        OCR confidence scores parallel to texts.
+        y_thresh_frac: Upper-zone threshold as fraction of ROI height (default 0.35).
+        x_right_frac:  Right-column threshold as fraction of ROI width  (default 0.80).
+
+    Returns:
+        Filtered (texts, boxes, scores) with flavor-zone tokens removed.
+        Returns the originals unchanged if all tokens would be discarded (safety guard)
+        or if inputs are inconsistent.
+    """
+    if not texts or not boxes or len(texts) != len(boxes):
+        return texts, boxes, scores
+
+    roi_height = max(box[3] for box in boxes)
+    roi_width = max(box[2] for box in boxes)
+    if roi_height == 0 or roi_width == 0:
+        return texts, boxes, scores
+
+    y_thresh = y_thresh_frac * roi_height
+    x_right = x_right_frac * roi_width
+
+    kept = [
+        (t, b, s)
+        for t, b, s in zip(texts, boxes, scores)
+        if not (b[1] < y_thresh and b[2] < x_right)
+    ]
+
+    # Safety guard: never discard everything (e.g. unusual card layouts)
+    if not kept:
+        return texts, boxes, scores
+
+    texts_f, boxes_f, scores_f = zip(*kept)
+    return list(texts_f), list(boxes_f), list(scores_f)
+
+
 def extract_setcode_candidates(texts: list[str]) -> list[str]:
     """Extract set code candidates from raw PaddleOCR info-ROI tokens.
 
     Searches for language-code artifacts (e.g. "WAR·EN", "ECC ★EN", "ECL · EN")
     and returns the prefix as the set code. When no artifact is found, falls back
-    to returning uppercase-only tokens (2-5 chars) that look like set codes, and
-    finally to all tokens with length 3-8.
+    to uppercase-only tokens (2-5 chars) that are not in _SETCODE_BLOCKLIST.
+    Returns [] when no candidates survive — feeding rapidfuzz with irrelevant
+    tokens (artist names, years, copyright words) would only add noise.
 
     Args:
         texts: Raw OCR text tokens from the info ROI.
@@ -108,13 +172,19 @@ def extract_setcode_candidates(texts: list[str]) -> list[str]:
     if candidates:
         return candidates
 
-    # Fallback — prefer tokens that look like set codes (uppercase letters only, 2-5 chars)
+    # Fallback — uppercase-only tokens (2-5 chars) that aren't known non-set-code words.
+    # Old cards don't print a language artifact, so we look for tokens whose shape
+    # matches a set code.  Noisy tokens (artist names, years, digits, mixed-case words)
+    # are implicitly excluded by the fullmatch; copyright boilerplate that happens to
+    # be all-uppercase (e.g. "COAST", "INC") is excluded via _SETCODE_BLOCKLIST.
+    # When nothing survives we return [] — an empty candidates list is cleaner than
+    # feeding rapidfuzz with irrelevant strings that would all score ~0 anyway.
     tokens = [t.strip() for text in texts for t in text.split() if t.strip()]
-    setcode_like = [t for t in tokens if re.fullmatch(r"[A-Z]{2,5}", t)]
-    if setcode_like:
-        return setcode_like
-
-    return [t for t in tokens if 3 <= len(t) <= 8]
+    return [
+        t
+        for t in tokens
+        if re.fullmatch(r"[A-Z]{2,5}", t) and t not in _SETCODE_BLOCKLIST
+    ]
 
 
 def extract_power_toughness(
@@ -150,13 +220,15 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
     was found.
 
     Accepts:
+    - 2-digit values (with or without a leading zero)
     - 3-4 digit values
-    - 2-digit values that start with a leading zero (CE/IE style, e.g. "02")
 
     Rejects:
     - 1-digit values (too ambiguous — P/T bleed, noise)
-    - 2-digit values without a leading zero
     - 4-digit values in the MTG copyright year range [1993, current_year+1]
+    - Any digit sub-match from a token that contains a slash (/ \\ |): those are
+      P/T or Stage-1 fragments (e.g. "10" from "10/4" would otherwise be mistaken
+      for a standalone card number on creature cards with power ≥ 10).
 
     Ranking (best first):
     1. Leading-zero tokens (strong signal for old-set card numbers)
@@ -170,14 +242,16 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
         n = len(num_str)
         if n == 1:
             return False
-        if n == 2 and not num_str.startswith("0"):
-            return False
         if n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max:
             return False
         return True
 
-    # Primary pass: bare digit tokens (e.g. "338", "0214")
+    # Primary pass: bare digit tokens (e.g. "71", "338", "0214")
+    # Skip tokens containing a slash — digit sub-matches there are P/T components
+    # or collector-number fragments already handled by Stage 1.
     for idx, text in enumerate(rec_texts):
+        if re.search(r"[/\\|]", text):
+            continue
         for m in _S2_PATTERN.finditer(text):
             num_str = m.group(1)
             if _accept(num_str):
@@ -186,6 +260,8 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
     # Secondary pass: single uppercase letter prefix glued to digits
     # (e.g. "L0398" / "L398" from a basic-land "L 398" marker read by OCR)
     for idx, text in enumerate(rec_texts):
+        if re.search(r"[/\\|]", text):
+            continue
         for m in _S2_LEADING_LETTER_PATTERN.finditer(text):
             num_str = m.group(1)
             if _accept(num_str):

@@ -1,12 +1,13 @@
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.ocr.ocr_utils import (
+from mtg_recognition.engine.ocr.ocr_extraction import (
     extract_card_name,
     extract_number_and_base_set_size,
     extract_power_toughness,
     extract_set_release_year,
     extract_setcode_candidates,
+    filter_flavor_text_zone,
     sort_scores_with_indices,
 )
 
@@ -40,9 +41,90 @@ class TestExtractSetCodeByArtifact:
             # Non-EN language codes
             (["093/261", "U", "DMR·JP", "ALEXANDER", "MOKHOV"], ["DMR"]),
             (["U0341", "CMM·DE", "WESLEY BURT", "&O2023Wizards"], ["CMM"]),
+            # Comma as separator (OCR misread of · or .)
+            (["011/264", "ELD,EN", "ARTIST"], ["ELD"]),
+            # ASCII asterisk as separator (OCR outputs * instead of Unicode ★)
+            (["2/1", "048/271", "ONE*EN", "BUY CHRISTIAN", "2023Wizards", "AMA"], ["ONE"]),
         ],
     )
     def test_extract_setcode_various_artifacts(self, texts, expected):
+        assert extract_setcode_candidates(texts) == expected
+
+
+class TestExtractSetCodeFallback:
+    """Tests for extract_setcode_candidates fallback (no language artifact).
+
+    When no artifact pattern matches, the function falls back to returning
+    uppercase-only 2-5 char tokens that are not in _SETCODE_BLOCKLIST.
+    Fallback 2 (all tokens 3-8 chars) has been removed — noisy tokens such as
+    artist names, years, and copyright words are never returned.
+    """
+
+    def test_uppercase_token_returned(self):
+        """A real-looking set code token is returned by the fallback."""
+        # "MNC" is 3 uppercase chars; no artifact present
+        assert extract_setcode_candidates(["MNC", "2025", "Wizants", "394"]) == ["MNC"]
+
+    def test_mixed_case_tokens_excluded(self):
+        """Tokens with any lowercase letter do not match [A-Z]{2,5}."""
+        # Old card: only lowercase/mixed tokens remain after spatial filter
+        result = extract_setcode_candidates(
+            ["Illus.", "Jeff", "Miracola", "01997", "Wizards", "of", "the", "Coast,"]
+        )
+        assert result == []
+
+    def test_digit_only_and_year_tokens_excluded(self):
+        """Numeric tokens are excluded by the uppercase regex."""
+        result = extract_setcode_candidates(["394", "2025", "01997"])
+        assert result == []
+
+    def test_blocklist_words_excluded(self):
+        """Copyright boilerplate that is all-uppercase is filtered by _SETCODE_BLOCKLIST."""
+        # "COAST", "INC", "TM" all match [A-Z]{2,5} but are in the blocklist
+        result = extract_setcode_candidates(["COAST", "INC", "TM", "LLC"])
+        assert result == []
+
+    def test_blocklist_does_not_suppress_real_setcode(self):
+        """A valid set code that happens to share letters with blocklist words is returned."""
+        # "ARN" (Arabian Nights) is not in the blocklist
+        assert extract_setcode_candidates(["ARN", "338", "©1993"]) == ["ARN"]
+
+    def test_multiple_uppercase_tokens_all_returned(self):
+        """Multiple uppercase candidates are all returned."""
+        result = extract_setcode_candidates(["ARN", "ICE", "1993"])
+        assert result == ["ARN", "ICE"]
+
+    def test_token_too_long_excluded(self):
+        """Tokens longer than 5 chars don't match [A-Z]{2,5}."""
+        assert extract_setcode_candidates(["WIZARDS", "RESERVED"]) == []
+
+    def test_token_one_char_excluded(self):
+        """Single-char tokens don't match [A-Z]{2,5} (min 2)."""
+        assert extract_setcode_candidates(["A", "B", "1"]) == []
+
+    def test_artifact_takes_priority_over_fallback(self):
+        """Artifact pass takes priority — fallback is never reached when artifact fires."""
+        # "WAR" from artifact takes priority; uppercase fallback token "ABC" is not returned
+        result = extract_setcode_candidates(["011/264", "WAR-EN", "ABC"])
+        assert result == ["WAR"]
+
+    @pytest.mark.parametrize(
+        "texts,expected",
+        [
+            # Old card — no uppercase-only 2-5 token survives
+            (
+                ["Illus.", "Jeff", "Miracola", "01997", "Wizards", "of the", "Coast,", "Inc."],
+                [],
+            ),
+            # Old card — "COAST" blocklisted, nothing left
+            (["Avon", "Illus,", "COAST", "Inc.", "(30/350)", "of the", "TM&1993-2001 Wizards"], []),
+            # Modern card with known set code — artifact fires (not a fallback case)
+            (["011/264", "WAR-EN", "B0AG"], ["WAR"]),
+            # Old card with a real set code token
+            (["Illus.", "Jeff", "ARN", "01997"], ["ARN"]),
+        ],
+    )
+    def test_real_world_old_cards(self, texts, expected):
         assert extract_setcode_candidates(texts) == expected
 
 
@@ -212,9 +294,31 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
             None,
         )
 
-    def test_two_digit_without_leading_zero_rejected(self):
-        """2-digit value without leading zero is too noisy"""
-        assert extract_number_and_base_set_size(["ARN", "38", "Artist"]) == (None, None)
+    def test_two_digit_without_leading_zero_accepted(self):
+        """2-digit value without leading zero is now accepted (old sets like The Dark)"""
+        assert extract_number_and_base_set_size(["ARN", "38", "Artist"]) == ("38", None)
+
+    def test_two_digit_without_leading_zero_real_world(self):
+        """Burnished Hart retro-frame: collector number 71, P/T 2/2"""
+        assert extract_number_and_base_set_size(
+            ["2/2", "Han", "Yeong-Hao", "Illus.", "Coast", "71", "Wizards", "ofthe", "IM&", "2022"]
+        ) == ("71", None)
+
+    def test_pt_in_slash_token_not_mistaken_for_card_number(self):
+        """Power >= 10 in a slash token must not beat the real standalone card number.
+
+        Without the slash guard, '10' from '10/4' would appear at an earlier
+        reading-order index than '71' and win the ranking.
+        """
+        assert extract_number_and_base_set_size(
+            ["10/4", "Artist", "Name", "71", "©1994"]
+        ) == ("71", None)
+
+    def test_two_digit_pt_in_slash_token_not_mistaken(self):
+        """P/T token '12/8' — neither '12' nor '8' should be treated as card number."""
+        assert extract_number_and_base_set_size(
+            ["12/8", "Artist", "Name", "©1994"]
+        ) == (None, None)
 
     def test_stage1_takes_priority(self):
         """Full cardNumber/baseSetSize result is returned when both stages could match"""
@@ -462,3 +566,120 @@ class TestSortScoresWithIndices:
         # Both indices 0 and 2 should be present
         assert 0 in top_indices
         assert 2 in top_indices
+
+
+class TestFilterFlavorTextZone:
+    """Tests for filter_flavor_text_zone.
+
+    Box format: [x1, y1, x2, y2].  roi_height = max(y2), roi_width = max(x2).
+    Default thresholds: y_thresh_frac=0.35, x_right_frac=0.80.
+    A token is discarded when: y1 < 0.35*roi_height  AND  x2 < 0.80*roi_width.
+    """
+
+    def test_empty_inputs(self):
+        texts, boxes, scores = filter_flavor_text_zone([], [], [])
+        assert texts == []
+        assert boxes == []
+        assert scores == []
+
+    def test_mismatched_lengths_passthrough(self):
+        texts = ["foo"]
+        boxes = [[0, 0, 100, 50], [0, 0, 100, 50]]  # one extra box
+        scores = [0.9]
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+        assert t == texts
+        assert b == boxes
+        assert s == scores
+
+    def test_no_tokens_in_flavor_zone(self):
+        """All tokens sit below the y threshold → nothing filtered."""
+        # roi_height = 300, y_thresh = 0.35*300 = 105
+        # Both tokens have y1 = 150 > 105 → both kept
+        texts = ["048/271", "ONE·EN"]
+        boxes = [[0, 150, 200, 220], [0, 200, 200, 260]]
+        scores = [0.98, 0.93]
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+        assert t == texts
+        assert b == boxes
+        assert s == scores
+
+    def test_flavor_token_in_top_left_discarded(self):
+        """Token in top-left (small y1, small x2) is flavor text → discarded."""
+        # roi_height = 300 → y_thresh = 105; roi_width = 200 → x_right = 160
+        # "trials" box: y1=20 < 105 AND x2=100 < 160 → DISCARDED
+        # "048/271" box: y1=150 > 105 → KEPT
+        texts = ["trials", "048/271"]
+        boxes = [[10, 20, 100, 60], [0, 150, 200, 220]]
+        scores = [0.95, 0.98]
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+        assert t == ["048/271"]
+        assert b == [[0, 150, 200, 220]]
+        assert s == [0.98]
+
+    def test_pt_in_top_right_kept(self):
+        """P/T token sits near the top but in the far-right column → kept."""
+        # roi_height = 300 → y_thresh = 105; roi_width = 1700 → x_right = 1360
+        # P/T "3/4" box: y1=60 < 105 BUT x2=1660 > 1360 → KEPT (right column)
+        # Flavor "pretend" box: y1=5 < 105 AND x2=400 < 1360 → DISCARDED
+        texts = ["pretend", "3/4", "132/269"]
+        boxes = [
+            [50, 5, 400, 80],    # flavor text
+            [1500, 60, 1660, 170],  # P/T — far right
+            [20, 170, 250, 230],  # collector number
+        ]
+        scores = [0.99, 0.98, 0.99]
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+        assert "pretend" not in t
+        assert "3/4" in t
+        assert "132/269" in t
+
+    def test_safety_guard_keeps_all_when_all_would_be_discarded(self):
+        """If every token is in the flavor zone, return originals unchanged."""
+        # roi_height = 100 → y_thresh = 35; roi_width = 200 → x_right = 160
+        # Both tokens: y1 < 35 AND x2 < 160 → would all be discarded
+        texts = ["foo", "bar"]
+        boxes = [[0, 5, 100, 30], [10, 10, 120, 28]]
+        scores = [0.8, 0.7]
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+        assert t == texts  # safety guard: originals returned
+        assert b == boxes
+        assert s == scores
+
+    def test_escaped_experiment_case(self):
+        """Real data: Escaped Experiment has 5 flavor tokens above threshold.
+
+        raw_texts:  ["perform", "trials", "the", "scientists.", "on",
+                     "2/1", "048/271", "ONE*EN", "BUY CHRISTIAN",
+                     "2023Wizards of he Coas", "AMA"]
+        roi_height ≈ 300, roi_width ≈ 1728
+        y_thresh ≈ 105, x_right ≈ 1382
+        """
+        texts = [
+            "perform", "trials", "the", "scientists.", "on",
+            "2/1", "048/271", "ONE*EN", "BUY CHRISTIAN",
+            "2023Wizards of he Coas", "AMA",
+        ]
+        boxes = [
+            [36, 17, 371, 130],    # "perform"       — flavor
+            [373, 25, 607, 120],   # "trials"        — flavor
+            [734, 25, 885, 120],   # "the"           — flavor
+            [888, 25, 1271, 119],  # "scientists."   — flavor
+            [608, 35, 739, 119],   # "on"            — flavor
+            [1503, 67, 1668, 177], # "2/1"           — P/T (right side, kept)
+            [1, 164, 237, 232],    # "048/271"       — collector number
+            [0, 214, 238, 280],    # "ONE*EN"        — set code
+            [300, 217, 673, 300],  # "BUY CHRISTIAN" — artist
+            [1198, 203, 1728, 293],# "2023Wizards..."— copyright
+            [1061, 231, 1224, 276],# "AMA"           — noise
+        ]
+        scores = [0.99] * len(texts)
+
+        t, b, s = filter_flavor_text_zone(texts, boxes, scores)
+
+        flavor_tokens = {"perform", "trials", "the", "scientists.", "on"}
+        assert not flavor_tokens.intersection(t), f"Flavor tokens leaked: {set(t) & flavor_tokens}"
+        assert "2/1" in t, "P/T should be kept"
+        assert "048/271" in t
+        assert "ONE*EN" in t
+        assert "BUY CHRISTIAN" in t
+        assert len(t) == len(texts) - len(flavor_tokens)

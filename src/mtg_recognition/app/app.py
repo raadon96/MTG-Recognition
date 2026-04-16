@@ -282,7 +282,10 @@ def display_batch_detail_view(results, selected_idx, engine):
             with st.expander("🔬 Annotated Info ROI", expanded=True):
                 st.image(ocr_debug.ocr_result_img, width="stretch")
 
-        with st.expander("📄 Raw OCR Output (Info ROI)", expanded=True):
+        with st.expander(
+            "📄 OCR Tokens — Info ROI",
+            expanded=True,
+        ):
             # st.dataframe(
             #     dict(texts=ocr_debug.texts_info_roi, scores=ocr_debug.scores_info_roi),
             #     column_config={"scores": st.column_config.NumberColumn(format="%.1f")},
