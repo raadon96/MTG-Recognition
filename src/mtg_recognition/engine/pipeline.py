@@ -198,7 +198,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     Examples:
 
     \b
-    uv run python -m mtg_recognition.engine.pipeline -i card.jpg
+    uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg -o runs/output.json
     uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
     uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results.json
     """
@@ -266,12 +266,11 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # Raw OCR texts and scores
             raw_texts: list[str] = []
             raw_scores: list[float] = []
+            raw_boxes: list[tuple[int, int, int, int]] = []
             if seg.ocr_debug is not None:
-                raw_texts = seg.ocr_debug.df_raw_texts["text"].tolist()
-                raw_scores = [
-                    round(float(s), 3)
-                    for s in seg.ocr_debug.df_raw_texts["score"].tolist()
-                ]
+                raw_texts = seg.ocr_debug.texts_info_roi
+                raw_scores = seg.ocr_debug.scores_info_roi
+                raw_boxes = seg.ocr_debug.boxes_info_roi
 
             # Terminal output
             prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "
@@ -286,27 +285,37 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
 
             if output_file is not None:
-                segments_json.append(
-                    {
-                        "segment_idx": seg_idx,
-                        "success": success,
-                        "matches": [
-                            {
-                                "rank": rank,
-                                "name": match.name,
-                                "uuid": match.uuid,
-                                "setCode": match.setCode,
-                                "number": match.number,
-                                "score": round(score, 1),
-                            }
-                            for rank, (match, score) in enumerate(
-                                zip(seg.matches, seg.scores), 1
-                            )
-                        ],
+                include_debug_info = True
+                out = {
+                    "segment_idx": seg_idx,
+                    "success": success,
+                    "matches": [
+                        {
+                            "rank": rank,
+                            "name": match.name,
+                            "uuid": match.uuid,
+                            "setCode": match.setCode,
+                            "number": match.number,
+                            "score": round(score, 1),
+                        }
+                        for rank, (match, score) in enumerate(
+                            zip(seg.matches, seg.scores), 1
+                        )
+                    ],
+                    "debug": {
                         "raw_texts": raw_texts,
                         "raw_scores": raw_scores,
+                        "raw_boxes": raw_boxes,
+                    },
+                }
+                if include_debug_info:
+                    debug_info = {
+                        "raw_texts": raw_texts,
+                        "raw_scores": raw_scores,
+                        "raw_boxes": raw_boxes,
                     }
-                )
+                    out.update({"debug_info": debug_info})
+                segments_json.append(out)
 
         click.echo("")
 

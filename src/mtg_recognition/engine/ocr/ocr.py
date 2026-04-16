@@ -69,10 +69,12 @@ class OCRDebugData:
 
     # Annotated info ROI image from PaddleOCR (side-by-side: original + text labels).
     # None if .img API is unavailable for this PaddleOCR version.
-    annotated_info: Image.Image | None
-    # Raw info-ROI OCR output: columns ["text", "score"], one row per detected fragment.
-    df_raw_texts: pd.DataFrame
+    ocr_result_img: Image.Image | None
+    # Raw OCR texts and scores from the info ROI (the more complex one with multiple
+    texts_info_roi: list[str]
+    scores_info_roi: list[float]
     # Extracted card properties (for Table 1: extracted vs. best match comparison).
+    boxes_info_roi: list[tuple[int, int, int, int]]
     properties: "Properties"
     # Per-attribute fuzzy scores for the top-k candidates.
     # Index = candidate card names, columns = ATTRIBUTE_MAPPINGS db_attr keys.
@@ -160,6 +162,7 @@ class CardOCR:
 
         texts_name_roi: list[str] = []
         texts_info_roi: list[str] = []
+        boxes_info_roi: list[tuple[int, int, int, int]] = []
         scores_info_roi: list[float] = []
         raw_results = None
 
@@ -169,6 +172,7 @@ class CardOCR:
             )
             texts_name_roi = raw_results[0]["rec_texts"]
             texts_info_roi = raw_results[1]["rec_texts"]
+            boxes_info_roi = raw_results[1]["rec_boxes"].tolist()
             scores_info_roi = raw_results[1]["rec_scores"]
         except RuntimeError as e:
             print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
@@ -198,10 +202,10 @@ class CardOCR:
         if not debug:
             return properties, None
 
-        annotated_info: Image.Image | None = None
+        ocr_result_img: Image.Image | None = None
         if raw_results is not None:
             try:
-                annotated_info = raw_results[1].img["ocr_res_img"]
+                ocr_result_img = raw_results[1].img["ocr_res_img"]
             except Exception as e:
                 print(
                     f"Failed to extract annotated image from OCR result: {e}\nContinuing without annotated image..."
@@ -212,8 +216,10 @@ class CardOCR:
         df_raw_texts["text"] = df_raw_texts["text"].astype(str)
 
         ocr_debug = OCRDebugData(
-            annotated_info=annotated_info,
-            df_raw_texts=df_raw_texts,
+            ocr_result_img=ocr_result_img,
+            texts_info_roi=texts_info_roi,
+            scores_info_roi=scores_info_roi,
+            boxes_info_roi=boxes_info_roi,
             properties=properties,
             score_matrix=None,  # populated by find_best_matches
         )
@@ -326,8 +332,10 @@ class CardOCR:
                 columns=attribute_names,
             )
             ocr_debug = OCRDebugData(
-                annotated_info=ocr_debug.annotated_info,
-                df_raw_texts=ocr_debug.df_raw_texts,
+                ocr_result_img=ocr_debug.ocr_result_img,
+                texts_info_roi=ocr_debug.texts_info_roi,
+                scores_info_roi=ocr_debug.scores_info_roi,
+                boxes_info_roi=ocr_debug.boxes_info_roi,
                 properties=ocr_debug.properties,
                 score_matrix=score_matrix_df,
             )

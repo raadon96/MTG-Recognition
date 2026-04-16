@@ -278,19 +278,19 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
     if debug and ocr_debug is not None:
-        if ocr_debug.annotated_info is not None:
+        if ocr_debug.ocr_result_img is not None:
             with st.expander("🔬 Annotated Info ROI", expanded=True):
-                st.image(ocr_debug.annotated_info, width="stretch")
+                st.image(ocr_debug.ocr_result_img, width="stretch")
 
         with st.expander("📄 Raw OCR Output (Info ROI)", expanded=True):
             # st.dataframe(
-            #     ocr_debug.df_raw_texts,
-            #     column_config={"score": st.column_config.NumberColumn(format="%.1f")},
+            #     dict(texts=ocr_debug.texts_info_roi, scores=ocr_debug.scores_info_roi),
+            #     column_config={"scores": st.column_config.NumberColumn(format="%.1f")},
             #     width="stretch",
             # )
 
-            st.json(dict(text=ocr_debug.df_raw_texts["text"].tolist()), width="stretch")
-            # st.text(ocr_debug.df_raw_texts["text"].tolist(), width="stretch")
+            st.json(dict(text=ocr_debug.texts_info_roi), width="stretch")
+            # st.text(ocr_debug.texts_info_roi, width="stretch")
 
         with st.expander(
             "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
