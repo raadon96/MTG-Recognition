@@ -71,8 +71,8 @@ class OCRDebugData:
     # None if .img API is unavailable for this PaddleOCR version.
     annotated_info: Image.Image | None
     # Raw info-ROI OCR output: columns ["text", "score"], one row per detected fragment.
-    raw_texts_df: pd.DataFrame
-    # Extracted card properties (for Table 2: extracted vs. best match comparison).
+    df_raw_texts: pd.DataFrame
+    # Extracted card properties (for Table 1: extracted vs. best match comparison).
     properties: "Properties"
     # Per-attribute fuzzy scores for the top-k candidates.
     # Index = candidate card names, columns = ATTRIBUTE_MAPPINGS db_attr keys.
@@ -161,15 +161,15 @@ class CardOCR:
         texts_name_roi: list[str] = []
         texts_info_roi: list[str] = []
         scores_info_roi: list[float] = []
-        batch_result = None
+        raw_results = None
 
         try:
-            batch_result = self._paddleocr.predict(
-                [name_roi_img, info_roi_img], text_det_thresh=0.0
+            raw_results = self._paddleocr.predict(
+                [name_roi_img, info_roi_img], text_det_thresh=0.05
             )
-            texts_name_roi = batch_result[0]["rec_texts"]
-            texts_info_roi = batch_result[1]["rec_texts"]
-            scores_info_roi = batch_result[1]["rec_scores"]
+            texts_name_roi = raw_results[0]["rec_texts"]
+            texts_info_roi = raw_results[1]["rec_texts"]
+            scores_info_roi = raw_results[1]["rec_scores"]
         except RuntimeError as e:
             print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
             pass  # leave all text lists empty; scoring will use zero vectors
@@ -199,20 +199,21 @@ class CardOCR:
             return properties, None
 
         annotated_info: Image.Image | None = None
-        if batch_result is not None:
+        if raw_results is not None:
             try:
-                annotated_info = batch_result[1].img["ocr_res_img"]
+                annotated_info = raw_results[1].img["ocr_res_img"]
             except Exception as e:
                 print(
                     f"Failed to extract annotated image from OCR result: {e}\nContinuing without annotated image..."
                 )
                 pass
 
-        raw_texts_df = pd.DataFrame({"text": texts_info_roi, "score": scores_info_roi})
+        df_raw_texts = pd.DataFrame({"text": texts_info_roi, "score": scores_info_roi})
+        df_raw_texts["text"] = df_raw_texts["text"].astype(str)
 
         ocr_debug = OCRDebugData(
             annotated_info=annotated_info,
-            raw_texts_df=raw_texts_df,
+            df_raw_texts=df_raw_texts,
             properties=properties,
             score_matrix=None,  # populated by find_best_matches
         )
@@ -326,7 +327,7 @@ class CardOCR:
             )
             ocr_debug = OCRDebugData(
                 annotated_info=ocr_debug.annotated_info,
-                raw_texts_df=ocr_debug.raw_texts_df,
+                df_raw_texts=ocr_debug.df_raw_texts,
                 properties=ocr_debug.properties,
                 score_matrix=score_matrix_df,
             )

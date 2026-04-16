@@ -282,15 +282,18 @@ def display_batch_detail_view(results, selected_idx, engine):
             with st.expander("🔬 Annotated Info ROI", expanded=True):
                 st.image(ocr_debug.annotated_info, width="stretch")
 
-        with st.expander("📄 Table 1 — Raw OCR Output (Info ROI)", expanded=True):
-            st.dataframe(
-                ocr_debug.raw_texts_df,
-                column_config={"score": st.column_config.NumberColumn(format="%.1f")},
-                width="stretch",
-            )
+        with st.expander("📄 Raw OCR Output (Info ROI)", expanded=True):
+            # st.dataframe(
+            #     ocr_debug.df_raw_texts,
+            #     column_config={"score": st.column_config.NumberColumn(format="%.1f")},
+            #     width="stretch",
+            # )
+
+            st.json(dict(text=ocr_debug.df_raw_texts["text"].tolist()), width="stretch")
+            # st.text(ocr_debug.df_raw_texts["text"].tolist(), width="stretch")
 
         with st.expander(
-            "📊 Table 2 — Extracted Properties vs. Best Match", expanded=True
+            "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
         ):
             import pandas as pd
 
@@ -308,7 +311,8 @@ def display_batch_detail_view(results, selected_idx, engine):
                         "best match": getattr(best_match, db_attr, "—"),
                     }
                 )
-            st.dataframe(pd.DataFrame(rows).set_index("attribute"), width="stretch")
+            df_prop = pd.DataFrame(rows).set_index("attribute").astype(str)
+            st.dataframe(df_prop, width="stretch")
 
     # Show top matches below
     st.markdown("---")
@@ -331,7 +335,7 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
-        with st.expander("📈 Table 3 — Score Matrix (top 5 candidates)", expanded=True):
+        with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
             st.dataframe(
                 ocr_debug.score_matrix.style.background_gradient(
                     cmap="RdYlGn", vmin=0, vmax=100
@@ -344,21 +348,19 @@ def display_batch_detail_view(results, selected_idx, engine):
     _nav_bar("bottom")
 
 
-def export_results(
-    results, export_format: str, processor: BatchProcessor, with_diagnostics=False
-):
+def export_results(results, export_format: str, processor: BatchProcessor):
     """Generate export file for results."""
 
     import tempfile
 
     if export_format == "CSV":
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            processor.export_to_csv(results, f.name, with_diagnostics)
+            processor.export_to_csv(results, f.name)
             return f.name, "text/csv", "results.csv"
 
     elif export_format == "Excel":
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as f:
-            processor.export_to_excel(results, f.name, with_diagnostics)
+            processor.export_to_excel(results, f.name)
             return (
                 f.name,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -367,36 +369,8 @@ def export_results(
 
     elif export_format == "JSON":
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            processor.export_to_json(results, f.name, with_diagnostics)
+            processor.export_to_json(results, f.name)
             return f.name, "application/json", "results.json"
-
-
-def display_batch_timing_metrics(results):
-    """Display simple timing metrics for the latest batch."""
-    timing_results = [r for r in results if r.timings_ms is not None]
-    if not timing_results:
-        return
-
-    total_values = [r.timings_ms.get("total_ms", 0.0) for r in timing_results]
-    seg_values = [r.timings_ms.get("segmentation_ms", 0.0) for r in timing_results]
-    phash_values = [r.timings_ms.get("phash_ms", 0.0) for r in timing_results]
-    ocr_values = [r.timings_ms.get("ocr_ms", 0.0) for r in timing_results]
-
-    def p95(values: list[float]) -> float:
-        if len(values) < 2:
-            return values[0] if values else 0.0
-        return statistics.quantiles(values, n=20)[-1]
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("📈 Batch Timing")
-    st.sidebar.caption(f"Measured images: {len(timing_results)}/{len(results)}")
-    st.sidebar.metric("Total Avg (ms)", f"{statistics.mean(total_values):.1f}")
-    st.sidebar.metric("Total P95 (ms)", f"{p95(total_values):.1f}")
-
-    with st.sidebar.expander("Stage breakdown (avg ms)"):
-        st.caption(f"Segmentation: {statistics.mean(seg_values):.1f}")
-        st.caption(f"pHash: {statistics.mean(phash_values):.1f}")
-        st.caption(f"OCR: {statistics.mean(ocr_values):.1f}")
 
 
 def main():
@@ -525,10 +499,7 @@ def main():
         processor = BatchProcessor(pipeline, db_engine)
         try:
             file_path, mime_type, filename = export_results(
-                results,
-                export_format,
-                processor,
-                with_diagnostics=args.with_diagnostics,
+                results, export_format, processor
             )
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
@@ -540,9 +511,6 @@ def main():
                 )
         except Exception as e:
             st.sidebar.error(f"Export failed: {str(e)}")
-
-        if args.with_diagnostics:
-            display_batch_timing_metrics(results)
 
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
@@ -558,12 +526,6 @@ def parse_args() -> argparse.Namespace:
             "App for MTG card recognition with batch processing, detailed results view, and export functionality."
         )
     )
-    parser.add_argument(
-        "--with-diagnostics",
-        action="store_true",
-        # default=False,
-        help="Show timings in the UI and include timings in export file.",
-    )
     return parser.parse_args()
 
 
@@ -571,4 +533,4 @@ if __name__ == "__main__":
     main()
 
 # Run app as a script
-# uv run streamlit run src/mtg_recognition/app/app.py -- --with-diagnostics
+# uv run streamlit run src/mtg_recognition/app/app.py

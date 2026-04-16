@@ -1,8 +1,6 @@
 import json
 import time
 import uuid as _uuid
-from collections.abc import Generator
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,16 +17,6 @@ from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResul
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
 
-@dataclass
-class PipelineDiagnostics:
-    """Per-stage timing for a single pipeline run (milliseconds)."""
-
-    segmentation_ms: float = 0.0
-    phash_ms: float = 0.0
-    ocr_ms: float = 0.0
-    total_ms: float = 0.0
-
-
 @dataclass(frozen=True)
 class SegmentResult:
     """Recognition result for a single detected card segment."""
@@ -36,17 +24,6 @@ class SegmentResult:
     matches: list[Row]
     scores: list[float]
     ocr_debug: OCRDebugData | None
-    diag: PipelineDiagnostics
-
-
-@contextmanager
-def _timer(diag: PipelineDiagnostics, attr: str) -> Generator[None, None, None]:
-    """Context manager that measures elapsed time and stores it on a PipelineDiagnostics field."""
-    start = time.perf_counter()
-    try:
-        yield
-    finally:
-        setattr(diag, attr, (time.perf_counter() - start) * 1000.0)
 
 
 class Pipeline:
@@ -135,41 +112,27 @@ class Pipeline:
         segmentation_ms: float,
     ) -> SegmentResult:
         """Run pHash + OCR matching on a single pre-warped card image."""
-        diag = PipelineDiagnostics(segmentation_ms=segmentation_ms)
         total_start = time.perf_counter()
 
         # Stage 1: Coarse search with perceptual hashing
-        with _timer(diag, "phash_ms"):
-            matches_ph, scores_ph = self.phash_matcher.find_best_matches(
-                img_warped, k=k_phash_candidates
-            )
+        matches_ph, scores_ph = self.phash_matcher.find_best_matches(
+            img_warped, k=k_phash_candidates
+        )
 
         if len(matches_ph) == 0:
-            diag.total_ms = (
-                time.perf_counter() - total_start
-            ) * 1000.0 + segmentation_ms
-            return SegmentResult(matches=[], scores=[], ocr_debug=None, diag=diag)
+            return SegmentResult(matches=[], scores=[], ocr_debug=None)
 
         if len(matches_ph) == 1:
-            diag.total_ms = (
-                time.perf_counter() - total_start
-            ) * 1000.0 + segmentation_ms
-            return SegmentResult(
-                matches=matches_ph, scores=scores_ph, ocr_debug=None, diag=diag
-            )
+            return SegmentResult(matches=matches_ph, scores=scores_ph, ocr_debug=None)
 
         # Stage 2: Accurate OCR search on reduced search space
-        with _timer(diag, "ocr_ms"):
-            matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
-                img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
-            )
-
-        diag.total_ms = (time.perf_counter() - total_start) * 1000.0 + segmentation_ms
+        matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
+            img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
+        )
         return SegmentResult(
             matches=matches_ocr,
             scores=scores_ocr,
             ocr_debug=ocr_debug if debug else None,
-            diag=diag,
         )
 
     def _load_index(self):
@@ -304,10 +267,10 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             raw_texts: list[str] = []
             raw_scores: list[float] = []
             if seg.ocr_debug is not None:
-                raw_texts = seg.ocr_debug.raw_texts_df["text"].tolist()
+                raw_texts = seg.ocr_debug.df_raw_texts["text"].tolist()
                 raw_scores = [
                     round(float(s), 3)
-                    for s in seg.ocr_debug.raw_texts_df["score"].tolist()
+                    for s in seg.ocr_debug.df_raw_texts["score"].tolist()
                 ]
 
             # Terminal output
@@ -321,12 +284,6 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                 )
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
-            click.echo(
-                f"{prefix}  timings: seg={seg.diag.segmentation_ms:.0f}ms  "
-                f"phash={seg.diag.phash_ms:.0f}ms  "
-                f"ocr={seg.diag.ocr_ms:.0f}ms  "
-                f"total={seg.diag.total_ms:.0f}ms"
-            )
 
             if output_file is not None:
                 segments_json.append(
@@ -348,12 +305,6 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                         ],
                         "raw_texts": raw_texts,
                         "raw_scores": raw_scores,
-                        "timings_ms": {
-                            "segmentation_ms": round(seg.diag.segmentation_ms, 1),
-                            "phash_ms": round(seg.diag.phash_ms, 1),
-                            "ocr_ms": round(seg.diag.ocr_ms, 1),
-                            "total_ms": round(seg.diag.total_ms, 1),
-                        },
                     }
                 )
 
