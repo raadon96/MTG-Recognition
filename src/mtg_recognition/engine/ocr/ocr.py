@@ -7,12 +7,10 @@ the full end-to-end pipeline including segmentation and pHash coarse search.
 from dataclasses import dataclass
 from typing import NamedTuple
 
-import cv2
 import numpy as np
 import pandas as pd
 import rapidfuzz
 from paddleocr import PaddleOCR
-from paddlex.inference import load_pipeline_config
 from PIL import Image
 from sqlalchemy.engine.row import Row
 
@@ -31,6 +29,19 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
     {"db_attr": "power", "ocr_property": "power", "weight": 1.0},
     {"db_attr": "toughness", "ocr_property": "toughness", "weight": 1.0},
 ]
+
+# ROI coordinates as fractions of image dimensions (H x W)
+# Name ROI: horizontal text area at top of card
+NAME_ROI_TOP = 0.04
+NAME_ROI_BOTTOM = 0.11
+NAME_ROI_LEFT = 0.06
+NAME_ROI_RIGHT = 0.9
+
+# Info ROI: card information at bottom (set code, number, artist, date)
+INFO_ROI_TOP = 0.88
+INFO_ROI_BOTTOM = 1.0
+INFO_ROI_LEFT = 0.05
+INFO_ROI_RIGHT = 0.95
 
 _MIN_DIM = 32
 
@@ -71,19 +82,6 @@ class OCRDebugData:
 
 class CardOCR:
     """OCR-based card matcher using PaddleOCR for text extraction."""
-
-    # ROI coordinates as fractions of image dimensions (H x W)
-    # Name ROI: horizontal text area at top of card
-    NAME_ROI_TOP = 0.04
-    NAME_ROI_BOTTOM = 0.11
-    NAME_ROI_LEFT = 0.06
-    NAME_ROI_RIGHT = 0.9
-
-    # Info ROI: card information at bottom (set code, number, artist, date)
-    INFO_ROI_TOP = 0.88
-    INFO_ROI_BOTTOM = 1.0
-    INFO_ROI_LEFT = 0.05
-    INFO_ROI_RIGHT = 0.95
 
     def __init__(self, use_preprocessing=False):
         self._use_preprocessing = use_preprocessing
@@ -135,14 +133,14 @@ class CardOCR:
         """
         h, w, _ = query_img.shape
 
-        # Extract ROIs using class constants
+        # Extract ROIs using module-level constants
         name_roi_img = query_img[
-            int(h * self.NAME_ROI_TOP) : int(h * self.NAME_ROI_BOTTOM),
-            int(w * self.NAME_ROI_LEFT) : int(w * self.NAME_ROI_RIGHT),
+            int(h * NAME_ROI_TOP) : int(h * NAME_ROI_BOTTOM),
+            int(w * NAME_ROI_LEFT) : int(w * NAME_ROI_RIGHT),
         ]
         info_roi_img = query_img[
-            int(h * self.INFO_ROI_TOP) : int(h * self.INFO_ROI_BOTTOM),
-            int(w * self.INFO_ROI_LEFT) : int(w * self.INFO_ROI_RIGHT),
+            int(h * INFO_ROI_TOP) : int(h * INFO_ROI_BOTTOM),
+            int(w * INFO_ROI_LEFT) : int(w * INFO_ROI_RIGHT),
         ]
 
         if self._use_preprocessing:

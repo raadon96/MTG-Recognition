@@ -103,23 +103,18 @@ uv sync
 source .venv/bin/activate
 ```
 
-#### 5. Install additional requirements
-```bash
-uv run paddlex --install hpi-cpu
-```
-
-#### 6. Build MobileCache.sqlite local DB (based on MTGJSON) and download images from Scryfall 
+#### 5. Build local DB and download images from Scryfall (not required if testing local app) 
 ```bash
 uv run python -m mtg_recognition.jobs.build_database
 ```
 
-#### 7. Build embeddings and perceptual hashing indexes
+#### 6. Build perceptual hashing indexes
 ```bash
-uv run python -m mtg_recognition.engine.pipeline
+uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg
 ```
-**Note**: On first run, this command will also build indexes (embeddings and phashes).
+**Note**: On first run, this command triggers perceptual hash index bulding.
 
-#### 8. Run Streamlit app
+#### 7. Run Streamlit app
 
 ```bash
 uv run streamlit run src/mtg_recognition/app/app.py -- --with-diagnostics

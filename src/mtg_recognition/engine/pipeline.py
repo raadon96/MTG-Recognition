@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
-import cv2
 import numpy as np
 from rich import print
 from sqlalchemy.engine.row import Row
