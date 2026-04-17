@@ -30,6 +30,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     git \
     libgl1 \
     libglib2.0-0 \
@@ -107,7 +108,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Install PaddleX CPU high-performance inference plugin in the uv-managed environment.
 
 RUN mkdir -p "${ULTRALYTICS_ASSET_CACHE_DIR}" \
-    && chown -R appuser:appuser /app /home/appuser/.cache
+    && mkdir -p /home/appuser/.paddlex/fonts \
+    && curl -fsSL https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/simfang.ttf \
+       -o /home/appuser/.paddlex/fonts/simfang.ttf \
+    && chown -R appuser:appuser /app /home/appuser/.cache /home/appuser/.paddlex
 # Create cache directory and give ownership to appuser, so downloads can write there.
 
 USER appuser
