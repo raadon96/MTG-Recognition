@@ -283,7 +283,7 @@ def display_batch_detail_view(results, selected_idx, engine):
                 st.image(ocr_debug.ocr_result_img, width="stretch")
 
         with st.expander(
-            "📄 OCR Tokens — Info ROI",
+            "📄 Info ROI — OCR Tokens (flavor-text filtered)",
             expanded=True,
         ):
             # st.dataframe(

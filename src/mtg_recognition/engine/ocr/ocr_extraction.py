@@ -27,6 +27,8 @@ _ARTIST_BLOCKLIST = frozenset(
     {
         "illus",
         "illus.",
+        "rlluis",
+        "rlluis.",
         "wizards",
         "wizants",
         "coast",
@@ -122,6 +124,8 @@ def filter_flavor_text_zone(
         for t, b, s in zip(texts, boxes, scores)
         if not (b[1] < y_thresh and b[2] < x_right)
     ]
+
+    # kept = [(t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)]
 
     # Safety guard: never discard everything (e.g. unusual card layouts)
     if not kept:

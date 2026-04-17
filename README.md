@@ -117,5 +117,5 @@ uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/ra
 #### 7. Run Streamlit app
 
 ```bash
-uv run streamlit run src/mtg_recognition/app/app.py -- --with-diagnostics
+uv run streamlit run src/mtg_recognition/app/app.py
 ```

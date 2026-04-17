@@ -219,14 +219,18 @@ class CardOCR:
             print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
             pass  # leave all text lists empty; scoring will use zero vectors
 
-        # # Remove tokens in the flavor-text bleedthrough zone before extraction.
-        # # Tokens near the TOP of the info ROI and not in the far-right column
-        # # (where P/T lives) are flavor text that bled into the ROI.
-        # texts_info_roi, boxes_info_roi, scores_info_roi = (
-        #     ocr_extraction.filter_flavor_text_zone(
-        #         texts_info_roi, boxes_info_roi, scores_info_roi
-        #     )
-        # )
+        # Remove tokens in the flavor-text bleedthrough zone before extraction.
+        # Tokens near the TOP of the info ROI and not in the far-right column
+        # (where P/T lives) are flavor text that bled into the ROI.
+        texts_info_roi, boxes_info_roi, scores_info_roi = (
+            ocr_extraction.filter_flavor_text_zone(
+                texts_info_roi,
+                boxes_info_roi,
+                scores_info_roi,
+                y_thresh_frac=0.08,
+                x_right_frac=0.90,
+            )
+        )
 
         # Extract structured properties from OCR texts
         name = ocr_extraction.extract_card_name(texts_name_roi)
