@@ -84,6 +84,12 @@ INFO_ROI_BOTTOM = 1.0
 INFO_ROI_LEFT = 0.05
 INFO_ROI_RIGHT = 0.95
 
+# for flavor text bleedthrough filtering in info ROI
+Y_TRESH_FRAC = 0.08
+X_RIGHT_FRAC = 0.90
+
+# PaddleOCR's text detection model requires both dimensions >= 32 px;
+# upscale any ROI that falls below this threshold before inference.
 _MIN_DIM = 32
 
 
@@ -227,8 +233,8 @@ class CardOCR:
                 texts_info_roi,
                 boxes_info_roi,
                 scores_info_roi,
-                y_thresh_frac=0.08,
-                x_right_frac=0.90,
+                y_thresh_frac=Y_TRESH_FRAC,
+                x_right_frac=X_RIGHT_FRAC,
             )
         )
 

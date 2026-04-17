@@ -108,7 +108,7 @@ source .venv/bin/activate
 uv run python -m mtg_recognition.jobs.build_database
 ```
 
-#### 6. Build perceptual hashing indexes
+#### 6. Build perceptual hashing indexes (not required if testing local app)
 ```bash
 uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg
 ```

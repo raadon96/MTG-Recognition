@@ -77,9 +77,7 @@ class Pipeline:
         )
 
         if apply_segmentation:
-            seg_total_start = time.perf_counter()
             seg_result = self.segment_card(query_img)
-            segmentation_ms = (time.perf_counter() - seg_total_start) * 1000.0
 
             if not seg_result.success:
                 print("No card detected")
@@ -87,7 +85,6 @@ class Pipeline:
 
             warped_images = [s.warped_image for s in seg_result.segments]
         else:
-            segmentation_ms = 0.0
             warped_images = [query_img]
 
         results: list[SegmentResult] = []
@@ -98,7 +95,6 @@ class Pipeline:
                     k_phash_candidates,
                     k_final_results,
                     debug,
-                    segmentation_ms,
                 )
             )
         return results
@@ -109,10 +105,8 @@ class Pipeline:
         k_phash_candidates: int,
         k_final_results: int,
         debug: bool,
-        segmentation_ms: float,
     ) -> SegmentResult:
         """Run pHash + OCR matching on a single pre-warped card image."""
-        total_start = time.perf_counter()
 
         # Stage 1: Coarse search with perceptual hashing
         matches_ph, scores_ph = self.phash_matcher.find_best_matches(
