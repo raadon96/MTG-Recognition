@@ -52,9 +52,26 @@ _Milestone: MTG Recognition — Project Setup & Tooling_
 
 ## Traceability
 
-| Req ID | Phase |
-|--------|-------|
-| DVC-01 – DVC-08 | Phase 1 |
-| SYNC-01 – SYNC-04 | Phase 2 |
-| CLI-01 – CLI-06 | Phase 2 |
-| DOC-01 – DOC-03 | Phase 3 |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DVC-01 | Phase 1 | Pending |
+| DVC-02 | Phase 1 | Pending |
+| DVC-03 | Phase 1 | Pending |
+| DVC-04 | Phase 1 | Pending |
+| DVC-05 | Phase 1 | Pending |
+| DVC-06 | Phase 1 | Pending |
+| DVC-07 | Phase 1 | Pending |
+| DVC-08 | Phase 1 | Pending |
+| SYNC-01 | Phase 2 | Pending |
+| SYNC-02 | Phase 2 | Pending |
+| SYNC-03 | Phase 2 | Pending |
+| SYNC-04 | Phase 2 | Pending |
+| CLI-01 | Phase 2 | Pending |
+| CLI-02 | Phase 2 | Pending |
+| CLI-03 | Phase 2 | Pending |
+| CLI-04 | Phase 2 | Pending |
+| CLI-05 | Phase 2 | Pending |
+| CLI-06 | Phase 2 | Pending |
+| DOC-01 | Phase 3 | Pending |
+| DOC-02 | Phase 3 | Pending |
+| DOC-03 | Phase 3 | Pending |
