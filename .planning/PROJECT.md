@@ -33,11 +33,11 @@ _Capabilities already working in the existing codebase:_
 
 _What this milestone delivers:_
 
-- [ ] DVC initialized in the repo with a Google Drive remote configured
-- [ ] `data/test/` fully tracked by DVC (no large files in git)
-- [ ] `benchmarks/dataset` moved into `data/test/6_benchmark` and removed from git
-- [ ] Collaborators can run `dvc pull` to get all test/benchmark datasets
-- [ ] `dvc push` workflow documented so contributors can share new test images
+- [x] DVC initialized in the repo with a Google Drive remote configured — Validated in Phase 01 (2026-05-10)
+- [x] `data/test/` fully tracked by DVC (no large files in git) — Validated in Phase 01 (2026-05-10)
+- [x] `benchmarks/dataset` moved into `data/test/6_benchmark` and removed from git — Validated in Phase 01 (2026-05-10)
+- [x] Collaborators can run `dvc pull` to get all test/benchmark datasets — Validated in Phase 01 (2026-05-10)
+- [x] `dvc push` workflow documented so contributors can share new test images — Validated in Phase 01 (2026-05-10)
 - [ ] `mtg sync` command: one command that runs MobileCache rebuild → downloads missing reference images → rebuilds full pHash index
 - [ ] `mtg recognize` command: wraps the pipeline CLI
 - [ ] `mtg segment` command: wraps the segmentation CLI
@@ -97,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 after initialization*
+*Last updated: 2026-05-10 — Phase 01 (dataset-versioning) complete*
