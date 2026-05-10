@@ -8,10 +8,10 @@ _Milestone: MTG Recognition — Project Setup & Tooling_
 
 - [x] **DVC-01**: DVC is initialized in the repository (`dvc init`)
 - [x] **DVC-02**: A Google Drive remote is configured as the DVC remote storage
-- [ ] **DVC-03**: `benchmarks/dataset/` is removed from git tracking and deleted from git history tracking (without history rewrite — gitignore + rm --cached)
-- [ ] **DVC-04**: `benchmarks/dataset/` content is moved into `data/test/6_benchmark/`
-- [ ] **DVC-05**: `data/test/` is tracked by DVC (`dvc add data/test`)
-- [ ] **DVC-06**: Dataset is pushed to Google Drive remote (`dvc push`)
+- [x] **DVC-03**: `benchmarks/dataset/` is removed from git tracking and deleted from git history tracking (without history rewrite — gitignore + rm --cached)
+- [x] **DVC-04**: `benchmarks/dataset/` content is moved into `data/test/6_benchmark/`
+- [x] **DVC-05**: `data/test/` is tracked by DVC (`dvc add data/test`)
+- [x] **DVC-06**: Dataset is pushed to Google Drive remote (`dvc push`)
 - [ ] **DVC-07**: Collaborator can run `dvc pull` to download all test/benchmark datasets
 - [ ] **DVC-08**: `dvc push` workflow is documented so contributors can share new test images
 
@@ -56,10 +56,10 @@ _Milestone: MTG Recognition — Project Setup & Tooling_
 |-------------|-------|--------|
 | DVC-01 | Phase 1 | Complete |
 | DVC-02 | Phase 1 | Complete |
-| DVC-03 | Phase 1 | Pending |
-| DVC-04 | Phase 1 | Pending |
-| DVC-05 | Phase 1 | Pending |
-| DVC-06 | Phase 1 | Pending |
+| DVC-03 | Phase 1 | Complete |
+| DVC-04 | Phase 1 | Complete |
+| DVC-05 | Phase 1 | Complete |
+| DVC-06 | Phase 1 | Complete |
 | DVC-07 | Phase 1 | Pending |
 | DVC-08 | Phase 1 | Pending |
 | SYNC-01 | Phase 2 | Pending |

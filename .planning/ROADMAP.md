@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. `git status` shows no large image files untracked or tracked in git after the migration
 **Plans:** 1/3 plans executed
 - [x] 01-01-PLAN.md — Install DVC, init repo, configure Google Drive remote with custom OAuth (DVC-01, DVC-02)
-- [ ] 01-02-PLAN.md — Migrate benchmarks/dataset/ to data/test/6_benchmark/, untrack from git, dvc add + push to gdrive (DVC-03..06)
+- [x] 01-02-PLAN.md — Migrate benchmarks/dataset/ to data/test/6_benchmark/, untrack from git, dvc add + push to gdrive (DVC-03..06)
 - [ ] 01-03-PLAN.md — Verify collaborator dvc pull round-trip + write CONTRIBUTING.md (DVC-07, DVC-08)
 
 ### Phase 2: CLI & Sync Command
