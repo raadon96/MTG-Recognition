@@ -26,8 +26,7 @@ scripts/
 runs/
 output/
 **/results
-#benchmarks/**/*.jpg
-benchmarks/dataset/ocr
+benchmarks/
 run_models.py
 sc_*.py
 script_*.py
