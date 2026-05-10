@@ -14,8 +14,11 @@ MTG card recognition app: takes a photo of a Magic: The Gathering card, segments
 ## Commands
 
 ```bash
-# Install dependencies
+# Install dependencies (includes DVC)
 uv sync --dev
+
+# Pull test/benchmark dataset from Google Drive (required before running tests or pipeline on test images)
+uv run dvc pull
 
 # Run app locally
 uv run streamlit run src/mtg_recognition/app/app.py
@@ -37,7 +40,7 @@ uv run python -m compileall src tests
 
 # Pipeline CLI (recognition on one image or a directory)
 uv run python -m mtg_recognition.engine.pipeline -i card.jpg
-uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
+uv run python -m mtg_recognition.engine.pipeline -i data/test/6_benchmark/images/raw -k 3 --k-phash 50
 uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results.json
 uv run python -m mtg_recognition.engine.pipeline --help
 
@@ -46,6 +49,28 @@ uv run python -m mtg_recognition.engine.segmentation.cli -i data/test/images -o 
 ```
 
 No linter/formatter is configured — match the style of surrounding code.
+
+## Dataset (DVC)
+
+Test and benchmark images are tracked by DVC with a Google Drive remote. They are **not in git**. After cloning, run `uv run dvc pull` to populate `data/test/`.
+
+First-time setup requires a personal GCP OAuth Desktop app credential — see `CONTRIBUTING.md` for the one-time steps. Once configured:
+
+```bash
+# One-time secret setup (writes to .dvc/config.local, which is gitignored)
+uv run dvc remote modify --local origin gdrive_client_id '<your-client-id>'
+uv run dvc remote modify --local origin gdrive_client_secret '<your-client-secret>'
+
+# Pull dataset (~600 MB, triggers browser OAuth on first run)
+uv run dvc pull
+
+# After adding new test images: re-track and push
+uv run dvc add data/test
+uv run dvc push
+git add data/test.dvc && git commit -m "data: add ..."
+```
+
+The DVC remote is `gdrive://root/decksray/MTG-Recognition/data/test` (named `origin`, set as default).
 
 ## Architecture
 
@@ -96,12 +121,19 @@ Read-only SQLite opened with `mode=ro&nolock=1`. 35 MB, ~1M+ cards.
 
 ## Data & Assets
 
-All reference data lives under `data/reference/` (not in git):
-- `images/` — ~1M card images indexed by UUID
-- `MobileCache.sqlite` — card metadata database
-- `index/phash/hashes.npy` + `index_to_uuid.json` — prebuilt pHash index
-- YOLO `.pt` models: `engine/segmentation/models/prod/`
-- OCR models: `engine/ocr/models/prod/`
+**DVC-tracked** (restored via `dvc pull`, not in git):
+- `data/test/` — test and benchmark images across 8 categories (0–6 + 6_benchmark); ~971 files, ~600 MB
+  - `data/test/6_benchmark/images/raw/` — 36 raw benchmark JPGs (UUID filenames)
+  - `data/test/6_benchmark/images/ready/` — 36 pre-warped benchmark JPGs
+  - `data/test/6_benchmark/ocr/` — 20 OCR ground-truth images
+- `data/test.dvc` — the git-tracked DVC pointer (committed; tells `dvc pull` what to fetch)
+
+**Not in git** (must be obtained separately, see `CONTRIBUTING.md` or `build_database.py`):
+- `data/reference/images/` — ~1M card images indexed by UUID
+- `data/reference/MobileCache.sqlite` — card metadata database (~35 MB, ~1M+ cards)
+- `data/reference/index/phash/hashes.npy` + `index_to_uuid.json` — prebuilt pHash index
+- YOLO `.pt` models: `src/mtg_recognition/engine/segmentation/models/prod/`
+- OCR models: `src/mtg_recognition/engine/ocr/models/prod/`
 
 ## Key Entry Points
 
