@@ -12,7 +12,7 @@ This milestone transforms a working but hard-to-reproduce ML project into one an
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Dataset Versioning** - Move benchmark data out of git into DVC with Google Drive remote
+- [x] **Phase 1: Dataset Versioning** - Move benchmark data out of git into DVC with Google Drive remote (completed 2026-05-10)
 - [ ] **Phase 2: CLI & Sync Command** - Deliver unified `mtg` CLI and one-command reference data sync
 - [ ] **Phase 3: Documentation** - Write collaborator setup guide covering DVC pull, sync, and CLI usage
 
@@ -29,10 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `benchmarks/dataset/` no longer appears in `git ls-files`; its contents are present under `data/test/6_benchmark/`
   4. A collaborator who clones the repo and runs `dvc pull` receives all test and benchmark images locally
   5. `git status` shows no large image files untracked or tracked in git after the migration
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 - [x] 01-01-PLAN.md — Install DVC, init repo, configure Google Drive remote with custom OAuth (DVC-01, DVC-02)
 - [x] 01-02-PLAN.md — Migrate benchmarks/dataset/ to data/test/6_benchmark/, untrack from git, dvc add + push to gdrive (DVC-03..06)
-- [ ] 01-03-PLAN.md — Verify collaborator dvc pull round-trip + write CONTRIBUTING.md (DVC-07, DVC-08)
+- [x] 01-03-PLAN.md — Verify collaborator dvc pull round-trip + write CONTRIBUTING.md (DVC-07, DVC-08)
 
 ### Phase 2: CLI & Sync Command
 **Goal**: A collaborator can invoke any pipeline operation via a short `mtg <subcommand>` command, and `mtg sync` rebuilds the full reference data stack (MobileCache → images → pHash index) in one shot
@@ -64,6 +64,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Dataset Versioning | 1/3 | In Progress|  |
+| 1. Dataset Versioning | 3/3 | Complete   | 2026-05-10 |
 | 2. CLI & Sync Command | 0/? | Not started | - |
 | 3. Documentation | 0/? | Not started | - |
