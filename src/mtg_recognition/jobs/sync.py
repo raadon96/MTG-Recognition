@@ -1,14 +1,32 @@
+"""Reference data synchronisation for MTG Recognition.
+
+Manages the full reference data stack: MobileCache (SQLite card database),
+reference images, and pHash index.  All three artifacts must stay in sync —
+they are built from the same MTGJSON data release and consumed together
+during card recognition.
+
+This module can be executed as a standalone script:
+
+    uv run python -m mtg_recognition.jobs.sync
+"""
+
 import asyncio
+import json
 import logging
 import shutil
+import sqlite3
 import zipfile
 from pathlib import Path
 from urllib import request
 
 import aiohttp
+import click
+from rich.console import Console
+from rich.panel import Panel
 from sqlmodel import Session, SQLModel, create_engine, select
 from tqdm.asyncio import tqdm
 
+from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.settings import settings
 
 from .schemas import CardIdentifiers, Cards, MobileCache, Sets
@@ -25,6 +43,18 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+console = Console()
+
+# State file that tracks the MTGJSON version last used to build each artifact (D-01).
+STATE_FILE = settings.REF_DIR / ".mtg-sync-state.json"
+
+# MTGJSON Meta endpoint for a lightweight version check (D-04).
+META_URL = "https://mtgjson.com/api/v5/Meta.json"
+
+
+# ---------------------------------------------------------------------------
+# Database helpers
+# ---------------------------------------------------------------------------
 
 def generate_image_uri(
     scryfallId,
@@ -259,10 +289,10 @@ def download_raw_images(dest_engine):
 
 
 def build_mobilecache():
-    """Download AllPrintings ZIP and rebuild MobileCache. Steps 1+2 of the original main().
+    """Download AllPrintings ZIP and rebuild MobileCache.
 
-    Returns the SQLAlchemy Engine pointing at settings.LOCAL_DB_FILE so the caller
-    can pass it directly to download_images(dest_engine=...) without recreating it.
+    Returns the SQLAlchemy Engine pointing at settings.LOCAL_DB_FILE so the
+    caller can pass it directly to download_images() without recreating it.
     """
     print("--- Step 1: Retrieving Data ---")
     if not settings.MTGO_DB_FILE_ZIP.exists():
@@ -291,7 +321,7 @@ def build_mobilecache():
 
 
 def download_images(dest_engine=None):
-    """Download reference images. Step 3 of the original main().
+    """Download reference images.
 
     If dest_engine is None, creates a new SQLAlchemy Engine pointing at
     settings.LOCAL_DB_FILE so the function is callable standalone.
@@ -304,13 +334,207 @@ def download_images(dest_engine=None):
     download_raw_images(dest_engine)
 
 
-def main():
-    """Backward-compatible entry point. Called by 'python -m mtg_recognition.jobs.build_database'."""
-    dest_engine = build_mobilecache()
-    download_images(dest_engine)
+# ---------------------------------------------------------------------------
+# Sync state helpers
+# ---------------------------------------------------------------------------
+
+def _load_state() -> dict:
+    """Return the sync state dict from disk.
+
+    Returns all-null on FileNotFoundError or JSON decode error (D-03:
+    missing or corrupt state treated the same as first-run).
+    """
+    try:
+        return json.loads(STATE_FILE.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {
+            "mobilecache_version": None,
+            "images_version": None,
+            "phash_version": None,
+        }
+
+
+def _save_state(state: dict) -> None:
+    """Write state dict to STATE_FILE as pretty-printed JSON."""
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def _fetch_mtgjson_version() -> str:
+    """Fetch the current MTGJSON version via a lightweight META_URL GET.
+
+    Uses SCRYFALL_HEADERS (D-04).
+    Re-raises any exception so the sync orchestrator can exit non-zero (SYNC-04).
+    """
+    req = request.Request(META_URL, headers=SCRYFALL_HEADERS)
+    with request.urlopen(req) as response:
+        data = json.loads(response.read())
+    return data["meta"]["version"]
+
+
+# ---------------------------------------------------------------------------
+# Sync CLI command
+# ---------------------------------------------------------------------------
+
+@click.command()
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Bypass all version checks and rebuild MobileCache, images, and pHash index unconditionally.",
+)
+@click.option(
+    "--skip-db-check",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Skip the MTGJSON Meta.json HTTP freshness check (Step 1). Use when offline.",
+)
+def main(force: bool, skip_db_check: bool) -> None:
+    """Rebuild the full reference data stack in one shot.
+
+    Runs three steps in order: MobileCache rebuild → reference image download →
+    pHash index build. Skips steps whose local version already matches the remote
+    MTGJSON version. Use --force to bypass all version checks.
+    """
+    # First-run directory creation
+    settings.REF_DIR.mkdir(parents=True, exist_ok=True)
+
+    state = _load_state()
+    summary: dict[str, str] = {}
+
+    try:
+        # ------------------------------------------------------------------
+        # Step 1 — MobileCache (D-04, D-13)
+        # ------------------------------------------------------------------
+        console.print("\n[bold]--- Step 1: MobileCache ---[/bold]")
+
+        remote_version: str | None = None
+        rebuild_mobilecache = force
+
+        if not force:
+            if skip_db_check:
+                # No network fetch — check local state only (D-08)
+                if (
+                    state["mobilecache_version"] is not None
+                    and settings.LOCAL_DB_FILE.exists()
+                ):
+                    rebuild_mobilecache = False
+                else:
+                    rebuild_mobilecache = True
+            else:
+                remote_version = _fetch_mtgjson_version()
+                if (
+                    state["mobilecache_version"] == remote_version
+                    and settings.LOCAL_DB_FILE.exists()
+                ):
+                    rebuild_mobilecache = False
+                else:
+                    rebuild_mobilecache = True
+
+        if not rebuild_mobilecache:
+            console.print(
+                f"[green]✓ MobileCache is up-to-date ({state['mobilecache_version']}) — skipping rebuild[/green]"
+            )
+            summary["MobileCache"] = f"skipped ({state['mobilecache_version']})"
+            dest_engine = None
+        else:
+            # Write in-progress null BEFORE the work begins (D-02)
+            state["mobilecache_version"] = None
+            _save_state(state)
+
+            dest_engine = build_mobilecache()
+
+            # Resolve the version to persist
+            if remote_version is not None:
+                resolved = remote_version
+            else:
+                # skip_db_check=True — read version from the extracted AllPrintings.sqlite
+                try:
+                    conn = sqlite3.connect(str(settings.MTGO_DB_FILE))
+                    row = conn.execute("SELECT version FROM meta").fetchone()
+                    conn.close()
+                    resolved = row[0] if row else "unknown"
+                except Exception:
+                    resolved = "unknown"
+
+            state["mobilecache_version"] = resolved
+            _save_state(state)
+            summary["MobileCache"] = f"rebuilt ({resolved})"
+
+        # ------------------------------------------------------------------
+        # Step 2 — Reference images (D-05, D-13)
+        # ------------------------------------------------------------------
+        console.print("\n[bold]--- Step 2: Reference Images ---[/bold]")
+
+        rebuild_images = force or not (
+            state["images_version"] is not None
+            and state["images_version"] == state["mobilecache_version"]
+        )
+
+        if not rebuild_images:
+            console.print(
+                f"[green]✓ Reference images are up-to-date ({state['images_version']}) — skipping download[/green]"
+            )
+            summary["Reference images"] = f"skipped ({state['images_version']})"
+        else:
+            # Write in-progress null BEFORE the work begins (D-02)
+            state["images_version"] = None
+            _save_state(state)
+
+            download_images(dest_engine=dest_engine)
+
+            state["images_version"] = state["mobilecache_version"]
+            _save_state(state)
+            summary["Reference images"] = f"downloaded ({state['images_version']})"
+
+        # ------------------------------------------------------------------
+        # Step 3 — pHash index (D-06, D-13, D-15)
+        # ------------------------------------------------------------------
+        console.print("\n[bold]--- Step 3: pHash Index ---[/bold]")
+
+        rebuild_phash = force or not (
+            state["phash_version"] is not None
+            and state["phash_version"] == state["images_version"]
+        )
+
+        if not rebuild_phash:
+            console.print(
+                f"[green]✓ pHash index is up-to-date ({state['phash_version']}) — skipping rebuild[/green]"
+            )
+            summary["pHash index"] = f"skipped ({state['phash_version']})"
+        else:
+            # Write in-progress null BEFORE the work begins (D-02)
+            state["phash_version"] = None
+            _save_state(state)
+
+            # D-15: tqdm progress bar inside build_index() passes through unchanged
+            matcher = PHashCardMatcher(auto_build=False)
+            matcher.build_index(force=True)
+
+            state["phash_version"] = state["images_version"]
+            _save_state(state)
+            summary["pHash index"] = f"rebuilt ({state['phash_version']})"
+
+    except Exception as exc:
+        # SYNC-04: non-zero exit with descriptive error message
+        click.echo(
+            f"Error during sync: {type(exc).__name__}: {exc}",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    # ------------------------------------------------------------------
+    # Summary panel (D-14)
+    # ------------------------------------------------------------------
+    summary_text = "\n".join(
+        f"{artifact}: {outcome}" for artifact, outcome in summary.items()
+    )
+    console.print(Panel(summary_text, title="Sync Summary", expand=False))
 
 
 if __name__ == "__main__":
     main()
 
-# uv run python -m mtg_recognition.jobs.build_database
+# uv run python -m mtg_recognition.jobs.sync

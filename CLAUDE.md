@@ -113,7 +113,7 @@ Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`
 - `batch_processor.py` — orchestrates per-image pipeline, returns `BatchResult` dataclasses. `BatchResult` carries the full top-K `matches: list[Row]`, `scores: list[float]`, `ocr_debug: OCRDebugData | None`, and `timings_ms: dict[str, float] | None` so the detail view is self-contained. Owns `K_PHASH_CANDIDATES` and `K_TOP_MATCHES` constants (imported by `app.py`) so both code paths always use the same pipeline parameters. Batch processing always runs with `debug=True` so `OCRDebugData` is available on demand without a second pipeline call.
 
 **Data jobs** (`jobs/`):
-- `build_database.py` — ingests MTGJson/Scryfall data into `MobileCache.sqlite`.
+- `sync.py` — manages the full reference data stack: builds MobileCache, downloads reference images, and builds the pHash index. Also exposes `mtg sync` as a CLI entry point (`uv run python -m mtg_recognition.jobs.sync`).
 - `schemas.py` — SQLModel ORM models (`Cards`, `CardIdentifiers`, `Sets`).
 
 **Database** (`database.py`):
@@ -128,7 +128,7 @@ Read-only SQLite opened with `mode=ro&nolock=1`. 35 MB, ~1M+ cards.
   - `data/test/6_benchmark/ocr/` — 20 OCR ground-truth images
 - `data/test.dvc` — the git-tracked DVC pointer (committed; tells `dvc pull` what to fetch)
 
-**Not in git** (must be obtained separately, see `CONTRIBUTING.md` or `build_database.py`):
+**Not in git** (must be obtained separately, see `CONTRIBUTING.md` or `jobs/sync.py`):
 - `data/reference/images/` — ~1M card images indexed by UUID
 - `data/reference/MobileCache.sqlite` — card metadata database (~35 MB, ~1M+ cards)
 - `data/reference/index/phash/hashes.npy` + `index_to_uuid.json` — prebuilt pHash index
@@ -147,4 +147,4 @@ Read-only SQLite opened with `mode=ro&nolock=1`. 35 MB, ~1M+ cards.
 | Segmentation (YOLO primary) | `src/mtg_recognition/engine/segmentation/yolo.py` |
 | Segmentation (shared helpers) | `src/mtg_recognition/engine/segmentation/seg_utils.py` |
 | pHash matcher | `src/mtg_recognition/engine/matching/phash_matcher.py` |
-| Database job | `src/mtg_recognition/jobs/build_database.py` |
+| Reference data sync job | `src/mtg_recognition/jobs/sync.py` |

@@ -2,6 +2,7 @@ import json
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
+import click
 import imagehash
 import numpy as np
 from numpydantic import NDArray, Shape
@@ -12,6 +13,7 @@ from tqdm import tqdm
 
 from mtg_recognition.engine.ocr.ocr_extraction import sort_scores_with_indices
 from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.settings import settings
 
 # --- Configuration ---
 IMG_DIR = "data/reference/images"
@@ -375,27 +377,38 @@ class PHashCardMatcher:
         return similarity
 
 
-def main():
-    # Test with a sample segmented test image
-    query_image_path = Path(
-        "benchmarks/dataset/images/ready/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg",
-        # "benchmarks/dataset/images/ready/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg"
-    )
-    assert query_image_path.exists()
+@click.command()
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Rebuild pHash index even if it already exists.",
+)
+@click.option(
+    "--workers",
+    type=click.INT,
+    default=cpu_count() - 1,
+    show_default=True,
+    help="Number of parallel worker processes for hash computation.",
+)
+def main(force: bool, workers: int) -> None:
+    """Rebuild the pHash index from reference images already on disk.
 
-    matcher = PHashCardMatcher(auto_build=True)
-    matcher.build_index(force=False)
+    Requires data/reference/images/ to be populated first (run 'mtg sync'
+    to download reference images if you haven't already).
+    """
+    # Preflight check (D-10): image directory must exist and be non-empty.
+    img_dir = settings.IMG_DIR
+    if not img_dir.exists() or not any(img_dir.iterdir()):
+        click.echo(
+            "Error: data/reference/images/ is missing or empty. Run 'mtg sync' first.",
+            err=True,
+        )
+        raise SystemExit(1)
 
-    import cv2
-
-    k = 10
-    query_img = cv2.imread(str(query_image_path))
-    best_matches, best_scores = matcher.find_best_matches(query_img, k=k)
-
-    print(f"\nTop {k} matches:")
-    for i, match in enumerate(best_matches):
-        # print(f"  UUID: {match.uuid}, name: {match.name}, Score: {best_scores[i]}")
-        print(match, sep="\n", end="\n\n")
+    matcher = PHashCardMatcher(auto_build=False)
+    matcher.build_index(force=force, num_workers=workers)
 
 
 # --- Example Usage ---
