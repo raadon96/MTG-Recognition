@@ -44,7 +44,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `mtg sync` runs to completion and leaves MobileCache.sqlite, reference images, and the pHash index in a consistent state
   3. `mtg sync` exits non-zero with a descriptive error message if any step (DB build, image download, index rebuild) fails
   4. Existing `uv run python -m mtg_recognition.engine.pipeline` and `uv run python -m mtg_recognition.engine.segmentation.cli` invocations still work unchanged
-**Plans**: TBD
+**Plans:** 3 plans
+- [ ] 02-01-PLAN.md — `mtg` click group + `recognize`/`segment` subcommands via `add_command`; `[project.scripts]` entry point (CLI-01, CLI-02, CLI-05, CLI-06)
+- [ ] 02-02-PLAN.md — `mtg build-index` subcommand with `--force`/`--workers` flags + preflight check on `data/reference/images/` (CLI-03)
+- [ ] 02-03-PLAN.md — `mtg sync` orchestrator with state-file plumbing, Meta.json freshness, three-step skipping, and `build_database.py` refactor (SYNC-01..04, CLI-04, CLI-06)
 
 ### Phase 3: Documentation
 **Goal**: A new collaborator can follow a written guide to go from a fresh clone to a fully working development environment without asking anyone for help
@@ -65,5 +68,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Dataset Versioning | 3/3 | Complete   | 2026-05-10 |
-| 2. CLI & Sync Command | 0/? | Not started | - |
+| 2. CLI & Sync Command | 0/3 | Planned | - |
 | 3. Documentation | 0/? | Not started | - |
