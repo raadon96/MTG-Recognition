@@ -258,9 +258,12 @@ def download_raw_images(dest_engine):
     print("\nDone!")
 
 
-def main():
-    # settings.DATA_DIR = Path("scratch/test_download")
+def build_mobilecache():
+    """Download AllPrintings ZIP and rebuild MobileCache. Steps 1+2 of the original main().
 
+    Returns the SQLAlchemy Engine pointing at settings.LOCAL_DB_FILE so the caller
+    can pass it directly to download_images(dest_engine=...) without recreating it.
+    """
     print("--- Step 1: Retrieving Data ---")
     if not settings.MTGO_DB_FILE_ZIP.exists():
         print(f"Downloading {settings.MTGJSON_URL}...")
@@ -284,9 +287,27 @@ def main():
     # create cache database for memory efficient lookups when matching
     create_database(source_engine, dest_engine, force=True)
 
-    # download raw images
+    return dest_engine
+
+
+def download_images(dest_engine=None):
+    """Download reference images. Step 3 of the original main().
+
+    If dest_engine is None, creates a new SQLAlchemy Engine pointing at
+    settings.LOCAL_DB_FILE so the function is callable standalone.
+    download_raw_images() is already incremental — it skips files that exist on disk.
+    """
+    if dest_engine is None:
+        dest_engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
+
     print("\n--- Step 3: Downloading Images ---")
     download_raw_images(dest_engine)
+
+
+def main():
+    """Backward-compatible entry point. Called by 'python -m mtg_recognition.jobs.build_database'."""
+    dest_engine = build_mobilecache()
+    download_images(dest_engine)
 
 
 if __name__ == "__main__":

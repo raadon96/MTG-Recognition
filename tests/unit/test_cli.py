@@ -198,3 +198,252 @@ class TestBuildIndexCommand:
         mock_matcher_instance.build_index.assert_called_once_with(
             force=True, num_workers=4
         )
+
+
+@pytest.mark.unit
+class TestSyncCommand:
+    """Tests for the `mtg sync` subcommand."""
+
+    def test_sync_help(self) -> None:
+        """`mtg sync --help` exits 0 and lists --force and --skip-db-check."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["sync", "--help"])
+        assert result.exit_code == 0
+        assert "--force" in result.output
+        assert "--skip-db-check" in result.output
+
+    def test_sync_first_run_runs_all_steps(self, tmp_path, monkeypatch) -> None:
+        """First run (no state file, all missing): all three steps execute and state file is written."""
+        import json
+        from unittest.mock import MagicMock, patch
+
+        import mtg_recognition.cli as cli_module
+
+        # Redirect settings paths into tmp_path
+        ref_dir = tmp_path / "reference"
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        local_db = ref_dir / "MobileCache.sqlite"
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        # Ensure STATE_FILE resolves into tmp_path by also patching at module level
+        monkeypatch.setattr(cli_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
+
+        mock_engine = MagicMock()
+        mock_matcher_instance = MagicMock()
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version", return_value="5.3.0+20260302"),
+            patch("mtg_recognition.cli.build_database") as mock_db,
+            patch("mtg_recognition.cli.PHashCardMatcher", return_value=mock_matcher_instance) as MockMatcher,
+        ):
+            mock_db.build_mobilecache.return_value = mock_engine
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        mock_db.build_mobilecache.assert_called_once()
+        mock_db.download_images.assert_called_once()
+        MockMatcher.assert_called_once_with(auto_build=False)
+        mock_matcher_instance.build_index.assert_called_once()
+
+        # State file must exist with three version strings
+        state_file = ref_dir / ".mtg-sync-state.json"
+        assert state_file.exists(), "State file must be written"
+        state = json.loads(state_file.read_text())
+        assert state["mobilecache_version"] == "5.3.0+20260302"
+        assert state["images_version"] == "5.3.0+20260302"
+        assert state["phash_version"] == "5.3.0+20260302"
+
+    def test_sync_skips_when_versions_match(self, tmp_path, monkeypatch) -> None:
+        """Second run with matching versions: all three steps are skipped."""
+        import json
+        from unittest.mock import MagicMock, patch
+
+        import mtg_recognition.cli as cli_module
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+        local_db.write_bytes(b"")  # Create the file so LOCAL_DB_FILE.exists() is True
+
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        state_file = ref_dir / ".mtg-sync-state.json"
+        monkeypatch.setattr(cli_module, "STATE_FILE", state_file)
+
+        # Pre-write state with all versions equal to "V"
+        state_file.write_text(json.dumps({
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }))
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version", return_value="V"),
+            patch("mtg_recognition.cli.build_database") as mock_db,
+            patch("mtg_recognition.cli.PHashCardMatcher") as MockMatcher,
+        ):
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        mock_db.build_mobilecache.assert_not_called()
+        mock_db.download_images.assert_not_called()
+        MockMatcher.assert_not_called()
+
+        # Output must contain skip checkmarks
+        assert "skipping" in result.output
+        assert result.output.count("✓") >= 3
+
+    def test_sync_force_rebuilds_all(self, tmp_path, monkeypatch) -> None:
+        """--force rebuilds all three steps even when state versions match."""
+        import json
+        from unittest.mock import MagicMock, patch
+
+        import mtg_recognition.cli as cli_module
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        state_file = ref_dir / ".mtg-sync-state.json"
+        monkeypatch.setattr(cli_module, "STATE_FILE", state_file)
+
+        # Pre-write state — all versions match remote
+        state_file.write_text(json.dumps({
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }))
+
+        mock_engine = MagicMock()
+        mock_matcher_instance = MagicMock()
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version", return_value="V"),
+            patch("mtg_recognition.cli.build_database") as mock_db,
+            patch("mtg_recognition.cli.PHashCardMatcher", return_value=mock_matcher_instance),
+        ):
+            mock_db.build_mobilecache.return_value = mock_engine
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync", "--force"])
+
+        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        mock_db.build_mobilecache.assert_called_once()
+        mock_db.download_images.assert_called_once()
+        mock_matcher_instance.build_index.assert_called_once()
+
+    def test_sync_skip_db_check_bypasses_meta_fetch(self, tmp_path, monkeypatch) -> None:
+        """--skip-db-check must NOT call _fetch_mtgjson_version."""
+        from unittest.mock import MagicMock, patch
+
+        import mtg_recognition.cli as cli_module
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        monkeypatch.setattr(cli_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
+
+        mock_engine = MagicMock()
+        mock_matcher_instance = MagicMock()
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version") as mock_fetch,
+            patch("mtg_recognition.cli.build_database") as mock_db,
+            patch("mtg_recognition.cli.PHashCardMatcher", return_value=mock_matcher_instance),
+        ):
+            mock_db.build_mobilecache.return_value = mock_engine
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync", "--skip-db-check"])
+
+        mock_fetch.assert_not_called()
+
+    def test_sync_step1_failure_leaves_null_state(self, tmp_path, monkeypatch) -> None:
+        """When Step 1 raises, exit code is 1, and state file has mobilecache_version: null."""
+        import json
+        from unittest.mock import patch
+
+        import mtg_recognition.cli as cli_module
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        state_file = ref_dir / ".mtg-sync-state.json"
+        monkeypatch.setattr(cli_module, "STATE_FILE", state_file)
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version", return_value="5.3.0+20260302"),
+            patch("mtg_recognition.cli.build_database") as mock_db,
+        ):
+            mock_db.build_mobilecache.side_effect = RuntimeError("boom")
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert result.exit_code == 1
+        assert "boom" in result.output
+
+        # State file must have been written with null mobilecache_version BEFORE the exception
+        assert state_file.exists(), "State file must exist (null written before work)"
+        state = json.loads(state_file.read_text())
+        assert state["mobilecache_version"] is None
+
+    def test_sync_creates_ref_dir_on_first_run(self, tmp_path, monkeypatch) -> None:
+        """mtg sync creates data/reference/ if it doesn't exist on first run."""
+        from unittest.mock import MagicMock, patch
+
+        import mtg_recognition.cli as cli_module
+
+        ref_dir = tmp_path / "data" / "reference"
+        # Do NOT create ref_dir — it must not exist
+        assert not ref_dir.exists()
+
+        local_db = ref_dir / "MobileCache.sqlite"
+
+        monkeypatch.setattr(
+            type(cli_module.settings), "REF_DIR", property(lambda self: ref_dir)
+        )
+        monkeypatch.setattr(
+            type(cli_module.settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        monkeypatch.setattr(cli_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
+
+        mock_engine = MagicMock()
+        mock_matcher_instance = MagicMock()
+
+        with (
+            patch("mtg_recognition.cli._fetch_mtgjson_version", return_value="5.3.0+20260302"),
+            patch("mtg_recognition.cli.build_database") as mock_db,
+            patch("mtg_recognition.cli.PHashCardMatcher", return_value=mock_matcher_instance),
+        ):
+            mock_db.build_mobilecache.return_value = mock_engine
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert ref_dir.exists(), "sync must create REF_DIR on first run"

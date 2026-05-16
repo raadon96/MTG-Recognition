@@ -9,6 +9,7 @@ data/test/
 
 data/reference/tmp
 data/reference/download_errors.log
+data/reference/.mtg-sync-state.json
 data/examples/
 # test models
 **/models/test/
