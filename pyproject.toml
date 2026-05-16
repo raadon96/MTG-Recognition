@@ -41,6 +41,9 @@ dependencies = [
     "rembg[cli,cpu]>=2.0.73",
 ]
 
+[project.scripts]
+mtg = "mtg_recognition.cli:cli"
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.1.0",
@@ -93,4 +96,5 @@ module-root = "src"
 testpaths = ["tests"]
 markers = [
     "slow: requires the segmentation model; deselect with -m 'not slow'",
+    "unit: fast unit tests with no external dependencies",
 ]
