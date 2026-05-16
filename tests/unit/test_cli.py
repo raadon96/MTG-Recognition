@@ -47,11 +47,11 @@ class TestCliGroup:
 
         assert cli.commands["segment"] is _segment_main
 
-    def test_build_index_is_same_object_as_phash_main(self) -> None:
-        """The `build-index` command must be the same object as `phash_matcher.main`."""
-        from mtg_recognition.engine.matching.phash_matcher import main as _build_index_main
+    def test_build_index_is_same_object_as_phash_build_index(self) -> None:
+        """The `build-index` command must be the same object as `phash_matcher.build_index`."""
+        from mtg_recognition.engine.matching.phash_matcher import build_index as _build_index_cmd
 
-        assert cli.commands["build-index"] is _build_index_main
+        assert cli.commands["build-index"] is _build_index_cmd
 
     def test_sync_is_same_object_as_sync_main(self) -> None:
         """The `sync` command must be the same object as `jobs.sync.main`."""
