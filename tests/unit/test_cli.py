@@ -119,32 +119,34 @@ class TestBuildIndexCommand:
         assert "--workers" in result.output
 
     def test_build_index_preflight_missing_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR does not exist; stderr contains path and 'mtg sync'."""
+        """Exit code 1 when IMG_DIR does not exist; output contains path and 'mtg sync'."""
         nonexistent = tmp_path / "does_not_exist"
         # monkeypatch the IMG_DIR property on the settings object
         import mtg_recognition.cli as cli_module
         monkeypatch.setattr(
             type(cli_module.settings), "IMG_DIR", property(lambda self: nonexistent)
         )
-        runner = CliRunner(mix_stderr=False)
+        # Click 8.3.1 CliRunner mixes stderr into result.output by default.
+        runner = CliRunner()
         result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 1
-        assert "data/reference/images/" in result.stderr
-        assert "mtg sync" in result.stderr
+        assert "data/reference/images/" in result.output
+        assert "mtg sync" in result.output
 
     def test_build_index_preflight_empty_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR exists but is empty; stderr contains path and 'mtg sync'."""
+        """Exit code 1 when IMG_DIR exists but is empty; output contains path and 'mtg sync'."""
         empty_dir = tmp_path / "images"
         empty_dir.mkdir()
         import mtg_recognition.cli as cli_module
         monkeypatch.setattr(
             type(cli_module.settings), "IMG_DIR", property(lambda self: empty_dir)
         )
-        runner = CliRunner(mix_stderr=False)
+        # Click 8.3.1 CliRunner mixes stderr into result.output by default.
+        runner = CliRunner()
         result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 1
-        assert "data/reference/images/" in result.stderr
-        assert "mtg sync" in result.stderr
+        assert "data/reference/images/" in result.output
+        assert "mtg sync" in result.output
 
     def test_build_index_invokes_matcher_with_defaults(
         self, tmp_path, monkeypatch
