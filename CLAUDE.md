@@ -46,6 +46,16 @@ uv run python -m mtg_recognition.engine.pipeline --help
 
 # Segmentation CLI
 uv run python -m mtg_recognition.engine.segmentation.cli -i data/test/images -o output/seg --mode auto
+
+# mtg CLI (registered console script — available after activating the venv)
+mtg --help
+mtg sync                      # download missing reference images (pinned to committed DB)
+mtg sync --update-db          # fetch latest MTGJSON release and rebuild all artifacts
+mtg sync --force              # unconditional full rebuild
+mtg build-index               # rebuild pHash index from existing reference images
+mtg build-index --force --workers 8
+mtg recognize -i card.jpg
+mtg segment -i card.jpg --mode auto
 ```
 
 No linter/formatter is configured — match the style of surrounding code.
@@ -113,11 +123,14 @@ Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`
 - `batch_processor.py` — orchestrates per-image pipeline, returns `BatchResult` dataclasses. `BatchResult` carries the full top-K `matches: list[Row]`, `scores: list[float]`, `ocr_debug: OCRDebugData | None`, and `timings_ms: dict[str, float] | None` so the detail view is self-contained. Owns `K_PHASH_CANDIDATES` and `K_TOP_MATCHES` constants (imported by `app.py`) so both code paths always use the same pipeline parameters. Batch processing always runs with `debug=True` so `OCRDebugData` is available on demand without a second pipeline call.
 
 **Data jobs** (`jobs/`):
-- `sync.py` — manages the full reference data stack: builds MobileCache, downloads reference images, and builds the pHash index. Also exposes `mtg sync` as a CLI entry point (`uv run python -m mtg_recognition.jobs.sync`).
+- `sync.py` — manages the full reference data stack: builds MobileCache, downloads reference images, and builds the pHash index. Exposes `mtg sync` as the CLI entry point. Three modes: default (images-only, DB pinned to git), `--update-db` (fetches remote MTGJSON version, rebuilds if changed), `--force` (unconditional full rebuild). State file, MobileCache, and pHash index are git-tracked; only `data/reference/images/` is not.
 - `schemas.py` — SQLModel ORM models (`Cards`, `CardIdentifiers`, `Sets`).
 
 **Database** (`database.py`):
 Read-only SQLite opened with `mode=ro&nolock=1`. 35 MB, ~1M+ cards.
+
+**CLI architecture** (`cli.py`):
+Thin registration file — no business logic. Each subcommand is defined in its domain module as a `@click.command()` and registered via `cli.add_command()`. To add a new subcommand: define the Click function in the relevant domain module, then add one `cli.add_command()` line to `cli.py`.
 
 ## Data & Assets
 
