@@ -83,12 +83,41 @@ class TestNeedsRebuild:
         state = {"mobilecache_version": "V_new", "images_version": "V_old", "phash_version": "V_old"}
         assert _needs_images_rebuild(state, force=False) is True
 
-    def test_images_up_to_date_skips(self) -> None:
-        """images_version matches mobilecache_version returns False."""
+    def test_images_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
+        """images_version matches mobilecache_version and IMG_DIR is non-empty returns False."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
+        from mtg_recognition.settings import settings
+
+        img_dir = tmp_path / "images"
+        img_dir.mkdir()
+        (img_dir / "dummy.jpg").write_bytes(b"")
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
 
         state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
         assert _needs_images_rebuild(state, force=False) is False
+
+    def test_images_dir_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
+        """Missing IMG_DIR triggers rebuild even when versions match."""
+        from mtg_recognition.jobs.sync import _needs_images_rebuild
+        from mtg_recognition.settings import settings
+
+        missing = tmp_path / "images"
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: missing))
+
+        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        assert _needs_images_rebuild(state, force=False) is True
+
+    def test_images_dir_empty_rebuilds(self, tmp_path, monkeypatch) -> None:
+        """Empty IMG_DIR triggers rebuild even when versions match."""
+        from mtg_recognition.jobs.sync import _needs_images_rebuild
+        from mtg_recognition.settings import settings
+
+        img_dir = tmp_path / "images"
+        img_dir.mkdir()
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
+
+        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        assert _needs_images_rebuild(state, force=False) is True
 
     # --- _needs_phash_rebuild ---
 

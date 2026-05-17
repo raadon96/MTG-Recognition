@@ -48,8 +48,8 @@ class Settings(BaseSettings):
 
     @property
     def REF_DIR(self) -> Path:
-        # return self.DATA_DIR / "reference"
-        return self.DATA_DIR / "reference_test"
+        return self.DATA_DIR / "reference"
+        # return self.DATA_DIR / "reference_test"
 
     @property
     def LOCAL_DB_FILE(self) -> Path:

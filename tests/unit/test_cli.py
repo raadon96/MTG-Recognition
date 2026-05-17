@@ -169,7 +169,7 @@ class TestBuildIndexCommand:
     def test_build_index_invokes_matcher_with_defaults(
         self, tmp_path, monkeypatch
     ) -> None:
-        """Invokes PHashCardMatcher(auto_build=False).build_index(force=False, num_workers=<default>)."""
+        """Invokes PHashCardMatcher().build_index(force=False, num_workers=<default>)."""
         from multiprocessing import cpu_count
         from unittest.mock import MagicMock, patch
 
@@ -189,7 +189,7 @@ class TestBuildIndexCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 0
-        MockMatcher.assert_called_once_with(auto_build=False)
+        MockMatcher.assert_called_once_with()
         mock_matcher_instance.build_index.assert_called_once_with(
             force=False, num_workers=cpu_count() - 1
         )
@@ -197,7 +197,7 @@ class TestBuildIndexCommand:
     def test_build_index_invokes_matcher_with_flags(
         self, tmp_path, monkeypatch
     ) -> None:
-        """--force and --workers flags are passed through to build_index."""
+        """--force and --workers flags are passed through to PHashCardMatcher().build_index."""
         from unittest.mock import MagicMock, patch
 
         img_dir = tmp_path / "images"
@@ -216,7 +216,7 @@ class TestBuildIndexCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["build-index", "--force", "--workers", "4"])
         assert result.exit_code == 0
-        MockMatcher.assert_called_once_with(auto_build=False)
+        MockMatcher.assert_called_once_with()
         mock_matcher_instance.build_index.assert_called_once_with(
             force=True, num_workers=4
         )
@@ -273,7 +273,7 @@ class TestSyncCommand:
         )
         mock_build.assert_called_once()
         mock_download.assert_called_once()
-        MockMatcher.assert_called_once_with(auto_build=False)
+        MockMatcher.assert_called_once_with()
         mock_matcher_instance.build_index.assert_called_once()
 
         # State file must exist with three version strings
@@ -301,7 +301,10 @@ class TestSyncCommand:
             type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
         )
         state_file = ref_dir / ".mtg-sync-state.json"
-        # Stub phash index files so the file-existence guard in sync.py doesn't force a rebuild
+        # Stub image and phash dirs so file-existence guards don't force a rebuild
+        img_dir = ref_dir / "images"
+        img_dir.mkdir(parents=True)
+        (img_dir / "dummy.jpg").write_bytes(b"")
         phash_dir = ref_dir / "index" / "phash"
         phash_dir.mkdir(parents=True)
         (phash_dir / "hashes.npy").write_bytes(b"")

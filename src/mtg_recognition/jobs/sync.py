@@ -385,6 +385,8 @@ def _needs_images_rebuild(state: dict, force: bool) -> bool:
         force
         or state["images_version"] is None
         or state["images_version"] != state["mobilecache_version"]
+        or not settings.IMG_DIR.exists()
+        or not any(settings.IMG_DIR.iterdir())
     )
 
 
@@ -419,11 +421,11 @@ def main(force: bool) -> None:
     MTGJSON version. Use --force to bypass all version checks.
     """
     settings.REF_DIR.mkdir(parents=True, exist_ok=True)
-    remote_version = _fetch_mtgjson_version()
-    state = _load_state()
     summary: dict[str, str] = {}
 
     try:
+        remote_version = _fetch_mtgjson_version()
+        state = _load_state()
         # ------------------------------------------------------------------
         # Step 1 — MobileCache (D-04, D-13)
         # ------------------------------------------------------------------
@@ -480,7 +482,7 @@ def main(force: bool) -> None:
             _save_state(state)
 
             # D-15: tqdm progress bar inside build_index() passes through unchanged
-            matcher = PHashCardMatcher(auto_build=False)
+            matcher = PHashCardMatcher()
             matcher.build_index(force=True)
 
             state["phash_version"] = state["images_version"]
@@ -506,5 +508,3 @@ def main(force: bool) -> None:
 
 if __name__ == "__main__":
     main()
-
-# uv run python -m mtg_recognition.jobs.sync

@@ -95,7 +95,7 @@ cd MTG-Recognition/
 
 #### 3. Install dependencies
 ```bash
-uv sync
+uv sync --dev
 ```
 
 #### 4. Activate virtual environment
@@ -103,18 +103,21 @@ uv sync
 source .venv/bin/activate
 ```
 
-#### 5. Build local DB and download images from Scryfall (not required if testing local app) 
+#### 5. Download reference data
+Build the local card metadata database (MobileCache), download reference images, and build the pHash index in one shot. 
+
 ```bash
-uv run python -m mtg_recognition.jobs.build_database
+mtg sync
+```
+**Note:** This step requires a network connection (~500 MB download). Subsequent runs are incremental — only artifacts that are out of date are rebuilt. 
+
+
+To force a full rebuild (e.g. for trouble-shooting):
+```bash
+mtg sync --force
 ```
 
-#### 6. Build perceptual hashing indexes (not required if testing local app)
-```bash
-uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg
-```
-**Note**: On first run, this command triggers perceptual hash index bulding.
-
-#### 7. Run Streamlit app
+#### 6. Run Streamlit app
 
 ```bash
 uv run streamlit run src/mtg_recognition/app/app.py

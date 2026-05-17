@@ -22,15 +22,14 @@ HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
 class PHashCardMatcher:
     """
     Initializes the pHash matcher.
-    If database files exist, they are loaded.
-    If not, the matcher is ready for build_index() to be called.
+    If index files exist on disk, they are loaded automatically.
+    If not, the matcher is ready for build_index() to be called explicitly.
 
     Args:
         index_path: Path to save/load the numpy array of hash values
         mapping_path: Path to save/load the UUID mapping
         img_dir: Directory containing reference card images
         hash_size: Size of the perceptual hash (default 16 = 256-bit hash)
-        auto_build: If True, automatically build index if missing
     """
 
     def __init__(
@@ -39,7 +38,6 @@ class PHashCardMatcher:
         mapping_path: Path = settings.PHASH_MAPPING_FILE,
         img_dir: Path = settings.IMG_DIR,
         hash_size: int = HASH_SIZE,
-        auto_build: bool = False,
     ):
 
         self.index_path = Path(index_path)
@@ -55,7 +53,6 @@ class PHashCardMatcher:
         self.uuid_to_idx: dict[str, int] | None = (
             None  # Reverse mapping for O(1) lookup
         )
-        self.auto_build = auto_build
 
         self._load_index()
 
@@ -125,13 +122,9 @@ class PHashCardMatcher:
             except Exception as e:
                 print(f"Error loading pHash index: {e}")
         else:
-            if self.auto_build:  # <-- Only build if flag is True
-                print("Warning: pHash index files not found. Building index...")
-                self.build_index()
-            else:
-                print(
-                    "Warning: pHash index files not found. Call build_index() to create."
-                )
+            print(
+                "Warning: pHash index files not found. Call build_index() to create."
+            )
 
     def build_index(self, force=False, num_workers=cpu_count() - 1):
         """
@@ -404,7 +397,7 @@ def build_index(force: bool, workers: int) -> None:
         )
         raise SystemExit(1)
 
-    matcher = PHashCardMatcher(auto_build=False)
+    matcher = PHashCardMatcher()
     matcher.build_index(force=force, num_workers=workers)
 
 
@@ -416,7 +409,7 @@ def main():
     )
     assert query_image_path.exists()
 
-    matcher = PHashCardMatcher(auto_build=True)
+    matcher = PHashCardMatcher()
     matcher.build_index(force=False)
 
     import cv2
