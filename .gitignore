@@ -6,6 +6,7 @@
 # Reference cards dataset
 data/reference/images
 data/test/
+data/reference_test
 
 data/reference/tmp
 data/reference/download_errors.log
@@ -265,3 +266,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+data/reference_test/.mtg-sync-state.json

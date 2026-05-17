@@ -1,7 +1,7 @@
 """Tests for the top-level `mtg` CLI group."""
 
-import pytest
 import click
+import pytest
 from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
@@ -49,7 +49,9 @@ class TestCliGroup:
 
     def test_build_index_is_same_object_as_phash_build_index(self) -> None:
         """The `build-index` command must be the same object as `phash_matcher.build_index`."""
-        from mtg_recognition.engine.matching.phash_matcher import build_index as _build_index_cmd
+        from mtg_recognition.engine.matching.phash_matcher import (
+            build_index as _build_index_cmd,
+        )
 
         assert cli.commands["build-index"] is _build_index_cmd
 
@@ -141,6 +143,7 @@ class TestBuildIndexCommand:
         """Exit code 1 when IMG_DIR does not exist; output contains path and 'mtg sync'."""
         nonexistent = tmp_path / "does_not_exist"
         from mtg_recognition.settings import settings
+
         monkeypatch.setattr(
             type(settings), "IMG_DIR", property(lambda self: nonexistent)
         )
@@ -155,9 +158,8 @@ class TestBuildIndexCommand:
         empty_dir = tmp_path / "images"
         empty_dir.mkdir()
         from mtg_recognition.settings import settings
-        monkeypatch.setattr(
-            type(settings), "IMG_DIR", property(lambda self: empty_dir)
-        )
+
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: empty_dir))
         runner = CliRunner()
         result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 1
@@ -176,9 +178,8 @@ class TestBuildIndexCommand:
         (img_dir / "dummy.jpg").write_bytes(b"")
 
         from mtg_recognition.settings import settings
-        monkeypatch.setattr(
-            type(settings), "IMG_DIR", property(lambda self: img_dir)
-        )
+
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
 
         mock_matcher_instance = MagicMock()
         with patch(
@@ -204,9 +205,8 @@ class TestBuildIndexCommand:
         (img_dir / "dummy.jpg").write_bytes(b"")
 
         from mtg_recognition.settings import settings
-        monkeypatch.setattr(
-            type(settings), "IMG_DIR", property(lambda self: img_dir)
-        )
+
+        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
 
         mock_matcher_instance = MagicMock()
         with patch(
@@ -227,41 +227,50 @@ class TestSyncCommand:
     """Tests for the `mtg sync` subcommand."""
 
     def test_sync_help(self) -> None:
-        """`mtg sync --help` exits 0 and lists --force and --skip-db-check."""
+        """`mtg sync --help` exits 0 and lists --force."""
         runner = CliRunner()
         result = runner.invoke(cli, ["sync", "--help"])
         assert result.exit_code == 0
         assert "--force" in result.output
-        assert "--skip-db-check" in result.output
 
     def test_sync_first_run_runs_all_steps(self, tmp_path, monkeypatch) -> None:
         """First run (no state file, all missing): all three steps execute and state file is written."""
         import json
         from unittest.mock import MagicMock, patch
 
-        import mtg_recognition.jobs.sync as sync_module
-
         ref_dir = tmp_path / "reference"
         local_db = ref_dir / "MobileCache.sqlite"
 
         from mtg_recognition.settings import settings
+
         monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        monkeypatch.setattr(sync_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
 
         mock_engine = MagicMock()
         mock_matcher_instance = MagicMock()
 
         with (
-            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="5.3.0+20260302"),
-            patch("mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine) as mock_build,
+            patch(
+                "mtg_recognition.jobs.sync._fetch_mtgjson_version",
+                return_value="5.3.0+20260302",
+            ),
+            patch(
+                "mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine
+            ) as mock_build,
             patch("mtg_recognition.jobs.sync.download_images") as mock_download,
-            patch("mtg_recognition.jobs.sync.PHashCardMatcher", return_value=mock_matcher_instance) as MockMatcher,
+            patch(
+                "mtg_recognition.jobs.sync.PHashCardMatcher",
+                return_value=mock_matcher_instance,
+            ) as MockMatcher,
         ):
             runner = CliRunner()
             result = runner.invoke(cli, ["sync"])
 
-        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
         mock_build.assert_called_once()
         mock_download.assert_called_once()
         MockMatcher.assert_called_once_with(auto_build=False)
@@ -280,24 +289,33 @@ class TestSyncCommand:
         import json
         from unittest.mock import patch
 
-        import mtg_recognition.jobs.sync as sync_module
-
         ref_dir = tmp_path / "reference"
         ref_dir.mkdir(parents=True)
         local_db = ref_dir / "MobileCache.sqlite"
         local_db.write_bytes(b"")
 
         from mtg_recognition.settings import settings
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        state_file = ref_dir / ".mtg-sync-state.json"
-        monkeypatch.setattr(sync_module, "STATE_FILE", state_file)
 
-        state_file.write_text(json.dumps({
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }))
+        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+        state_file = ref_dir / ".mtg-sync-state.json"
+        # Stub phash index files so the file-existence guard in sync.py doesn't force a rebuild
+        phash_dir = ref_dir / "index" / "phash"
+        phash_dir.mkdir(parents=True)
+        (phash_dir / "hashes.npy").write_bytes(b"")
+        (phash_dir / "index_to_uuid.json").write_text("{}")
+
+        state_file.write_text(
+            json.dumps(
+                {
+                    "mobilecache_version": "V",
+                    "images_version": "V",
+                    "phash_version": "V",
+                }
+            )
+        )
 
         with (
             patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="V"),
@@ -308,7 +326,9 @@ class TestSyncCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["sync"])
 
-        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
         mock_build.assert_not_called()
         mock_download.assert_not_called()
         MockMatcher.assert_not_called()
@@ -321,76 +341,56 @@ class TestSyncCommand:
         import json
         from unittest.mock import MagicMock, patch
 
-        import mtg_recognition.jobs.sync as sync_module
-
         ref_dir = tmp_path / "reference"
         ref_dir.mkdir(parents=True)
         local_db = ref_dir / "MobileCache.sqlite"
         state_file = ref_dir / ".mtg-sync-state.json"
 
         from mtg_recognition.settings import settings
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        monkeypatch.setattr(sync_module, "STATE_FILE", state_file)
 
-        state_file.write_text(json.dumps({
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }))
+        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+
+        state_file.write_text(
+            json.dumps(
+                {
+                    "mobilecache_version": "V",
+                    "images_version": "V",
+                    "phash_version": "V",
+                }
+            )
+        )
 
         mock_engine = MagicMock()
         mock_matcher_instance = MagicMock()
 
         with (
             patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="V"),
-            patch("mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine) as mock_build,
+            patch(
+                "mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine
+            ) as mock_build,
             patch("mtg_recognition.jobs.sync.download_images") as mock_download,
-            patch("mtg_recognition.jobs.sync.PHashCardMatcher", return_value=mock_matcher_instance),
+            patch(
+                "mtg_recognition.jobs.sync.PHashCardMatcher",
+                return_value=mock_matcher_instance,
+            ),
         ):
             runner = CliRunner()
             result = runner.invoke(cli, ["sync", "--force"])
 
-        assert result.exit_code == 0, f"Exit code {result.exit_code}, output: {result.output}"
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
         mock_build.assert_called_once()
         mock_download.assert_called_once()
         mock_matcher_instance.build_index.assert_called_once()
-
-    def test_sync_skip_db_check_bypasses_meta_fetch(self, tmp_path, monkeypatch) -> None:
-        """--skip-db-check must NOT call _fetch_mtgjson_version."""
-        from unittest.mock import MagicMock, patch
-
-        import mtg_recognition.jobs.sync as sync_module
-
-        ref_dir = tmp_path / "reference"
-        ref_dir.mkdir(parents=True)
-        local_db = ref_dir / "MobileCache.sqlite"
-
-        from mtg_recognition.settings import settings
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        monkeypatch.setattr(sync_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
-
-        mock_engine = MagicMock()
-        mock_matcher_instance = MagicMock()
-
-        with (
-            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version") as mock_fetch,
-            patch("mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine),
-            patch("mtg_recognition.jobs.sync.download_images"),
-            patch("mtg_recognition.jobs.sync.PHashCardMatcher", return_value=mock_matcher_instance),
-        ):
-            runner = CliRunner()
-            result = runner.invoke(cli, ["sync", "--skip-db-check"])
-
-        mock_fetch.assert_not_called()
 
     def test_sync_step1_failure_leaves_null_state(self, tmp_path, monkeypatch) -> None:
         """When Step 1 raises, exit code is 1, and state file has mobilecache_version: null."""
         import json
         from unittest.mock import patch
-
-        import mtg_recognition.jobs.sync as sync_module
 
         ref_dir = tmp_path / "reference"
         ref_dir.mkdir(parents=True)
@@ -398,13 +398,21 @@ class TestSyncCommand:
         state_file = ref_dir / ".mtg-sync-state.json"
 
         from mtg_recognition.settings import settings
+
         monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        monkeypatch.setattr(sync_module, "STATE_FILE", state_file)
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
 
         with (
-            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="5.3.0+20260302"),
-            patch("mtg_recognition.jobs.sync.build_mobilecache", side_effect=RuntimeError("boom")),
+            patch(
+                "mtg_recognition.jobs.sync._fetch_mtgjson_version",
+                return_value="5.3.0+20260302",
+            ),
+            patch(
+                "mtg_recognition.jobs.sync.build_mobilecache",
+                side_effect=RuntimeError("boom"),
+            ),
         ):
             runner = CliRunner()
             result = runner.invoke(cli, ["sync"])
@@ -420,26 +428,34 @@ class TestSyncCommand:
         """mtg sync creates data/reference/ if it doesn't exist on first run."""
         from unittest.mock import MagicMock, patch
 
-        import mtg_recognition.jobs.sync as sync_module
-
         ref_dir = tmp_path / "data" / "reference"
         assert not ref_dir.exists()
 
         local_db = ref_dir / "MobileCache.sqlite"
 
         from mtg_recognition.settings import settings
+
         monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: local_db))
-        monkeypatch.setattr(sync_module, "STATE_FILE", ref_dir / ".mtg-sync-state.json")
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
 
         mock_engine = MagicMock()
         mock_matcher_instance = MagicMock()
 
         with (
-            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="5.3.0+20260302"),
-            patch("mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine),
+            patch(
+                "mtg_recognition.jobs.sync._fetch_mtgjson_version",
+                return_value="5.3.0+20260302",
+            ),
+            patch(
+                "mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine
+            ),
             patch("mtg_recognition.jobs.sync.download_images"),
-            patch("mtg_recognition.jobs.sync.PHashCardMatcher", return_value=mock_matcher_instance),
+            patch(
+                "mtg_recognition.jobs.sync.PHashCardMatcher",
+                return_value=mock_matcher_instance,
+            ),
         ):
             runner = CliRunner()
             result = runner.invoke(cli, ["sync"])

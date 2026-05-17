@@ -11,7 +11,9 @@ its own Click command definition:
 
 import click
 
-from mtg_recognition.engine.matching.phash_matcher import main as _build_index_main
+from mtg_recognition.engine.matching.phash_matcher import (
+    build_index as _build_index_main,
+)
 from mtg_recognition.engine.pipeline import main as _recognize_main
 from mtg_recognition.engine.segmentation.cli import main as _segment_main
 from mtg_recognition.jobs.sync import main as _sync_main
@@ -23,10 +25,10 @@ def cli() -> None:
     pass
 
 
-cli.add_command(_recognize_main, name="recognize")
-cli.add_command(_segment_main, name="segment")
-cli.add_command(_build_index_main, name="build-index")
 cli.add_command(_sync_main, name="sync")
+cli.add_command(_build_index_main, name="build-index")
+cli.add_command(_segment_main, name="segment")
+cli.add_command(_recognize_main, name="recognize")
 
 
 if __name__ == "__main__":

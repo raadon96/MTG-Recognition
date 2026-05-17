@@ -35,6 +35,9 @@ SCRYFALL_HEADERS = {
     "User-Agent": "mtg-recognition/1.0 (contact: adnen.boumessouer@gmail.com)",
 }
 
+# MTGJSON Meta endpoint for a lightweight version check (D-04).
+META_URL = "https://mtgjson.com/api/v5/Meta.json"
+
 # --- LOGGING SETUP ---
 logging.basicConfig(
     level=logging.ERROR,
@@ -45,16 +48,11 @@ logging.basicConfig(
 
 console = Console()
 
-# State file that tracks the MTGJSON version last used to build each artifact (D-01).
-STATE_FILE = settings.REF_DIR / ".mtg-sync-state.json"
-
-# MTGJSON Meta endpoint for a lightweight version check (D-04).
-META_URL = "https://mtgjson.com/api/v5/Meta.json"
-
 
 # ---------------------------------------------------------------------------
 # Database helpers
 # ---------------------------------------------------------------------------
+
 
 def generate_image_uri(
     scryfallId,
@@ -77,9 +75,9 @@ def create_database(source_engine, dest_engine, force: bool = False):
 
     # 1. Reset Destination
     if settings.LOCAL_DB_FILE.exists():
-        print(f"Local database already exists at {settings.LOCAL_DB_FILE}.")
+        print(f"Local database already exists at {settings.LOCAL_DB_FILE}...")
         if not force:
-            print("Skipping database creation.")
+            print("Skipping database creation...")
             return
 
         print(f"Removing existing database at {settings.LOCAL_DB_FILE}...")
@@ -294,9 +292,8 @@ def build_mobilecache():
     Returns the SQLAlchemy Engine pointing at settings.LOCAL_DB_FILE so the
     caller can pass it directly to download_images() without recreating it.
     """
-    print("--- Step 1: Retrieving Data ---")
     if not settings.MTGO_DB_FILE_ZIP.exists():
-        print(f"Downloading {settings.MTGJSON_URL}...")
+        console.print(f"Downloading from {settings.MTGJSON_URL}...")
         req = request.Request(settings.MTGJSON_URL, headers=SCRYFALL_HEADERS)
         with (
             request.urlopen(req) as response,
@@ -304,17 +301,14 @@ def build_mobilecache():
         ):
             shutil.copyfileobj(response, out_file)
 
-    print("Extracting...")
+    console.print("Extracting...")
     with zipfile.ZipFile(settings.MTGO_DB_FILE_ZIP, "r") as zip_ref:
         zip_ref.extractall(settings.TMP_DIR)
 
-    print("\n--- Step 2: Building Local Database ---")
-
-    # Engines
+    # Create cache db for memory efficient lookups during matching
+    console.print("Building Local Database...")
     source_engine = create_engine(f"sqlite:///{settings.MTGO_DB_FILE}")
     dest_engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-
-    # create cache database for memory efficient lookups when matching
     create_database(source_engine, dest_engine, force=True)
 
     return dest_engine
@@ -330,13 +324,14 @@ def download_images(dest_engine=None):
     if dest_engine is None:
         dest_engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
 
-    print("\n--- Step 3: Downloading Images ---")
+    console.print("Downloading reference images...")
     download_raw_images(dest_engine)
 
 
 # ---------------------------------------------------------------------------
 # Sync state helpers
 # ---------------------------------------------------------------------------
+
 
 def _load_state() -> dict:
     """Return the sync state dict from disk.
@@ -345,7 +340,7 @@ def _load_state() -> dict:
     missing or corrupt state treated the same as first-run).
     """
     try:
-        return json.loads(STATE_FILE.read_text())
+        return json.loads(settings.STATE_FILE.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         return {
             "mobilecache_version": None,
@@ -356,8 +351,8 @@ def _load_state() -> dict:
 
 def _save_state(state: dict) -> None:
     """Write state dict to STATE_FILE as pretty-printed JSON."""
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    settings.STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    settings.STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _fetch_mtgjson_version() -> str:
@@ -376,6 +371,7 @@ def _fetch_mtgjson_version() -> str:
 # Sync CLI command
 # ---------------------------------------------------------------------------
 
+
 @click.command()
 @click.option(
     "--force",
@@ -384,14 +380,7 @@ def _fetch_mtgjson_version() -> str:
     show_default=True,
     help="Bypass all version checks and rebuild MobileCache, images, and pHash index unconditionally.",
 )
-@click.option(
-    "--skip-db-check",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Skip the MTGJSON Meta.json HTTP freshness check (Step 1). Use when offline.",
-)
-def main(force: bool, skip_db_check: bool) -> None:
+def main(force: bool) -> None:
     """Rebuild the full reference data stack in one shot.
 
     Runs three steps in order: MobileCache rebuild → reference image download →
@@ -414,24 +403,14 @@ def main(force: bool, skip_db_check: bool) -> None:
         rebuild_mobilecache = force
 
         if not force:
-            if skip_db_check:
-                # No network fetch — check local state only (D-08)
-                if (
-                    state["mobilecache_version"] is not None
-                    and settings.LOCAL_DB_FILE.exists()
-                ):
-                    rebuild_mobilecache = False
-                else:
-                    rebuild_mobilecache = True
+            remote_version = _fetch_mtgjson_version()  # network fetch
+            if (
+                state["mobilecache_version"] is not None
+                and settings.LOCAL_DB_FILE.exists()
+            ):
+                rebuild_mobilecache = False
             else:
-                remote_version = _fetch_mtgjson_version()
-                if (
-                    state["mobilecache_version"] == remote_version
-                    and settings.LOCAL_DB_FILE.exists()
-                ):
-                    rebuild_mobilecache = False
-                else:
-                    rebuild_mobilecache = True
+                rebuild_mobilecache = True
 
         if not rebuild_mobilecache:
             console.print(
@@ -450,7 +429,7 @@ def main(force: bool, skip_db_check: bool) -> None:
             if remote_version is not None:
                 resolved = remote_version
             else:
-                # skip_db_check=True — read version from the extracted AllPrintings.sqlite
+                # read version from the extracted AllPrintings.sqlite
                 try:
                     conn = sqlite3.connect(str(settings.MTGO_DB_FILE))
                     row = conn.execute("SELECT version FROM meta").fetchone()
@@ -494,9 +473,16 @@ def main(force: bool, skip_db_check: bool) -> None:
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 3: pHash Index ---[/bold]")
 
-        rebuild_phash = force or not (
-            state["phash_version"] is not None
-            and state["phash_version"] == state["images_version"]
+        rebuild_phash = (
+            force
+            or not (
+                state["phash_version"] is not None
+                and state["phash_version"] == state["images_version"]
+            )
+            or not (
+                settings.PHASH_INDEX_FILE.exists()
+                and settings.PHASH_MAPPING_FILE.exists()
+            )
         )
 
         if not rebuild_phash:

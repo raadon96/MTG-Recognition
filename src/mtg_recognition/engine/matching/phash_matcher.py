@@ -16,9 +16,6 @@ from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
 
 # --- Configuration ---
-IMG_DIR = "data/reference/images"
-INDEX_PATH = "data/reference/index/phash/hashes.npy"
-MAPPING_PATH = "data/reference/index/phash/index_to_uuid.json"
 HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
 
 
@@ -38,16 +35,16 @@ class PHashCardMatcher:
 
     def __init__(
         self,
-        index_path: str = INDEX_PATH,
-        mapping_path: str = MAPPING_PATH,
-        img_dir: str = IMG_DIR,
+        index_path: Path = settings.PHASH_INDEX_FILE,
+        mapping_path: Path = settings.PHASH_MAPPING_FILE,
+        img_dir: Path = settings.IMG_DIR,
         hash_size: int = HASH_SIZE,
         auto_build: bool = True,
     ):
 
         self.index_path = Path(index_path)
         self.mapping_path = Path(mapping_path)
-        self.img_dir = Path(img_dir)
+        self.img_dir = img_dir
         self.hash_size = hash_size
 
         # type and shape validation using numpydantic (https://github.com/p2p-ld/numpydantic)
@@ -392,7 +389,7 @@ class PHashCardMatcher:
     show_default=True,
     help="Number of parallel worker processes for hash computation.",
 )
-def main(force: bool, workers: int) -> None:
+def build_index(force: bool, workers: int) -> None:
     """Rebuild the pHash index from reference images already on disk.
 
     Requires data/reference/images/ to be populated first (run 'mtg sync'
@@ -409,6 +406,29 @@ def main(force: bool, workers: int) -> None:
 
     matcher = PHashCardMatcher(auto_build=False)
     matcher.build_index(force=force, num_workers=workers)
+
+
+def main():
+    # Test with a sample segmented test image
+    query_image_path = Path(
+        "data/test/6_benchmark/images/ready/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg",
+        # "data/test/6_benchmark/images/ready/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg"
+    )
+    assert query_image_path.exists()
+
+    matcher = PHashCardMatcher(auto_build=True)
+    matcher.build_index(force=False)
+
+    import cv2
+
+    k = 10
+    query_img = cv2.imread(str(query_image_path))
+    best_matches, best_scores = matcher.find_best_matches(query_img, k=k)
+
+    print(f"\nTop {k} matches:")
+    for i, match in enumerate(best_matches):
+        # print(f"  UUID: {match.uuid}, name: {match.name}, Score: {best_scores[i]}")
+        print(match, sep="\n", end="\n\n")
 
 
 # --- Example Usage ---
