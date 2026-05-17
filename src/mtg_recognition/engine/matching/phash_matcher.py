@@ -39,7 +39,7 @@ class PHashCardMatcher:
         mapping_path: Path = settings.PHASH_MAPPING_FILE,
         img_dir: Path = settings.IMG_DIR,
         hash_size: int = HASH_SIZE,
-        auto_build: bool = True,
+        auto_build: bool = False,
     ):
 
         self.index_path = Path(index_path)

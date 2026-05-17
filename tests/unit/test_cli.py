@@ -424,14 +424,17 @@ class TestSyncCommand:
         state = json.loads(state_file.read_text())
         assert state["mobilecache_version"] is None
 
-    def test_sync_creates_ref_dir_on_first_run(self, tmp_path, monkeypatch) -> None:
-        """mtg sync creates data/reference/ if it doesn't exist on first run."""
+    def test_sync_rebuilds_when_remote_version_changes(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """When remote version differs from state, all three steps rebuild without --force."""
+        import json
         from unittest.mock import MagicMock, patch
 
-        ref_dir = tmp_path / "data" / "reference"
-        assert not ref_dir.exists()
-
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
         local_db = ref_dir / "MobileCache.sqlite"
+        local_db.write_bytes(b"")
 
         from mtg_recognition.settings import settings
 
@@ -440,18 +443,33 @@ class TestSyncCommand:
             type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
         )
 
+        state_file = ref_dir / ".mtg-sync-state.json"
+        phash_dir = ref_dir / "index" / "phash"
+        phash_dir.mkdir(parents=True)
+        (phash_dir / "hashes.npy").write_bytes(b"")
+        (phash_dir / "index_to_uuid.json").write_text("{}")
+        state_file.write_text(
+            json.dumps(
+                {
+                    "mobilecache_version": "V_old",
+                    "images_version": "V_old",
+                    "phash_version": "V_old",
+                }
+            )
+        )
+
         mock_engine = MagicMock()
         mock_matcher_instance = MagicMock()
 
         with (
             patch(
                 "mtg_recognition.jobs.sync._fetch_mtgjson_version",
-                return_value="5.3.0+20260302",
+                return_value="V_new",
             ),
             patch(
                 "mtg_recognition.jobs.sync.build_mobilecache", return_value=mock_engine
-            ),
-            patch("mtg_recognition.jobs.sync.download_images"),
+            ) as mock_build,
+            patch("mtg_recognition.jobs.sync.download_images") as mock_download,
             patch(
                 "mtg_recognition.jobs.sync.PHashCardMatcher",
                 return_value=mock_matcher_instance,
@@ -460,4 +478,14 @@ class TestSyncCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["sync"])
 
-        assert ref_dir.exists(), "sync must create REF_DIR on first run"
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
+        mock_build.assert_called_once()
+        mock_download.assert_called_once()
+        mock_matcher_instance.build_index.assert_called_once()
+
+        state = json.loads(state_file.read_text())
+        assert state["mobilecache_version"] == "V_new"
+        assert state["images_version"] == "V_new"
+        assert state["phash_version"] == "V_new"

@@ -14,7 +14,6 @@ import asyncio
 import json
 import logging
 import shutil
-import sqlite3
 import zipfile
 from pathlib import Path
 from urllib import request
@@ -368,6 +367,38 @@ def _fetch_mtgjson_version() -> str:
 
 
 # ---------------------------------------------------------------------------
+# Rebuild predicates
+# ---------------------------------------------------------------------------
+
+
+def _needs_mobilecache_rebuild(state: dict, remote_version: str, force: bool) -> bool:
+    return (
+        force
+        or state["mobilecache_version"] is None
+        or state["mobilecache_version"] != remote_version
+        or not settings.LOCAL_DB_FILE.exists()
+    )
+
+
+def _needs_images_rebuild(state: dict, force: bool) -> bool:
+    return (
+        force
+        or state["images_version"] is None
+        or state["images_version"] != state["mobilecache_version"]
+    )
+
+
+def _needs_phash_rebuild(state: dict, force: bool) -> bool:
+    return (
+        force
+        or state["phash_version"] is None
+        or state["phash_version"] != state["images_version"]
+        or not settings.PHASH_INDEX_FILE.exists()
+        or not settings.PHASH_MAPPING_FILE.exists()
+    )
+
+
+# ---------------------------------------------------------------------------
 # Sync CLI command
 # ---------------------------------------------------------------------------
 
@@ -387,9 +418,8 @@ def main(force: bool) -> None:
     pHash index build. Skips steps whose local version already matches the remote
     MTGJSON version. Use --force to bypass all version checks.
     """
-    # First-run directory creation
     settings.REF_DIR.mkdir(parents=True, exist_ok=True)
-
+    remote_version = _fetch_mtgjson_version()
     state = _load_state()
     summary: dict[str, str] = {}
 
@@ -399,67 +429,34 @@ def main(force: bool) -> None:
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 1: MobileCache ---[/bold]")
 
-        remote_version: str | None = None
-        rebuild_mobilecache = force
-
-        if not force:
-            remote_version = _fetch_mtgjson_version()  # network fetch
-            if (
-                state["mobilecache_version"] is not None
-                and settings.LOCAL_DB_FILE.exists()
-            ):
-                rebuild_mobilecache = False
-            else:
-                rebuild_mobilecache = True
-
-        if not rebuild_mobilecache:
+        if not _needs_mobilecache_rebuild(state, remote_version, force):
             console.print(
                 f"[green]✓ MobileCache is up-to-date ({state['mobilecache_version']}) — skipping rebuild[/green]"
             )
             summary["MobileCache"] = f"skipped ({state['mobilecache_version']})"
             dest_engine = None
         else:
-            # Write in-progress null BEFORE the work begins (D-02)
-            state["mobilecache_version"] = None
+            state["mobilecache_version"] = None  # D-02: null before work begins
             _save_state(state)
 
             dest_engine = build_mobilecache()
 
-            # Resolve the version to persist
-            if remote_version is not None:
-                resolved = remote_version
-            else:
-                # read version from the extracted AllPrintings.sqlite
-                try:
-                    conn = sqlite3.connect(str(settings.MTGO_DB_FILE))
-                    row = conn.execute("SELECT version FROM meta").fetchone()
-                    conn.close()
-                    resolved = row[0] if row else "unknown"
-                except Exception:
-                    resolved = "unknown"
-
-            state["mobilecache_version"] = resolved
+            state["mobilecache_version"] = remote_version
             _save_state(state)
-            summary["MobileCache"] = f"rebuilt ({resolved})"
+            summary["MobileCache"] = f"rebuilt ({remote_version})"
 
         # ------------------------------------------------------------------
         # Step 2 — Reference images (D-05, D-13)
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 2: Reference Images ---[/bold]")
 
-        rebuild_images = force or not (
-            state["images_version"] is not None
-            and state["images_version"] == state["mobilecache_version"]
-        )
-
-        if not rebuild_images:
+        if not _needs_images_rebuild(state, force):
             console.print(
                 f"[green]✓ Reference images are up-to-date ({state['images_version']}) — skipping download[/green]"
             )
             summary["Reference images"] = f"skipped ({state['images_version']})"
         else:
-            # Write in-progress null BEFORE the work begins (D-02)
-            state["images_version"] = None
+            state["images_version"] = None  # D-02: null before work begins
             _save_state(state)
 
             download_images(dest_engine=dest_engine)
@@ -473,26 +470,13 @@ def main(force: bool) -> None:
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 3: pHash Index ---[/bold]")
 
-        rebuild_phash = (
-            force
-            or not (
-                state["phash_version"] is not None
-                and state["phash_version"] == state["images_version"]
-            )
-            or not (
-                settings.PHASH_INDEX_FILE.exists()
-                and settings.PHASH_MAPPING_FILE.exists()
-            )
-        )
-
-        if not rebuild_phash:
+        if not _needs_phash_rebuild(state, force):
             console.print(
                 f"[green]✓ pHash index is up-to-date ({state['phash_version']}) — skipping rebuild[/green]"
             )
             summary["pHash index"] = f"skipped ({state['phash_version']})"
         else:
-            # Write in-progress null BEFORE the work begins (D-02)
-            state["phash_version"] = None
+            state["phash_version"] = None  # D-02: null before work begins
             _save_state(state)
 
             # D-15: tqdm progress bar inside build_index() passes through unchanged
