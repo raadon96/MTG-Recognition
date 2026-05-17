@@ -103,16 +103,19 @@ uv sync --dev
 source .venv/bin/activate
 ```
 
-#### 5. Download reference data
-Build the local card metadata database (MobileCache), download reference images, and build the pHash index in one shot. 
+#### 5. Download reference images
 
 ```bash
 mtg sync
 ```
-**Note:** This step requires a network connection (~500 MB download). Subsequent runs are incremental — only artifacts that are out of date are rebuilt. 
+This downloads the ~1M reference card images (~500 MB). The card database and pHash index are committed to git and do not require a network sync. 
 
+**Maintainers only — update the card database to a new MTGJSON release:**
+```bash
+mtg sync --update-db
+```
 
-To force a full rebuild (e.g. for trouble-shooting):
+**Force a full rebuild of all artifacts (e.g. for troubleshooting):**
 ```bash
 mtg sync --force
 ```

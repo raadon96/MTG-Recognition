@@ -60,6 +60,14 @@ class TestNeedsRebuild:
         state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
         assert _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
 
+    def test_mobilecache_skips_without_update_db(self) -> None:
+        """remote_version=None (no --update-db) never rebuilds MobileCache."""
+        from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
+
+        # Version mismatch — would normally rebuild, but remote_version=None pins the DB
+        state = {"mobilecache_version": "V_old", "images_version": "V_old", "phash_version": "V_old"}
+        assert _needs_mobilecache_rebuild(state, remote_version=None, force=False) is False
+
     # --- _needs_images_rebuild ---
 
     def test_images_force_always_rebuilds(self) -> None:

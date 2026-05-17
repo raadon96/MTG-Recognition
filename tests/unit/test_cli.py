@@ -227,11 +227,12 @@ class TestSyncCommand:
     """Tests for the `mtg sync` subcommand."""
 
     def test_sync_help(self) -> None:
-        """`mtg sync --help` exits 0 and lists --force."""
+        """`mtg sync --help` exits 0 and lists --force and --update-db."""
         runner = CliRunner()
         result = runner.invoke(cli, ["sync", "--help"])
         assert result.exit_code == 0
         assert "--force" in result.output
+        assert "--update-db" in result.output
 
     def test_sync_first_run_runs_all_steps(self, tmp_path, monkeypatch) -> None:
         """First run (no state file, all missing): all three steps execute and state file is written."""
@@ -266,7 +267,7 @@ class TestSyncCommand:
             ) as MockMatcher,
         ):
             runner = CliRunner()
-            result = runner.invoke(cli, ["sync"])
+            result = runner.invoke(cli, ["sync", "--update-db"])
 
         assert result.exit_code == 0, (
             f"Exit code {result.exit_code}, output: {result.output}"
@@ -321,7 +322,7 @@ class TestSyncCommand:
         )
 
         with (
-            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version", return_value="V"),
+            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version") as mock_fetch,
             patch("mtg_recognition.jobs.sync.build_mobilecache") as mock_build,
             patch("mtg_recognition.jobs.sync.download_images") as mock_download,
             patch("mtg_recognition.jobs.sync.PHashCardMatcher") as MockMatcher,
@@ -332,6 +333,7 @@ class TestSyncCommand:
         assert result.exit_code == 0, (
             f"Exit code {result.exit_code}, output: {result.output}"
         )
+        mock_fetch.assert_not_called()  # no --update-db → no remote version fetch
         mock_build.assert_not_called()
         mock_download.assert_not_called()
         MockMatcher.assert_not_called()
@@ -418,7 +420,7 @@ class TestSyncCommand:
             ),
         ):
             runner = CliRunner()
-            result = runner.invoke(cli, ["sync"])
+            result = runner.invoke(cli, ["sync", "--update-db"])
 
         assert result.exit_code == 1
         assert "boom" in result.output
@@ -479,7 +481,7 @@ class TestSyncCommand:
             ),
         ):
             runner = CliRunner()
-            result = runner.invoke(cli, ["sync"])
+            result = runner.invoke(cli, ["sync", "--update-db"])
 
         assert result.exit_code == 0, (
             f"Exit code {result.exit_code}, output: {result.output}"
@@ -492,3 +494,97 @@ class TestSyncCommand:
         assert state["mobilecache_version"] == "V_new"
         assert state["images_version"] == "V_new"
         assert state["phash_version"] == "V_new"
+
+    def test_sync_downloads_images_without_update_db(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """Contributor use case: committed DB present, images missing, no --update-db → images only."""
+        import json
+        from unittest.mock import patch
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+        local_db.write_bytes(b"")
+
+        from mtg_recognition.settings import settings
+
+        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+
+        state_file = ref_dir / ".mtg-sync-state.json"
+        # img_dir intentionally absent — simulates fresh clone without images
+        phash_dir = ref_dir / "index" / "phash"
+        phash_dir.mkdir(parents=True)
+        (phash_dir / "hashes.npy").write_bytes(b"")
+        (phash_dir / "index_to_uuid.json").write_text("{}")
+        state_file.write_text(
+            json.dumps({"mobilecache_version": "V", "images_version": "V", "phash_version": "V"})
+        )
+
+        with (
+            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version") as mock_fetch,
+            patch("mtg_recognition.jobs.sync.build_mobilecache") as mock_build,
+            patch("mtg_recognition.jobs.sync.download_images") as mock_download,
+            patch("mtg_recognition.jobs.sync.PHashCardMatcher") as MockMatcher,
+        ):
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
+        mock_fetch.assert_not_called()
+        mock_build.assert_not_called()
+        mock_download.assert_called_once()
+        MockMatcher.assert_not_called()
+
+    def test_sync_skips_db_rebuild_without_update_db(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """Stale state version does not trigger DB rebuild without --update-db."""
+        import json
+        from unittest.mock import patch
+
+        ref_dir = tmp_path / "reference"
+        ref_dir.mkdir(parents=True)
+        local_db = ref_dir / "MobileCache.sqlite"
+        local_db.write_bytes(b"")
+
+        from mtg_recognition.settings import settings
+
+        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
+        )
+
+        state_file = ref_dir / ".mtg-sync-state.json"
+        img_dir = ref_dir / "images"
+        img_dir.mkdir(parents=True)
+        (img_dir / "dummy.jpg").write_bytes(b"")
+        phash_dir = ref_dir / "index" / "phash"
+        phash_dir.mkdir(parents=True)
+        (phash_dir / "hashes.npy").write_bytes(b"")
+        (phash_dir / "index_to_uuid.json").write_text("{}")
+        state_file.write_text(
+            json.dumps({"mobilecache_version": "V_old", "images_version": "V_old", "phash_version": "V_old"})
+        )
+
+        with (
+            patch("mtg_recognition.jobs.sync._fetch_mtgjson_version") as mock_fetch,
+            patch("mtg_recognition.jobs.sync.build_mobilecache") as mock_build,
+            patch("mtg_recognition.jobs.sync.download_images") as mock_download,
+            patch("mtg_recognition.jobs.sync.PHashCardMatcher") as MockMatcher,
+        ):
+            runner = CliRunner()
+            result = runner.invoke(cli, ["sync"])
+
+        assert result.exit_code == 0, (
+            f"Exit code {result.exit_code}, output: {result.output}"
+        )
+        mock_fetch.assert_not_called()
+        mock_build.assert_not_called()
+        mock_download.assert_not_called()
+        MockMatcher.assert_not_called()

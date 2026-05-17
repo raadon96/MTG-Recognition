@@ -371,10 +371,13 @@ def _fetch_mtgjson_version() -> str:
 # ---------------------------------------------------------------------------
 
 
-def _needs_mobilecache_rebuild(state: dict, remote_version: str, force: bool) -> bool:
+def _needs_mobilecache_rebuild(state: dict, remote_version: str | None, force: bool) -> bool:
+    if force:
+        return True
+    if remote_version is None:
+        return False  # pinned mode (no --update-db): never rebuild the database
     return (
-        force
-        or state["mobilecache_version"] is None
+        state["mobilecache_version"] is None
         or state["mobilecache_version"] != remote_version
         or not settings.LOCAL_DB_FILE.exists()
     )
@@ -413,18 +416,26 @@ def _needs_phash_rebuild(state: dict, force: bool) -> bool:
     show_default=True,
     help="Bypass all version checks and rebuild MobileCache, images, and pHash index unconditionally.",
 )
-def main(force: bool) -> None:
+@click.option(
+    "--update-db",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Check for a new MTGJSON release and rebuild MobileCache, images, and pHash index if outdated.",
+)
+def main(force: bool, update_db: bool) -> None:
     """Rebuild the full reference data stack in one shot.
 
-    Runs three steps in order: MobileCache rebuild → reference image download →
-    pHash index build. Skips steps whose local version already matches the remote
-    MTGJSON version. Use --force to bypass all version checks.
+    By default only downloads missing reference images (database is pinned to
+    the committed version). Use --update-db to check for a new MTGJSON release
+    and rebuild all artifacts if outdated. Use --force to bypass all version
+    checks and rebuild unconditionally.
     """
     settings.REF_DIR.mkdir(parents=True, exist_ok=True)
     summary: dict[str, str] = {}
 
     try:
-        remote_version = _fetch_mtgjson_version()
+        remote_version = _fetch_mtgjson_version() if (update_db or force) else None
         state = _load_state()
         # ------------------------------------------------------------------
         # Step 1 — MobileCache (D-04, D-13)
