@@ -163,3 +163,17 @@ Thin registration file — no business logic. Each subcommand is defined in its 
 | Segmentation (shared helpers) | `src/mtg_recognition/engine/segmentation/seg_utils.py` |
 | pHash matcher | `src/mtg_recognition/engine/matching/phash_matcher.py` |
 | Reference data sync job | `src/mtg_recognition/jobs/sync.py` |
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues on `decksray/MTG-Recognition` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
