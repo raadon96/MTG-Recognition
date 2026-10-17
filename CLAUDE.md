@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against a ~1M-card SQLite database. Served as a Streamlit web app via Docker.
 
+## Git
+
+- `dev` is the integration branch; `main` is the release branch and the GitHub default. Branch off `dev` and open PRs against `dev`: always pass `gh pr create --base dev`. Worktrees default to `main`, so base them on `dev` explicitly.
+- Feature PRs are squash-merged into `dev`. Releases are `dev` → `main` PRs merged with a merge commit, never squashed, then tagged (e.g. `v0.2.0`).
+- Never commit to `main` directly; fixes go through `dev` and a release.
+- Never credit Claude or Claude Code as a contributor: no `Co-Authored-By` trailer in commits, no "Generated with Claude Code" line in PR bodies, issues or comments.
+
 ## Requirements
 
 - Python 3.12+
