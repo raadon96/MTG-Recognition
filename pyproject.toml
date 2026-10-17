@@ -48,7 +48,6 @@ mtg = "mtg_recognition.cli:cli"
 dev = [
     "ipykernel>=7.1.0",
     # "ipython>=9.8.0",
-    "pytest>=9.0.2",
     "sqlacodegen>=3.2.0",
     "rapidocr>=3.7.0",
     "streamlit-webrtc>=0.64.5",
@@ -56,6 +55,11 @@ dev = [
     "pyarrow>=22.0.0",
     "ipyplot>=1.1.2",
     "dvc[gdrive]>=3.67.1",
+    "ty>=0.0.89",
+    "ruff>=0.17.1",
+    "pytest>=9.1.1",
+    "import-linter>=2.15",
+    "pre-commit>=4.7.0",
 ]
 
 [build-system]
@@ -97,4 +101,29 @@ testpaths = ["tests"]
 markers = [
     "slow: requires the segmentation model; deselect with -m 'not slow'",
     "unit: fast unit tests with no external dependencies",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/**/*.py" = ["E501", "B905", "F401", "I001"]
+"*.ipynb" = ["E501", "B905", "F401", "I001"]
+
+[tool.ruff.format]
+preview = false
+
+[tool.marimo.formatting]
+line_length = 120 # keep consistent with ruff's line-length
+
+[tool.marimo.save]
+format_on_save = true
+
+[tool.ty.src]
+exclude = [
+    "tests/",
 ]

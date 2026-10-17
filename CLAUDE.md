@@ -58,7 +58,13 @@ mtg recognize -i card.jpg
 mtg segment -i card.jpg --mode auto
 ```
 
-No linter/formatter is configured — match the style of surrounding code.
+Linting and formatting use [ruff](https://docs.astral.sh/ruff/), configured in `pyproject.toml` (line length 120, Python 3.12, rules `E`, `F`, `I`, `UP`, `B`, `SIM`):
+
+```bash
+uv run ruff check src tests          # lint
+uv run ruff check --fix src tests    # lint + autofix
+uv run ruff format src tests         # format
+```
 
 ## Dataset (DVC)
 

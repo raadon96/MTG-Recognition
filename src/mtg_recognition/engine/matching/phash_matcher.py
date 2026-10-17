@@ -122,9 +122,7 @@ class PHashCardMatcher:
             except Exception as e:
                 print(f"Error loading pHash index: {e}")
         else:
-            print(
-                "Warning: pHash index files not found. Call build_index() to create."
-            )
+            print("Warning: pHash index files not found. Call build_index() to create.")
 
     def build_index(self, force=False, num_workers=cpu_count() - 1):
         """
