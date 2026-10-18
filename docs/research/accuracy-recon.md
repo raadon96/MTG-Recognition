@@ -28,33 +28,37 @@ Answers [Measure today's top-1 accuracy, run-to-run variance and runtime on the 
 
 ## Misses (identical in both runs)
 
+Tracked in [Known recognition failure modes](https://github.com/decksray/MTG-Recognition/issues/17). "pHash rank" is the expected UUID's position among the top-200 pHash candidates (`accuracy-recon/phash_rank.py`).
+
 | Category | UUID | Expected | Got | Kind |
 |---|---|---|---|---|
-| photos | 156dd28e | Selhoff Occultist JMP 174 | Selhoff Occultist SIS 21 | right card, wrong printing |
-| photos | 96851213 | Lunarch Veteran // Luminous Phantom INR 32 (front) | same card, back-face UUID `fa15d8b3` | **other face, same image** |
-| photos | fa15d8b3 | Lunarch Veteran // Luminous Phantom INR 32 (back) | Burnout Bashtronaut PDFT 115s | wrong card (DFC) |
-| photos | 23c2e576 | Ecstatic Awakener // Awoken Demon INR 107 | Savanti Romero TMT 72 | wrong card (DFC) |
-| photos | 3b78d1a8 | Shrill Howler // Howling Chorus INR 214 | Jin-Gitaxias MOM 65 | wrong card (DFC) |
-| photos | 8dbff4d6 | Soulcipher Board // Cipherbound Spirit INR 85 | Epitaph Golem INR 262 | wrong card (DFC) |
-| photos | ab62f9e1 | Hinterland Logger // Timber Shredder INR 203 | Vilespawn Spider INR 251 | wrong card (DFC) |
-| photos | d3451c0f | Grizzled Angler // Grisly Anglerfish INR 67 | Gird for Battle JMP 106 | wrong card (DFC) |
-| photos | d63e8a74 | Hanweir Watchkeep // Bane of Hanweir INR 158 | Amazing Acrobatics SPM 25 | wrong card (DFC) |
-| photos | de33b83e | Smoldering Werewolf // Erupting Dreadwolf INR 171 | Oran-Rief NEC 173 | wrong card (DFC) |
-| photos + ocr/uncommon | d2f3f21f | Harvest Hand // Scrounged Scythe INR 265 | Ugin's Construct FRF 164 | wrong card (DFC) |
-| photos | c4db37a8 | Traveler's Amulet INR 273 | Fiend Hunter INR 22 | wrong card |
-| scans_no_bg | 0a0ebcb7 | Phelia PMH3 40s (promo) | Phelia MH3 40 | right card, wrong printing |
+| photos | 23c2e576 | Awoken Demon (back of Ecstatic Awakener) INR 107 | Savanti Romero TMT 72 | DFC back face |
+| photos | 3b78d1a8 | Howling Chorus (back of Shrill Howler) INR 214 | Jin-Gitaxias MOM 65 | DFC back face |
+| photos | 8dbff4d6 | Cipherbound Spirit (back of Soulcipher Board) INR 85 | Epitaph Golem INR 262 | DFC back face |
+| photos | ab62f9e1 | Timber Shredder (back of Hinterland Logger) INR 203 | Vilespawn Spider INR 251 | DFC back face |
+| photos + ocr/uncommon | d2f3f21f | Scrounged Scythe (back of Harvest Hand) INR 265 | Ugin's Construct FRF 164 | DFC back face |
+| photos | d3451c0f | Grisly Anglerfish (back of Grizzled Angler) INR 67 | Gird for Battle JMP 106 | DFC back face |
+| photos | d63e8a74 | Bane of Hanweir (back of Hanweir Watchkeep) INR 158 | Amazing Acrobatics SPM 25 | DFC back face |
+| photos | de33b83e | Erupting Dreadwolf (back of Smoldering Werewolf) INR 171 | Oran-Rief NEC 173 | DFC back face |
+| photos | fa15d8b3 | Luminous Phantom (back of Lunarch Veteran) INR 32 | Burnout Bashtronaut PDFT 115s | DFC back face |
+| photos | 96851213 | Lunarch Veteran (front) INR 32 | back-face UUID `fa15d8b3` of the same card | DFC front, other face returned (pHash rank 4) |
+| photos | 156dd28e | Selhoff Occultist JMP 174 | Selhoff Occultist SIS 21 | wrong printing; pHash rank **1**, OCR rerank overturned it |
+| scans_no_bg | 0a0ebcb7 | Phelia PMH3 40s (promo) | Phelia MH3 40 | wrong printing; pHash rank **1**, OCR read `MH3EN` / `R 0040` |
+| photos | c4db37a8 | Traveler's Amulet INR 273 | Fiend Hunter INR 22 (score 36.7) | not in top-200 pHash despite clean OCR (`C 0273`, `INR·EN`, `ALAN POLLACK`) |
 
-### Double-faced cards are the main failure mode
+### Back faces of double-faced cards are the main failure mode
 
-- MTGJSON gives **each face of a double-faced card (DFC) its own UUID, and both rows share the same image URL**. In `MobileCache.sqlite`, 4,531 of 109,018 rows share their URL with another row. The ground-truth label for a DFC photo is therefore ambiguous: the filename names one face, and the pHash index holds two identical hashes.
-- In `1_photos_single_card`, single-faced cards score **178/180 (98.9 %)**. DFCs score **10/20 (50 %)**: one miss is the other face of the right card, and nine are genuinely wrong cards.
-- If the benchmark counted "same card, other face" as correct, photos would be 189/200 and the total 247/260.
+*(Corrected: an earlier version of this section described the problem as a label ambiguity.)*
+
+- MTGJSON gives **each face of a double-faced card (DFC) its own UUID**, but in `MobileCache.sqlite` both rows share **one `url`, which points to the front image** (`.../normal/front/...`). 4,531 of 109,018 rows share their URL with another row. The back-face art therefore isn't in the pHash index, and a back-face photo has nothing to match.
+- The dataset has photos of **both faces of 10 DFCs** (all INR). Front faces score **9/10**: the one miss returned the other face's UUID, because the two faces share a reference image and their name, set, number, artist and P/T are identical. Back faces score **1/10** (only Howlpack of Estwald).
+- Single-faced photos score 178/180 (98.9 %). Back faces account for 10 of the 14 misses (counting the duplicate in `6_benchmark`).
 
 ## Implications for "Define the accuracy benchmark"
 
 - **Tolerance:** results are deterministic on this machine, so a tight ratchet (exact count, zero tolerance) is feasible locally. Determinism across machines (CI runner vs. laptop, different CPU/BLAS) has **not** been tested.
 - **CI cost:** about 3 minutes of compute for all 260 images (probably slower on a 2- or 4-core GitHub runner, untested), plus the dataset pull. Running the full set in CI looks affordable.
-- **Correctness definition:** decide how DFC faces count (UUID-exact, or any UUID sharing the image/scryfall id) and whether "right card, wrong printing" is a separate metric.
+- **Correctness definition:** decide whether back-face photos are gated while the reference data lacks back faces, whether returning the other face of the right card counts as correct, and whether "right card, wrong printing" is a separate metric.
 - **Category coverage:** `6_benchmark/*` scores 55/56 and adds no signal not already in `1_photos_single_card` (all its UUIDs also appear there). Several categories have **no UUID ground truth at all**, which matters for "Decide the benchmark dataset's layout and naming".
 
 ## Side observations
@@ -65,4 +69,4 @@ Answers [Measure today's top-1 accuracy, run-to-run variance and runtime on the 
 
 ## Artifacts
 
-`docs/research/accuracy-recon/`: `run1/` and `run2/` (per-category JSON outputs, CLI logs, `times.txt`), `run.sh` (runner) and `analyse.py` (summary script; expects the outputs under `/tmp/acc6`).
+`docs/research/accuracy-recon/`: `run1/` and `run2/` (per-category JSON outputs, CLI logs, `times.txt`), `run.sh` (runner), `analyse.py` (summary script; expects the outputs under `/tmp/acc6`) and `phash_rank.py` (expected-UUID rank among pHash candidates).
