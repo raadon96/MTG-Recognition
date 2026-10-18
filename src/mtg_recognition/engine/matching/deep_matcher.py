@@ -6,29 +6,22 @@ from typing import Any
 import cv2
 import numpy as np
 import torch
-from numpydantic import NDArray, Shape
+from numpydantic import NDArray
 from PIL import Image
 from pydantic import BaseModel
-from sqlalchemy.engine.row import Row
-from sqlmodel import Session, col, create_engine, select
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from tqdm import tqdm
 
 from mtg_recognition.engine.ocr.ocr_extraction import sort_scores_with_indices
-from mtg_recognition.jobs.schemas import MobileCache
 
 # --- Configuration ---
 IMG_DIR = "data/reference/images"
 INDEX_PATH = "data/reference/index/mobilenet_v3_small/embeddings.npy"
 MAPPING_PATH = "data/reference/index/mobilenet_v3_small/index_to_uuid.json"
-BATCH_SIZE = 32  # Sweet spot for MobileNetV3 on CPU.
+EMBEDDING_BATCH_SIZE = 32  # Sweet spot for MobileNetV3 on CPU.
 DEVICE = "cpu"  # RPi5 has no CUDA, so CPU.
-
-LOCAL_DB_FILE = "data/reference/MobileCache.sqlite"
-
-# Initialize engine with sqlean extensions
-dest_engine = create_engine(f"sqlite:///{LOCAL_DB_FILE}?mode=ro&nolock=1")
+DEFAULT_NUM_WORKERS = cpu_count() - 1
 
 
 class CardDataset(Dataset):
@@ -143,7 +136,7 @@ class DeepCardMatcher(BaseModel):
         self._load_index()
 
     @property
-    def _index_is_loaded(self):
+    def index_loaded(self):
         """Check if the pHash index is loaded."""
         return self.embeddings is not None and self.uuid_mapping is not None
 
@@ -164,7 +157,7 @@ class DeepCardMatcher(BaseModel):
             else:
                 print("Warning: Index files not found. Call build_index() to create.")
 
-    def build_index(self, force=False, num_workers=cpu_count() - 1):
+    def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
         """
         Scans the reference directory, extracts and saves embeddings using optimized DataLoader.
         """
@@ -183,7 +176,7 @@ class DeepCardMatcher(BaseModel):
         dataset = CardDataset(self.img_dir, transform=self._transform)
         dataloader = DataLoader(
             dataset,
-            batch_size=BATCH_SIZE,
+            batch_size=EMBEDDING_BATCH_SIZE,
             shuffle=False,
             num_workers=num_workers,
         )
@@ -267,14 +260,14 @@ class DeepCardMatcher(BaseModel):
     def find_best_matches(
         self,
         query_image_bgr: np.ndarray,
-        candidates: list[Row] = [],
+        candidate_uuids: list[str] | None = None,
         k: int = 5,
-    ) -> tuple[list[Row], list[float]]:
-        if not self._index_is_loaded:
+    ) -> tuple[list[str], list[float]]:
+        if not self.index_loaded:
             raise ValueError("Error: Index not loaded.")
 
         # Filter if subset specified
-        subset_uuids = [candidate.uuid for candidate in candidates]
+        subset_uuids = candidate_uuids or []
         subset_idxs = []
         uuid_mapping, embeddings = self._filter_by_uuids_or_idxs(
             subset_uuids, subset_idxs
@@ -303,17 +296,7 @@ class DeepCardMatcher(BaseModel):
         top_k_scores, top_k_indices = sort_scores_with_indices(scores, k)
         top_k_uuids = [uuid_mapping[idx] for idx in top_k_indices]
 
-        statement = select(MobileCache).where(col(MobileCache.uuid).in_(top_k_uuids))
-        with Session(dest_engine) as session:
-            results = session.exec(statement).all()
-
-        # Reorder results based on score (since in clause does not guarantee return order)
-        uuid_to_match = {row.uuid: row for row in results}
-        top_k_matches = [
-            uuid_to_match[uuid] for uuid in top_k_uuids if uuid in uuid_to_match
-        ]
-
-        return top_k_matches, top_k_scores
+        return top_k_uuids, top_k_scores
 
 
 def main():
@@ -330,11 +313,11 @@ def main():
 
     k = 5
     query_img = cv2.imread(str(query_image_path))
-    matches, scores = matcher.find_best_matches(query_img, k=k)
+    uuids, scores = matcher.find_best_matches(query_img, k=k)
 
     print(f"\nTop {k} matches:")
-    for i, match in enumerate(matches):
-        print(f"  UUID: {match.uuid}, Name: {match.name}, Score: {scores[i]}")
+    for uuid, score in zip(uuids, scores, strict=True):
+        print(f"  UUID: {uuid}, Score: {score}")
 
 
 if __name__ == "__main__":

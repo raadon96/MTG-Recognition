@@ -13,13 +13,14 @@ import pandas as pd
 import rapidfuzz
 from paddleocr import PaddleOCR
 from PIL import Image
-from sqlalchemy.engine.row import Row
 
+from mtg_recognition.catalog import Printing
 from mtg_recognition.core.image_utils import _ensure_min_dim
 from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
 
-# Attribute mapping configuration for fuzzy matching
+# Attribute mapping configuration for fuzzy matching.
+# db_attr is the Printing field compared against the OCR property.
 ATTRIBUTE_MAPPINGS: list[dict] = [
     {
         "db_attr": "name",
@@ -28,7 +29,7 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
         "preprocessor": rapidfuzz.utils.default_process,
     },
     {
-        "db_attr": "setCode",
+        "db_attr": "set_code",
         "ocr_property": "setcode_candidates",
         "weight": 1.0,
         "preprocessor": None,
@@ -40,7 +41,7 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
         "preprocessor": None,
     },
     {
-        "db_attr": "baseSetSize",
+        "db_attr": "base_set_size",
         "ocr_property": "base_set_size",
         "weight": 1.0,
         "preprocessor": None,
@@ -52,7 +53,7 @@ ATTRIBUTE_MAPPINGS: list[dict] = [
         "preprocessor": rapidfuzz.utils.default_process,
     },
     {
-        "db_attr": "setReleaseYear",
+        "db_attr": "set_release_year",
         "ocr_property": "set_release_year",
         "weight": 1.0,
         "preprocessor": None,
@@ -135,7 +136,8 @@ class CardOCR:
     def __init__(self, use_preprocessing=False):
         self._use_preprocessing = use_preprocessing
         self._paddleocr = PaddleOCR(
-            # text image rectification (performs geometric transformations on images to correct distortions, inclinations, perspective deformations)
+            # text image rectification (performs geometric transformations on images to correct
+            # distortions, inclinations, perspective deformations)
             use_doc_unwarping=False,
             doc_unwarping_model_name=None,
             # textline orientation classification (corrects the orientation of text lines)
@@ -286,7 +288,7 @@ class CardOCR:
         return properties, ocr_debug
 
     def _compute_scores(
-        self, properties: Properties, candidates: list[Row]
+        self, properties: Properties, candidates: list[Printing]
     ) -> tuple[np.ndarray, list[str], list[str]]:
         """Compute per-attribute fuzzy scores for all candidates.
 
@@ -331,12 +333,12 @@ class CardOCR:
     def find_best_matches(
         self,
         query_img: np.ndarray,
-        candidates: list[Row],
+        candidates: list[Printing],
         properties: Properties | None = None,
         k: int | None = 10,
         thresh: float = 0.0,
         debug: bool = False,
-    ) -> tuple[list[Row], list[float], OCRDebugData | None]:
+    ) -> tuple[list[Printing], list[float], OCRDebugData | None]:
         """
         Find best matching cards by comparing OCR-extracted properties against candidates.
 
@@ -345,7 +347,7 @@ class CardOCR:
 
         Args:
             query_img: Card image (BGR format from OpenCV)
-            candidates: List of candidate card Row objects to match against
+            candidates: Candidate printings to match against
             properties: Pre-extracted properties (if None, will extract from query_img)
             k: Number of top matches to return (None = return all)
             thresh: Minimum score threshold (0.0 to 100.0)

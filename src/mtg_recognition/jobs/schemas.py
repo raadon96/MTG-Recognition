@@ -1,7 +1,6 @@
 from datetime import datetime
-from typing import Optional
 
-from sqlmodel import Field, Index, SQLModel
+from sqlmodel import Field, SQLModel
 
 # Note: We only define the fields we strictly need to save memory.
 

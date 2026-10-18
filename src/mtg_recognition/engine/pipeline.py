@@ -1,142 +1,126 @@
 import json
-import time
 import uuid as _uuid
 from dataclasses import dataclass
 from pathlib import Path
 
 import click
 import numpy as np
-from rich import print
-from sqlalchemy.engine.row import Row
 
+from mtg_recognition.catalog import CardCatalog, Printing, SqliteCardCatalog
 from mtg_recognition.core import image_utils
-from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.core.image_utils import load_image, resize_if_needed
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
-from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+from mtg_recognition.settings import settings
 
 
 @dataclass(frozen=True)
 class SegmentResult:
-    """Recognition result for a single detected card segment."""
+    """Recognition result for one card found in the image."""
 
-    matches: list[Row]
+    warped_image: np.ndarray
+    matches: list[Printing]
     scores: list[float]
     ocr_debug: OCRDebugData | None
 
 
+@dataclass(frozen=True)
+class RecognitionResult:
+    """Recognition result for one input image."""
+
+    segments: list[SegmentResult]  # empty = no card found
+    error: str | None
+
+
 class Pipeline:
+    """The engine's recognition module: image in, ranked Printings per card out.
+
+    Segments the image, finds pHash candidates, resolves them to Printings
+    through the catalog and reranks them with OCR.
+
+    Args:
+        k_phash_candidates: Number of candidates from the pHash stage.
+        k_final_results: Number of matches returned per card after OCR reranking.
+        catalog: Resolves printing UUIDs to Printings (default: MobileCache SQLite).
+        segmentor, phash_matcher, ocr: Stage implementations (defaults built here).
+        auto_build: Build the pHash index if it is missing on disk.
+
+    Raises:
+        ValueError: If the k parameters are invalid or the pHash index is not loaded.
+    """
+
     def __init__(
         self,
-        auto_build: bool = True,
+        k_phash_candidates: int = 20,
+        k_final_results: int = 1,
+        catalog: CardCatalog | None = None,
         segmentor: YoloCardSegmentor | None = None,
-        phash_matcher: PHashCardMatcher = PHashCardMatcher(),
-        ocr: CardOCR = CardOCR(use_preprocessing=True),
+        phash_matcher: PHashCardMatcher | None = None,
+        ocr: CardOCR | None = None,
+        auto_build: bool = True,
     ):
+        if not 1 <= k_final_results <= k_phash_candidates:
+            raise ValueError(
+                f"Need 1 <= k_final_results <= k_phash_candidates, got {k_final_results} and {k_phash_candidates}"
+            )
+        self.k_phash_candidates = k_phash_candidates
+        self.k_final_results = k_final_results
+
+        self.catalog = catalog if catalog is not None else SqliteCardCatalog()
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
-        self.phash_matcher = phash_matcher
-        self.ocr = ocr
-        self.auto_build = auto_build
+        self.phash_matcher = phash_matcher if phash_matcher is not None else PHashCardMatcher()
+        self.ocr = ocr if ocr is not None else CardOCR(use_preprocessing=True)
 
         if auto_build:
             self.phash_matcher.build_index(force=False)
+        if not self.phash_matcher.index_loaded:
+            raise ValueError("pHash index not loaded. Run 'mtg sync' or 'mtg build-index' first.")
 
-    def segment_card(self, query_img: np.ndarray) -> ImageSegmentationResult:
-        """Segment cards from a query image."""
-        return self.segmentor.segment(query_img)
+    def recognize(self, image: np.ndarray, debug: bool = False) -> RecognitionResult:
+        """Recognize every card in a decoded BGR image.
 
-    def find_best_matches(
-        self,
-        query_img: np.ndarray,
-        k_phash_candidates: int = 20,
-        k_final_results: int = 1,
-        apply_segmentation: bool = True,
-        debug: bool = False,
-    ) -> list[SegmentResult]:
-        """Find best matching cards using a two-stage pipeline.
-
-        Stage 1: Perceptual hashing for fast coarse candidate retrieval.
-        Stage 2: OCR-based fuzzy matching for accurate refinement.
+        The image is downscaled so its longest edge is at most
+        settings.MAX_IMAGE_DIMENSION. Failures while processing the image are
+        returned in RecognitionResult.error rather than raised.
 
         Args:
-            query_img: Query image (BGR format from OpenCV).
-            k_phash_candidates: Number of candidates from the pHash stage.
-            k_final_results: Number of final results after OCR refinement.
-            apply_segmentation: When True, runs YOLO segmentation first and
-                returns one SegmentResult per detected card. When False, treats
-                query_img as a pre-warped single card and returns a list of one.
+            image: Decoded BGR image (EXIF orientation already applied).
             debug: When True, ocr_debug inside each SegmentResult is populated.
-
-        Returns:
-            List of SegmentResult, one per detected card segment.
-            Empty list when no cards are detected.
         """
-        assert k_final_results <= k_phash_candidates, (
-            "k_final_results must be <= k_phash_candidates"
-        )
+        try:
+            image = resize_if_needed(image, settings.MAX_IMAGE_DIMENSION)
+            segmentation = self.segmentor.segment(image)
+            segments = [self._match_one(s.warped_image, debug) for s in segmentation.segments]
+        except Exception as e:
+            return RecognitionResult(segments=[], error=f"{type(e).__name__}: {e}")
+        return RecognitionResult(segments=segments, error=None)
 
-        if apply_segmentation:
-            seg_result = self.segment_card(query_img)
+    def _match_one(self, warped_image: np.ndarray, debug: bool) -> SegmentResult:
+        """Run pHash + OCR matching on a single warped card image."""
 
-            if not seg_result.success:
-                print("No card detected")
-                return []
+        # Stage 1: coarse search with perceptual hashing
+        uuids, phash_scores = self.phash_matcher.find_best_matches(warped_image, k=self.k_phash_candidates)
+        printings = self.catalog.lookup(uuids)
+        candidates = [printings[u] for u in uuids if u in printings]
+        candidate_scores = [s for u, s in zip(uuids, phash_scores, strict=True) if u in printings]
 
-            warped_images = [s.warped_image for s in seg_result.segments]
-        else:
-            warped_images = [query_img]
+        if len(candidates) <= 1:
+            return SegmentResult(warped_image, candidates, candidate_scores, ocr_debug=None)
 
-        results: list[SegmentResult] = []
-        for img_warped in warped_images:
-            results.append(
-                self._match_one(
-                    img_warped,
-                    k_phash_candidates,
-                    k_final_results,
-                    debug,
-                )
-            )
-        return results
-
-    def _match_one(
-        self,
-        img_warped: np.ndarray,
-        k_phash_candidates: int,
-        k_final_results: int,
-        debug: bool,
-    ) -> SegmentResult:
-        """Run pHash + OCR matching on a single pre-warped card image."""
-
-        # Stage 1: Coarse search with perceptual hashing
-        matches_ph, scores_ph = self.phash_matcher.find_best_matches(
-            img_warped, k=k_phash_candidates
-        )
-
-        if len(matches_ph) == 0:
-            return SegmentResult(matches=[], scores=[], ocr_debug=None)
-
-        if len(matches_ph) == 1:
-            return SegmentResult(matches=matches_ph, scores=scores_ph, ocr_debug=None)
-
-        # Stage 2: Accurate OCR search on reduced search space
-        matches_ocr, scores_ocr, ocr_debug = self.ocr.find_best_matches(
-            img_warped, matches_ph, k=k_final_results, thresh=0.0, debug=debug
+        # Stage 2: OCR reranking on the reduced search space
+        matches, scores, ocr_debug = self.ocr.find_best_matches(
+            warped_image, candidates, k=self.k_final_results, thresh=0.0, debug=debug
         )
         return SegmentResult(
-            matches=matches_ocr,
-            scores=scores_ocr,
+            warped_image=warped_image,
+            matches=matches[: self.k_final_results],
+            scores=[float(s) for s in scores[: self.k_final_results]],
             ocr_debug=ocr_debug if debug else None,
         )
 
-    def _load_index(self):
-        """Load indices for all matchers."""
-        # self.deep_matcher._load_index()  # Commented - keeping for future use
-        self.phash_matcher._load_index()
-
     def build_index(self, force: bool = False):
-        """Build indices for all matchers."""
-        # self.deep_matcher.build_index(force)  # Commented - keeping for future use
+        """Build the pHash index."""
         self.phash_matcher.build_index(force)
 
 
@@ -192,14 +176,11 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     Examples:
 
     \b
-    uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg -o runs/output.json
-    uv run python -m mtg_recognition.engine.pipeline -i benchmarks/dataset/images/raw -k 3 --k-phash 50
+    uv run python -m mtg_recognition.engine.pipeline -i card.jpg -o runs/output.json
+    uv run python -m mtg_recognition.engine.pipeline -i data/test/6_benchmark/images/raw -k 3 --k-phash 50
     uv run python -m mtg_recognition.engine.pipeline -i data/test/images -o output/results.json
     """
-    if input_path.is_file():
-        img_paths = [input_path]
-    else:
-        img_paths = image_utils.get_image_files_in_directory(input_path)
+    img_paths = [input_path] if input_path.is_file() else image_utils.get_image_files_in_directory(input_path)
 
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)
@@ -208,7 +189,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     if output_file is not None:
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    pipeline = Pipeline(auto_build=True)
+    pipeline = Pipeline(k_phash_candidates=k_phash, k_final_results=k)
     total = len(img_paths)
     all_results: list[dict] = []
 
@@ -219,20 +200,16 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
         except ValueError:
             img_display = img_abs
 
-        query_img = load_and_resize_image(img_path)
-        if query_img is None:
-            click.echo(
-                f"[{idx}/{total}] {img_display}  ERROR: failed to load image", err=True
-            )
+        try:
+            query_img = load_image(img_path)
+        except (OSError, ValueError) as e:
+            click.echo(f"[{idx}/{total}] {img_display}  ERROR: failed to load image: {e}", err=True)
             continue
 
-        segment_results = pipeline.find_best_matches(
-            query_img,
-            k_phash_candidates=k_phash,
-            k_final_results=k,
-            apply_segmentation=True,
-            debug=True,
-        )
+        recognition = pipeline.recognize(query_img, debug=True)
+        if recognition.error is not None:
+            click.echo(f"[{idx}/{total}] {img_display}  ERROR: {recognition.error}", err=True)
+        segment_results = recognition.segments
 
         stem_uuid = _stem_uuid(img_path.stem)
         n_segs = len(segment_results)
@@ -271,9 +248,9 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             click.echo(f"{prefix} {status}")
             if not seg.matches:
                 click.echo(f"{prefix}  no matches found")
-            for rank, (match, score) in enumerate(zip(seg.matches, seg.scores), 1):
+            for rank, (match, score) in enumerate(zip(seg.matches, seg.scores, strict=True), 1):
                 click.echo(
-                    f"{prefix}  #{rank}  {match.name}  |  {match.setCode} · {match.number}  |  score: {score:.1f}"
+                    f"{prefix}  #{rank}  {match.name}  |  {match.set_code} · {match.number}  |  score: {score:.1f}"
                 )
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
@@ -288,12 +265,12 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                             "rank": rank,
                             "name": match.name,
                             "uuid": match.uuid,
-                            "setCode": match.setCode,
+                            "setCode": match.set_code,
                             "number": match.number,
                             "score": round(score, 1),
                         }
                         for rank, (match, score) in enumerate(
-                            zip(seg.matches, seg.scores), 1
+                            zip(seg.matches, seg.scores, strict=True), 1
                         )
                     ],
                     "debug": {

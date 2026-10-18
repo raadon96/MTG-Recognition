@@ -91,14 +91,14 @@ def preprocess_for_ocr(
     if enhance:
         # Step 2: Convert to LAB, extract L channel
         lab = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
+        lightness, a, b = cv2.split(lab)
 
         # Step 3 (info ROI only): Wiener deconvolution before contrast enhancement
         if deblur:
-            l = _wiener_deconvolve(l, sigma=1.5, snr=40.0)
+            lightness = _wiener_deconvolve(lightness, sigma=1.5, snr=40.0)
 
         # Step 4: CLAHE on L channel
-        l_enhanced = _CLAHE.apply(l)
+        l_enhanced = _CLAHE.apply(lightness)
 
         # Step 5: Merge back and mild unsharp mask
         lab = cv2.merge([l_enhanced, a, b])

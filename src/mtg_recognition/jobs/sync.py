@@ -506,7 +506,7 @@ def main(force: bool, update_db: bool) -> None:
             f"Error during sync: {type(exc).__name__}: {exc}",
             err=True,
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from exc
 
     # ------------------------------------------------------------------
     # Summary panel (D-14)

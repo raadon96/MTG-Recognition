@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
-from typing import Union
 
 import cv2
 import numpy as np
@@ -11,15 +10,15 @@ from PIL import Image, ImageOps
 from mtg_recognition.settings import settings
 
 # All types accepted by load_image
-ImageSource = Union[
-    str,  # file path
-    Path,  # file path
-    bytes,  # raw encoded bytes
-    bytearray,  # raw encoded bytes
-    np.ndarray,  # already decoded BGR array (passthrough)
-    Image.Image,  # PIL Image
-    # Any file-like with .read() — BytesIO, UploadedFile, open(), etc.
-]
+# Any file-like with .read() (BytesIO, UploadedFile, open(), etc.) is accepted too.
+ImageSource = (
+    str  # file path
+    | Path  # file path
+    | bytes  # raw encoded bytes
+    | bytearray  # raw encoded bytes
+    | np.ndarray  # already decoded BGR array (passthrough)
+    | Image.Image  # PIL Image
+)
 
 
 def get_image_files_in_directory(
@@ -34,7 +33,7 @@ def get_image_files_in_directory(
     return sorted(img_paths)
 
 
-def _resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
+def resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     """Downscale img so its longest edge does not exceed max_dimension.
 
     Returns the original array unchanged if it is already within bounds.
@@ -67,8 +66,8 @@ def _pil_to_bgr(pil_img: Image.Image) -> np.ndarray:
     return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
 
 
-def _to_ndarray(source: ImageSource) -> np.ndarray:
-    """Convert any supported image source to a BGR uint8 numpy array."""
+def load_image(source: ImageSource) -> np.ndarray:
+    """Decode any supported image source to a BGR uint8 numpy array, applying EXIF orientation."""
 
     # Already a numpy array — passthrough
     if isinstance(source, np.ndarray):
@@ -119,4 +118,4 @@ def load_and_resize_image(
         ValueError: If the image cannot be decoded.
         TypeError: If source is an unsupported type.
     """
-    return _resize_if_needed(_to_ndarray(source), max_dimension)
+    return resize_if_needed(load_image(source), max_dimension)

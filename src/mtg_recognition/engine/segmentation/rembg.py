@@ -31,8 +31,7 @@ class RembgCardSegmentor:
 
     Handles multi-card images: each connected foreground blob is treated as a
     separate card candidate. Blobs are filtered by minimum area and aspect ratio.
-    The rembg session is loaded once and reused across all calls, making
-    segment_batch efficient for processing multiple images.
+    The rembg session is loaded once and reused across all calls.
     """
 
     def __init__(
@@ -94,18 +93,6 @@ class RembgCardSegmentor:
             segments.append(CardSegment(warped_image=warp_card(img, corners)))
 
         return ImageSegmentationResult(segments=segments)
-
-    def segment_batch(self, imgs: list[np.ndarray]) -> list[ImageSegmentationResult]:
-        """
-        Segment cards from multiple images, reusing the rembg session.
-
-        Args:
-            imgs: List of BGR images.
-
-        Returns:
-            One ImageSegmentationResult per input image, in the same order.
-        """
-        return [self.segment(img) for img in imgs]
 
     def segment_from_dir(self, src_dir: str | Path, dst_dir: str | Path) -> None:
         src_dir = Path(src_dir)

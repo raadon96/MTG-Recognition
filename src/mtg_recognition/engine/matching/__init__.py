@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 import numpy as np
 
@@ -9,10 +8,11 @@ class CardMatcher(ABC):
     def find_best_matches(
         self,
         query_image: np.ndarray,
-        subset_uuids: list[str] = [],
-        subset_idxs: list[int] = [],
+        candidate_uuids: list[str] | None = None,
         k: int = 1,
-    ) -> list[dict]: ...
+    ) -> tuple[list[str], list[float]]:
+        """Return the UUIDs of the k most similar printings and their scores, best first."""
+        ...
 
     @abstractmethod
     def _load_index(self) -> None: ...

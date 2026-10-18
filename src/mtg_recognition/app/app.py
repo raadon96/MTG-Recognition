@@ -1,22 +1,13 @@
 import argparse
-import os
-import statistics
 from pathlib import Path
 
 import cv2
 import requests
 import streamlit as st
 
-from mtg_recognition.app.batch_processor import (
-    K_TOP_MATCHES,
-    BatchProcessor,
-)
-from mtg_recognition.core.image_utils import load_and_resize_image
-from mtg_recognition.database import engine
-from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
-from mtg_recognition.engine.ocr.ocr import CardOCR
+from mtg_recognition.app.upload_processor import UploadProcessor
+from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.settings import settings
 
 # --- Streamlit Page Config ---
@@ -41,22 +32,19 @@ def fetch_scryfall_data_from_url(scryfall_id):
 
 
 @st.cache_resource(scope="global")
-def load_database():
-    """Load and cache the database engine."""
-    # return create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-    print("Loading database (this may take a moment)...")
-    return engine
-
-
-@st.cache_resource(scope="global")
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(
-        segmentor=YoloCardSegmentor(),
-        phash_matcher=PHashCardMatcher(),
-        ocr=CardOCR(use_preprocessing=True),
-    )
+    return Pipeline(k_phash_candidates=50, k_final_results=5)
+
+
+def _score_color(score: float) -> str:
+    """Badge colour for a 0–100 match score."""
+    if score >= 50:
+        return "#6BA76B"
+    if score >= 25:
+        return "#CC9900"
+    return "#CC6600"
 
 
 def create_thumbnail_grid(results, results_key="batch_results"):
@@ -70,79 +58,65 @@ def create_thumbnail_grid(results, results_key="batch_results"):
     for idx, result in enumerate(results):
         col_idx = idx % cols_per_row
 
-        with cols[col_idx]:
-            with st.container(border=True):
-                # Display best match image from reference database
-                if result.status == "success" and result.matches:
-                    img_url = result.matches[0].url
-                    st.image(
-                        img_url
-                        if img_url
-                        else "https://via.placeholder.com/300x420?text=No+Image",
-                    )
+        with cols[col_idx], st.container(border=True):
+            # Display best match image from reference database
+            if result.status == "success" and result.matches:
+                img_url = result.matches[0].image_url
+                st.image(
+                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
+                )
 
-                # Display card name
-                if result.status == "success" and result.matches:
-                    st.markdown(f"**{result.matches[0].name}**")
+            # Display card name
+            if result.status == "success" and result.matches:
+                st.markdown(f"**{result.matches[0].name}**")
 
-                    # Color-coded score indicator (scores are 0–100)
-                    score = result.scores[0]
-                    if score >= 50:
-                        st.markdown(
-                            f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    elif score >= 25:
-                        st.markdown(
-                            f'<div style="background-color: #CC9900; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            f'<div style="background-color: #CC6600; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
+                # Color-coded score indicator (scores are 0–100)
+                score = result.scores[0]
+                st.markdown(
+                    f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
+                    f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
+                    f"{score:.1f}</div>",
+                    unsafe_allow_html=True,
+                )
 
-                    st.caption(
-                        f"{result.matches[0].setCode} #{result.matches[0].number}"
-                    )
+                st.caption(f"{result.matches[0].set_code} #{result.matches[0].number}")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
-                    # View Details button
-                    if st.button(
-                        "Details",
-                        key=f"detail_btn_{idx}_{results_key}",
-                        width="stretch",
-                    ):
-                        st.session_state.selected_result_idx = idx
-                        st.session_state.selected_results_key = results_key
-                        st.rerun()
+                # View Details button
+                if st.button(
+                    "Details",
+                    key=f"detail_btn_{idx}_{results_key}",
+                    width="stretch",
+                ):
+                    st.session_state.selected_result_idx = idx
+                    st.session_state.selected_results_key = results_key
+                    st.rerun()
 
-                elif result.status == "no_match":
-                    st.caption("❌ No Match")
+            elif result.status == "no_match":
+                st.caption("❌ No Match")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
-                else:  # error
-                    st.caption("⚠️ Error")
+            else:  # error
+                st.caption("⚠️ Error")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
 
-def display_batch_detail_view(results, selected_idx, engine):
+def display_batch_detail_view(results, selected_idx, top_k: int):
     """Display detailed view of a selected batch result with all improvements."""
     result = results[selected_idx]
 
@@ -153,9 +127,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [
-        i for i, r in enumerate(results) if r.status == "success" and r.matches
-    ]
+    success_indices = [i for i, r in enumerate(results) if r.status == "success" and r.matches]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -164,9 +136,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
-            if st.button(
-                "← Back to Results", key=f"back_{key_suffix}", use_container_width=True
-            ):
+            if st.button("← Back to Results", key=f"back_{key_suffix}", use_container_width=True):
                 st.session_state.selected_result_idx = None
                 st.rerun()
         if pos is not None:
@@ -213,10 +183,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     # Column 1: Original Image
     with col1:
         st.caption("**Original Image**")
-        if (
-            result.original_image_temp_path
-            and Path(result.original_image_temp_path).exists()
-        ):
+        if result.original_image_temp_path and Path(result.original_image_temp_path).exists():
             original_img = cv2.imread(result.original_image_temp_path)
             if original_img is not None:
                 st.image(
@@ -238,7 +205,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     best_match = matches[0]
     with col3:
         st.caption("**Best Match**")
-        img_url = best_match.url
+        img_url = best_match.image_url
         st.image(
             img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
         )
@@ -250,31 +217,20 @@ def display_batch_detail_view(results, selected_idx, engine):
 
         # Color-coded score (scores are 0–100)
         score = scores[0]
-        if score >= 50:
-            st.markdown(
-                f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
-        elif score >= 25:
-            st.markdown(
-                f'<div style="background-color: #CC9900; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<div style="background-color: #CC6600; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
+            f'text-align: center; font-weight: bold; color: white;">'
+            f"{score:.1f}</div>",
+            unsafe_allow_html=True,
+        )
 
         st.divider()
-        st.caption(f"**Set:** {best_match.setCode}")
-        st.caption(
-            f"**Collector Number:** {best_match.number}/{best_match.baseSetSize}"
-        )
+        st.caption(f"**Set:** {best_match.set_code}")
+        st.caption(f"**Collector Number:** {best_match.number}/{best_match.base_set_size}")
         st.caption(f"**Artist:** {best_match.artist or 'Unknown'}")
 
-        if best_match.url:
-            st.markdown(f"[Scryfall]({best_match.url})")
+        if best_match.image_url:
+            st.markdown(f"[Scryfall]({best_match.image_url})")
 
     # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
     if debug and ocr_debug is not None:
@@ -295,9 +251,7 @@ def display_batch_detail_view(results, selected_idx, engine):
             st.json(dict(text=ocr_debug.texts_info_roi), width="stretch")
             # st.text(ocr_debug.texts_info_roi, width="stretch")
 
-        with st.expander(
-            "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
-        ):
+        with st.expander("📊 Table 1 — Extracted Properties vs. Best Match", expanded=True):
             import pandas as pd
 
             from mtg_recognition.engine.ocr.ocr import ATTRIBUTE_MAPPINGS
@@ -319,19 +273,15 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     # Show top matches below
     st.markdown("---")
-    st.subheader(f"Top {K_TOP_MATCHES} Matches")
+    st.subheader(f"Top {top_k} Matches")
 
     if matches:
-        match_cols = st.columns(K_TOP_MATCHES)
-        for col_idx, (match, score) in enumerate(
-            zip(matches[:K_TOP_MATCHES], scores[:K_TOP_MATCHES])
-        ):
+        match_cols = st.columns(top_k)
+        for col_idx, (match, score) in enumerate(zip(matches[:top_k], scores[:top_k], strict=True)):
             with match_cols[col_idx]:
-                img_url = match.url
+                img_url = match.image_url
                 st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
+                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
                 st.caption(f"**{match.name}**")
                 st.caption(f"Score: {score:.2f}")
@@ -340,9 +290,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
         with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
             st.dataframe(
-                ocr_debug.score_matrix.style.background_gradient(
-                    cmap="RdYlGn", vmin=0, vmax=100
-                ).format("{:.1f}"),
+                ocr_debug.score_matrix.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=100).format("{:.1f}"),
                 width="stretch",
             )
 
@@ -351,7 +299,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     _nav_bar("bottom")
 
 
-def export_results(results, export_format: str, processor: BatchProcessor):
+def export_results(results, export_format: str, processor: UploadProcessor):
     """Generate export file for results."""
 
     import tempfile
@@ -377,15 +325,11 @@ def export_results(results, export_format: str, processor: BatchProcessor):
 
 
 def main():
-    args = parse_args()
+    parse_args()
     st.title("Decksray MTGC Recognizer")
-    st.markdown(
-        "Upload or capture a Magic: The Gathering card image for instant recognition."
-    )
+    st.markdown("Upload or capture a Magic: The Gathering card image for instant recognition.")
 
-    # Initialize db and pipeline
     pipeline = load_pipeline()
-    db_engine = load_database()
 
     # Sidebar options
     st.sidebar.header("⚙️ Import")
@@ -429,7 +373,7 @@ def main():
             temp_paths = []
 
             for uploaded_file in uploaded_files:
-                img = load_and_resize_image(uploaded_file)
+                img = load_image(uploaded_file)
                 stem = Path(uploaded_file.name).stem
                 temp_path = Path(temp_dir) / f"{stem}.jpg"
                 cv2.imwrite(
@@ -439,26 +383,21 @@ def main():
                 )
                 temp_paths.append(str(temp_path))
 
-            # Initialize batch processor
-            processor = BatchProcessor(pipeline, db_engine)
+            processor = UploadProcessor(pipeline)
 
             # Progress container
             progress_placeholder = st.empty()
-            status_placeholder = st.empty()
             progress_bar = st.progress(0)
 
-            def progress_callback(current: int, total: int, status: str):
+            def progress_callback(current: int, total: int):
                 """Update progress UI."""
                 progress = current / total if total > 0 else 0
                 progress_bar.progress(progress)
                 progress_placeholder.info(f"Processing: {current}/{total} images")
-                status_placeholder.caption(status)
 
             # Process batch
             try:
-                results = processor.process_batch(
-                    temp_paths, progress_callback=progress_callback
-                )
+                results = processor.process(temp_paths, progress_callback=progress_callback)
                 st.session_state.batch_results = results
 
                 # Clean up temp directory
@@ -481,9 +420,7 @@ def main():
 
         # Detail view
         if st.session_state.selected_result_idx is not None:
-            display_batch_detail_view(
-                results, st.session_state.selected_result_idx, db_engine
-            )
+            display_batch_detail_view(results, st.session_state.selected_result_idx, pipeline.k_final_results)
         else:
             # Grid view
             create_thumbnail_grid(results, results_key="batch_results")
@@ -499,11 +436,9 @@ def main():
             key="export_format_batch",
         )
 
-        processor = BatchProcessor(pipeline, db_engine)
+        processor = UploadProcessor(pipeline)
         try:
-            file_path, mime_type, filename = export_results(
-                results, export_format, processor
-            )
+            file_path, mime_type, filename = export_results(results, export_format, processor)
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
                     label=f"⬇️ Download {filename}",
