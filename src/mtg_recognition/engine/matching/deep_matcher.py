@@ -135,7 +135,7 @@ class DeepCardMatcher(BaseModel):
         self._load_index()
 
     @property
-    def _index_is_loaded(self):
+    def index_loaded(self):
         """Check if the pHash index is loaded."""
         return self.embeddings is not None and self.uuid_mapping is not None
 
@@ -262,7 +262,7 @@ class DeepCardMatcher(BaseModel):
         candidate_uuids: list[str] | None = None,
         k: int = 5,
     ) -> tuple[list[str], list[float]]:
-        if not self._index_is_loaded:
+        if not self.index_loaded:
             raise ValueError("Error: Index not loaded.")
 
         # Filter if subset specified

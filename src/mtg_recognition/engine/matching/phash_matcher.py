@@ -58,7 +58,7 @@ class PHashCardMatcher:
     #     self._load_index()
 
     @property
-    def _index_is_loaded(self):
+    def index_loaded(self):
         """Check if the pHash index is loaded."""
         return self.hashes is not None and self.uuid_mapping is not None
 
@@ -270,7 +270,7 @@ class PHashCardMatcher:
         Returns:
             Tuple of (uuids, scores), best first; scores are floats (0-1)
         """
-        if not self._index_is_loaded:
+        if not self.index_loaded:
             raise ValueError("Error: pHash index not loaded. Call build_index() first.")
 
         uuid_mapping, hashes = self._filter_by_uuids(candidate_uuids or [])
