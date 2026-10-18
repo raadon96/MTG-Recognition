@@ -70,3 +70,17 @@ Tracked in [Known recognition failure modes](https://github.com/decksray/MTG-Rec
 ## Artifacts
 
 `docs/research/accuracy-recon/`: `run1/` and `run2/` (per-category JSON outputs, CLI logs, `times.txt`), `run.sh` (runner), `analyse.py` (summary script; expects the outputs under `/tmp/acc6`) and `phash_rank.py` (expected-UUID rank among pHash candidates).
+
+## Rerun after #23 (Pipeline.recognize, no YOLO batching)
+
+Rerun on branch `refactor/pipeline-recognize` (commit `791fe69`) with the same inputs, CLI defaults 20/1 and machine as above, to check that "Deepen Pipeline into the one recognition module, returning Printings" (#23) didn't change results.
+
+- **Top-1: 246/260**, the **same top-1 UUID for all 260 images** as run 1, and every image still yields exactly one segment.
+- **Runtime: 173 s** for the full set (run 1: 174 s).
+- Outputs in `accuracy-recon/issue23/` (JSON per category + `times.txt`; `*.log` is gitignored, as for runs 1 and 2). This is the reference for later refactors.
+
+### Reproducing
+
+1. `docs/research/accuracy-recon/make_inputs.sh` rebuilds `/tmp/acc6/in/` (symlinks to the 260 UUID-named images under `data/test/`; needs `uv run dvc pull`).
+2. `docs/research/accuracy-recon/run.sh <run-name>` writes `/tmp/acc6/<run-name>/`.
+3. Copy a committed reference run back, e.g. `cp -r docs/research/accuracy-recon/issue23 /tmp/acc6/issue23`, then `uv run python docs/research/accuracy-recon/compare.py issue23 <run-name>`.
