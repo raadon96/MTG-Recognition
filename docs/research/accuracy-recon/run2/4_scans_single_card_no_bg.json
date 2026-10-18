@@ -1,0 +1,446 @@
+[
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/4_scans_single_card_no_bg/images/0a00eb60-c3a1-5e43-9d87-0ce618a7f599.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "matches": [
+          {
+            "rank": 1,
+            "name": "Seven Dwarves",
+            "uuid": "0a00eb60-c3a1-5e43-9d87-0ce618a7f599",
+            "setCode": "ELD",
+            "number": "141",
+            "score": 98.6
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/2",
+            "141/269",
+            "C",
+            "ELD \u00b7 EN IASON RAINVILLE",
+            "IM&O 2019 Wizards of the Coast"
+          ],
+          "raw_scores": [
+            0.9678204655647278,
+            0.9922676086425781,
+            0.7225850820541382,
+            0.8803847432136536,
+            0.9192736744880676
+          ],
+          "raw_boxes": [
+            [
+              1459,
+              52,
+              1634,
+              157
+            ],
+            [
+              11,
+              145,
+              237,
+              199
+            ],
+            [
+              245,
+              155,
+              300,
+              195
+            ],
+            [
+              11,
+              189,
+              668,
+              252
+            ],
+            [
+              1030,
+              185,
+              1689,
+              245
+            ]
+          ]
+        },
+        "debug_info": {
+          "raw_texts": [
+            "2/2",
+            "141/269",
+            "C",
+            "ELD \u00b7 EN IASON RAINVILLE",
+            "IM&O 2019 Wizards of the Coast"
+          ],
+          "raw_scores": [
+            0.9678204655647278,
+            0.9922676086425781,
+            0.7225850820541382,
+            0.8803847432136536,
+            0.9192736744880676
+          ],
+          "raw_boxes": [
+            [
+              1459,
+              52,
+              1634,
+              157
+            ],
+            [
+              11,
+              145,
+              237,
+              199
+            ],
+            [
+              245,
+              155,
+              300,
+              195
+            ],
+            [
+              11,
+              189,
+              668,
+              252
+            ],
+            [
+              1030,
+              185,
+              1689,
+              245
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/4_scans_single_card_no_bg/images/0a0ebcb7-3477-5bcf-97e0-f8fee61369aa.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": false,
+        "matches": [
+          {
+            "rank": 1,
+            "name": "Phelia, Exuberant Shepherd",
+            "uuid": "24488650-34e7-576c-8533-4735246dba55",
+            "setCode": "MH3",
+            "number": "40",
+            "score": 75.2
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/2",
+            "R 0040",
+            "MH3EN RUDY SISWANTO",
+            "TM&O2024 Wizards of the Coast"
+          ],
+          "raw_scores": [
+            0.9636855125427246,
+            0.8761093616485596,
+            0.937222957611084,
+            0.9247199892997742
+          ],
+          "raw_boxes": [
+            [
+              1456,
+              46,
+              1630,
+              155
+            ],
+            [
+              23,
+              138,
+              230,
+              189
+            ],
+            [
+              20,
+              181,
+              645,
+              243
+            ],
+            [
+              1032,
+              182,
+              1685,
+              240
+            ]
+          ]
+        },
+        "debug_info": {
+          "raw_texts": [
+            "2/2",
+            "R 0040",
+            "MH3EN RUDY SISWANTO",
+            "TM&O2024 Wizards of the Coast"
+          ],
+          "raw_scores": [
+            0.9636855125427246,
+            0.8761093616485596,
+            0.937222957611084,
+            0.9247199892997742
+          ],
+          "raw_boxes": [
+            [
+              1456,
+              46,
+              1630,
+              155
+            ],
+            [
+              23,
+              138,
+              230,
+              189
+            ],
+            [
+              20,
+              181,
+              645,
+              243
+            ],
+            [
+              1032,
+              182,
+              1685,
+              240
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/4_scans_single_card_no_bg/images/0a0ecc26-2faf-5f5b-8121-de983a204c26.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "matches": [
+          {
+            "rank": 1,
+            "name": "Galvanic Discharge",
+            "uuid": "0a0ecc26-2faf-5f5b-8121-de983a204c26",
+            "setCode": "MH3",
+            "number": "122",
+            "score": 63.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "\u798f",
+            "C 0122",
+            "2024Wizardsof theCoast",
+            "MH3\u00b7EN ZOLTAN BOROS"
+          ],
+          "raw_scores": [
+            0.2877226769924164,
+            0.8951689600944519,
+            0.9765534996986389,
+            0.9002282023429871
+          ],
+          "raw_boxes": [
+            [
+              497,
+              27,
+              529,
+              62
+            ],
+            [
+              25,
+              140,
+              208,
+              189
+            ],
+            [
+              1168,
+              145,
+              1683,
+              192
+            ],
+            [
+              21,
+              181,
+              629,
+              244
+            ]
+          ]
+        },
+        "debug_info": {
+          "raw_texts": [
+            "\u798f",
+            "C 0122",
+            "2024Wizardsof theCoast",
+            "MH3\u00b7EN ZOLTAN BOROS"
+          ],
+          "raw_scores": [
+            0.2877226769924164,
+            0.8951689600944519,
+            0.9765534996986389,
+            0.9002282023429871
+          ],
+          "raw_boxes": [
+            [
+              497,
+              27,
+              529,
+              62
+            ],
+            [
+              25,
+              140,
+              208,
+              189
+            ],
+            [
+              1168,
+              145,
+              1683,
+              192
+            ],
+            [
+              21,
+              181,
+              629,
+              244
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/4_scans_single_card_no_bg/images/0a0f53ed-2640-5848-936d-50de61cb5c9f.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "matches": [
+          {
+            "rank": 1,
+            "name": "Swamp",
+            "uuid": "0a0f53ed-2640-5848-936d-50de61cb5c9f",
+            "setCode": "ZEN",
+            "number": "240",
+            "score": 63.5
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "- V\u00e9ronique",
+            "Meignaud",
+            "&1993-2009",
+            "Wizards of the",
+            "CoastLLC",
+            "240/249"
+          ],
+          "raw_scores": [
+            0.8897728323936462,
+            0.9994646310806274,
+            0.9545390009880066,
+            0.9629495739936829,
+            0.9486116766929626,
+            0.935271143913269
+          ],
+          "raw_boxes": [
+            [
+              107,
+              111,
+              501,
+              189
+            ],
+            [
+              490,
+              114,
+              782,
+              186
+            ],
+            [
+              55,
+              183,
+              433,
+              233
+            ],
+            [
+              420,
+              188,
+              711,
+              233
+            ],
+            [
+              707,
+              188,
+              941,
+              233
+            ],
+            [
+              927,
+              191,
+              1090,
+              229
+            ]
+          ]
+        },
+        "debug_info": {
+          "raw_texts": [
+            "- V\u00e9ronique",
+            "Meignaud",
+            "&1993-2009",
+            "Wizards of the",
+            "CoastLLC",
+            "240/249"
+          ],
+          "raw_scores": [
+            0.8897728323936462,
+            0.9994646310806274,
+            0.9545390009880066,
+            0.9629495739936829,
+            0.9486116766929626,
+            0.935271143913269
+          ],
+          "raw_boxes": [
+            [
+              107,
+              111,
+              501,
+              189
+            ],
+            [
+              490,
+              114,
+              782,
+              186
+            ],
+            [
+              55,
+              183,
+              433,
+              233
+            ],
+            [
+              420,
+              188,
+              711,
+              233
+            ],
+            [
+              707,
+              188,
+              941,
+              233
+            ],
+            [
+              927,
+              191,
+              1090,
+              229
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]
