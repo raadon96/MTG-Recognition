@@ -7,16 +7,9 @@ import cv2
 import requests
 import streamlit as st
 
-from mtg_recognition.app.batch_processor import (
-    K_TOP_MATCHES,
-    BatchProcessor,
-)
-from mtg_recognition.core.image_utils import load_and_resize_image
-from mtg_recognition.database import engine
-from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
-from mtg_recognition.engine.ocr.ocr import CardOCR
+from mtg_recognition.app.upload_processor import UploadProcessor
+from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.settings import settings
 
 # --- Streamlit Page Config ---
@@ -41,22 +34,10 @@ def fetch_scryfall_data_from_url(scryfall_id):
 
 
 @st.cache_resource(scope="global")
-def load_database():
-    """Load and cache the database engine."""
-    # return create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-    print("Loading database (this may take a moment)...")
-    return engine
-
-
-@st.cache_resource(scope="global")
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(
-        segmentor=YoloCardSegmentor(),
-        phash_matcher=PHashCardMatcher(),
-        ocr=CardOCR(use_preprocessing=True),
-    )
+    return Pipeline(k_phash_candidates=50, k_final_results=5)
 
 
 def create_thumbnail_grid(results, results_key="batch_results"):
@@ -142,7 +123,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                     st.caption(f"📄 {filename}")
 
 
-def display_batch_detail_view(results, selected_idx, engine):
+def display_batch_detail_view(results, selected_idx, top_k: int):
     """Display detailed view of a selected batch result with all improvements."""
     result = results[selected_idx]
 
@@ -319,13 +300,11 @@ def display_batch_detail_view(results, selected_idx, engine):
 
     # Show top matches below
     st.markdown("---")
-    st.subheader(f"Top {K_TOP_MATCHES} Matches")
+    st.subheader(f"Top {top_k} Matches")
 
     if matches:
-        match_cols = st.columns(K_TOP_MATCHES)
-        for col_idx, (match, score) in enumerate(
-            zip(matches[:K_TOP_MATCHES], scores[:K_TOP_MATCHES])
-        ):
+        match_cols = st.columns(top_k)
+        for col_idx, (match, score) in enumerate(zip(matches[:top_k], scores[:top_k], strict=True)):
             with match_cols[col_idx]:
                 img_url = match.image_url
                 st.image(
@@ -351,7 +330,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     _nav_bar("bottom")
 
 
-def export_results(results, export_format: str, processor: BatchProcessor):
+def export_results(results, export_format: str, processor: UploadProcessor):
     """Generate export file for results."""
 
     import tempfile
@@ -383,9 +362,7 @@ def main():
         "Upload or capture a Magic: The Gathering card image for instant recognition."
     )
 
-    # Initialize db and pipeline
     pipeline = load_pipeline()
-    db_engine = load_database()
 
     # Sidebar options
     st.sidebar.header("⚙️ Import")
@@ -429,7 +406,7 @@ def main():
             temp_paths = []
 
             for uploaded_file in uploaded_files:
-                img = load_and_resize_image(uploaded_file)
+                img = load_image(uploaded_file)
                 stem = Path(uploaded_file.name).stem
                 temp_path = Path(temp_dir) / f"{stem}.jpg"
                 cv2.imwrite(
@@ -439,26 +416,21 @@ def main():
                 )
                 temp_paths.append(str(temp_path))
 
-            # Initialize batch processor
-            processor = BatchProcessor(pipeline, db_engine)
+            processor = UploadProcessor(pipeline)
 
             # Progress container
             progress_placeholder = st.empty()
-            status_placeholder = st.empty()
             progress_bar = st.progress(0)
 
-            def progress_callback(current: int, total: int, status: str):
+            def progress_callback(current: int, total: int):
                 """Update progress UI."""
                 progress = current / total if total > 0 else 0
                 progress_bar.progress(progress)
                 progress_placeholder.info(f"Processing: {current}/{total} images")
-                status_placeholder.caption(status)
 
             # Process batch
             try:
-                results = processor.process_batch(
-                    temp_paths, progress_callback=progress_callback
-                )
+                results = processor.process(temp_paths, progress_callback=progress_callback)
                 st.session_state.batch_results = results
 
                 # Clean up temp directory
@@ -481,9 +453,7 @@ def main():
 
         # Detail view
         if st.session_state.selected_result_idx is not None:
-            display_batch_detail_view(
-                results, st.session_state.selected_result_idx, db_engine
-            )
+            display_batch_detail_view(results, st.session_state.selected_result_idx, pipeline.k_final_results)
         else:
             # Grid view
             create_thumbnail_grid(results, results_key="batch_results")
@@ -499,7 +469,7 @@ def main():
             key="export_format_batch",
         )
 
-        processor = BatchProcessor(pipeline, db_engine)
+        processor = UploadProcessor(pipeline)
         try:
             file_path, mime_type, filename = export_results(
                 results, export_format, processor
