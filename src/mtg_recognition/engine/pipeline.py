@@ -7,8 +7,8 @@ from pathlib import Path
 import click
 import numpy as np
 from rich import print
-from sqlalchemy.engine.row import Row
 
+from mtg_recognition.catalog import CardCatalog, Printing, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
@@ -21,7 +21,7 @@ from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 class SegmentResult:
     """Recognition result for a single detected card segment."""
 
-    matches: list[Row]
+    matches: list[Printing]
     scores: list[float]
     ocr_debug: OCRDebugData | None
 
@@ -33,7 +33,9 @@ class Pipeline:
         segmentor: YoloCardSegmentor | None = None,
         phash_matcher: PHashCardMatcher = PHashCardMatcher(),
         ocr: CardOCR = CardOCR(use_preprocessing=True),
+        catalog: CardCatalog | None = None,
     ):
+        self.catalog = catalog if catalog is not None else SqliteCardCatalog()
         self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
         self.phash_matcher = phash_matcher
         self.ocr = ocr
@@ -109,9 +111,12 @@ class Pipeline:
         """Run pHash + OCR matching on a single pre-warped card image."""
 
         # Stage 1: Coarse search with perceptual hashing
-        matches_ph, scores_ph = self.phash_matcher.find_best_matches(
+        uuids_ph, scores_by_uuid = self.phash_matcher.find_best_matches(
             img_warped, k=k_phash_candidates
         )
+        printings = self.catalog.lookup(uuids_ph)
+        matches_ph = [printings[u] for u in uuids_ph if u in printings]
+        scores_ph = [s for u, s in zip(uuids_ph, scores_by_uuid, strict=True) if u in printings]
 
         if len(matches_ph) == 0:
             return SegmentResult(matches=[], scores=[], ocr_debug=None)
@@ -273,7 +278,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                 click.echo(f"{prefix}  no matches found")
             for rank, (match, score) in enumerate(zip(seg.matches, seg.scores), 1):
                 click.echo(
-                    f"{prefix}  #{rank}  {match.name}  |  {match.setCode} · {match.number}  |  score: {score:.1f}"
+                    f"{prefix}  #{rank}  {match.name}  |  {match.set_code} · {match.number}  |  score: {score:.1f}"
                 )
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
@@ -288,7 +293,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                             "rank": rank,
                             "name": match.name,
                             "uuid": match.uuid,
-                            "setCode": match.setCode,
+                            "setCode": match.set_code,
                             "number": match.number,
                             "score": round(score, 1),
                         }

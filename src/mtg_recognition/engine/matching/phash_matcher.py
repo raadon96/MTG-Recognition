@@ -7,12 +7,9 @@ import imagehash
 import numpy as np
 from numpydantic import NDArray, Shape
 from PIL import Image
-from sqlalchemy.engine.row import Row
-from sqlmodel import Session, col, select
 from tqdm import tqdm
 
 from mtg_recognition.engine.ocr.ocr_extraction import sort_scores_with_indices
-from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
 
 # --- Configuration ---
@@ -258,29 +255,25 @@ class PHashCardMatcher:
     def find_best_matches(
         self,
         query_image,
-        candidates: list[Row] = [],
+        candidate_uuids: list[str] | None = None,
         k=5,
-    ) -> tuple[list[Row], list[float]]:
+    ) -> tuple[list[str], list[float]]:
         """
-        Finds the top k matching cards using Hamming distance.
+        Finds the top k matching printings using Hamming distance.
 
         Args:
             query_image: Query image (numpy array in BGR format from OpenCV,
                         or PIL Image in RGB)
-            candidates: Optional list of candidate Row objects to restrict search to
+            candidate_uuids: Optional list of printing UUIDs to restrict search to
             k: Number of top matches to return
 
         Returns:
-            Tuple of (matches, scores) where matches are Row objects and scores are floats (0-1)
+            Tuple of (uuids, scores), best first; scores are floats (0-1)
         """
         if not self._index_is_loaded:
             raise ValueError("Error: pHash index not loaded. Call build_index() first.")
 
-        # Filter by candidates if provided
-        subset_uuids = (
-            [candidate.uuid for candidate in candidates] if candidates else []
-        )
-        uuid_mapping, hashes = self._filter_by_uuids(subset_uuids)
+        uuid_mapping, hashes = self._filter_by_uuids(candidate_uuids or [])
 
         # Compute hash for query image
         query_hash = self._compute_hash(query_image)
@@ -300,20 +293,7 @@ class PHashCardMatcher:
         top_k_scores, top_k_indices = sort_scores_with_indices(scores, k)
         top_k_uuids = [uuid_mapping[idx] for idx in top_k_indices]
 
-        # Query database for Row objects
-        from mtg_recognition.database import engine
-
-        statement = select(MobileCache).where(col(MobileCache.uuid).in_(top_k_uuids))
-        with Session(engine) as session:
-            results = session.exec(statement).all()
-
-        # Reorder results based on score (since IN clause does not guarantee return order)
-        uuid_to_match = {row.uuid: row for row in results}
-        top_k_matches = [
-            uuid_to_match[uuid] for uuid in top_k_uuids if uuid in uuid_to_match
-        ]
-
-        return top_k_matches, top_k_scores
+        return top_k_uuids, top_k_scores
 
     def get_distance(
         self, query_image: np.ndarray | Image.Image, reference_uuid: str
@@ -414,12 +394,11 @@ def main():
 
     k = 10
     query_img = cv2.imread(str(query_image_path))
-    best_matches, best_scores = matcher.find_best_matches(query_img, k=k)
+    best_uuids, best_scores = matcher.find_best_matches(query_img, k=k)
 
     print(f"\nTop {k} matches:")
-    for i, match in enumerate(best_matches):
-        # print(f"  UUID: {match.uuid}, name: {match.name}, Score: {best_scores[i]}")
-        print(match, sep="\n", end="\n\n")
+    for uuid, score in zip(best_uuids, best_scores, strict=True):
+        print(f"  UUID: {uuid}, Score: {score:.3f}")
 
 
 # --- Example Usage ---

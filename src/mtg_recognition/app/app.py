@@ -74,7 +74,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
             with st.container(border=True):
                 # Display best match image from reference database
                 if result.status == "success" and result.matches:
-                    img_url = result.matches[0].url
+                    img_url = result.matches[0].image_url
                     st.image(
                         img_url
                         if img_url
@@ -104,7 +104,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                         )
 
                     st.caption(
-                        f"{result.matches[0].setCode} #{result.matches[0].number}"
+                        f"{result.matches[0].set_code} #{result.matches[0].number}"
                     )
 
                     # Filename (truncated)
@@ -238,7 +238,7 @@ def display_batch_detail_view(results, selected_idx, engine):
     best_match = matches[0]
     with col3:
         st.caption("**Best Match**")
-        img_url = best_match.url
+        img_url = best_match.image_url
         st.image(
             img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
         )
@@ -267,14 +267,14 @@ def display_batch_detail_view(results, selected_idx, engine):
             )
 
         st.divider()
-        st.caption(f"**Set:** {best_match.setCode}")
+        st.caption(f"**Set:** {best_match.set_code}")
         st.caption(
-            f"**Collector Number:** {best_match.number}/{best_match.baseSetSize}"
+            f"**Collector Number:** {best_match.number}/{best_match.base_set_size}"
         )
         st.caption(f"**Artist:** {best_match.artist or 'Unknown'}")
 
-        if best_match.url:
-            st.markdown(f"[Scryfall]({best_match.url})")
+        if best_match.image_url:
+            st.markdown(f"[Scryfall]({best_match.image_url})")
 
     # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
     if debug and ocr_debug is not None:
@@ -327,7 +327,7 @@ def display_batch_detail_view(results, selected_idx, engine):
             zip(matches[:K_TOP_MATCHES], scores[:K_TOP_MATCHES])
         ):
             with match_cols[col_idx]:
-                img_url = match.url
+                img_url = match.image_url
                 st.image(
                     img_url
                     if img_url

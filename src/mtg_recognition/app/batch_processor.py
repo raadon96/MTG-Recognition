@@ -7,8 +7,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from sqlalchemy.engine.row import Row
 
+from mtg_recognition.catalog import Printing
 from mtg_recognition.core.image_utils import load_and_resize_image
 from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline
@@ -25,7 +25,7 @@ class BatchResult:
 
     uploaded_filename: str
     original_image_path: str
-    matches: list[Row] = field(default_factory=list)
+    matches: list[Printing] = field(default_factory=list)
     scores: list[float] = field(default_factory=list)
     status: str = "no_match"  # "success", "no_match", "error"
     error_message: str | None = None
@@ -243,11 +243,11 @@ class BatchProcessor:
                 "Card Name": best.name if best else None,
                 "UUID": best.uuid if best else None,
                 "Score": result.scores[0] if result.scores else None,
-                "Set Code": best.setCode if best else None,
+                "Set Code": best.set_code if best else None,
                 "Card Number": best.number if best else None,
-                "Base Set Size": best.baseSetSize if best else None,
+                "Base Set Size": best.base_set_size if best else None,
                 "Artist": best.artist if best else None,
-                "Scryfall URL": best.url if best else None,
+                "Scryfall URL": best.image_url if best else None,
             }
             data.append(row)
 
@@ -297,11 +297,11 @@ class BatchProcessor:
                 "card_name": best.name if best else None,
                 "uuid": best.uuid if best else None,
                 "score": result.scores[0] if result.scores else None,
-                "set_code": best.setCode if best else None,
+                "set_code": best.set_code if best else None,
                 "card_number": best.number if best else None,
-                "base_set_size": best.baseSetSize if best else None,
+                "base_set_size": best.base_set_size if best else None,
                 "artist": best.artist if best else None,
-                "scryfall_url": best.url if best else None,
+                "scryfall_url": best.image_url if best else None,
                 "error_message": result.error_message,
             }
             data.append(item)
