@@ -6,7 +6,6 @@ All YOLO model I/O is mocked so tests run without model files.
 
 from unittest.mock import MagicMock, patch
 
-import cv2
 import numpy as np
 import pytest
 

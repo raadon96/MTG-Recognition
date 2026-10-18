@@ -136,7 +136,8 @@ class CardOCR:
     def __init__(self, use_preprocessing=False):
         self._use_preprocessing = use_preprocessing
         self._paddleocr = PaddleOCR(
-            # text image rectification (performs geometric transformations on images to correct distortions, inclinations, perspective deformations)
+            # text image rectification (performs geometric transformations on images to correct
+            # distortions, inclinations, perspective deformations)
             use_doc_unwarping=False,
             doc_unwarping_model_name=None,
             # textline orientation classification (corrects the orientation of text lines)

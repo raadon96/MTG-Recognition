@@ -1,6 +1,4 @@
 import argparse
-import os
-import statistics
 from pathlib import Path
 
 import cv2
@@ -40,6 +38,15 @@ def load_pipeline():
     return Pipeline(k_phash_candidates=50, k_final_results=5)
 
 
+def _score_color(score: float) -> str:
+    """Badge colour for a 0–100 match score."""
+    if score >= 50:
+        return "#6BA76B"
+    if score >= 25:
+        return "#CC9900"
+    return "#CC6600"
+
+
 def create_thumbnail_grid(results, results_key="batch_results"):
     """Create an interactive grid view of batch results with improved UX."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
@@ -51,76 +58,62 @@ def create_thumbnail_grid(results, results_key="batch_results"):
     for idx, result in enumerate(results):
         col_idx = idx % cols_per_row
 
-        with cols[col_idx]:
-            with st.container(border=True):
-                # Display best match image from reference database
-                if result.status == "success" and result.matches:
-                    img_url = result.matches[0].image_url
-                    st.image(
-                        img_url
-                        if img_url
-                        else "https://via.placeholder.com/300x420?text=No+Image",
-                    )
+        with cols[col_idx], st.container(border=True):
+            # Display best match image from reference database
+            if result.status == "success" and result.matches:
+                img_url = result.matches[0].image_url
+                st.image(
+                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
+                )
 
-                # Display card name
-                if result.status == "success" and result.matches:
-                    st.markdown(f"**{result.matches[0].name}**")
+            # Display card name
+            if result.status == "success" and result.matches:
+                st.markdown(f"**{result.matches[0].name}**")
 
-                    # Color-coded score indicator (scores are 0–100)
-                    score = result.scores[0]
-                    if score >= 50:
-                        st.markdown(
-                            f'<div style="background-color: #6BA76B; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    elif score >= 25:
-                        st.markdown(
-                            f'<div style="background-color: #CC9900; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            f'<div style="background-color: #CC6600; padding: 2px 6px; border-radius: 3px; text-align: center; font-size: 12px; font-weight: bold; color: white;">{score:.1f}</div>',
-                            unsafe_allow_html=True,
-                        )
+                # Color-coded score indicator (scores are 0–100)
+                score = result.scores[0]
+                st.markdown(
+                    f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
+                    f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
+                    f"{score:.1f}</div>",
+                    unsafe_allow_html=True,
+                )
 
-                    st.caption(
-                        f"{result.matches[0].set_code} #{result.matches[0].number}"
-                    )
+                st.caption(f"{result.matches[0].set_code} #{result.matches[0].number}")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
-                    # View Details button
-                    if st.button(
-                        "Details",
-                        key=f"detail_btn_{idx}_{results_key}",
-                        width="stretch",
-                    ):
-                        st.session_state.selected_result_idx = idx
-                        st.session_state.selected_results_key = results_key
-                        st.rerun()
+                # View Details button
+                if st.button(
+                    "Details",
+                    key=f"detail_btn_{idx}_{results_key}",
+                    width="stretch",
+                ):
+                    st.session_state.selected_result_idx = idx
+                    st.session_state.selected_results_key = results_key
+                    st.rerun()
 
-                elif result.status == "no_match":
-                    st.caption("❌ No Match")
+            elif result.status == "no_match":
+                st.caption("❌ No Match")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
-                else:  # error
-                    st.caption("⚠️ Error")
+            else:  # error
+                st.caption("⚠️ Error")
 
-                    # Filename (truncated)
-                    filename = result.uploaded_filename
-                    if len(filename) > 20:
-                        filename = filename[:17] + "..."
-                    st.caption(f"📄 {filename}")
+                # Filename (truncated)
+                filename = result.uploaded_filename
+                if len(filename) > 20:
+                    filename = filename[:17] + "..."
+                st.caption(f"📄 {filename}")
 
 
 def display_batch_detail_view(results, selected_idx, top_k: int):
@@ -134,9 +127,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [
-        i for i, r in enumerate(results) if r.status == "success" and r.matches
-    ]
+    success_indices = [i for i, r in enumerate(results) if r.status == "success" and r.matches]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -145,9 +136,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
-            if st.button(
-                "← Back to Results", key=f"back_{key_suffix}", use_container_width=True
-            ):
+            if st.button("← Back to Results", key=f"back_{key_suffix}", use_container_width=True):
                 st.session_state.selected_result_idx = None
                 st.rerun()
         if pos is not None:
@@ -194,10 +183,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
     # Column 1: Original Image
     with col1:
         st.caption("**Original Image**")
-        if (
-            result.original_image_temp_path
-            and Path(result.original_image_temp_path).exists()
-        ):
+        if result.original_image_temp_path and Path(result.original_image_temp_path).exists():
             original_img = cv2.imread(result.original_image_temp_path)
             if original_img is not None:
                 st.image(
@@ -231,27 +217,16 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
 
         # Color-coded score (scores are 0–100)
         score = scores[0]
-        if score >= 50:
-            st.markdown(
-                f'<div style="background-color: #6BA76B; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
-        elif score >= 25:
-            st.markdown(
-                f'<div style="background-color: #CC9900; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<div style="background-color: #CC6600; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold; color: white;">{score:.1f}</div>',
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
+            f'text-align: center; font-weight: bold; color: white;">'
+            f"{score:.1f}</div>",
+            unsafe_allow_html=True,
+        )
 
         st.divider()
         st.caption(f"**Set:** {best_match.set_code}")
-        st.caption(
-            f"**Collector Number:** {best_match.number}/{best_match.base_set_size}"
-        )
+        st.caption(f"**Collector Number:** {best_match.number}/{best_match.base_set_size}")
         st.caption(f"**Artist:** {best_match.artist or 'Unknown'}")
 
         if best_match.image_url:
@@ -276,9 +251,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
             st.json(dict(text=ocr_debug.texts_info_roi), width="stretch")
             # st.text(ocr_debug.texts_info_roi, width="stretch")
 
-        with st.expander(
-            "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
-        ):
+        with st.expander("📊 Table 1 — Extracted Properties vs. Best Match", expanded=True):
             import pandas as pd
 
             from mtg_recognition.engine.ocr.ocr import ATTRIBUTE_MAPPINGS
@@ -308,9 +281,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
             with match_cols[col_idx]:
                 img_url = match.image_url
                 st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
+                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
                 st.caption(f"**{match.name}**")
                 st.caption(f"Score: {score:.2f}")
@@ -319,9 +290,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
         with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
             st.dataframe(
-                ocr_debug.score_matrix.style.background_gradient(
-                    cmap="RdYlGn", vmin=0, vmax=100
-                ).format("{:.1f}"),
+                ocr_debug.score_matrix.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=100).format("{:.1f}"),
                 width="stretch",
             )
 
@@ -356,11 +325,9 @@ def export_results(results, export_format: str, processor: UploadProcessor):
 
 
 def main():
-    args = parse_args()
+    parse_args()
     st.title("Decksray MTGC Recognizer")
-    st.markdown(
-        "Upload or capture a Magic: The Gathering card image for instant recognition."
-    )
+    st.markdown("Upload or capture a Magic: The Gathering card image for instant recognition.")
 
     pipeline = load_pipeline()
 
@@ -471,9 +438,7 @@ def main():
 
         processor = UploadProcessor(pipeline)
         try:
-            file_path, mime_type, filename = export_results(
-                results, export_format, processor
-            )
+            file_path, mime_type, filename = export_results(results, export_format, processor)
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
                     label=f"⬇️ Download {filename}",

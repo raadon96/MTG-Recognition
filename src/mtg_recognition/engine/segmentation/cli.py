@@ -31,7 +31,6 @@ import cv2
 from tqdm import tqdm
 
 from mtg_recognition.core import image_utils
-from mtg_recognition.settings import settings
 
 
 @click.command()
@@ -66,10 +65,7 @@ from mtg_recognition.settings import settings
 def main(input_path: Path, output_dir: Path, mode: str) -> None:
     segmentor = _build_segmentor(mode)
 
-    if input_path.is_file():
-        img_paths = [input_path]
-    else:
-        img_paths = image_utils.get_image_files_in_directory(input_path)
+    img_paths = [input_path] if input_path.is_file() else image_utils.get_image_files_in_directory(input_path)
 
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)

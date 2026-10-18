@@ -121,7 +121,7 @@ def filter_flavor_text_zone(
 
     kept = [
         (t, b, s)
-        for t, b, s in zip(texts, boxes, scores)
+        for t, b, s in zip(texts, boxes, scores, strict=False)
         if not (b[1] < y_thresh and b[2] < x_right)
     ]
 
@@ -131,7 +131,7 @@ def filter_flavor_text_zone(
     if not kept:
         return texts, boxes, scores
 
-    texts_f, boxes_f, scores_f = zip(*kept)
+    texts_f, boxes_f, scores_f = zip(*kept, strict=True)
     return list(texts_f), list(boxes_f), list(scores_f)
 
 
@@ -246,9 +246,7 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
         n = len(num_str)
         if n == 1:
             return False
-        if n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max:
-            return False
-        return True
+        return not (n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max)
 
     # Primary pass: bare digit tokens (e.g. "71", "338", "0214")
     # Skip tokens containing a slash — digit sub-matches there are P/T components
@@ -375,7 +373,7 @@ def extract_card_name(texts: list[str]) -> str | None:
     # filtered_list = [text.strip() for text in texts if len(text.strip()) > 1]
 
     filtered_list = [text.strip() for text in texts]
-    filtered_list = list(filter(lambda text: 2 <= len(text), texts))
+    filtered_list = list(filter(lambda text: len(text) >= 2, texts))
 
     if not filtered_list:
         return None

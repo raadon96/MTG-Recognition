@@ -11,7 +11,6 @@ Run:
 
 from pathlib import Path
 
-import cv2
 import pytest
 
 from mtg_recognition.core.image_utils import load_and_resize_image

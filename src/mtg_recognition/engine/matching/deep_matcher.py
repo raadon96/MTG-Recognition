@@ -6,7 +6,7 @@ from typing import Any
 import cv2
 import numpy as np
 import torch
-from numpydantic import NDArray, Shape
+from numpydantic import NDArray
 from PIL import Image
 from pydantic import BaseModel
 from torch.utils.data import DataLoader, Dataset
@@ -21,6 +21,7 @@ INDEX_PATH = "data/reference/index/mobilenet_v3_small/embeddings.npy"
 MAPPING_PATH = "data/reference/index/mobilenet_v3_small/index_to_uuid.json"
 EMBEDDING_BATCH_SIZE = 32  # Sweet spot for MobileNetV3 on CPU.
 DEVICE = "cpu"  # RPi5 has no CUDA, so CPU.
+DEFAULT_NUM_WORKERS = cpu_count() - 1
 
 
 class CardDataset(Dataset):
@@ -156,7 +157,7 @@ class DeepCardMatcher(BaseModel):
             else:
                 print("Warning: Index files not found. Call build_index() to create.")
 
-    def build_index(self, force=False, num_workers=cpu_count() - 1):
+    def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
         """
         Scans the reference directory, extracts and saves embeddings using optimized DataLoader.
         """

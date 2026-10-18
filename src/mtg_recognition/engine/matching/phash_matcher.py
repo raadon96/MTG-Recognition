@@ -14,6 +14,7 @@ from mtg_recognition.settings import settings
 
 # --- Configuration ---
 HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
+DEFAULT_NUM_WORKERS = cpu_count() - 1
 
 
 class PHashCardMatcher:
@@ -121,7 +122,7 @@ class PHashCardMatcher:
         else:
             print("Warning: pHash index files not found. Call build_index() to create.")
 
-    def build_index(self, force=False, num_workers=cpu_count() - 1):
+    def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
         """
         Scans the reference directory and builds a pHash index using parallel processing.
 

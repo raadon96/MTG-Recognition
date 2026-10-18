@@ -86,7 +86,7 @@ def _corners_match(
     det = sorted(detected, key=lambda p: (p[0], p[1]))
     gold = sorted(golden, key=lambda p: (p[0], p[1]))
     return all(
-        abs(d[0] - g[0]) <= tol and abs(d[1] - g[1]) <= tol for d, g in zip(det, gold)
+        abs(d[0] - g[0]) <= tol and abs(d[1] - g[1]) <= tol for d, g in zip(det, gold, strict=False)
     )
 
 
@@ -222,7 +222,7 @@ class TestMultiCardIoU:
         assert len(rembg_blobs) == len(ref_blobs), (
             f"{stem}: expected {len(ref_blobs)} blobs, got {len(rembg_blobs)}"
         )
-        for i, (rembg_blob, ref_blob) in enumerate(zip(rembg_blobs, ref_blobs)):
+        for i, (rembg_blob, ref_blob) in enumerate(zip(rembg_blobs, ref_blobs, strict=False)):
             iou = _compute_iou(rembg_blob, ref_blob)
             assert iou >= IOU_THRESHOLD, (
                 f"{stem} blob {i}: IoU={iou:.3f} < {IOU_THRESHOLD}"
@@ -254,7 +254,7 @@ class TestMultiCardCorners:
         assert len(ref_blobs) == len(golden_blobs), (
             f"{stem}: expected {len(golden_blobs)} blobs, got {len(ref_blobs)}"
         )
-        for i, (blob_mask, golden_corners) in enumerate(zip(ref_blobs, golden_blobs)):
+        for i, (blob_mask, golden_corners) in enumerate(zip(ref_blobs, golden_blobs, strict=False)):
             corners = corners_from_binary_mask(blob_mask, erode=True)
             assert corners is not None, (
                 f"{stem} blob {i}: no corners found in reference mask"

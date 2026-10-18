@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
-from typing import Union
 
 import cv2
 import numpy as np
@@ -11,15 +10,15 @@ from PIL import Image, ImageOps
 from mtg_recognition.settings import settings
 
 # All types accepted by load_image
-ImageSource = Union[
-    str,  # file path
-    Path,  # file path
-    bytes,  # raw encoded bytes
-    bytearray,  # raw encoded bytes
-    np.ndarray,  # already decoded BGR array (passthrough)
-    Image.Image,  # PIL Image
-    # Any file-like with .read() — BytesIO, UploadedFile, open(), etc.
-]
+# Any file-like with .read() (BytesIO, UploadedFile, open(), etc.) is accepted too.
+ImageSource = (
+    str  # file path
+    | Path  # file path
+    | bytes  # raw encoded bytes
+    | bytearray  # raw encoded bytes
+    | np.ndarray  # already decoded BGR array (passthrough)
+    | Image.Image  # PIL Image
+)
 
 
 def get_image_files_in_directory(

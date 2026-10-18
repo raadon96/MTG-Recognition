@@ -68,26 +68,28 @@ class UploadProcessor:
         return results
 
     def _process_one(self, image_file: Path) -> list[UploadResult]:
-        base = {"uploaded_filename": image_file.name, "original_image_path": str(image_file)}
+        name, path = image_file.name, str(image_file)
         try:
             img = load_image(image_file)
         except Exception as e:
-            return [UploadResult(**base, error_message=str(e))]
+            return [UploadResult(name, path, error_message=str(e))]
 
-        base["original_image_temp_path"] = _write_temp_png(img)
+        original_tmp = _write_temp_png(img)
         recognition: RecognitionResult = self.pipeline.recognize(img, debug=True)
 
         if recognition.error is not None:
-            return [UploadResult(**base, error_message=recognition.error)]
+            return [UploadResult(name, path, error_message=recognition.error, original_image_temp_path=original_tmp)]
         if not recognition.segments:
-            return [UploadResult(**base)]
+            return [UploadResult(name, path, original_image_temp_path=original_tmp)]
 
         return [
             UploadResult(
-                **base,
+                name,
+                path,
                 matches=segment.matches,
                 scores=segment.scores,
                 warped_image_temp_path=_write_temp_png(segment.warped_image),
+                original_image_temp_path=original_tmp,
                 ocr_debug=segment.ocr_debug,
             )
             for segment in recognition.segments
