@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     # DATA_DIR: Path = Path("scratch/test_download")
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
 
-    # --- Batch processing ---
-    BATCH_SIZE: int = 20  # images per YOLO predict call and per load/match mini-batch
-
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
     U2NET_HOME: str = "src/mtg_recognition/engine/segmentation/models/prod"

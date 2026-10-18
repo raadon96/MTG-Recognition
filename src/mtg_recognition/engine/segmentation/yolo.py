@@ -3,7 +3,7 @@ YOLO-primary card segmentor with three-path architecture:
 
     Path 1 — Bypass   : image aspect ratio ≈ MTG card ratio → resize only
                          (covers scans where background was already stripped)
-    Path 2 — YOLO     : yoloe-11s-seg batch inference (mini-batches of 20)
+    Path 2 — YOLO     : yoloe-11s-seg inference, one image at a time
     Path 3 — Fallback : CV box segmentor first, then rembg if CV finds nothing
                          (covers the rare <1 % of images YOLO misses)
 
@@ -86,7 +86,7 @@ class YoloCardSegmentor:
 
     Three-path pipeline per image:
         1. Aspect-ratio bypass  → immediate resize (no model)
-        2. YOLO                 → batch inference, polygon mask → corners → warp
+        2. YOLO                 → inference, polygon mask → corners → warp
         3. Fallback             → CV box segmentor, then rembg if CV fails
 
     Images are preprocessed (CLAHE + gamma) before YOLO and CV detection, but
@@ -100,7 +100,6 @@ class YoloCardSegmentor:
         classes: Open-vocabulary class names for yoloe set_classes.
         target_size: Output (width, height) of each warped card image.
         aspect_ratio_tolerance: Tolerance for YOLO mask aspect-ratio validation.
-        batch_size: Number of images per YOLO predict call.
         fallback_enabled: If False, skip CV and rembg fallback when YOLO finds
                           nothing (useful for --mode yolo CLI option).
     """
@@ -110,7 +109,6 @@ class YoloCardSegmentor:
         model_path: str | Path | None = None,
         classes: list[str] | None = None,
         aspect_ratio_tolerance: float = 0.2,
-        batch_size: int | None = None,
         fallback_enabled: bool = True,
     ):
 
@@ -125,7 +123,6 @@ class YoloCardSegmentor:
         self._model.set_classes(_classes)
 
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
-        self.batch_size = batch_size if batch_size is not None else settings.BATCH_SIZE
         self.fallback_enabled = fallback_enabled
 
         self._rembg_segmentor: RembgCardSegmentor | None = None  # lazy
@@ -138,7 +135,8 @@ class YoloCardSegmentor:
         """
         Segment all cards from a single image.
 
-        Convenience wrapper around segment_batch for single-image use.
+        Images are segmented one at a time: YOLO batch inference changes results
+        for mixed-size batches (see docs/adr/0002-recognise-one-image-at-a-time.md).
 
         Args:
             img: BGR input image.
@@ -147,65 +145,20 @@ class YoloCardSegmentor:
             ImageSegmentationResult with one CardSegment per detected card.
             segments is empty if no cards were found.
         """
-        return self.segment_batch([img])[0]
+        # -- Path 1: bypass for scan-without-background images --------------
+        if self._is_scan_without_bg(img):
+            return ImageSegmentationResult(segments=[self._bypass_warp(img)])
 
-    def segment_batch(
-        self,
-        imgs: list[np.ndarray],
-        batch_size: int | None = None,
-    ) -> list[ImageSegmentationResult]:
-        """
-        Segment cards from multiple images, leveraging YOLO batch inference.
+        # -- Path 2: YOLO ----------------------------------------------------
+        proc_img = enhance_contrast(img)
+        yolo_result = self._model.predict(proc_img, **_DEFAULT_PREDICT_KWARGS)[0]
+        segments = self._process_yolo_result(img, yolo_result)
 
-        Args:
-            imgs: List of BGR images.
-            batch_size: Mini-batch size for YOLO predict calls. Defaults to
-                        self.batch_size.
+        # -- Path 3: fallback (CV → rembg) for 0-detection images -----------
+        if not segments and self.fallback_enabled:
+            segments = self._fallback_segment(img, proc_img)
 
-        Returns:
-            One ImageSegmentationResult per input image, in the same order.
-        """
-        if not imgs:
-            return []
-
-        _batch_size = batch_size if batch_size is not None else self.batch_size
-        n = len(imgs)
-        results: list[ImageSegmentationResult | None] = [None] * n
-
-        # -- Pass 1: bypass for scan-without-background images --------------------
-        yolo_indices: list[int] = []
-        for i, img in enumerate(imgs):
-            if self._is_scan_without_bg(img):
-                results[i] = ImageSegmentationResult(segments=[self._bypass_warp(img)])
-            else:
-                yolo_indices.append(i)
-
-        # -- Pass 2: YOLO batch inference ----------------------------------
-        fallback_indices: list[int] = []
-        for start in range(0, len(yolo_indices), _batch_size):
-            batch_idx = yolo_indices[start : start + _batch_size]
-            batch_imgs = [imgs[i] for i in batch_idx]
-            proc_imgs = [enhance_contrast(img) for img in batch_imgs]
-
-            yolo_results = self._model.predict(proc_imgs, **_DEFAULT_PREDICT_KWARGS)
-
-            for global_i, yolo_result in zip(batch_idx, yolo_results):
-                segments = self._process_yolo_result(imgs[global_i], yolo_result)
-                if segments:
-                    results[global_i] = ImageSegmentationResult(segments=segments)
-                else:
-                    fallback_indices.append(global_i)
-
-        # -- Pass 3: fallback (CV → rembg) for 0-detection images ---------
-        for i in fallback_indices:
-            if self.fallback_enabled:
-                proc_img = enhance_contrast(imgs[i])
-                segments = self._fallback_segment(imgs[i], proc_img)
-            else:
-                segments = []
-            results[i] = ImageSegmentationResult(segments=segments)
-
-        return results  # type: ignore[return-value]  # all slots filled
+        return ImageSegmentationResult(segments=segments)
 
     # ------------------------------------------------------------------
     # Path 1 — Bypass

@@ -17,6 +17,7 @@ from mtg_recognition.engine.pipeline import Pipeline
 # Keep these in one place so both code paths always agree.
 K_PHASH_CANDIDATES = 50  # pHash candidates passed to OCR refinement
 K_TOP_MATCHES = 5  # final matches returned after OCR
+_CHUNK_SIZE = 20  # images loaded and matched per chunk
 
 
 @dataclass
@@ -61,8 +62,8 @@ class BatchProcessor:
         Process a batch of images in memory-bounded mini-batches.
 
         Images are loaded, segmented, and matched in chunks of
-        ``settings.BATCH_SIZE`` so that peak memory usage is
-        O(BATCH_SIZE × image_size) regardless of how many images are uploaded.
+        ``_CHUNK_SIZE`` so that peak memory usage is
+        O(_CHUNK_SIZE × image_size) regardless of how many images are uploaded.
 
         Within each mini-batch:
           1. Load & resize images (longest edge ≤ MAX_IMAGE_DIMENSION).
@@ -83,14 +84,12 @@ class BatchProcessor:
         if not image_paths:
             return []
 
-        from mtg_recognition.settings import settings
-
         total = len(image_paths)
         results: list[BatchResult] = []
         processed = 0
 
-        for batch_start in range(0, total, settings.BATCH_SIZE):
-            batch_paths = image_paths[batch_start : batch_start + settings.BATCH_SIZE]
+        for batch_start in range(0, total, _CHUNK_SIZE):
+            batch_paths = image_paths[batch_start : batch_start + _CHUNK_SIZE]
 
             # -- Stage A: load mini-batch --------------------------------------
             loaded: list[tuple[str, np.ndarray | None, str | None, str | None]] = []
@@ -113,10 +112,7 @@ class BatchProcessor:
             valid = [(p, img, orig) for p, img, orig, err in loaded if img is not None]
             imgs_to_segment = [img for _, img, _ in valid]
 
-            if imgs_to_segment:
-                seg_results = self.pipeline.segmentor.segment_batch(imgs_to_segment)
-            else:
-                seg_results = []
+            seg_results = [self.pipeline.segmentor.segment(img) for img in imgs_to_segment]
 
             # -- Stage C: emit results in input order --------------------------
             seg_idx = 0
