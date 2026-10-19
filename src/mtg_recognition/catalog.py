@@ -31,6 +31,14 @@ class Printing:
     image_url: str | None = None
 
 
+@dataclass(frozen=True)
+class RankedPrinting:
+    """A candidate printing with the score that ranked it (higher is better)."""
+
+    printing: Printing
+    score: float
+
+
 class CardCatalog(Protocol):
     def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
         """Return the known printings among `uuids`, keyed by UUID. Unknown UUIDs are omitted."""

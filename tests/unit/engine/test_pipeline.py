@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from mtg_recognition.catalog import RankedPrinting
 from tests.unit.engine.fakes import FakeOCR, FakePHashMatcher, FakeSegmentor, card_image, make_pipeline, printing
 
 
@@ -22,8 +23,7 @@ def test_one_card_is_matched_by_phash_then_reranked_by_ocr():
     [segment] = result.segments
     assert segment.warped_image is warped
     # pHash ranks p3 then p0; the fake OCR reverses that order.
-    assert segment.matches == [printing("p0"), printing("p3")]
-    assert segment.scores == [90.0, 89.0]
+    assert segment.matches == [RankedPrinting(printing("p0"), 90.0), RankedPrinting(printing("p3"), 89.0)]
 
 
 def test_several_cards_give_one_segment_each_in_segmentation_order():
@@ -31,7 +31,11 @@ def test_several_cards_give_one_segment_each_in_segmentation_order():
 
     result = make_pipeline(segmentor, k_phash_candidates=1, k_final_results=1).recognize(card_image())
 
-    assert [s.matches for s in result.segments] == [[printing("p1")], [printing("p2")], [printing("p3")]]
+    assert [[m.printing for m in s.matches] for s in result.segments] == [
+        [printing("p1")],
+        [printing("p2")],
+        [printing("p3")],
+    ]
 
 
 def test_k_parameters_are_passed_to_phash_and_bound_the_results():
@@ -44,13 +48,13 @@ def test_k_parameters_are_passed_to_phash_and_bound_the_results():
 
     assert phash.ks == [7]
     assert ocr.ks == [3]
-    assert len(segment.matches) == len(segment.scores) == 3
+    assert len(segment.matches) == 3
 
 
 def test_results_are_truncated_to_k_even_if_ocr_returns_more():
     class AllCandidatesOCR(FakeOCR):
         def find_best_matches(self, query_img, candidates, k=10, thresh=0.0, debug=False):
-            return candidates, [0.0] * len(candidates), None
+            return [RankedPrinting(c, 0.0) for c in candidates], None
 
     pipeline = make_pipeline(
         FakeSegmentor([card_image()]), k_phash_candidates=5, k_final_results=2, ocr=AllCandidatesOCR()
@@ -58,7 +62,7 @@ def test_results_are_truncated_to_k_even_if_ocr_returns_more():
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert len(segment.matches) == len(segment.scores) == 2
+    assert len(segment.matches) == 2
 
 
 def test_candidates_missing_from_the_catalog_are_dropped_with_their_scores():
@@ -69,7 +73,19 @@ def test_candidates_missing_from_the_catalog_are_dropped_with_their_scores():
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.matches == [printing("p5"), printing("p4")]
+    assert [m.printing for m in segment.matches] == [printing("p5"), printing("p4")]
+
+
+def test_a_candidate_missing_from_the_catalog_does_not_shift_the_scores():
+    # pHash ranks "not-in-catalog" first (1.0) and p5 second (0.99); only p5 survives, so OCR is skipped.
+    phash = FakePHashMatcher(index=["not-in-catalog", "p5"])
+    pipeline = make_pipeline(
+        FakeSegmentor([card_image(7)]), k_phash_candidates=2, k_final_results=1, phash_matcher=phash
+    )
+
+    [segment] = pipeline.recognize(card_image()).segments
+
+    assert segment.matches == [RankedPrinting(printing("p5"), 0.99)]
 
 
 def test_a_single_phash_candidate_is_returned_without_ocr():
@@ -78,8 +94,7 @@ def test_a_single_phash_candidate_is_returned_without_ocr():
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.matches == [printing("p6")]
-    assert segment.scores == [1.0]
+    assert segment.matches == [RankedPrinting(printing("p6"), 1.0)]
     assert ocr.ks == []
 
 

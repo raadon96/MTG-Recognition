@@ -14,7 +14,7 @@ import rapidfuzz
 from paddleocr import PaddleOCR
 from PIL import Image
 
-from mtg_recognition.catalog import Printing
+from mtg_recognition.catalog import Printing, RankedPrinting
 from mtg_recognition.core.image_utils import _ensure_min_dim
 from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
@@ -338,7 +338,7 @@ class CardOCR:
         k: int | None = 10,
         thresh: float = 0.0,
         debug: bool = False,
-    ) -> tuple[list[Printing], list[float], OCRDebugData | None]:
+    ) -> tuple[list[RankedPrinting], OCRDebugData | None]:
         """
         Find best matching cards by comparing OCR-extracted properties against candidates.
 
@@ -351,10 +351,10 @@ class CardOCR:
             properties: Pre-extracted properties (if None, will extract from query_img)
             k: Number of top matches to return (None = return all)
             thresh: Minimum score threshold (0.0 to 100.0)
-            debug: When True, returns a populated OCRDebugData as the third element.
+            debug: When True, returns a populated OCRDebugData as the second element.
 
         Returns:
-            Tuple of (best_matches, best_scores, OCRDebugData | None). Third element
+            Tuple of (candidates ranked best first, OCRDebugData | None). Second element
             is None when debug=False.
         """
         ocr_debug: OCRDebugData | None = None
@@ -378,9 +378,14 @@ class CardOCR:
                 f"No candidates found with k={k} and threshold={thresh}. "
                 "Try lowering k or thresh.\nReturning input candidates without filtering..."
             )
-            return candidates, scores_aggregate.tolist(), ocr_debug
+            return [
+                RankedPrinting(c, float(s)) for c, s in zip(candidates, scores_aggregate, strict=True)
+            ], ocr_debug
 
-        top_candidates = [candidates[i] for i in top_indices]
+        ranked = [
+            RankedPrinting(candidates[i], float(s))
+            for i, s in zip(top_indices, top_scores, strict=True)
+        ]
 
         if debug and ocr_debug is not None:
             # Prefix each label with its rank so duplicate card names (reprints)
@@ -404,4 +409,4 @@ class CardOCR:
                 score_matrix=score_matrix_df,
             )
 
-        return top_candidates, top_scores, ocr_debug
+        return ranked, ocr_debug

@@ -4,6 +4,7 @@ import cv2
 import pytest
 
 from mtg_recognition.app.upload_processor import UploadProcessor, UploadStatus
+from mtg_recognition.catalog import RankedPrinting
 from tests.unit.engine.fakes import FakeSegmentor, card_image, make_pipeline, printing
 
 
@@ -56,7 +57,7 @@ def test_one_result_per_card_found(image_path):
     results = _processor(FakeSegmentor([card_image(1), card_image(2)]), k=1).process([image_path])
 
     assert [r.status for r in results] == [UploadStatus.SUCCESS, UploadStatus.SUCCESS]
-    assert [r.matches[0].uuid for r in results] == ["p1", "p2"]
+    assert [r.matches[0].printing.uuid for r in results] == ["p1", "p2"]
 
 
 def test_csv_export_has_one_row_per_result_with_the_best_printing(image_path, tmp_path):
@@ -169,10 +170,10 @@ def test_json_export_has_one_item_per_result_with_the_best_printing(image_path, 
     ]
 
 
-def test_best_is_the_top_ranked_printing(image_path):
+def test_best_is_the_top_ranked_entry(image_path):
     [result] = _processor(FakeSegmentor([card_image(3)])).process([image_path])
 
-    assert result.best == printing("p0")
+    assert result.best == RankedPrinting(printing("p0"), 90.0)
 
 
 def test_best_is_none_without_a_match(image_path):

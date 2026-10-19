@@ -9,7 +9,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from mtg_recognition.catalog import Printing
+from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult
@@ -27,8 +27,7 @@ class UploadResult:
 
     uploaded_filename: str
     original_image_path: str
-    matches: list[Printing] = field(default_factory=list)
-    scores: list[float] = field(default_factory=list)
+    matches: list[RankedPrinting] = field(default_factory=list)  # best first
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
@@ -42,21 +41,21 @@ class UploadResult:
         return UploadStatus.SUCCESS if self.matches else UploadStatus.NO_MATCH
 
     @property
-    def best(self) -> Printing | None:
-        """The top-ranked printing, or None if there is no match."""
+    def best(self) -> RankedPrinting | None:
+        """The top-ranked entry, or None if there is no match."""
         return self.matches[0] if self.matches else None
 
 
 # Exported fields of the best printing: (JSON key, CSV/Excel column, value).
-_BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[Printing, float], object]]] = [
-    ("card_name", "Card Name", lambda p, _: p.name),
-    ("uuid", "UUID", lambda p, _: p.uuid),
-    ("score", "Score", lambda _, score: score),
-    ("set_code", "Set Code", lambda p, _: p.set_code),
-    ("card_number", "Card Number", lambda p, _: p.number),
-    ("base_set_size", "Base Set Size", lambda p, _: p.base_set_size),
-    ("artist", "Artist", lambda p, _: p.artist),
-    ("scryfall_url", "Scryfall URL", lambda p, _: p.image_url),
+_BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[RankedPrinting], object]]] = [
+    ("card_name", "Card Name", lambda b: b.printing.name),
+    ("uuid", "UUID", lambda b: b.printing.uuid),
+    ("score", "Score", lambda b: b.score),
+    ("set_code", "Set Code", lambda b: b.printing.set_code),
+    ("card_number", "Card Number", lambda b: b.printing.number),
+    ("base_set_size", "Base Set Size", lambda b: b.printing.base_set_size),
+    ("artist", "Artist", lambda b: b.printing.artist),
+    ("scryfall_url", "Scryfall URL", lambda b: b.printing.image_url),
 ]
 
 
@@ -64,7 +63,7 @@ def _best_printing_fields(result: UploadResult, as_columns: bool) -> dict[str, o
     """The exported fields of the result's best printing (all None without a match), by JSON key or column name."""
     best = result.best
     return {
-        (column if as_columns else key): (get(best, result.scores[0]) if best is not None else None)
+        (column if as_columns else key): (get(best) if best is not None else None)
         for key, column, get in _BEST_PRINTING_FIELDS
     }
 
@@ -121,7 +120,6 @@ class UploadProcessor:
                 name,
                 path,
                 matches=segment.matches,
-                scores=segment.scores,
                 warped_image_temp_path=_write_temp_png(segment.warped_image),
                 original_image_temp_path=original_tmp,
                 ocr_debug=segment.ocr_debug,

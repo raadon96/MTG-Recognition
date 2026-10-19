@@ -31,4 +31,4 @@ def test_recognizes_the_printing_named_by_the_file(pipeline, uuid):
 
     assert result.error is None
     [segment] = result.segments
-    assert segment.matches[0].uuid == uuid
+    assert segment.matches[0].printing.uuid == uuid

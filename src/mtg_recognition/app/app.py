@@ -59,8 +59,9 @@ def create_thumbnail_grid(results, results_key="upload_results"):
         col_idx = idx % cols_per_row
 
         with cols[col_idx], st.container(border=True):
-            best = result.best
-            if result.status == UploadStatus.SUCCESS and best is not None:
+            ranked = result.best
+            if result.status == UploadStatus.SUCCESS and ranked is not None:
+                best = ranked.printing
                 # Display best match image from reference database
                 img_url = best.image_url
                 st.image(
@@ -71,7 +72,7 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                 st.markdown(f"**{best.name}**")
 
                 # Color-coded score indicator (scores are 0–100)
-                score = result.scores[0]
+                score = ranked.score
                 st.markdown(
                     f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
                     f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
@@ -120,10 +121,11 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
-    best_match = result.best
-    if result.status != UploadStatus.SUCCESS or best_match is None:
+    best = result.best
+    if result.status != UploadStatus.SUCCESS or best is None:
         st.error("Cannot display details for this result")
         return
+    best_match = best.printing
 
     debug = st.session_state.get("debug_mode", False)
 
@@ -171,7 +173,6 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     st.subheader(f"📋 {result.uploaded_filename}")
 
     matches = result.matches
-    scores = result.scores
     ocr_debug = result.ocr_debug
 
     warped_img = None
@@ -216,7 +217,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         st.markdown(f"**{best_match.name}**")
 
         # Color-coded score (scores are 0–100)
-        score = scores[0]
+        score = best.score
         st.markdown(
             f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
             f'text-align: center; font-weight: bold; color: white;">'
@@ -277,14 +278,14 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     if matches:
         match_cols = st.columns(top_k)
-        for col_idx, (match, score) in enumerate(zip(matches[:top_k], scores[:top_k], strict=True)):
+        for col_idx, ranked in enumerate(matches[:top_k]):
             with match_cols[col_idx]:
-                img_url = match.image_url
+                img_url = ranked.printing.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
-                st.caption(f"**{match.name}**")
-                st.caption(f"Score: {score:.2f}")
+                st.caption(f"**{ranked.printing.name}**")
+                st.caption(f"Score: {ranked.score:.2f}")
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:

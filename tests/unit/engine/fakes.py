@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mtg_recognition.catalog import InMemoryCardCatalog, Printing
+from mtg_recognition.catalog import InMemoryCardCatalog, Printing, RankedPrinting
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.seg_utils import CardSegment, ImageSegmentationResult
 
@@ -59,7 +59,7 @@ class FakeOCR:
     def find_best_matches(self, query_img, candidates, k=10, thresh=0.0, debug=False):
         self.ks.append(k)
         reranked = list(reversed(candidates))[:k]
-        return reranked, [90.0 - i for i in range(len(reranked))], None
+        return [RankedPrinting(p, 90.0 - i) for i, p in enumerate(reranked)], None
 
 
 def make_pipeline(segmentor: FakeSegmentor, **kwargs) -> Pipeline:
