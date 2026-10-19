@@ -2,17 +2,50 @@ import json
 import uuid as _uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import click
 import numpy as np
 
-from mtg_recognition.catalog import CardCatalog, RankedPrinting, SqliteCardCatalog
+from mtg_recognition.catalog import CardCatalog, Printing, RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import load_image, resize_if_needed
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
+from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.settings import settings
+
+
+class CardSegmentor(Protocol):
+    """Finds the cards in an image and warps each one flat (default: YoloCardSegmentor)."""
+
+    def segment(self, img: np.ndarray) -> ImageSegmentationResult: ...
+
+
+class CandidateMatcher(Protocol):
+    """Coarse search over the reference index by printing UUID (default: PHashCardMatcher)."""
+
+    @property
+    def index_loaded(self) -> bool: ...
+
+    def find_best_matches(self, query_image: np.ndarray, *, k: int) -> tuple[list[str], list[float]]: ...
+
+    def build_index(self, force: bool = False) -> None: ...
+
+
+class CandidateReranker(Protocol):
+    """Reranks candidate printings for a warped card image (default: CardOCR)."""
+
+    def find_best_matches(
+        self,
+        query_img: np.ndarray,
+        candidates: list[Printing],
+        *,
+        k: int | None,
+        thresh: float,
+        debug: bool,
+    ) -> tuple[list[RankedPrinting], OCRDebugData | None]: ...
 
 
 @dataclass(frozen=True)
@@ -54,9 +87,9 @@ class Pipeline:
         k_phash_candidates: int = 20,
         k_final_results: int = 1,
         catalog: CardCatalog | None = None,
-        segmentor: YoloCardSegmentor | None = None,
-        phash_matcher: PHashCardMatcher | None = None,
-        ocr: CardOCR | None = None,
+        segmentor: CardSegmentor | None = None,
+        phash_matcher: CandidateMatcher | None = None,
+        ocr: CandidateReranker | None = None,
         auto_build: bool = True,
     ):
         if not 1 <= k_final_results <= k_phash_candidates:
@@ -67,9 +100,9 @@ class Pipeline:
         self.k_final_results = k_final_results
 
         self.catalog = catalog if catalog is not None else SqliteCardCatalog()
-        self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
-        self.phash_matcher = phash_matcher if phash_matcher is not None else PHashCardMatcher()
-        self.ocr = ocr if ocr is not None else CardOCR(use_preprocessing=True)
+        self.segmentor: CardSegmentor = segmentor if segmentor is not None else YoloCardSegmentor()
+        self.phash_matcher: CandidateMatcher = phash_matcher if phash_matcher is not None else PHashCardMatcher()
+        self.ocr: CandidateReranker = ocr if ocr is not None else CardOCR(use_preprocessing=True)
 
         if auto_build:
             self.phash_matcher.build_index(force=False)

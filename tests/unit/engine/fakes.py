@@ -3,6 +3,7 @@
 import numpy as np
 
 from mtg_recognition.catalog import InMemoryCardCatalog, Printing, RankedPrinting
+from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.seg_utils import CardSegment, ImageSegmentationResult
 
@@ -56,13 +57,31 @@ class FakeOCR:
     def __init__(self):
         self.ks: list[int | None] = []
 
-    def find_best_matches(self, query_img, candidates, k=10, thresh=0.0, debug=False):
+    def find_best_matches(
+        self,
+        query_img: np.ndarray,
+        candidates: list[Printing],
+        k: int | None = 10,
+        thresh: float = 0.0,
+        debug: bool = False,
+    ) -> tuple[list[RankedPrinting], OCRDebugData | None]:
         self.ks.append(k)
         reranked = list(reversed(candidates))[:k]
         return [RankedPrinting(p, 90.0 - i) for i, p in enumerate(reranked)], None
 
 
-def make_pipeline(segmentor: FakeSegmentor, **kwargs) -> Pipeline:
-    kwargs.setdefault("phash_matcher", FakePHashMatcher())
-    kwargs.setdefault("ocr", FakeOCR())
-    return Pipeline(catalog=CATALOG, segmentor=segmentor, **kwargs)
+def make_pipeline(
+    segmentor: FakeSegmentor,
+    k_phash_candidates: int = 20,
+    k_final_results: int = 1,
+    phash_matcher: FakePHashMatcher | None = None,
+    ocr: FakeOCR | None = None,
+) -> Pipeline:
+    return Pipeline(
+        k_phash_candidates=k_phash_candidates,
+        k_final_results=k_final_results,
+        catalog=CATALOG,
+        segmentor=segmentor,
+        phash_matcher=phash_matcher if phash_matcher is not None else FakePHashMatcher(),
+        ocr=ocr if ocr is not None else FakeOCR(),
+    )

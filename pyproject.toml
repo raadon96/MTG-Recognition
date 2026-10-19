@@ -124,6 +124,9 @@ line_length = 120 # keep consistent with ruff's line-length
 format_on_save = true
 
 [tool.ty.src]
-exclude = [
-    "tests/",
+# tests/ is not type-checked, except the Pipeline fakes, which must satisfy the stage protocols.
+include = [
+    "src",
+    "tests/unit/engine/fakes.py",
+    "tests/unit/engine/test_pipeline.py",
 ]
