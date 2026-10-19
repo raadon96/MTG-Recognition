@@ -75,7 +75,7 @@ mtg recognize -i card.jpg
 mtg segment -i card.jpg --mode auto
 ```
 
-Linting and formatting use [ruff](https://docs.astral.sh/ruff/), configured in `pyproject.toml` (line length 120, Python 3.12, rules `E`, `F`, `I`, `UP`, `B`, `SIM`):
+Linting and formatting use [ruff](https://docs.astral.sh/ruff/), configured in `pyproject.toml` (line length 88, Python 3.12, rules `E`, `F`, `I`, `UP`, `B`, `SIM`):
 
 ```bash
 uv run ruff check src tests          # lint

@@ -9,14 +9,16 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR", "ECC ★EN")
+# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN",
+# "ELD·FR", "ECC ★EN")
 _SUPPORTED_LANG_CODES = frozenset(
     {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
 # Separators: ·  .  +  -  =  ★  *  ,  (optional whitespace on both sides)
 # ★ = Unicode BLACK STAR (U+2605); * = ASCII asterisk (U+002A) — OCR may output either.
-# No word boundary at end: lang code may be glued to trailing OCR noise (e.g. "M2O=ENVKH")
+# No word boundary at end: lang code may be glued to trailing OCR noise (e.g.
+# "M2O=ENVKH")
 _ARTIFACT_PATTERN = re.compile(rf"(.+?)\s*[·.+\-=★*,]\s*(?:{_LANG_GROUP})")
 
 # Artist name extraction
@@ -52,9 +54,11 @@ _SETCODE_BLOCKLIST = frozenset(
 )
 
 # Collector number extraction — Stage 1 (full cardNumber/baseSetSize)
-# Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo markers
+# Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo
+# markers
 _COLL_SUFFIX = r"[a-z★†✦]?"
-# Symmetric T/C prefix variant (T=token, C=commander): both sides must carry the same prefix class
+# Symmetric T/C prefix variant (T=token, C=commander): both sides must carry the same
+# prefix class
 _S1_BOUNDARY_PREFIX = re.compile(
     rf"\b([TC]\d{{1,4}}{_COLL_SUFFIX}/[TC]\d{{2,4}}{_COLL_SUFFIX})\b"
 )
@@ -125,7 +129,9 @@ def filter_flavor_text_zone(
         if not (b[1] < y_thresh and b[2] < x_right)
     ]
 
-    # kept = [(t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)]
+    # kept = [
+    #     (t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)
+    # ]
 
     # Safety guard: never discard everything (e.g. unusual card layouts)
     if not kept:
@@ -204,7 +210,8 @@ def extract_power_toughness(
     Args:
         rec_texts: List of OCR-recognized text strings
     Returns:
-        Power/toughness tuple (e.g., ("3", "2"), ("*", "*")) or (None, None) if not found
+        Power/toughness tuple (e.g., ("3", "2"), ("*", "*")) or (None, None) if not
+        found
     """
     _PT_SLOT = r"(\*|\d)"
     pattern = rf"(?<!\w){_PT_SLOT}/{_PT_SLOT}(?!\w)"
@@ -477,14 +484,16 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
                 # Validate reasonable year range for MTG (1993-2030)
                 if 1993 <= year <= 2030:
                     logger.debug(
-                        f"Found year range: {start_year}-{end_year}, using end year: {year}"
+                        f"Found year range: {start_year}-{end_year}, "
+                        f"using end year: {year}"
                     )
                     candidates.append(
                         (year, has_copyright_context, 2)
                     )  # Priority 2 for ranges
 
         # Pattern 2: Find single four-digit years
-        # Use negative lookbehind/lookahead to avoid matching years within longer numbers
+        # Use negative lookbehind/lookahead to avoid matching years within longer
+        # numbers
         year_pattern = r"(?<!\d)(\d{4})(?!\d)"
         year_matches = re.findall(year_pattern, normalized)
 
@@ -493,7 +502,8 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
             # Filter reasonable years for MTG cards (1993-2030)
             if 1993 <= year <= 2030:
                 logger.debug(
-                    f"Found single year: {year}, copyright context: {has_copyright_context}"
+                    f"Found single year: {year}, "
+                    f"copyright context: {has_copyright_context}"
                 )
                 candidates.append(
                     (year, has_copyright_context, 1)
@@ -520,7 +530,8 @@ def sort_scores_with_indices(
     scores: np.ndarray, k: int | None = None, threshold: float = 0.0
 ) -> tuple[list[float], list[int]]:
     """
-    Return top-k scores (descending) and their indices, using argpartition for efficiency.
+    Return top-k scores (descending) and their indices, using argpartition for
+    efficiency.
 
     Parameters:
     - scores: 1-D numpy array of numeric scores
@@ -529,7 +540,8 @@ def sort_scores_with_indices(
 
     Returns:
     - top_scores_desc: 1-D numpy array of the top-k scores in descending order
-    - top_indices_desc: 1-D numpy array of the corresponding indices in the original scores
+    - top_indices_desc: 1-D numpy array of the corresponding indices in the original
+      scores
     """
     # Ensure input is a NumPy array
     scores = np.asarray(scores)

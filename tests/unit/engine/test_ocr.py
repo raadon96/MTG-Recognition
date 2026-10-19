@@ -44,7 +44,10 @@ class TestExtractSetCodeByArtifact:
             # Comma as separator (OCR misread of · or .)
             (["011/264", "ELD,EN", "ARTIST"], ["ELD"]),
             # ASCII asterisk as separator (OCR outputs * instead of Unicode ★)
-            (["2/1", "048/271", "ONE*EN", "BUY CHRISTIAN", "2023Wizards", "AMA"], ["ONE"]),
+            (
+                ["2/1", "048/271", "ONE*EN", "BUY CHRISTIAN", "2023Wizards", "AMA"],
+                ["ONE"],
+            ),
         ],
     )
     def test_extract_setcode_various_artifacts(self, texts, expected):
@@ -79,13 +82,17 @@ class TestExtractSetCodeFallback:
         assert result == []
 
     def test_blocklist_words_excluded(self):
-        """Copyright boilerplate that is all-uppercase is filtered by _SETCODE_BLOCKLIST."""
+        """Copyright boilerplate that is all-uppercase is filtered by
+        _SETCODE_BLOCKLIST.
+        """
         # "COAST", "INC", "TM" all match [A-Z]{2,5} but are in the blocklist
         result = extract_setcode_candidates(["COAST", "INC", "TM", "LLC"])
         assert result == []
 
     def test_blocklist_does_not_suppress_real_setcode(self):
-        """A valid set code that happens to share letters with blocklist words is returned."""
+        """A valid set code that happens to share letters with blocklist words is
+        returned.
+        """
         # "ARN" (Arabian Nights) is not in the blocklist
         assert extract_setcode_candidates(["ARN", "338", "©1993"]) == ["ARN"]
 
@@ -103,8 +110,11 @@ class TestExtractSetCodeFallback:
         assert extract_setcode_candidates(["A", "B", "1"]) == []
 
     def test_artifact_takes_priority_over_fallback(self):
-        """Artifact pass takes priority — fallback is never reached when artifact fires."""
-        # "WAR" from artifact takes priority; uppercase fallback token "ABC" is not returned
+        """Artifact pass takes priority — fallback is never reached when artifact
+        fires.
+        """
+        # "WAR" from artifact takes priority; uppercase fallback token "ABC" is not
+        # returned
         result = extract_setcode_candidates(["011/264", "WAR-EN", "ABC"])
         assert result == ["WAR"]
 
@@ -113,11 +123,31 @@ class TestExtractSetCodeFallback:
         [
             # Old card — no uppercase-only 2-5 token survives
             (
-                ["Illus.", "Jeff", "Miracola", "01997", "Wizards", "of the", "Coast,", "Inc."],
+                [
+                    "Illus.",
+                    "Jeff",
+                    "Miracola",
+                    "01997",
+                    "Wizards",
+                    "of the",
+                    "Coast,",
+                    "Inc.",
+                ],
                 [],
             ),
             # Old card — "COAST" blocklisted, nothing left
-            (["Avon", "Illus,", "COAST", "Inc.", "(30/350)", "of the", "TM&1993-2001 Wizards"], []),
+            (
+                [
+                    "Avon",
+                    "Illus,",
+                    "COAST",
+                    "Inc.",
+                    "(30/350)",
+                    "of the",
+                    "TM&1993-2001 Wizards",
+                ],
+                [],
+            ),
             # Modern card with known set code — artifact fires (not a fallback case)
             (["011/264", "WAR-EN", "B0AG"], ["WAR"]),
             # Old card with a real set code token
@@ -295,13 +325,26 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         )
 
     def test_two_digit_without_leading_zero_accepted(self):
-        """2-digit value without leading zero is now accepted (old sets like The Dark)"""
+        """2-digit value without leading zero is now accepted (old sets like The
+        Dark)
+        """
         assert extract_number_and_base_set_size(["ARN", "38", "Artist"]) == ("38", None)
 
     def test_two_digit_without_leading_zero_real_world(self):
         """Burnished Hart retro-frame: collector number 71, P/T 2/2"""
         assert extract_number_and_base_set_size(
-            ["2/2", "Han", "Yeong-Hao", "Illus.", "Coast", "71", "Wizards", "ofthe", "IM&", "2022"]
+            [
+                "2/2",
+                "Han",
+                "Yeong-Hao",
+                "Illus.",
+                "Coast",
+                "71",
+                "Wizards",
+                "ofthe",
+                "IM&",
+                "2022",
+            ]
         ) == ("71", None)
 
     def test_pt_in_slash_token_not_mistaken_for_card_number(self):
@@ -312,7 +355,10 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         """
         assert extract_number_and_base_set_size(
             ["10/4", "Artist", "Name", "71", "©1994"]
-        ) == ("71", None)
+        ) == (
+            "71",
+            None,
+        )
 
     def test_two_digit_pt_in_slash_token_not_mistaken(self):
         """P/T token '12/8' — neither '12' nor '8' should be treated as card number."""
@@ -321,17 +367,24 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         ) == (None, None)
 
     def test_stage1_takes_priority(self):
-        """Full cardNumber/baseSetSize result is returned when both stages could match"""
+        """Full cardNumber/baseSetSize result is returned when both stages could
+        match
+        """
         assert extract_number_and_base_set_size(["214", "011/264", "WAR-EN"]) == (
             "11",
             "264",
         )
 
     def test_leading_letter_with_ocr_zero_artifact(self):
-        """Single uppercase letter prefix with OCR zero artifact (e.g. 'L0398' from 'L 398')"""
+        """Single uppercase letter prefix with OCR zero artifact
+        (e.g. 'L0398' from 'L 398')
+        """
         assert extract_number_and_base_set_size(
             ["LCI", "L0398", "Artist", "©2023"]
-        ) == ("398", None)
+        ) == (
+            "398",
+            None,
+        )
 
     def test_leading_letter_no_artifact(self):
         """Single uppercase letter prefix without OCR artifact (e.g. 'L398')"""
@@ -363,7 +416,9 @@ class TestExtractPowerToughness:
         assert extract_power_toughness(["2/5"]) == ("2", "5")
 
     def test_digit_digit_not_confused_with_collector_number(self):
-        """Single-digit P/T is returned even when a multi-digit collector number is present"""
+        """Single-digit P/T is returned even when a multi-digit collector number is
+        present
+        """
         assert extract_power_toughness(["3/3", "173/361", "CMR-EN"]) == ("3", "3")
 
     def test_collector_number_alone_not_mistaken_for_pt(self):
@@ -623,7 +678,7 @@ class TestFilterFlavorTextZone:
         # Flavor "pretend" box: y1=5 < 105 AND x2=400 < 1360 → DISCARDED
         texts = ["pretend", "3/4", "132/269"]
         boxes = [
-            [50, 5, 400, 80],    # flavor text
+            [50, 5, 400, 80],  # flavor text
             [1500, 60, 1660, 170],  # P/T — far right
             [20, 170, 250, 230],  # collector number
         ]
@@ -655,29 +710,39 @@ class TestFilterFlavorTextZone:
         y_thresh ≈ 105, x_right ≈ 1382
         """
         texts = [
-            "perform", "trials", "the", "scientists.", "on",
-            "2/1", "048/271", "ONE*EN", "BUY CHRISTIAN",
-            "2023Wizards of he Coas", "AMA",
+            "perform",
+            "trials",
+            "the",
+            "scientists.",
+            "on",
+            "2/1",
+            "048/271",
+            "ONE*EN",
+            "BUY CHRISTIAN",
+            "2023Wizards of he Coas",
+            "AMA",
         ]
         boxes = [
-            [36, 17, 371, 130],    # "perform"       — flavor
-            [373, 25, 607, 120],   # "trials"        — flavor
-            [734, 25, 885, 120],   # "the"           — flavor
+            [36, 17, 371, 130],  # "perform"       — flavor
+            [373, 25, 607, 120],  # "trials"        — flavor
+            [734, 25, 885, 120],  # "the"           — flavor
             [888, 25, 1271, 119],  # "scientists."   — flavor
-            [608, 35, 739, 119],   # "on"            — flavor
-            [1503, 67, 1668, 177], # "2/1"           — P/T (right side, kept)
-            [1, 164, 237, 232],    # "048/271"       — collector number
-            [0, 214, 238, 280],    # "ONE*EN"        — set code
+            [608, 35, 739, 119],  # "on"            — flavor
+            [1503, 67, 1668, 177],  # "2/1"           — P/T (right side, kept)
+            [1, 164, 237, 232],  # "048/271"       — collector number
+            [0, 214, 238, 280],  # "ONE*EN"        — set code
             [300, 217, 673, 300],  # "BUY CHRISTIAN" — artist
-            [1198, 203, 1728, 293],# "2023Wizards..."— copyright
-            [1061, 231, 1224, 276],# "AMA"           — noise
+            [1198, 203, 1728, 293],  # "2023Wizards..."— copyright
+            [1061, 231, 1224, 276],  # "AMA"           — noise
         ]
         scores = [0.99] * len(texts)
 
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
 
         flavor_tokens = {"perform", "trials", "the", "scientists.", "on"}
-        assert not flavor_tokens.intersection(t), f"Flavor tokens leaked: {set(t) & flavor_tokens}"
+        assert not flavor_tokens.intersection(t), (
+            f"Flavor tokens leaked: {set(t) & flavor_tokens}"
+        )
         assert "2/1" in t, "P/T should be kept"
         assert "048/271" in t
         assert "ONE*EN" in t

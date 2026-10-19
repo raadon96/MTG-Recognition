@@ -1,4 +1,6 @@
-"""End-to-end recognition on real UUID-named images (requires `dvc pull` and the reference data)."""
+"""End-to-end recognition on real UUID-named images (requires `dvc pull` and the
+reference data).
+"""
 
 from pathlib import Path
 

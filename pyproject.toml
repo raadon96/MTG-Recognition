@@ -104,8 +104,10 @@ markers = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 target-version = "py312"
+# Vendored model directories (e.g. PaddleOCR model cards) are not ours to format.
+extend-exclude = ["src/mtg_recognition/engine/**/models/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -118,7 +120,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 preview = false
 
 [tool.marimo.formatting]
-line_length = 120 # keep consistent with ruff's line-length
+line_length = 88 # keep consistent with ruff's line-length
 
 [tool.marimo.save]
 format_on_save = true

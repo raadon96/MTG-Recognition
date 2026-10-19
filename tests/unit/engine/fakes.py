@@ -1,15 +1,22 @@
-"""Fake recognition stages and printings for tests that build a Pipeline without models."""
+"""Fake recognition stages and printings for tests that build a Pipeline without
+models.
+"""
 
 import numpy as np
 
 from mtg_recognition.catalog import InMemoryCardCatalog, Printing, RankedPrinting
 from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.engine.segmentation.seg_utils import CardSegment, ImageSegmentationResult
+from mtg_recognition.engine.segmentation.seg_utils import (
+    CardSegment,
+    ImageSegmentationResult,
+)
 
 
 def printing(uuid: str) -> Printing:
-    return Printing(uuid=uuid, name=f"Card {uuid}", set_code="TST", number="1", base_set_size="100")
+    return Printing(
+        uuid=uuid, name=f"Card {uuid}", set_code="TST", number="1", base_set_size="100"
+    )
 
 
 PRINTINGS = [printing(f"p{i}") for i in range(10)]
@@ -29,11 +36,16 @@ class FakeSegmentor:
 
     def segment(self, img: np.ndarray) -> ImageSegmentationResult:
         self.inputs.append(img)
-        return ImageSegmentationResult(segments=[CardSegment(warped_image=w) for w in self.warped_images])
+        return ImageSegmentationResult(
+            segments=[CardSegment(warped_image=w) for w in self.warped_images]
+        )
 
 
 class FakePHashMatcher:
-    """Returns the printings whose image value matches first, then the rest of the index in order."""
+    """Returns the printings whose image value matches first.
+
+    The rest of the index follows in order.
+    """
 
     index_loaded = True
 
@@ -41,7 +53,9 @@ class FakePHashMatcher:
         self.index = index if index is not None else [p.uuid for p in PRINTINGS]
         self.ks: list[int] = []
 
-    def find_best_matches(self, query_image: np.ndarray, k: int = 5) -> tuple[list[str], list[float]]:
+    def find_best_matches(
+        self, query_image: np.ndarray, k: int = 5
+    ) -> tuple[list[str], list[float]]:
         self.ks.append(k)
         value = int(query_image[0, 0, 0])
         ranked = sorted(self.index, key=lambda uuid: uuid != f"p{value}")[:k]
@@ -82,6 +96,8 @@ def make_pipeline(
         k_final_results=k_final_results,
         catalog=CATALOG,
         segmentor=segmentor,
-        phash_matcher=phash_matcher if phash_matcher is not None else FakePHashMatcher(),
+        phash_matcher=phash_matcher
+        if phash_matcher is not None
+        else FakePHashMatcher(),
         ocr=ocr if ocr is not None else FakeOCR(),
     )

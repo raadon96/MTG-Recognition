@@ -12,7 +12,9 @@ import pytest
 
 @pytest.mark.unit
 class TestNeedsRebuild:
-    """Unit tests for _needs_mobilecache_rebuild, _needs_images_rebuild, _needs_phash_rebuild."""
+    """Unit tests for _needs_mobilecache_rebuild, _needs_images_rebuild,
+    _needs_phash_rebuild.
+    """
 
     # --- _needs_mobilecache_rebuild ---
 
@@ -20,22 +22,39 @@ class TestNeedsRebuild:
         """force=True returns True regardless of state or file existence."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_mobilecache_rebuild(state, remote_version="V", force=True) is True
 
     def test_mobilecache_null_version_rebuilds(self) -> None:
         """null mobilecache_version returns True (short-circuits before file check)."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
-        state = {"mobilecache_version": None, "images_version": None, "phash_version": None}
-        assert _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
+        state = {
+            "mobilecache_version": None,
+            "images_version": None,
+            "phash_version": None,
+        }
+        assert (
+            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
+        )
 
     def test_mobilecache_version_mismatch_rebuilds(self) -> None:
         """Stale local version triggers rebuild (short-circuits before file check)."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
-        state = {"mobilecache_version": "V_old", "images_version": "V_old", "phash_version": "V_old"}
-        assert _needs_mobilecache_rebuild(state, remote_version="V_new", force=False) is True
+        state = {
+            "mobilecache_version": "V_old",
+            "images_version": "V_old",
+            "phash_version": "V_old",
+        }
+        assert (
+            _needs_mobilecache_rebuild(state, remote_version="V_new", force=False)
+            is True
+        )
 
     def test_mobilecache_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
         """Matching version + file exists returns False."""
@@ -46,8 +65,14 @@ class TestNeedsRebuild:
         db.write_bytes(b"")
         monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: db))
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
-        assert _needs_mobilecache_rebuild(state, remote_version="V", force=False) is False
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
+        assert (
+            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is False
+        )
 
     def test_mobilecache_file_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
         """Matching version but LOCAL_DB_FILE absent triggers rebuild."""
@@ -55,18 +80,32 @@ class TestNeedsRebuild:
         from mtg_recognition.settings import settings
 
         missing = tmp_path / "MobileCache.sqlite"
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: missing))
+        monkeypatch.setattr(
+            type(settings), "LOCAL_DB_FILE", property(lambda self: missing)
+        )
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
-        assert _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
+        assert (
+            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
+        )
 
     def test_mobilecache_skips_without_update_db(self) -> None:
         """remote_version=None (no --update-db) never rebuilds MobileCache."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
         # Version mismatch — would normally rebuild, but remote_version=None pins the DB
-        state = {"mobilecache_version": "V_old", "images_version": "V_old", "phash_version": "V_old"}
-        assert _needs_mobilecache_rebuild(state, remote_version=None, force=False) is False
+        state = {
+            "mobilecache_version": "V_old",
+            "images_version": "V_old",
+            "phash_version": "V_old",
+        }
+        assert (
+            _needs_mobilecache_rebuild(state, remote_version=None, force=False) is False
+        )
 
     # --- _needs_images_rebuild ---
 
@@ -74,25 +113,39 @@ class TestNeedsRebuild:
         """force=True returns True regardless of state."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_images_rebuild(state, force=True) is True
 
     def test_images_null_version_rebuilds(self) -> None:
         """null images_version returns True."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {"mobilecache_version": "V", "images_version": None, "phash_version": None}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": None,
+            "phash_version": None,
+        }
         assert _needs_images_rebuild(state, force=False) is True
 
     def test_images_version_mismatch_rebuilds(self) -> None:
         """images_version != mobilecache_version returns True."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {"mobilecache_version": "V_new", "images_version": "V_old", "phash_version": "V_old"}
+        state = {
+            "mobilecache_version": "V_new",
+            "images_version": "V_old",
+            "phash_version": "V_old",
+        }
         assert _needs_images_rebuild(state, force=False) is True
 
     def test_images_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
-        """images_version matches mobilecache_version and IMG_DIR is non-empty returns False."""
+        """images_version matches mobilecache_version and IMG_DIR is non-empty returns
+        False.
+        """
         from mtg_recognition.jobs.sync import _needs_images_rebuild
         from mtg_recognition.settings import settings
 
@@ -101,7 +154,11 @@ class TestNeedsRebuild:
         (img_dir / "dummy.jpg").write_bytes(b"")
         monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_images_rebuild(state, force=False) is False
 
     def test_images_dir_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
@@ -112,7 +169,11 @@ class TestNeedsRebuild:
         missing = tmp_path / "images"
         monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: missing))
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_images_rebuild(state, force=False) is True
 
     def test_images_dir_empty_rebuilds(self, tmp_path, monkeypatch) -> None:
@@ -124,7 +185,11 @@ class TestNeedsRebuild:
         img_dir.mkdir()
         monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_images_rebuild(state, force=False) is True
 
     # --- _needs_phash_rebuild ---
@@ -133,21 +198,33 @@ class TestNeedsRebuild:
         """force=True returns True regardless of state or file existence."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_phash_rebuild(state, force=True) is True
 
     def test_phash_null_version_rebuilds(self) -> None:
         """null phash_version returns True."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": None}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": None,
+        }
         assert _needs_phash_rebuild(state, force=False) is True
 
     def test_phash_version_mismatch_rebuilds(self) -> None:
         """phash_version != images_version returns True."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {"mobilecache_version": "V_new", "images_version": "V_new", "phash_version": "V_old"}
+        state = {
+            "mobilecache_version": "V_new",
+            "images_version": "V_new",
+            "phash_version": "V_old",
+        }
         assert _needs_phash_rebuild(state, force=False) is True
 
     def test_phash_files_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
@@ -156,10 +233,18 @@ class TestNeedsRebuild:
         from mtg_recognition.settings import settings
 
         missing = tmp_path / "does_not_exist"
-        monkeypatch.setattr(type(settings), "PHASH_INDEX_FILE", property(lambda self: missing))
-        monkeypatch.setattr(type(settings), "PHASH_MAPPING_FILE", property(lambda self: missing))
+        monkeypatch.setattr(
+            type(settings), "PHASH_INDEX_FILE", property(lambda self: missing)
+        )
+        monkeypatch.setattr(
+            type(settings), "PHASH_MAPPING_FILE", property(lambda self: missing)
+        )
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_phash_rebuild(state, force=False) is True
 
     def test_phash_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
@@ -173,10 +258,18 @@ class TestNeedsRebuild:
         mapping = phash_dir / "index_to_uuid.json"
         hashes.write_bytes(b"")
         mapping.write_text("{}")
-        monkeypatch.setattr(type(settings), "PHASH_INDEX_FILE", property(lambda self: hashes))
-        monkeypatch.setattr(type(settings), "PHASH_MAPPING_FILE", property(lambda self: mapping))
+        monkeypatch.setattr(
+            type(settings), "PHASH_INDEX_FILE", property(lambda self: hashes)
+        )
+        monkeypatch.setattr(
+            type(settings), "PHASH_MAPPING_FILE", property(lambda self: mapping)
+        )
 
-        state = {"mobilecache_version": "V", "images_version": "V", "phash_version": "V"}
+        state = {
+            "mobilecache_version": "V",
+            "images_version": "V",
+            "phash_version": "V",
+        }
         assert _needs_phash_rebuild(state, force=False) is False
 
 
@@ -199,7 +292,8 @@ class TestDownloadImages:
             sync_module.download_images(dest_engine=None)
 
         mock_ce.assert_called_once()
-        # The URL passed to create_engine must be a SQLite URL containing MobileCache.sqlite
+        # The URL passed to create_engine must be a SQLite URL containing
+        # MobileCache.sqlite
         call_args = mock_ce.call_args[0][0]
         assert "sqlite:///" in call_args
         assert "MobileCache.sqlite" in call_args

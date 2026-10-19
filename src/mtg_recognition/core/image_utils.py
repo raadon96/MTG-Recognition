@@ -67,7 +67,9 @@ def _pil_to_bgr(pil_img: Image.Image) -> np.ndarray:
 
 
 def load_image(source: ImageSource) -> np.ndarray:
-    """Decode any supported image source to a BGR uint8 numpy array, applying EXIF orientation."""
+    """Decode any supported image source to a BGR uint8 numpy array, applying EXIF
+    orientation.
+    """
 
     # Already a numpy array — passthrough
     if isinstance(source, np.ndarray):

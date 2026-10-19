@@ -23,7 +23,9 @@ class UploadStatus(StrEnum):
 
 @dataclass
 class UploadResult:
-    """Result for one card found in an uploaded image, or for an image with no card or an error."""
+    """Result for one card found in an uploaded image, or for an image with no card or
+    an error.
+    """
 
     uploaded_filename: str
     original_image_path: str
@@ -60,7 +62,10 @@ _BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[RankedPrinting], object]]]
 
 
 def _best_printing_fields(result: UploadResult, as_columns: bool) -> dict[str, object]:
-    """The exported fields of the result's best printing (all None without a match), by JSON key or column name."""
+    """The exported fields of the result's best printing (all None without a match).
+
+    Keyed by JSON key or column name.
+    """
     best = result.best
     return {
         (column if as_columns else key): (get(best) if best is not None else None)
@@ -111,7 +116,14 @@ class UploadProcessor:
         recognition: RecognitionResult = self.pipeline.recognize(img, debug=True)
 
         if recognition.error is not None:
-            return [UploadResult(name, path, error_message=recognition.error, original_image_temp_path=original_tmp)]
+            return [
+                UploadResult(
+                    name,
+                    path,
+                    error_message=recognition.error,
+                    original_image_temp_path=original_tmp,
+                )
+            ]
         if not recognition.segments:
             return [UploadResult(name, path, original_image_temp_path=original_tmp)]
 

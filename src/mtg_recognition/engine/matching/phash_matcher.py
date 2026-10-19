@@ -43,14 +43,14 @@ class PHashCardMatcher:
         self.img_dir = img_dir
         self.hash_size = hash_size
 
-        # type and shape validation using numpydantic (https://github.com/p2p-ld/numpydantic)
+        # type and shape validation using numpydantic
+        # (https://github.com/p2p-ld/numpydantic)
         self.hashes: (
             NDArray[Shape[f"* x, {hash_size * hash_size} y"], np.uint8] | None
         ) = None
         self.uuid_mapping: list | None = None
-        self.uuid_to_idx: dict[str, int] | None = (
-            None  # Reverse mapping for O(1) lookup
-        )
+        # Reverse mapping for O(1) lookup
+        self.uuid_to_idx: dict[str, int] | None = None
 
         self._load_index()
 
@@ -120,7 +120,8 @@ class PHashCardMatcher:
 
     def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
         """
-        Scans the reference directory and builds a pHash index using parallel processing.
+        Scans the reference directory and builds a pHash index using parallel
+        processing.
 
         Args:
             force: If True, rebuilds even if index files exist
@@ -128,7 +129,8 @@ class PHashCardMatcher:
         """
         if self.index_path.exists() and self.mapping_path.exists():
             print(
-                f"pHash index already exists at {self.index_path} and {self.mapping_path}..."
+                f"pHash index already exists at {self.index_path} and "
+                f"{self.mapping_path}..."
             )
             if not force:
                 return

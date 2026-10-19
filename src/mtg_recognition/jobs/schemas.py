@@ -218,8 +218,11 @@ class MobileCache(
     #     description="Unique set code",
     # ) # setCode
     # name: Optional[str] = Field(None, description="Set name") # setName
-    # baseSetSize: Optional[int] = Field(default=None, description="Base size of the set")
-    # releaseDate: Optional[str] = Field(None, description="Release date as string") # setReleaseDate
+    # baseSetSize: Optional[int] = Field(
+    #     default=None, description="Base size of the set"
+    # )
+    # setReleaseDate
+    # releaseDate: Optional[str] = Field(None, description="Release date as string")
 
     # # AllPrintings, table: cardIdentifiers
     # uuid: str | None = Field(primary_key=True)

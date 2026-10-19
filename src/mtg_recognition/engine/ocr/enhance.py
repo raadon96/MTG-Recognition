@@ -58,9 +58,11 @@ def preprocess_for_ocr(
     """Lightweight preprocessing to improve OCR text detection on card ROI crops.
 
     Pipeline:
-    1. [upscale=True only] Adaptive upscale — scales so text reaches TARGET_TEXT_HEIGHT px,
-       clamped to [MIN_UPSCALE, MAX_UPSCALE]. Skip for name ROI (text is already large).
-    2. [deblur=True only] Wiener deconvolution on L channel — reduces mild camera softness.
+    1. [upscale=True only] Adaptive upscale — scales so text reaches
+       TARGET_TEXT_HEIGHT px, clamped to [MIN_UPSCALE, MAX_UPSCALE].
+       Skip for name ROI (text is already large).
+    2. [deblur=True only] Wiener deconvolution on L channel — reduces mild camera
+       softness.
     3. CLAHE on L channel — normalises local contrast (fine tiles for dark borders).
     4. Mild unsharp mask — sharpens text edges.
 
