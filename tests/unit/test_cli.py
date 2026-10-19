@@ -48,7 +48,9 @@ class TestCliGroup:
         assert cli.commands["segment"] is _segment_main
 
     def test_build_index_is_same_object_as_phash_build_index(self) -> None:
-        """The `build-index` command must be the same object as `phash_matcher.build_index`."""
+        """The `build-index` command must be the same object as
+        `phash_matcher.build_index`.
+        """
         from mtg_recognition.engine.matching.phash_matcher import (
             build_index as _build_index_cmd,
         )
@@ -140,7 +142,9 @@ class TestBuildIndexCommand:
         assert "--workers" in result.output
 
     def test_build_index_preflight_missing_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR does not exist; output contains path and 'mtg sync'."""
+        """Exit code 1 when IMG_DIR does not exist; output contains path and
+        'mtg sync'.
+        """
         nonexistent = tmp_path / "does_not_exist"
         from mtg_recognition.settings import settings
 
@@ -154,7 +158,9 @@ class TestBuildIndexCommand:
         assert "mtg sync" in result.output
 
     def test_build_index_preflight_empty_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR exists but is empty; output contains path and 'mtg sync'."""
+        """Exit code 1 when IMG_DIR exists but is empty; output contains path and
+        'mtg sync'.
+        """
         empty_dir = tmp_path / "images"
         empty_dir.mkdir()
         from mtg_recognition.settings import settings
@@ -169,7 +175,9 @@ class TestBuildIndexCommand:
     def test_build_index_invokes_matcher_with_defaults(
         self, tmp_path, monkeypatch
     ) -> None:
-        """Invokes PHashCardMatcher().build_index(force=False, num_workers=<default>)."""
+        """Invokes PHashCardMatcher().build_index(force=False,
+        num_workers=<default>).
+        """
         from multiprocessing import cpu_count
         from unittest.mock import MagicMock, patch
 
@@ -197,7 +205,9 @@ class TestBuildIndexCommand:
     def test_build_index_invokes_matcher_with_flags(
         self, tmp_path, monkeypatch
     ) -> None:
-        """--force and --workers flags are passed through to PHashCardMatcher().build_index."""
+        """--force and --workers flags are passed through to
+        PHashCardMatcher().build_index.
+        """
         from unittest.mock import MagicMock, patch
 
         img_dir = tmp_path / "images"
@@ -235,7 +245,9 @@ class TestSyncCommand:
         assert "--update-db" in result.output
 
     def test_sync_first_run_runs_all_steps(self, tmp_path, monkeypatch) -> None:
-        """First run (no state file, all missing): all three steps execute and state file is written."""
+        """First run (no state file, all missing): all three steps execute and state
+        file is written.
+        """
         import json
         from unittest.mock import MagicMock, patch
 
@@ -393,7 +405,9 @@ class TestSyncCommand:
         mock_matcher_instance.build_index.assert_called_once()
 
     def test_sync_step1_failure_leaves_null_state(self, tmp_path, monkeypatch) -> None:
-        """When Step 1 raises, exit code is 1, and state file has mobilecache_version: null."""
+        """When Step 1 raises, exit code is 1, and state file has mobilecache_version:
+        null.
+        """
         import json
         from unittest.mock import patch
 
@@ -432,7 +446,9 @@ class TestSyncCommand:
     def test_sync_rebuilds_when_remote_version_changes(
         self, tmp_path, monkeypatch
     ) -> None:
-        """When remote version differs from state, all three steps rebuild without --force."""
+        """When remote version differs from state, all three steps rebuild without
+        --force.
+        """
         import json
         from unittest.mock import MagicMock, patch
 
@@ -498,7 +514,10 @@ class TestSyncCommand:
     def test_sync_downloads_images_without_update_db(
         self, tmp_path, monkeypatch
     ) -> None:
-        """Contributor use case: committed DB present, images missing, no --update-db → images only."""
+        """Contributor use case: committed DB present, images missing, no --update-db.
+
+        Downloads images only.
+        """
         import json
         from unittest.mock import patch
 
@@ -521,7 +540,13 @@ class TestSyncCommand:
         (phash_dir / "hashes.npy").write_bytes(b"")
         (phash_dir / "index_to_uuid.json").write_text("{}")
         state_file.write_text(
-            json.dumps({"mobilecache_version": "V", "images_version": "V", "phash_version": "V"})
+            json.dumps(
+                {
+                    "mobilecache_version": "V",
+                    "images_version": "V",
+                    "phash_version": "V",
+                }
+            )
         )
 
         with (
@@ -569,7 +594,13 @@ class TestSyncCommand:
         (phash_dir / "hashes.npy").write_bytes(b"")
         (phash_dir / "index_to_uuid.json").write_text("{}")
         state_file.write_text(
-            json.dumps({"mobilecache_version": "V_old", "images_version": "V_old", "phash_version": "V_old"})
+            json.dumps(
+                {
+                    "mobilecache_version": "V_old",
+                    "images_version": "V_old",
+                    "phash_version": "V_old",
+                }
+            )
         )
 
         with (

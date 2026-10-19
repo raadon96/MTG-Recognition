@@ -151,7 +151,9 @@ class TestPhotoMultipleCards:
 
 @pytest.mark.slow
 class TestScanWithBackground:
-    """Scans with visible scanner bed background must yield exactly one segment via YOLO."""
+    """Scans with visible scanner bed background must yield exactly one segment via
+    YOLO.
+    """
 
     @pytest.mark.parametrize(
         "img_path", _img_paths(SCANS_SINGLE_BG), ids=lambda p: p.stem

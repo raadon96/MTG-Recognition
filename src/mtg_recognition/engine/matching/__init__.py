@@ -11,7 +11,9 @@ class CardMatcher(ABC):
         candidate_uuids: list[str] | None = None,
         k: int = 1,
     ) -> tuple[list[str], list[float]]:
-        """Return the UUIDs of the k most similar printings and their scores, best first."""
+        """Return the UUIDs of the k most similar printings and their scores, best
+        first.
+        """
         ...
 
     @abstractmethod

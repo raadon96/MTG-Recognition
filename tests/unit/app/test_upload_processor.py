@@ -21,7 +21,9 @@ def image_path(tmp_path) -> str:
 
 
 def _processor(segmentor: FakeSegmentor, k: int = 2) -> UploadProcessor:
-    return UploadProcessor(make_pipeline(segmentor, k_phash_candidates=k, k_final_results=k))
+    return UploadProcessor(
+        make_pipeline(segmentor, k_phash_candidates=k, k_final_results=k)
+    )
 
 
 def test_a_recognized_card_is_a_success(image_path):
@@ -54,7 +56,9 @@ def test_an_unreadable_file_is_an_error(tmp_path):
 
 
 def test_one_result_per_card_found(image_path):
-    results = _processor(FakeSegmentor([card_image(1), card_image(2)]), k=1).process([image_path])
+    results = _processor(FakeSegmentor([card_image(1), card_image(2)]), k=1).process(
+        [image_path]
+    )
 
     assert [r.status for r in results] == [UploadStatus.SUCCESS, UploadStatus.SUCCESS]
     assert [r.ranked[0].printing.uuid for r in results] == ["p1", "p2"]
@@ -64,7 +68,9 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(image_path, tm
     import pandas as pd
 
     processor = _processor(FakeSegmentor([card_image(3)]))
-    results = processor.process([image_path]) + _processor(BrokenSegmentor([])).process([image_path])
+    results = processor.process([image_path]) + _processor(BrokenSegmentor([])).process(
+        [image_path]
+    )
     csv_path = tmp_path / "results.csv"
 
     processor.export_to_csv(results, str(csv_path))
@@ -110,7 +116,9 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(image_path, tm
     ]
 
 
-def test_json_export_has_one_item_per_result_with_the_best_printing(image_path, tmp_path):
+def test_json_export_has_one_item_per_result_with_the_best_printing(
+    image_path, tmp_path
+):
     import json
 
     processor = _processor(FakeSegmentor([card_image(3)]))
@@ -147,7 +155,12 @@ def test_json_export_has_one_item_per_result_with_the_best_printing(image_path, 
             "scryfall_url": None,
             "error_message": None,
         },
-        {"uploaded_filename": "card.jpg", "status": "no_match", **no_printing, "error_message": None},
+        {
+            "uploaded_filename": "card.jpg",
+            "status": "no_match",
+            **no_printing,
+            "error_message": None,
+        },
         {
             "uploaded_filename": "card.jpg",
             "status": "error",

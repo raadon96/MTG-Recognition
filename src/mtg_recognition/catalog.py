@@ -17,7 +17,9 @@ from mtg_recognition.jobs.schemas import MobileCache
 
 @dataclass(frozen=True)
 class Printing:
-    """One edition of a card in a specific set, identified by a UUID (see GLOSSARY.md)."""
+    """One edition of a card in a specific set, identified by a UUID (see
+    GLOSSARY.md).
+    """
 
     uuid: str
     name: str
@@ -41,7 +43,9 @@ class RankedPrinting:
 
 class CardCatalog(Protocol):
     def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
-        """Return the known printings among `uuids`, keyed by UUID. Unknown UUIDs are omitted."""
+        """Return the known printings among `uuids`, keyed by UUID. Unknown UUIDs are
+        omitted.
+        """
         ...
 
 

@@ -3,19 +3,24 @@ CLI for card segmentation.
 
 Usage examples:
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/1_photos_single_card/images -o output/1.0_seg/1_photos_single_card --mode auto
+        -i data/test/1_photos_single_card/images \
+        -o output/1.0_seg/1_photos_single_card --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/2_photos_multiple_cards/images -o output/1.0_seg/2_photos_multiple_cards --mode auto
+        -i data/test/2_photos_multiple_cards/images \
+        -o output/1.0_seg/2_photos_multiple_cards --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/3_scans_single_card_with_bg/images -o output/1.0_seg/3_scans_single_card_with_bg --mode auto
+        -i data/test/3_scans_single_card_with_bg/images \
+        -o output/1.0_seg/3_scans_single_card_with_bg --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/4_scans_single_card_no_bg/images -o output/1.0_seg/4_scans_single_card_no_bg --mode auto
+        -i data/test/4_scans_single_card_no_bg/images \
+        -o output/1.0_seg/4_scans_single_card_no_bg --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/5_scans_multiple_cards/images -o output/1.0_seg/5_scans_multiple_cards --mode auto
+        -i data/test/5_scans_multiple_cards/images \
+        -o output/1.0_seg/5_scans_multiple_cards --mode auto
 
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
@@ -65,7 +70,11 @@ from mtg_recognition.core import image_utils
 def main(input_path: Path, output_dir: Path, mode: str) -> None:
     segmentor = _build_segmentor(mode)
 
-    img_paths = [input_path] if input_path.is_file() else image_utils.get_image_files_in_directory(input_path)
+    img_paths = (
+        [input_path]
+        if input_path.is_file()
+        else image_utils.get_image_files_in_directory(input_path)
+    )
 
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)

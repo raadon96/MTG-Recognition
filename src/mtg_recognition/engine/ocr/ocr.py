@@ -136,11 +136,12 @@ class CardOCR:
     def __init__(self, use_preprocessing=False):
         self._use_preprocessing = use_preprocessing
         self._paddleocr = PaddleOCR(
-            # text image rectification (performs geometric transformations on images to correct
-            # distortions, inclinations, perspective deformations)
+            # text image rectification (performs geometric transformations on images
+            # to correct distortions, inclinations, perspective deformations)
             use_doc_unwarping=False,
             doc_unwarping_model_name=None,
-            # textline orientation classification (corrects the orientation of text lines)
+            # textline orientation classification
+            # (corrects the orientation of text lines)
             use_textline_orientation=False,
             # text detection (locating and marking text-containing regions in images)
             text_detection_model_name="PP-OCRv5_mobile_det",
@@ -270,7 +271,8 @@ class CardOCR:
                 ocr_result_img = raw_results[1].img["ocr_res_img"]
             except Exception as e:
                 print(
-                    f"Failed to extract annotated image from OCR result: {e}\nContinuing without annotated image..."
+                    f"Failed to extract annotated image from OCR result: {e}\n"
+                    "Continuing without annotated image..."
                 )
                 pass
 
@@ -340,9 +342,11 @@ class CardOCR:
         debug: bool = False,
     ) -> tuple[list[RankedPrinting], OCRDebugData | None]:
         """
-        Find best matching cards by comparing OCR-extracted properties against candidates.
+        Find best matching cards by comparing OCR-extracted properties against
+        candidates.
 
-        Uses fuzzy string matching to compare card attributes (name, set code, number, etc.)
+        Uses fuzzy string matching to compare card attributes (name, set code, number,
+        etc.)
         from OCR results against a list of candidate cards.
 
         Args:
@@ -376,10 +380,12 @@ class CardOCR:
         if not (top_scores and top_indices):
             print(
                 f"No candidates found with k={k} and threshold={thresh}. "
-                "Try lowering k or thresh.\nReturning input candidates without filtering..."
+                "Try lowering k or thresh.\n"
+                "Returning input candidates without filtering..."
             )
             return [
-                RankedPrinting(c, float(s)) for c, s in zip(candidates, scores_aggregate, strict=True)
+                RankedPrinting(c, float(s))
+                for c, s in zip(candidates, scores_aggregate, strict=True)
             ], ocr_debug
 
         ranked = [

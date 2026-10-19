@@ -73,7 +73,9 @@ def _rect_corners(w: int, h: int) -> np.ndarray:
 
 
 def _blank_img(w: int, h: int) -> np.ndarray:
-    """Black BGR image with one extra pixel on each edge so all corners are in-bounds."""
+    """Black BGR image with one extra pixel on each edge so all corners are
+    in-bounds.
+    """
     return np.zeros((h + 1, w + 1, 3), dtype=np.uint8)
 
 
@@ -82,16 +84,27 @@ class TestClampSize:
         assert clamp_size((600, 840), WARPED_MIN_SIZE, WARPED_MAX_SIZE) == (600, 840)
 
     def test_below_min_clamped_to_min(self):
-        assert clamp_size((300, 400), WARPED_MIN_SIZE, WARPED_MAX_SIZE) == WARPED_MIN_SIZE
+        assert (
+            clamp_size((300, 400), WARPED_MIN_SIZE, WARPED_MAX_SIZE) == WARPED_MIN_SIZE
+        )
 
     def test_above_max_clamped_to_max(self):
-        assert clamp_size((1100, 1500), WARPED_MIN_SIZE, WARPED_MAX_SIZE) == WARPED_MAX_SIZE
+        assert (
+            clamp_size((1100, 1500), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+            == WARPED_MAX_SIZE
+        )
 
     def test_at_min_boundary_unchanged(self):
-        assert clamp_size(WARPED_MIN_SIZE, WARPED_MIN_SIZE, WARPED_MAX_SIZE) == WARPED_MIN_SIZE
+        assert (
+            clamp_size(WARPED_MIN_SIZE, WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+            == WARPED_MIN_SIZE
+        )
 
     def test_at_max_boundary_unchanged(self):
-        assert clamp_size(WARPED_MAX_SIZE, WARPED_MIN_SIZE, WARPED_MAX_SIZE) == WARPED_MAX_SIZE
+        assert (
+            clamp_size(WARPED_MAX_SIZE, WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+            == WARPED_MAX_SIZE
+        )
 
     def test_axes_clamped_independently(self):
         # Width below min, height above max → each axis clamped independently
@@ -108,7 +121,8 @@ class TestWarpCard:
         assert result.shape[:2] == (WARPED_MIN_SIZE[1], WARPED_MIN_SIZE[0])
 
     def test_medium_corners_natural_size_preserved(self):
-        # Natural size (600×840) is within [WARPED_MIN_SIZE, WARPED_MAX_SIZE] → unchanged
+        # Natural size (600×840) is within [WARPED_MIN_SIZE, WARPED_MAX_SIZE] →
+        # unchanged
         corners = _rect_corners(600, 840)
         result = warp_card(_blank_img(600, 840), corners)
         assert result.shape[:2] == (840, 600)

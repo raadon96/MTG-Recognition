@@ -65,7 +65,9 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                 # Display best match image from reference database
                 img_url = best_printing.image_url
                 st.image(
-                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
+                    img_url
+                    if img_url
+                    else "https://via.placeholder.com/300x420?text=No+Image",
                 )
 
                 # Display card name
@@ -74,8 +76,10 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                 # Color-coded score indicator (scores are 0–100)
                 score = best.score
                 st.markdown(
-                    f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
-                    f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
+                    f'<div style="background-color: {_score_color(score)}; '
+                    f"padding: 2px 6px; border-radius: 3px; "
+                    "text-align: center; font-size: 12px; font-weight: bold; "
+                    'color: white;">'
                     f"{score:.1f}</div>",
                     unsafe_allow_html=True,
                 )
@@ -130,7 +134,11 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [i for i, r in enumerate(results) if r.status == UploadStatus.SUCCESS and r.best is not None]
+    success_indices = [
+        i
+        for i, r in enumerate(results)
+        if r.status == UploadStatus.SUCCESS and r.best is not None
+    ]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -139,7 +147,9 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
-            if st.button("← Back to Results", key=f"back_{key_suffix}", use_container_width=True):
+            if st.button(
+                "← Back to Results", key=f"back_{key_suffix}", use_container_width=True
+            ):
                 st.session_state.selected_result_idx = None
                 st.rerun()
         if pos is not None:
@@ -154,7 +164,8 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
                     st.rerun()
             with col_pos:
                 st.markdown(
-                    f"<p style='text-align:center; margin:0; padding-top:6px; color:gray;'>"
+                    "<p style='text-align:center; margin:0; padding-top:6px; "
+                    "color:gray;'>"
                     f"{pos + 1} / {len(success_indices)}</p>",
                     unsafe_allow_html=True,
                 )
@@ -185,7 +196,10 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     # Column 1: Original Image
     with col1:
         st.caption("**Original Image**")
-        if result.original_image_temp_path and Path(result.original_image_temp_path).exists():
+        if (
+            result.original_image_temp_path
+            and Path(result.original_image_temp_path).exists()
+        ):
             original_img = cv2.imread(result.original_image_temp_path)
             if original_img is not None:
                 st.image(
@@ -219,7 +233,8 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         # Color-coded score (scores are 0–100)
         score = best.score
         st.markdown(
-            f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
+            f'<div style="background-color: {_score_color(score)}; '
+            f"padding: 4px 8px; border-radius: 3px; "
             f'text-align: center; font-weight: bold; color: white;">'
             f"{score:.1f}</div>",
             unsafe_allow_html=True,
@@ -227,7 +242,10 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
         st.divider()
         st.caption(f"**Set:** {best_printing.set_code}")
-        st.caption(f"**Collector Number:** {best_printing.number}/{best_printing.base_set_size}")
+        st.caption(
+            f"**Collector Number:** "
+            f"{best_printing.number}/{best_printing.base_set_size}"
+        )
         st.caption(f"**Artist:** {best_printing.artist or 'Unknown'}")
 
         if best_printing.image_url:
@@ -244,15 +262,21 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             expanded=True,
         ):
             # st.dataframe(
-            #     dict(texts=ocr_debug.texts_info_roi, scores=ocr_debug.scores_info_roi),
-            #     column_config={"scores": st.column_config.NumberColumn(format="%.1f")},
+            #     dict(
+            #         texts=ocr_debug.texts_info_roi, scores=ocr_debug.scores_info_roi
+            #     ),
+            #     column_config={
+            #         "scores": st.column_config.NumberColumn(format="%.1f")
+            #     },
             #     width="stretch",
             # )
 
             st.json(dict(text=ocr_debug.texts_info_roi), width="stretch")
             # st.text(ocr_debug.texts_info_roi, width="stretch")
 
-        with st.expander("📊 Table 1 — Extracted Properties vs. Best Match", expanded=True):
+        with st.expander(
+            "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
+        ):
             import pandas as pd
 
             from mtg_recognition.engine.ocr.ocr import ATTRIBUTE_MAPPINGS
@@ -282,7 +306,9 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             with match_cols[col_idx]:
                 img_url = entry.printing.image_url
                 st.image(
-                    img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
+                    img_url
+                    if img_url
+                    else "https://via.placeholder.com/300x420?text=No+Image",
                 )
                 st.caption(f"**{entry.printing.name}**")
                 st.caption(f"Score: {entry.score:.2f}")
@@ -291,7 +317,9 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
         with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
             st.dataframe(
-                ocr_debug.score_matrix.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=100).format("{:.1f}"),
+                ocr_debug.score_matrix.style.background_gradient(
+                    cmap="RdYlGn", vmin=0, vmax=100
+                ).format("{:.1f}"),
                 width="stretch",
             )
 
@@ -328,7 +356,9 @@ def export_results(results, export_format: str, processor: UploadProcessor):
 def main():
     parse_args()
     st.title("Decksray MTGC Recognizer")
-    st.markdown("Upload or capture a Magic: The Gathering card image for instant recognition.")
+    st.markdown(
+        "Upload or capture a Magic: The Gathering card image for instant recognition."
+    )
 
     pipeline = load_pipeline()
 
@@ -362,7 +392,8 @@ def main():
         # Check file count
         if len(uploaded_files) > 100:
             st.sidebar.warning(
-                "⚠️ Processing 20-100 images at a time is recommended. Large uploads may take several minutes."
+                "⚠️ Processing 20-100 images at a time is recommended. "
+                "Large uploads may take several minutes."
             )
 
         # Start processing button
@@ -398,7 +429,9 @@ def main():
 
             # Process uploads
             try:
-                results = processor.process(temp_paths, progress_callback=progress_callback)
+                results = processor.process(
+                    temp_paths, progress_callback=progress_callback
+                )
                 st.session_state.upload_results = results
 
                 # Clean up temp directory
@@ -421,7 +454,9 @@ def main():
 
         # Detail view
         if st.session_state.selected_result_idx is not None:
-            display_upload_detail_view(results, st.session_state.selected_result_idx, pipeline.k_final_results)
+            display_upload_detail_view(
+                results, st.session_state.selected_result_idx, pipeline.k_final_results
+            )
         else:
             # Grid view
             create_thumbnail_grid(results, results_key="upload_results")
@@ -439,7 +474,9 @@ def main():
 
         processor = UploadProcessor(pipeline)
         try:
-            file_path, mime_type, filename = export_results(results, export_format, processor)
+            file_path, mime_type, filename = export_results(
+                results, export_format, processor
+            )
             with open(file_path, "rb") as f:
                 st.sidebar.download_button(
                     label=f"⬇️ Download {filename}",
@@ -462,7 +499,8 @@ def main():
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "App for MTG card recognition with multi-image uploads, detailed results view, and export functionality."
+            "App for MTG card recognition with multi-image uploads, "
+            "detailed results view, and export functionality."
         )
     )
     return parser.parse_args()

@@ -86,7 +86,9 @@ class Settings(BaseSettings):
 
     @property
     def STATE_FILE(self) -> Path:
-        """State file that tracks the MTGJSON version last used to build each artifact"""
+        """State file that tracks the MTGJSON version last used to build each
+        artifact
+        """
         return self.REF_DIR / ".mtg-sync-state.json"
 
     def ensure_dirs(self) -> None:

@@ -13,11 +13,13 @@ import numpy as np
 # Module-level constants
 # ---------------------------------------------------------------------------
 
-_MIN_CONTOUR_POINTS: int = 20           # below this, Hough corner detection is unreliable
-_HOUGH_MIN_LENGTH_RATIO: float = 0.10   # minLineLength as a fraction of the canvas diagonal
-_HOUGH_MAX_GAP_RATIO: float = 0.05      # maxLineGap as a fraction of the canvas diagonal
-_ARC_TRIM_FRACTION: float = 0.15        # fraction of arc endpoints trimmed before line fit
-_PARALLEL_DET_THRESHOLD: float = 1e-6   # determinant threshold for near-parallel lines
+_MIN_CONTOUR_POINTS: int = 20  # below this, Hough corner detection is unreliable
+_HOUGH_MIN_LENGTH_RATIO: float = (
+    0.10  # minLineLength as a fraction of the canvas diagonal
+)
+_HOUGH_MAX_GAP_RATIO: float = 0.05  # maxLineGap as a fraction of the canvas diagonal
+_ARC_TRIM_FRACTION: float = 0.15  # fraction of arc endpoints trimmed before line fit
+_PARALLEL_DET_THRESHOLD: float = 1e-6  # determinant threshold for near-parallel lines
 
 
 def find_corners_lines_intersect(contour_points: np.ndarray) -> np.ndarray | None:
@@ -207,9 +209,7 @@ def _corners_via_farthest_split(contour_xy: np.ndarray) -> np.ndarray | None:
     return np.array(corners, dtype=np.int32).reshape(4, 1, 2)
 
 
-def compute_intersection(
-    line1: np.ndarray, line2: np.ndarray
-) -> list[float] | None:
+def compute_intersection(line1: np.ndarray, line2: np.ndarray) -> list[float] | None:
     """
     Finds the intersection point of two lines.
     Each line is given by (vx, vy, x0, y0) from cv2.fitLine.
@@ -294,7 +294,8 @@ def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
         pts (List[Tuple[float, float]]): List of 4 points in the format of (x, y)
 
     Returns:
-        List[List[int]]: List of 4 points in the format of [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+        List[List[int]]: List of 4 points in the format of
+        [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
     """
     rect = np.zeros((4, 2), dtype=np.float32)
     pts_arr = np.array(pts)
@@ -368,9 +369,7 @@ def perspective_transform(
         Warped image
     """
     if corners.shape != (4, 1, 2):
-        raise ValueError(
-            f"corners must have shape (4, 1, 2), got {corners.shape}"
-        )
+        raise ValueError(f"corners must have shape (4, 1, 2), got {corners.shape}")
 
     corners = order_points(np.concatenate(corners).tolist())
 

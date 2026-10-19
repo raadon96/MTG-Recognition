@@ -371,7 +371,9 @@ def _fetch_mtgjson_version() -> str:
 # ---------------------------------------------------------------------------
 
 
-def _needs_mobilecache_rebuild(state: dict, remote_version: str | None, force: bool) -> bool:
+def _needs_mobilecache_rebuild(
+    state: dict, remote_version: str | None, force: bool
+) -> bool:
     if force:
         return True
     if remote_version is None:
@@ -414,14 +416,20 @@ def _needs_phash_rebuild(state: dict, force: bool) -> bool:
     is_flag=True,
     default=False,
     show_default=True,
-    help="Bypass all version checks and rebuild MobileCache, images, and pHash index unconditionally.",
+    help=(
+        "Bypass all version checks and rebuild MobileCache, images, and pHash index "
+        "unconditionally."
+    ),
 )
 @click.option(
     "--update-db",
     is_flag=True,
     default=False,
     show_default=True,
-    help="Check for a new MTGJSON release and rebuild MobileCache, images, and pHash index if outdated.",
+    help=(
+        "Check for a new MTGJSON release and rebuild MobileCache, images, "
+        "and pHash index if outdated."
+    ),
 )
 def main(force: bool, update_db: bool) -> None:
     """Rebuild the full reference data stack in one shot.
@@ -444,7 +452,8 @@ def main(force: bool, update_db: bool) -> None:
 
         if not _needs_mobilecache_rebuild(state, remote_version, force):
             console.print(
-                f"[green]✓ MobileCache is up-to-date ({state['mobilecache_version']}) — skipping rebuild[/green]"
+                f"[green]✓ MobileCache is up-to-date ({state['mobilecache_version']}) "
+                "— skipping rebuild[/green]"
             )
             summary["MobileCache"] = f"skipped ({state['mobilecache_version']})"
             dest_engine = None
@@ -465,7 +474,8 @@ def main(force: bool, update_db: bool) -> None:
 
         if not _needs_images_rebuild(state, force):
             console.print(
-                f"[green]✓ Reference images are up-to-date ({state['images_version']}) — skipping download[/green]"
+                f"[green]✓ Reference images are up-to-date ({state['images_version']}) "
+                "— skipping download[/green]"
             )
             summary["Reference images"] = f"skipped ({state['images_version']})"
         else:
@@ -485,7 +495,8 @@ def main(force: bool, update_db: bool) -> None:
 
         if not _needs_phash_rebuild(state, force):
             console.print(
-                f"[green]✓ pHash index is up-to-date ({state['phash_version']}) — skipping rebuild[/green]"
+                f"[green]✓ pHash index is up-to-date ({state['phash_version']}) "
+                "— skipping rebuild[/green]"
             )
             summary["pHash index"] = f"skipped ({state['phash_version']})"
         else:

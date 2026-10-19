@@ -84,7 +84,9 @@ def _single_corners(mask: np.ndarray) -> list[list[int]] | None:
 
 
 def _per_blob_corners(mask: np.ndarray) -> list[list[list[int]]]:
-    """Corners per blob, sorted by centroid. Returns [] if any blob yields no corners."""
+    """Corners per blob, sorted by centroid. Returns [] if any blob yields no
+    corners.
+    """
     result = []
     for _, _, blob_mask in _sorted_blobs(mask):
         corners = corners_from_binary_mask(blob_mask, erode=True)
@@ -108,7 +110,8 @@ def _process(
     corners_mode: str = "none",  # "single" | "per_blob" | "none"
 ) -> None:
     """
-    Downscale images and masks from src_* into tests/regression/segmentation/fixtures/<fixture_subdir>/.
+    Downscale images and masks from src_* into
+    tests/regression/segmentation/fixtures/<fixture_subdir>/.
 
     Args:
         corners_mode:

@@ -89,8 +89,9 @@ class TestBypassPath:
         assert len(result.segments) == 1
 
     def test_bypass_segment_output_size(self):
-        # The bypass image (630×880) is already within [WARPED_MIN_SIZE, WARPED_MAX_SIZE],
-        # so its natural size is preserved — it is NOT forced to WARPED_MIN_SIZE.
+        # The bypass image (630×880) is already within
+        # [WARPED_MIN_SIZE, WARPED_MAX_SIZE], so its natural size is preserved —
+        # it is NOT forced to WARPED_MIN_SIZE.
         result = self.seg.segment(_bypass_img())
         h, w = result.segments[0].warped_image.shape[:2]
         from mtg_recognition.engine.segmentation.seg_utils import WARPED_MAX_SIZE

@@ -86,9 +86,7 @@ def detect_cards_cv(
             if not valid_aspect_ratio(corners, aspect_ratio_tolerance):
                 continue
 
-            segments.append(
-                CardSegment(warped_image=warp_card(warp_from, corners))
-            )
+            segments.append(CardSegment(warped_image=warp_card(warp_from, corners)))
 
         if segments:
             break  # don't try inverted binary if forward pass found cards

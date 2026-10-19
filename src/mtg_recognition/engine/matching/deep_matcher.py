@@ -159,7 +159,8 @@ class DeepCardMatcher(BaseModel):
 
     def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
         """
-        Scans the reference directory, extracts and saves embeddings using optimized DataLoader.
+        Scans the reference directory, extracts and saves embeddings using optimized
+        DataLoader.
         """
         if self.index_path.exists() and self.mapping_path.exists():
             print("Embeddings already exist. Use force=True to rebuild.")
@@ -241,7 +242,8 @@ class DeepCardMatcher(BaseModel):
         If both UUIDs and indices are given, raises a ValueError.
         If only UUIDs are given, returns the corresponding indices and UUIDs.
         If only indices are given, returns the corresponding UUIDs and embeddings.
-        If neither UUIDs nor indices are given, returns the entire UUID mapping and embeddings.
+        If neither UUIDs nor indices are given, returns the entire UUID mapping and
+        embeddings.
         """
         if subset_uuids and subset_idxs:
             raise ValueError(
