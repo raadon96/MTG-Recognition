@@ -23,3 +23,7 @@ _Avoid_: matches, results, top-k
 **Score**:
 How well the text read off the card agrees with a printing's details, from 0 to 100; higher is better.
 _Avoid_: confidence (it is not a probability), similarity, distance
+
+**Reference data**:
+Everything built from one MTGJSON release and used to recognise cards: the MobileCache database, the reference images and the pHash index.
+_Avoid_: reference catalogue, assets

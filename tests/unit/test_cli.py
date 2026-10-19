@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
+from mtg_recognition.reference import ReferenceData
 
 
 @pytest.mark.unit
@@ -142,34 +143,31 @@ class TestBuildIndexCommand:
         assert "--workers" in result.output
 
     def test_build_index_preflight_missing_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR does not exist; output contains path and
-        'mtg sync'.
+        """Exit code 1 when the images directory does not exist; output contains
+        its path and 'mtg sync'.
         """
-        nonexistent = tmp_path / "does_not_exist"
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(
-            type(settings), "IMG_DIR", property(lambda self: nonexistent)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 1
-        assert "data/reference/images/" in result.output
+        assert f"{tmp_path / 'reference' / 'images'}/" in result.output
         assert "mtg sync" in result.output
 
     def test_build_index_preflight_empty_dir(self, tmp_path, monkeypatch) -> None:
-        """Exit code 1 when IMG_DIR exists but is empty; output contains path and
-        'mtg sync'.
+        """Exit code 1 when the images directory exists but is empty; output
+        contains its path and 'mtg sync'.
         """
-        empty_dir = tmp_path / "images"
-        empty_dir.mkdir()
+        empty_dir = tmp_path / "reference" / "images"
+        empty_dir.mkdir(parents=True)
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: empty_dir))
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 1
-        assert "data/reference/images/" in result.output
+        assert f"{empty_dir}/" in result.output
         assert "mtg sync" in result.output
 
     def test_build_index_invokes_matcher_with_defaults(
@@ -181,13 +179,13 @@ class TestBuildIndexCommand:
         from multiprocessing import cpu_count
         from unittest.mock import MagicMock, patch
 
-        img_dir = tmp_path / "images"
-        img_dir.mkdir()
+        img_dir = tmp_path / "reference" / "images"
+        img_dir.mkdir(parents=True)
         (img_dir / "dummy.jpg").write_bytes(b"")
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         mock_matcher_instance = MagicMock()
         with patch(
@@ -197,7 +195,9 @@ class TestBuildIndexCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["build-index"])
         assert result.exit_code == 0
-        MockMatcher.assert_called_once_with()
+        MockMatcher.assert_called_once_with(
+            reference=ReferenceData(tmp_path / "reference")
+        )
         mock_matcher_instance.build_index.assert_called_once_with(
             force=False, num_workers=cpu_count() - 1
         )
@@ -210,13 +210,13 @@ class TestBuildIndexCommand:
         """
         from unittest.mock import MagicMock, patch
 
-        img_dir = tmp_path / "images"
-        img_dir.mkdir()
+        img_dir = tmp_path / "reference" / "images"
+        img_dir.mkdir(parents=True)
         (img_dir / "dummy.jpg").write_bytes(b"")
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         mock_matcher_instance = MagicMock()
         with patch(
@@ -226,7 +226,9 @@ class TestBuildIndexCommand:
             runner = CliRunner()
             result = runner.invoke(cli, ["build-index", "--force", "--workers", "4"])
         assert result.exit_code == 0
-        MockMatcher.assert_called_once_with()
+        MockMatcher.assert_called_once_with(
+            reference=ReferenceData(tmp_path / "reference")
+        )
         mock_matcher_instance.build_index.assert_called_once_with(
             force=True, num_workers=4
         )
@@ -252,14 +254,10 @@ class TestSyncCommand:
         from unittest.mock import MagicMock, patch
 
         ref_dir = tmp_path / "reference"
-        local_db = ref_dir / "MobileCache.sqlite"
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         mock_engine = MagicMock()
         mock_matcher_instance = MagicMock()
@@ -286,7 +284,7 @@ class TestSyncCommand:
         )
         mock_build.assert_called_once()
         mock_download.assert_called_once()
-        MockMatcher.assert_called_once_with()
+        MockMatcher.assert_called_once_with(reference=ReferenceData(ref_dir))
         mock_matcher_instance.build_index.assert_called_once()
 
         # State file must exist with three version strings
@@ -309,10 +307,7 @@ class TestSyncCommand:
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
         state_file = ref_dir / ".mtg-sync-state.json"
         # Stub image and phash dirs so file-existence guards don't force a rebuild
         img_dir = ref_dir / "images"
@@ -360,15 +355,11 @@ class TestSyncCommand:
 
         ref_dir = tmp_path / "reference"
         ref_dir.mkdir(parents=True)
-        local_db = ref_dir / "MobileCache.sqlite"
         state_file = ref_dir / ".mtg-sync-state.json"
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         state_file.write_text(
             json.dumps(
@@ -413,15 +404,11 @@ class TestSyncCommand:
 
         ref_dir = tmp_path / "reference"
         ref_dir.mkdir(parents=True)
-        local_db = ref_dir / "MobileCache.sqlite"
         state_file = ref_dir / ".mtg-sync-state.json"
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         with (
             patch(
@@ -459,10 +446,7 @@ class TestSyncCommand:
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         state_file = ref_dir / ".mtg-sync-state.json"
         phash_dir = ref_dir / "index" / "phash"
@@ -528,10 +512,7 @@ class TestSyncCommand:
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         state_file = ref_dir / ".mtg-sync-state.json"
         # img_dir intentionally absent — simulates fresh clone without images
@@ -580,10 +561,7 @@ class TestSyncCommand:
 
         from mtg_recognition.settings import settings
 
-        monkeypatch.setattr(type(settings), "REF_DIR", property(lambda self: ref_dir))
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: local_db)
-        )
+        monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
 
         state_file = ref_dir / ".mtg-sync-state.json"
         img_dir = ref_dir / "images"

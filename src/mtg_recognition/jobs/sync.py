@@ -15,6 +15,7 @@ import json
 import logging
 import shutil
 import zipfile
+from dataclasses import replace
 from pathlib import Path
 from urllib import request
 
@@ -26,6 +27,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from tqdm.asyncio import tqdm
 
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
+from mtg_recognition.reference import ReferenceData, SyncState
 from mtg_recognition.settings import settings
 
 from .schemas import CardIdentifiers, Cards, MobileCache, Sets
@@ -37,13 +39,7 @@ SCRYFALL_HEADERS = {
 # MTGJSON Meta endpoint for a lightweight version check (D-04).
 META_URL = "https://mtgjson.com/api/v5/Meta.json"
 
-# --- LOGGING SETUP ---
-logging.basicConfig(
-    level=logging.ERROR,
-    filename=settings.LOG_FILE,
-    filemode="w",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+logger = logging.getLogger(__name__)
 
 console = Console()
 
@@ -69,18 +65,20 @@ def extract_year(releaseDate: str) -> str | None:
     return releaseDate.split("-")[0]
 
 
-def create_database(source_engine, dest_engine, force: bool = False):
-    """Migrate data from Source to Destination with streaming."""
+def create_database(source_engine, dest_engine, db_path: Path, force: bool = False):
+    """Migrate data from Source to Destination (the database at `db_path`) with
+    streaming.
+    """
 
     # 1. Reset Destination
-    if settings.LOCAL_DB_FILE.exists():
-        print(f"Local database already exists at {settings.LOCAL_DB_FILE}...")
+    if db_path.exists():
+        print(f"Local database already exists at {db_path}...")
         if not force:
             print("Skipping database creation...")
             return
 
-        print(f"Removing existing database at {settings.LOCAL_DB_FILE}...")
-        settings.LOCAL_DB_FILE.unlink()
+        print(f"Removing existing database at {db_path}...")
+        db_path.unlink()
 
     # Create tables (MobileCache is imported from models.py)
     SQLModel.metadata.create_all(dest_engine, tables=[MobileCache.__table__])
@@ -159,12 +157,7 @@ def create_database(source_engine, dest_engine, force: bool = False):
             dest_session.commit()
             total_migrated += len(batch)
 
-    print(f"Database created at {settings.LOCAL_DB_FILE} ({total_migrated} cards)")
-
-    # # Cleanup source to save space
-    # if settings.TMP_DIR.exists():
-    #     shutil.rmtree(settings.TMP_DIR)
-    #
+    print(f"Database created at {db_path} ({total_migrated} cards)")
 
 
 async def download_file_with_retry(session, url, path, retries=3):
@@ -188,20 +181,20 @@ async def download_file_with_retry(session, url, path, retries=3):
                         f.write(content)
                     return
                 elif response.status == 404:
-                    logging.error(f"404 Not Found: {url}")
+                    logger.error(f"404 Not Found: {url}")
                     # Don't retry 404s
                     return
                 else:
                     # Log other HTTP errors
-                    logging.warning(
+                    logger.warning(
                         f"HTTP {response.status}: {url} (Attempt {attempt + 1})"
                     )
         except TimeoutError:
-            logging.warning(f"Timeout: {url} (Attempt {attempt + 1})")
+            logger.warning(f"Timeout: {url} (Attempt {attempt + 1})")
         except aiohttp.ClientError as e:
-            logging.warning(f"ClientError: {url} - {str(e)} (Attempt {attempt + 1})")
+            logger.warning(f"ClientError: {url} - {str(e)} (Attempt {attempt + 1})")
         except Exception as e:
-            logging.error(f"Unexpected Error: {url} - {str(e)}")
+            logger.error(f"Unexpected Error: {url} - {str(e)}")
             return  # Don't retry unexpected errors
 
         # Wait before retry, unless it's the last attempt
@@ -220,8 +213,7 @@ async def image_worker(queue, session, pbar):
             queue.task_done()
             break
 
-        uuid, url = item
-        file_path = settings.IMG_DIR / f"{uuid}.jpg"
+        url, file_path = item
 
         await download_file_with_retry(session, url, file_path)
 
@@ -229,18 +221,11 @@ async def image_worker(queue, session, pbar):
         queue.task_done()
 
 
-async def download_manager(dest_engine, max_concurrent=20):
+async def download_manager(reference: ReferenceData, max_concurrent=20):
     """Manages the download queue and workers."""
 
-    # 1. Fetch URLs efficiently (Stream only UUID and URL)
-    with Session(dest_engine) as session:
-        # Only select needed columns
-        statement = select(MobileCache.uuid, MobileCache.url).where(
-            MobileCache.url is not None
-        )
-        # Load all into memory is okay for just UUID+URL strings (approx 10MB RAM)
-        # If strict on RAM, we could stream this too, but queue filling is fast.
-        cards_to_download = session.exec(statement).all()
+    # 1. Fetch the UUID and URL of every printing whose image is not on disk
+    cards_to_download = reference.missing_images()
 
     queue = asyncio.Queue(maxsize=1000)  # Buffer size
     total_files = len(cards_to_download)
@@ -258,8 +243,8 @@ async def download_manager(dest_engine, max_concurrent=20):
         ]
 
         # 4. Fill Queue (Producer)
-        for card in cards_to_download:
-            await queue.put((card.uuid, card.url))
+        for uuid, url in cards_to_download:
+            await queue.put((url, reference.image_path(uuid)))
 
         # 5. Signal Completion
         for _ in range(max_concurrent):
@@ -275,83 +260,66 @@ async def download_manager(dest_engine, max_concurrent=20):
         pbar.close()
 
 
-def download_raw_images(dest_engine):
+def download_raw_images(reference: ReferenceData):
     # Windows/Python 3.8+ specific event loop policy fix might be needed on some systems
     # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(
-        download_manager(dest_engine, max_concurrent=25)
+        download_manager(reference, max_concurrent=25)
     )  # TODO download webp images instead
 
     print("\nDone!")
 
 
-def build_mobilecache():
-    """Download AllPrintings ZIP and rebuild MobileCache.
-
-    Returns the SQLAlchemy Engine pointing at settings.LOCAL_DB_FILE so the
-    caller can pass it directly to download_images() without recreating it.
-    """
-    if not settings.MTGO_DB_FILE_ZIP.exists():
+def build_mobilecache(reference: ReferenceData) -> None:
+    """Download AllPrintings ZIP and rebuild MobileCache."""
+    reference.tmp_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = reference.allprintings_zip_path
+    if not zip_path.exists():
         console.print(f"Downloading from {settings.MTGJSON_URL}...")
         req = request.Request(settings.MTGJSON_URL, headers=SCRYFALL_HEADERS)
         with (
             request.urlopen(req) as response,
-            open(settings.MTGO_DB_FILE_ZIP, "wb") as out_file,
+            open(zip_path, "wb") as out_file,
         ):
             shutil.copyfileobj(response, out_file)
 
     console.print("Extracting...")
-    with zipfile.ZipFile(settings.MTGO_DB_FILE_ZIP, "r") as zip_ref:
-        zip_ref.extractall(settings.TMP_DIR)
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(reference.tmp_dir)
 
     # Create cache db for memory efficient lookups during matching
     console.print("Building Local Database...")
-    source_engine = create_engine(f"sqlite:///{settings.MTGO_DB_FILE}")
-    dest_engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-    create_database(source_engine, dest_engine, force=True)
+    source_engine = create_engine(f"sqlite:///{reference.allprintings_path}")
+    dest_engine = create_engine(f"sqlite:///{reference.db_path}")
+    try:
+        create_database(source_engine, dest_engine, reference.db_path, force=True)
+    finally:
+        source_engine.dispose()
+        dest_engine.dispose()
 
-    return dest_engine
 
+def download_images(reference: ReferenceData) -> None:
+    """Download the reference images missing from disk.
 
-def download_images(dest_engine=None):
-    """Download reference images.
-
-    If dest_engine is None, creates a new SQLAlchemy Engine pointing at
-    settings.LOCAL_DB_FILE so the function is callable standalone.
-    download_raw_images() is already incremental — it skips files that exist on disk.
+    Download errors are written to `reference.log_file` (overwritten on each run)
+    through a file handler attached only while the download runs.
     """
-    if dest_engine is None:
-        dest_engine = create_engine(f"sqlite:///{settings.LOCAL_DB_FILE}")
-
     console.print("Downloading reference images...")
-    download_raw_images(dest_engine)
+    reference.root.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(reference.log_file, mode="w")
+    handler.setLevel(logging.ERROR)
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+    try:
+        download_raw_images(reference)
+    finally:
+        logger.removeHandler(handler)
+        handler.close()
 
 
 # ---------------------------------------------------------------------------
 # Sync state helpers
 # ---------------------------------------------------------------------------
-
-
-def _load_state() -> dict:
-    """Return the sync state dict from disk.
-
-    Returns all-null on FileNotFoundError or JSON decode error (D-03:
-    missing or corrupt state treated the same as first-run).
-    """
-    try:
-        return json.loads(settings.STATE_FILE.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {
-            "mobilecache_version": None,
-            "images_version": None,
-            "phash_version": None,
-        }
-
-
-def _save_state(state: dict) -> None:
-    """Write state dict to STATE_FILE as pretty-printed JSON."""
-    settings.STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    settings.STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _fetch_mtgjson_version() -> str:
@@ -372,36 +340,42 @@ def _fetch_mtgjson_version() -> str:
 
 
 def _needs_mobilecache_rebuild(
-    state: dict, remote_version: str | None, force: bool
+    reference: ReferenceData,
+    state: SyncState,
+    remote_version: str | None,
+    force: bool,
 ) -> bool:
     if force:
         return True
     if remote_version is None:
         return False  # pinned mode (no --update-db): never rebuild the database
     return (
-        state["mobilecache_version"] is None
-        or state["mobilecache_version"] != remote_version
-        or not settings.LOCAL_DB_FILE.exists()
+        state.mobilecache_version is None
+        or state.mobilecache_version != remote_version
+        or not reference.db_path.exists()
     )
 
 
-def _needs_images_rebuild(state: dict, force: bool) -> bool:
+def _needs_images_rebuild(
+    reference: ReferenceData, state: SyncState, force: bool
+) -> bool:
     return (
         force
-        or state["images_version"] is None
-        or state["images_version"] != state["mobilecache_version"]
-        or not settings.IMG_DIR.exists()
-        or not any(settings.IMG_DIR.iterdir())
+        or state.images_version is None
+        or state.images_version != state.mobilecache_version
+        or not reference.images_dir.exists()
+        or not any(reference.images_dir.iterdir())
     )
 
 
-def _needs_phash_rebuild(state: dict, force: bool) -> bool:
+def _needs_phash_rebuild(
+    reference: ReferenceData, state: SyncState, force: bool
+) -> bool:
     return (
         force
-        or state["phash_version"] is None
-        or state["phash_version"] != state["images_version"]
-        or not settings.PHASH_INDEX_FILE.exists()
-        or not settings.PHASH_MAPPING_FILE.exists()
+        or state.phash_version is None
+        or state.phash_version != state.images_version
+        or not all(path.exists() for path in reference.phash_files)
     )
 
 
@@ -439,32 +413,33 @@ def main(force: bool, update_db: bool) -> None:
     and rebuild all artifacts if outdated. Use --force to bypass all version
     checks and rebuild unconditionally.
     """
-    settings.REF_DIR.mkdir(parents=True, exist_ok=True)
+    reference = ReferenceData.default()
+    reference.root.mkdir(parents=True, exist_ok=True)
     summary: dict[str, str] = {}
 
     try:
         remote_version = _fetch_mtgjson_version() if (update_db or force) else None
-        state = _load_state()
+        state = reference.load_state()
         # ------------------------------------------------------------------
         # Step 1 — MobileCache (D-04, D-13)
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 1: MobileCache ---[/bold]")
 
-        if not _needs_mobilecache_rebuild(state, remote_version, force):
+        if not _needs_mobilecache_rebuild(reference, state, remote_version, force):
             console.print(
-                f"[green]✓ MobileCache is up-to-date ({state['mobilecache_version']}) "
+                f"[green]✓ MobileCache is up-to-date ({state.mobilecache_version}) "
                 "— skipping rebuild[/green]"
             )
-            summary["MobileCache"] = f"skipped ({state['mobilecache_version']})"
-            dest_engine = None
+            summary["MobileCache"] = f"skipped ({state.mobilecache_version})"
         else:
-            state["mobilecache_version"] = None  # D-02: null before work begins
-            _save_state(state)
+            # D-02: null before work begins
+            state = replace(state, mobilecache_version=None)
+            reference.save_state(state)
 
-            dest_engine = build_mobilecache()
+            build_mobilecache(reference)
 
-            state["mobilecache_version"] = remote_version
-            _save_state(state)
+            state = replace(state, mobilecache_version=remote_version)
+            reference.save_state(state)
             summary["MobileCache"] = f"rebuilt ({remote_version})"
 
         # ------------------------------------------------------------------
@@ -472,44 +447,46 @@ def main(force: bool, update_db: bool) -> None:
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 2: Reference Images ---[/bold]")
 
-        if not _needs_images_rebuild(state, force):
+        if not _needs_images_rebuild(reference, state, force):
             console.print(
-                f"[green]✓ Reference images are up-to-date ({state['images_version']}) "
+                f"[green]✓ Reference images are up-to-date ({state.images_version}) "
                 "— skipping download[/green]"
             )
-            summary["Reference images"] = f"skipped ({state['images_version']})"
+            summary["Reference images"] = f"skipped ({state.images_version})"
         else:
-            state["images_version"] = None  # D-02: null before work begins
-            _save_state(state)
+            # D-02: null before work begins
+            state = replace(state, images_version=None)
+            reference.save_state(state)
 
-            download_images(dest_engine=dest_engine)
+            download_images(reference)
 
-            state["images_version"] = state["mobilecache_version"]
-            _save_state(state)
-            summary["Reference images"] = f"downloaded ({state['images_version']})"
+            state = replace(state, images_version=state.mobilecache_version)
+            reference.save_state(state)
+            summary["Reference images"] = f"downloaded ({state.images_version})"
 
         # ------------------------------------------------------------------
         # Step 3 — pHash index (D-06, D-13, D-15)
         # ------------------------------------------------------------------
         console.print("\n[bold]--- Step 3: pHash Index ---[/bold]")
 
-        if not _needs_phash_rebuild(state, force):
+        if not _needs_phash_rebuild(reference, state, force):
             console.print(
-                f"[green]✓ pHash index is up-to-date ({state['phash_version']}) "
+                f"[green]✓ pHash index is up-to-date ({state.phash_version}) "
                 "— skipping rebuild[/green]"
             )
-            summary["pHash index"] = f"skipped ({state['phash_version']})"
+            summary["pHash index"] = f"skipped ({state.phash_version})"
         else:
-            state["phash_version"] = None  # D-02: null before work begins
-            _save_state(state)
+            # D-02: null before work begins
+            state = replace(state, phash_version=None)
+            reference.save_state(state)
 
             # D-15: tqdm progress bar inside build_index() passes through unchanged
-            matcher = PHashCardMatcher()
+            matcher = PHashCardMatcher(reference=reference)
             matcher.build_index(force=True)
 
-            state["phash_version"] = state["images_version"]
-            _save_state(state)
-            summary["pHash index"] = f"rebuilt ({state['phash_version']})"
+            state = replace(state, phash_version=state.images_version)
+            reference.save_state(state)
+            summary["pHash index"] = f"rebuilt ({state.phash_version})"
 
     except Exception as exc:
         # SYNC-04: non-zero exit with descriptive error message

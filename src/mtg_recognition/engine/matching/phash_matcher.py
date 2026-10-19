@@ -1,6 +1,5 @@
 import json
 from multiprocessing import Pool, cpu_count
-from pathlib import Path
 
 import click
 import imagehash
@@ -10,7 +9,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from mtg_recognition.core.ranking import sort_scores_with_indices
-from mtg_recognition.settings import settings
+from mtg_recognition.reference import ReferenceData
 
 # --- Configuration ---
 HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
@@ -24,23 +23,19 @@ class PHashCardMatcher:
     If not, the matcher is ready for build_index() to be called explicitly.
 
     Args:
-        index_path: Path to save/load the numpy array of hash values
-        mapping_path: Path to save/load the UUID mapping
-        img_dir: Directory containing reference card images
+        reference: Reference data holding the index files and the reference
+            card images (default: `ReferenceData.default()`, resolved here)
         hash_size: Size of the perceptual hash (default 16 = 256-bit hash)
     """
 
     def __init__(
         self,
-        index_path: Path = settings.PHASH_INDEX_FILE,
-        mapping_path: Path = settings.PHASH_MAPPING_FILE,
-        img_dir: Path = settings.IMG_DIR,
+        reference: ReferenceData | None = None,
         hash_size: int = HASH_SIZE,
     ):
-
-        self.index_path = Path(index_path)
-        self.mapping_path = Path(mapping_path)
-        self.img_dir = img_dir
+        reference = reference or ReferenceData.default()
+        self.index_path, self.mapping_path = reference.phash_files
+        self.img_dir = reference.images_dir
         self.hash_size = hash_size
 
         # type and shape validation using numpydantic
@@ -270,13 +265,14 @@ def build_index(force: bool, workers: int) -> None:
     to download reference images if you haven't already).
     """
     # Preflight check (D-10): image directory must exist and be non-empty.
-    img_dir = settings.IMG_DIR
+    reference = ReferenceData.default()
+    img_dir = reference.images_dir
     if not img_dir.exists() or not any(img_dir.iterdir()):
         click.echo(
-            "Error: data/reference/images/ is missing or empty. Run 'mtg sync' first.",
+            f"Error: {img_dir}/ is missing or empty. Run 'mtg sync' first.",
             err=True,
         )
         raise SystemExit(1)
 
-    matcher = PHashCardMatcher()
+    matcher = PHashCardMatcher(reference=reference)
     matcher.build_index(force=force, num_workers=workers)

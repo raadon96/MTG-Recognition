@@ -1,13 +1,20 @@
 """Tests for `mtg_recognition.jobs.sync` step functions.
 
 Predicate functions (_needs_*_rebuild) are covered by TestNeedsRebuild.
-download_images() engine-passing behaviour is covered by TestDownloadImages.
+download_images() logging is covered by TestDownloadImages.
 The sync CLI command behaviour is covered by TestSyncCommand in test_cli.py.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
+
+from mtg_recognition.reference import ReferenceData, SyncState
+
+
+@pytest.fixture
+def reference(tmp_path) -> ReferenceData:
+    return ReferenceData(tmp_path)
 
 
 @pytest.mark.unit
@@ -18,298 +25,191 @@ class TestNeedsRebuild:
 
     # --- _needs_mobilecache_rebuild ---
 
-    def test_mobilecache_force_always_rebuilds(self) -> None:
+    def test_mobilecache_force_always_rebuilds(self, reference) -> None:
         """force=True returns True regardless of state or file existence."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_mobilecache_rebuild(state, remote_version="V", force=True) is True
-
-    def test_mobilecache_null_version_rebuilds(self) -> None:
-        """null mobilecache_version returns True (short-circuits before file check)."""
-        from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
-
-        state = {
-            "mobilecache_version": None,
-            "images_version": None,
-            "phash_version": None,
-        }
+        state = SyncState("V", "V", "V")
         assert (
-            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
-        )
-
-    def test_mobilecache_version_mismatch_rebuilds(self) -> None:
-        """Stale local version triggers rebuild (short-circuits before file check)."""
-        from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
-
-        state = {
-            "mobilecache_version": "V_old",
-            "images_version": "V_old",
-            "phash_version": "V_old",
-        }
-        assert (
-            _needs_mobilecache_rebuild(state, remote_version="V_new", force=False)
+            _needs_mobilecache_rebuild(reference, state, remote_version="V", force=True)
             is True
         )
 
-    def test_mobilecache_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
+    def test_mobilecache_null_version_rebuilds(self, reference) -> None:
+        """null mobilecache_version returns True (short-circuits before file check)."""
+        from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
+
+        state = SyncState(None, None, None)
+        assert (
+            _needs_mobilecache_rebuild(
+                reference, state, remote_version="V", force=False
+            )
+            is True
+        )
+
+    def test_mobilecache_version_mismatch_rebuilds(self, reference) -> None:
+        """Stale local version triggers rebuild (short-circuits before file check)."""
+        from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
+
+        state = SyncState("V_old", "V_old", "V_old")
+        assert (
+            _needs_mobilecache_rebuild(
+                reference, state, remote_version="V_new", force=False
+            )
+            is True
+        )
+
+    def test_mobilecache_up_to_date_skips(self, reference) -> None:
         """Matching version + file exists returns False."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
-        from mtg_recognition.settings import settings
 
-        db = tmp_path / "MobileCache.sqlite"
-        db.write_bytes(b"")
-        monkeypatch.setattr(type(settings), "LOCAL_DB_FILE", property(lambda self: db))
+        reference.db_path.write_bytes(b"")
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
+        state = SyncState("V", "V", "V")
         assert (
-            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is False
+            _needs_mobilecache_rebuild(
+                reference, state, remote_version="V", force=False
+            )
+            is False
         )
 
-    def test_mobilecache_file_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
-        """Matching version but LOCAL_DB_FILE absent triggers rebuild."""
+    def test_mobilecache_file_missing_rebuilds(self, reference) -> None:
+        """Matching version but the database file absent triggers rebuild."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
-        from mtg_recognition.settings import settings
 
-        missing = tmp_path / "MobileCache.sqlite"
-        monkeypatch.setattr(
-            type(settings), "LOCAL_DB_FILE", property(lambda self: missing)
-        )
-
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
+        state = SyncState("V", "V", "V")
         assert (
-            _needs_mobilecache_rebuild(state, remote_version="V", force=False) is True
+            _needs_mobilecache_rebuild(
+                reference, state, remote_version="V", force=False
+            )
+            is True
         )
 
-    def test_mobilecache_skips_without_update_db(self) -> None:
+    def test_mobilecache_skips_without_update_db(self, reference) -> None:
         """remote_version=None (no --update-db) never rebuilds MobileCache."""
         from mtg_recognition.jobs.sync import _needs_mobilecache_rebuild
 
         # Version mismatch — would normally rebuild, but remote_version=None pins the DB
-        state = {
-            "mobilecache_version": "V_old",
-            "images_version": "V_old",
-            "phash_version": "V_old",
-        }
+        state = SyncState("V_old", "V_old", "V_old")
         assert (
-            _needs_mobilecache_rebuild(state, remote_version=None, force=False) is False
+            _needs_mobilecache_rebuild(
+                reference, state, remote_version=None, force=False
+            )
+            is False
         )
 
     # --- _needs_images_rebuild ---
 
-    def test_images_force_always_rebuilds(self) -> None:
+    def test_images_force_always_rebuilds(self, reference) -> None:
         """force=True returns True regardless of state."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_images_rebuild(state, force=True) is True
+        state = SyncState("V", "V", "V")
+        assert _needs_images_rebuild(reference, state, force=True) is True
 
-    def test_images_null_version_rebuilds(self) -> None:
+    def test_images_null_version_rebuilds(self, reference) -> None:
         """null images_version returns True."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": None,
-            "phash_version": None,
-        }
-        assert _needs_images_rebuild(state, force=False) is True
+        state = SyncState("V", None, None)
+        assert _needs_images_rebuild(reference, state, force=False) is True
 
-    def test_images_version_mismatch_rebuilds(self) -> None:
+    def test_images_version_mismatch_rebuilds(self, reference) -> None:
         """images_version != mobilecache_version returns True."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
 
-        state = {
-            "mobilecache_version": "V_new",
-            "images_version": "V_old",
-            "phash_version": "V_old",
-        }
-        assert _needs_images_rebuild(state, force=False) is True
+        state = SyncState("V_new", "V_old", "V_old")
+        assert _needs_images_rebuild(reference, state, force=False) is True
 
-    def test_images_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
-        """images_version matches mobilecache_version and IMG_DIR is non-empty returns
-        False.
+    def test_images_up_to_date_skips(self, reference) -> None:
+        """images_version matches mobilecache_version and the images directory is
+        non-empty returns False.
         """
         from mtg_recognition.jobs.sync import _needs_images_rebuild
-        from mtg_recognition.settings import settings
 
-        img_dir = tmp_path / "images"
-        img_dir.mkdir()
-        (img_dir / "dummy.jpg").write_bytes(b"")
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
+        reference.images_dir.mkdir()
+        reference.image_path("dummy").write_bytes(b"")
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_images_rebuild(state, force=False) is False
+        state = SyncState("V", "V", "V")
+        assert _needs_images_rebuild(reference, state, force=False) is False
 
-    def test_images_dir_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
-        """Missing IMG_DIR triggers rebuild even when versions match."""
+    def test_images_dir_missing_rebuilds(self, reference) -> None:
+        """Missing the images directory triggers rebuild even when versions match."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
-        from mtg_recognition.settings import settings
 
-        missing = tmp_path / "images"
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: missing))
+        state = SyncState("V", "V", "V")
+        assert _needs_images_rebuild(reference, state, force=False) is True
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_images_rebuild(state, force=False) is True
-
-    def test_images_dir_empty_rebuilds(self, tmp_path, monkeypatch) -> None:
-        """Empty IMG_DIR triggers rebuild even when versions match."""
+    def test_images_dir_empty_rebuilds(self, reference) -> None:
+        """Empty the images directory triggers rebuild even when versions match."""
         from mtg_recognition.jobs.sync import _needs_images_rebuild
-        from mtg_recognition.settings import settings
 
-        img_dir = tmp_path / "images"
-        img_dir.mkdir()
-        monkeypatch.setattr(type(settings), "IMG_DIR", property(lambda self: img_dir))
+        reference.images_dir.mkdir()
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_images_rebuild(state, force=False) is True
+        state = SyncState("V", "V", "V")
+        assert _needs_images_rebuild(reference, state, force=False) is True
 
     # --- _needs_phash_rebuild ---
 
-    def test_phash_force_always_rebuilds(self) -> None:
+    def test_phash_force_always_rebuilds(self, reference) -> None:
         """force=True returns True regardless of state or file existence."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_phash_rebuild(state, force=True) is True
+        state = SyncState("V", "V", "V")
+        assert _needs_phash_rebuild(reference, state, force=True) is True
 
-    def test_phash_null_version_rebuilds(self) -> None:
+    def test_phash_null_version_rebuilds(self, reference) -> None:
         """null phash_version returns True."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": None,
-        }
-        assert _needs_phash_rebuild(state, force=False) is True
+        state = SyncState("V", "V", None)
+        assert _needs_phash_rebuild(reference, state, force=False) is True
 
-    def test_phash_version_mismatch_rebuilds(self) -> None:
+    def test_phash_version_mismatch_rebuilds(self, reference) -> None:
         """phash_version != images_version returns True."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
 
-        state = {
-            "mobilecache_version": "V_new",
-            "images_version": "V_new",
-            "phash_version": "V_old",
-        }
-        assert _needs_phash_rebuild(state, force=False) is True
+        state = SyncState("V_new", "V_new", "V_old")
+        assert _needs_phash_rebuild(reference, state, force=False) is True
 
-    def test_phash_files_missing_rebuilds(self, tmp_path, monkeypatch) -> None:
+    def test_phash_files_missing_rebuilds(self, reference) -> None:
         """Matching versions but index files absent returns True."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
-        from mtg_recognition.settings import settings
 
-        missing = tmp_path / "does_not_exist"
-        monkeypatch.setattr(
-            type(settings), "PHASH_INDEX_FILE", property(lambda self: missing)
-        )
-        monkeypatch.setattr(
-            type(settings), "PHASH_MAPPING_FILE", property(lambda self: missing)
-        )
+        state = SyncState("V", "V", "V")
+        assert _needs_phash_rebuild(reference, state, force=False) is True
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_phash_rebuild(state, force=False) is True
-
-    def test_phash_up_to_date_skips(self, tmp_path, monkeypatch) -> None:
+    def test_phash_up_to_date_skips(self, reference) -> None:
         """Matching versions + both index files exist returns False."""
         from mtg_recognition.jobs.sync import _needs_phash_rebuild
-        from mtg_recognition.settings import settings
 
-        phash_dir = tmp_path / "index" / "phash"
-        phash_dir.mkdir(parents=True)
-        hashes = phash_dir / "hashes.npy"
-        mapping = phash_dir / "index_to_uuid.json"
+        hashes, mapping = reference.phash_files
+        hashes.parent.mkdir(parents=True)
         hashes.write_bytes(b"")
         mapping.write_text("{}")
-        monkeypatch.setattr(
-            type(settings), "PHASH_INDEX_FILE", property(lambda self: hashes)
-        )
-        monkeypatch.setattr(
-            type(settings), "PHASH_MAPPING_FILE", property(lambda self: mapping)
-        )
 
-        state = {
-            "mobilecache_version": "V",
-            "images_version": "V",
-            "phash_version": "V",
-        }
-        assert _needs_phash_rebuild(state, force=False) is False
+        state = SyncState("V", "V", "V")
+        assert _needs_phash_rebuild(reference, state, force=False) is False
 
 
 @pytest.mark.unit
 class TestDownloadImages:
-    """Test download_images() standalone and engine-passing behaviour."""
+    """Test download_images() logging."""
 
-    def test_download_images_creates_engine_when_none(self) -> None:
-        """When dest_engine=None, download_images() must create a SQLite engine."""
+    def test_download_errors_go_to_the_log_file(self, reference) -> None:
+        """Errors logged during the download land in reference.log_file, and the
+        file handler is detached afterwards.
+        """
         import mtg_recognition.jobs.sync as sync_module
 
-        mock_engine = MagicMock()
+        handlers_before = list(sync_module.logger.handlers)
 
-        with (
-            patch.object(
-                sync_module, "create_engine", return_value=mock_engine
-            ) as mock_ce,
-            patch.object(sync_module, "download_raw_images") as mock_dl,
-        ):
-            sync_module.download_images(dest_engine=None)
+        def fake_download(ref) -> None:
+            assert ref == reference
+            sync_module.logger.error("404 Not Found: https://img/x.jpg")
 
-        mock_ce.assert_called_once()
-        # The URL passed to create_engine must be a SQLite URL containing
-        # MobileCache.sqlite
-        call_args = mock_ce.call_args[0][0]
-        assert "sqlite:///" in call_args
-        assert "MobileCache.sqlite" in call_args
-        mock_dl.assert_called_once_with(mock_engine)
+        with patch.object(sync_module, "download_raw_images", fake_download):
+            sync_module.download_images(reference)
 
-    def test_download_images_uses_provided_engine(self) -> None:
-        """When a dest_engine is provided, create_engine must NOT be called."""
-        import mtg_recognition.jobs.sync as sync_module
-
-        sentinel_engine = MagicMock(name="sentinel_engine")
-
-        with (
-            patch.object(sync_module, "create_engine") as mock_ce,
-            patch.object(sync_module, "download_raw_images") as mock_dl,
-        ):
-            sync_module.download_images(dest_engine=sentinel_engine)
-
-        mock_ce.assert_not_called()
-        mock_dl.assert_called_once_with(sentinel_engine)
+        assert "404 Not Found: https://img/x.jpg" in reference.log_file.read_text()
+        assert sync_module.logger.handlers == handlers_before

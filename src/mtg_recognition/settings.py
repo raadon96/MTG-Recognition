@@ -36,65 +36,12 @@ class Settings(BaseSettings):
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
     U2NET_HOME: str = "src/mtg_recognition/engine/segmentation/models/prod"
 
-    # --- Derived paths ---
+    # --- Derived paths (reference data paths live in reference.ReferenceData) ---
     @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
         return Path(
             "src/mtg_recognition/engine/segmentation/models/prod/yoloe-11s-seg.pt"
         )
-
-    @property
-    def REF_DIR(self) -> Path:
-        return self.DATA_DIR / "reference"
-        # return self.DATA_DIR / "reference_test"
-
-    @property
-    def LOCAL_DB_FILE(self) -> Path:
-        return self.REF_DIR / "MobileCache.sqlite"
-
-    @property
-    def TMP_DIR(self) -> Path:
-        return self.REF_DIR / "tmp"
-
-    @property
-    def MTGO_DB_FILE_ZIP(self) -> Path:
-        return self.TMP_DIR / "AllPrintings.sqlite.zip"
-
-    @property
-    def MTGO_DB_FILE(self) -> Path:
-        return self.TMP_DIR / "AllPrintings.sqlite"
-
-    @property
-    def IMG_DIR(self) -> Path:
-        return self.REF_DIR / "images"
-
-    @property
-    def LOG_FILE(self) -> Path:
-        return self.REF_DIR / "download_errors.log"
-
-    @property
-    def PHASH_INDEX_DIR(self) -> Path:
-        return self.REF_DIR / "index" / "phash"
-
-    @property
-    def PHASH_INDEX_FILE(self) -> Path:
-        return self.PHASH_INDEX_DIR / "hashes.npy"
-
-    @property
-    def PHASH_MAPPING_FILE(self) -> Path:
-        return self.PHASH_INDEX_DIR / "index_to_uuid.json"
-
-    @property
-    def STATE_FILE(self) -> Path:
-        """State file that tracks the MTGJSON version last used to build each
-        artifact
-        """
-        return self.REF_DIR / ".mtg-sync-state.json"
-
-    def ensure_dirs(self) -> None:
-        self.IMG_DIR.mkdir(parents=True, exist_ok=True)
-        self.TMP_DIR.mkdir(parents=True, exist_ok=True)
-        self.PHASH_INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
     @model_validator(mode="after")
     def _apply_third_party_env_vars(self) -> "Settings":
@@ -107,4 +54,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-settings.ensure_dirs()
