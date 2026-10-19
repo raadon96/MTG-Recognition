@@ -3,6 +3,7 @@
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 
 import cv2
@@ -12,6 +13,12 @@ from mtg_recognition.catalog import Printing
 from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult
+
+
+class UploadStatus(StrEnum):
+    SUCCESS = "success"
+    NO_MATCH = "no_match"
+    ERROR = "error"
 
 
 @dataclass
@@ -28,11 +35,11 @@ class UploadResult:
     ocr_debug: OCRDebugData | None = None
 
     @property
-    def status(self) -> str:
-        """One of "success", "no_match" or "error", derived from the recognition result."""
+    def status(self) -> UploadStatus:
+        """Derived from the recognition result."""
         if self.error_message is not None:
-            return "error"
-        return "success" if self.matches else "no_match"
+            return UploadStatus.ERROR
+        return UploadStatus.SUCCESS if self.matches else UploadStatus.NO_MATCH
 
 
 class UploadProcessor:
@@ -112,7 +119,7 @@ class UploadProcessor:
             best = result.matches[0] if result.matches else None
             row = {
                 "Uploaded Filename": result.uploaded_filename,
-                "Status": result.status,
+                "Status": result.status.value,
                 "Card Name": best.name if best else None,
                 "UUID": best.uuid if best else None,
                 "Score": result.scores[0] if result.scores else None,
@@ -166,7 +173,7 @@ class UploadProcessor:
             best = result.matches[0] if result.matches else None
             item = {
                 "uploaded_filename": result.uploaded_filename,
-                "status": result.status,
+                "status": result.status.value,
                 "card_name": best.name if best else None,
                 "uuid": best.uuid if best else None,
                 "score": result.scores[0] if result.scores else None,
