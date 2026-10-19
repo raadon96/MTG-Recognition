@@ -59,16 +59,16 @@ def create_thumbnail_grid(results, results_key="upload_results"):
         col_idx = idx % cols_per_row
 
         with cols[col_idx], st.container(border=True):
-            # Display best match image from reference database
-            if result.status == UploadStatus.SUCCESS and result.matches:
-                img_url = result.matches[0].image_url
+            best = result.best
+            if result.status == UploadStatus.SUCCESS and best is not None:
+                # Display best match image from reference database
+                img_url = best.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
 
-            # Display card name
-            if result.status == UploadStatus.SUCCESS and result.matches:
-                st.markdown(f"**{result.matches[0].name}**")
+                # Display card name
+                st.markdown(f"**{best.name}**")
 
                 # Color-coded score indicator (scores are 0–100)
                 score = result.scores[0]
@@ -79,7 +79,7 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                     unsafe_allow_html=True,
                 )
 
-                st.caption(f"{result.matches[0].set_code} #{result.matches[0].number}")
+                st.caption(f"{best.set_code} #{best.number}")
 
                 # Filename (truncated)
                 filename = result.uploaded_filename
@@ -120,14 +120,15 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
-    if result.status != UploadStatus.SUCCESS or not result.matches:
+    best_match = result.best
+    if result.status != UploadStatus.SUCCESS or best_match is None:
         st.error("Cannot display details for this result")
         return
 
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [i for i, r in enumerate(results) if r.status == UploadStatus.SUCCESS and r.matches]
+    success_indices = [i for i, r in enumerate(results) if r.status == UploadStatus.SUCCESS and r.best is not None]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -202,7 +203,6 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             st.info("Warped image not available")
 
     # Column 3: Best Match Image
-    best_match = matches[0]
     with col3:
         st.caption("**Best Match**")
         img_url = best_match.image_url
