@@ -11,12 +11,18 @@ import sys
 R = pathlib.Path("/tmp/acc6")
 
 
+def ranked(segment):
+    """The segment's ranked list: "ranked" since #26, "matches" in older runs."""
+    return segment.get("ranked", segment.get("matches"))
+
+
 def load(run):
     res = {}
     for f in sorted((R / run).glob("*.json")):
         for img in json.loads(f.read_text()):
             s = img["segments"]
-            top1 = s[0]["matches"][0]["uuid"] if s and s[0]["matches"] else None
+            r = ranked(s[0]) if s else None
+            top1 = r[0]["uuid"] if r else None
             res[(f.stem, pathlib.Path(img["image"]).stem)] = (bool(s) and s[0]["success"] is True, top1, len(s))
     return res
 

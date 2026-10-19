@@ -7,6 +7,11 @@ import re
 R = pathlib.Path("/tmp/acc6")
 
 
+def ranked(segment):
+    """The segment's ranked list: "ranked" since #26, "matches" in older runs."""
+    return segment.get("ranked", segment.get("matches"))
+
+
 def load(run):
     res, segs = {}, {}
     for f in sorted((R / run).glob("*.json")):
@@ -17,7 +22,8 @@ def load(run):
             segs[key] = len(s)
             # single-card image: success iff any segment... use segment 0 as the CLI does per segment
             res[key] = bool(s) and s[0]["success"] is True
-            res[key + ("top1",)] = s[0]["matches"][0]["uuid"] if s and s[0]["matches"] else None
+            r = ranked(s[0]) if s else None
+            res[key + ("top1",)] = r[0]["uuid"] if r else None
     return res, segs
 
 
