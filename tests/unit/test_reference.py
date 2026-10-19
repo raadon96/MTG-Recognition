@@ -1,6 +1,7 @@
 """Tests for `mtg_recognition.reference.ReferenceData`."""
 
 import pytest
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, SQLModel, create_engine
 
 from mtg_recognition.jobs.schemas import MobileCache
@@ -69,3 +70,11 @@ class TestMissingImages:
         (reference.images_dir / "on-disk.jpg").write_bytes(b"")
 
         assert reference.missing_images() == [("missing", "https://img/missing.jpg")]
+
+    def test_missing_database_is_not_created(self, tmp_path) -> None:
+        reference = ReferenceData(tmp_path)
+
+        with pytest.raises(OperationalError):
+            reference.missing_images()
+
+        assert not reference.db_path.exists()

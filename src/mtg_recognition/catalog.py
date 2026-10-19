@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Protocol
 
 from sqlalchemy import Engine
-from sqlmodel import Session, col, create_engine, select
+from sqlmodel import Session, col, select
 
 from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.reference import open_read_only
 
 
 @dataclass(frozen=True)
@@ -70,7 +71,7 @@ class SqliteCardCatalog:
 
     def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
         if self._engine is None:
-            self._engine = create_engine(f"sqlite:///{self._db_path}?mode=ro&nolock=1")
+            self._engine = open_read_only(self._db_path)
         statement = select(MobileCache).where(col(MobileCache.uuid).in_(list(uuids)))
         with Session(self._engine) as session:
             rows = session.exec(statement).all()

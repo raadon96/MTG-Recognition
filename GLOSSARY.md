@@ -1,6 +1,6 @@
 # MTG Recognition
 
-Identifies Magic: The Gathering cards in photos and scans by matching them against a reference catalogue of every printing.
+Identifies Magic: The Gathering cards in photos and scans by matching them against reference data covering every printing.
 
 ## Language
 

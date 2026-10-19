@@ -160,7 +160,7 @@ Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`
 **Reference data** (`reference.py`, next to `catalog.py`; see `GLOSSARY.md`):
 `ReferenceData(root)` owns the reference data layout; no other module builds these paths or reads the sync state file. `ReferenceData.default()` is `settings.DATA_DIR / "reference"`. It exposes `db_path`, `phash_files` (hashes `.npy`, UUID mapping `.json`), `images_dir`, `image_path(uuid)` (the `{uuid}.jpg` convention), `tmp_dir`, `allprintings_zip_path`, `allprintings_path`, `log_file`; `load_state()`/`save_state()` for the frozen `SyncState(mobilecache_version, images_version, phash_version)` (missing or corrupt file → all `None`, unknown keys ignored); and `missing_images()` → `(uuid, url)` of printings with a URL but no image file. `Settings` holds no reference data paths.
 
-**Database**: the MobileCache SQLite (`ReferenceData.db_path`), opened read-only (`mode=ro&nolock=1`) by `SqliteCardCatalog`. 35 MB, ~1M+ cards.
+**Database**: the MobileCache SQLite (`ReferenceData.db_path`), opened read-only by `SqliteCardCatalog` through `reference.open_read_only` (a SQLite URI with `mode=ro&nolock=1&uri=true`; a plain `sqlite:///path?mode=ro` URL silently opens read-write and creates missing files). 35 MB, ~1M+ cards.
 
 **CLI architecture** (`cli.py`):
 Thin registration file — no business logic. Each subcommand is defined in its domain module as a `@click.command()` and registered via `cli.add_command()`. To add a new subcommand: define the Click function in the relevant domain module, then add one `cli.add_command()` line to `cli.py`.

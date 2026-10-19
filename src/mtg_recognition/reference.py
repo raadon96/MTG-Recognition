@@ -9,11 +9,23 @@ module builds these paths itself.
 import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
+from urllib.parse import quote
 
+from sqlalchemy import Engine
 from sqlmodel import Session, col, create_engine, select
 
 from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
+
+
+def open_read_only(db_path: Path) -> Engine:
+    """Engine on the SQLite database at `db_path`, opened read-only: it never
+    writes and never creates a missing file. (`mode=ro` is only honoured in a
+    SQLite URI, hence `file:` and `uri=true`.)
+    """
+    return create_engine(
+        f"sqlite:///file:{quote(str(db_path))}?mode=ro&nolock=1&uri=true"
+    )
 
 
 @dataclass(frozen=True)
@@ -81,7 +93,7 @@ class ReferenceData:
         """`(uuid, url)` of the printings in the database that have an image URL
         but no image file.
         """
-        engine = create_engine(f"sqlite:///{self.db_path}")
+        engine = open_read_only(self.db_path)
         try:
             statement = select(MobileCache.uuid, MobileCache.url).where(
                 col(MobileCache.url).is_not(None)
