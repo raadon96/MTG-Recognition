@@ -59,20 +59,20 @@ def create_thumbnail_grid(results, results_key="upload_results"):
         col_idx = idx % cols_per_row
 
         with cols[col_idx], st.container(border=True):
-            ranked = result.best
-            if result.status == UploadStatus.SUCCESS and ranked is not None:
-                best_match = ranked.printing
+            best = result.best
+            if result.status == UploadStatus.SUCCESS and best is not None:
+                best_printing = best.printing
                 # Display best match image from reference database
-                img_url = best_match.image_url
+                img_url = best_printing.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
 
                 # Display card name
-                st.markdown(f"**{best_match.name}**")
+                st.markdown(f"**{best_printing.name}**")
 
                 # Color-coded score indicator (scores are 0–100)
-                score = ranked.score
+                score = best.score
                 st.markdown(
                     f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
                     f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
@@ -80,7 +80,7 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                     unsafe_allow_html=True,
                 )
 
-                st.caption(f"{best_match.set_code} #{best_match.number}")
+                st.caption(f"{best_printing.set_code} #{best_printing.number}")
 
                 # Filename (truncated)
                 filename = result.uploaded_filename
@@ -121,11 +121,11 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
-    ranked = result.best
-    if result.status != UploadStatus.SUCCESS or ranked is None:
+    best = result.best
+    if result.status != UploadStatus.SUCCESS or best is None:
         st.error("Cannot display details for this result")
         return
-    best_match = ranked.printing
+    best_printing = best.printing
 
     debug = st.session_state.get("debug_mode", False)
 
@@ -172,7 +172,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     st.subheader(f"📋 {result.uploaded_filename}")
 
-    matches = result.matches
+    ranked = result.ranked
     ocr_debug = result.ocr_debug
 
     warped_img = None
@@ -206,7 +206,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     # Column 3: Best Match Image
     with col3:
         st.caption("**Best Match**")
-        img_url = best_match.image_url
+        img_url = best_printing.image_url
         st.image(
             img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
         )
@@ -214,10 +214,10 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     # Column 4: Metadata
     with col4:
         st.caption("**Card Info**")
-        st.markdown(f"**{best_match.name}**")
+        st.markdown(f"**{best_printing.name}**")
 
         # Color-coded score (scores are 0–100)
-        score = ranked.score
+        score = best.score
         st.markdown(
             f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
             f'text-align: center; font-weight: bold; color: white;">'
@@ -226,12 +226,12 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         )
 
         st.divider()
-        st.caption(f"**Set:** {best_match.set_code}")
-        st.caption(f"**Collector Number:** {best_match.number}/{best_match.base_set_size}")
-        st.caption(f"**Artist:** {best_match.artist or 'Unknown'}")
+        st.caption(f"**Set:** {best_printing.set_code}")
+        st.caption(f"**Collector Number:** {best_printing.number}/{best_printing.base_set_size}")
+        st.caption(f"**Artist:** {best_printing.artist or 'Unknown'}")
 
-        if best_match.image_url:
-            st.markdown(f"[Scryfall]({best_match.image_url})")
+        if best_printing.image_url:
+            st.markdown(f"[Scryfall]({best_printing.image_url})")
 
     # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
     if debug and ocr_debug is not None:
@@ -266,7 +266,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
                     {
                         "attribute": db_attr,
                         "OCR extracted": ocr_val,
-                        "best match": getattr(best_match, db_attr, "—"),
+                        "best match": getattr(best_printing, db_attr, "—"),
                     }
                 )
             df_prop = pd.DataFrame(rows).set_index("attribute").astype(str)
@@ -276,9 +276,9 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     st.markdown("---")
     st.subheader(f"Top {top_k} Matches")
 
-    if matches:
+    if ranked:
         match_cols = st.columns(top_k)
-        for col_idx, candidate in enumerate(matches[:top_k]):
+        for col_idx, candidate in enumerate(ranked[:top_k]):
             with match_cols[col_idx]:
                 img_url = candidate.printing.image_url
                 st.image(

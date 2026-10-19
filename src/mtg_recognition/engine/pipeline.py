@@ -53,7 +53,7 @@ class SegmentResult:
     """Recognition result for one card found in the image."""
 
     warped_image: np.ndarray
-    matches: list[RankedPrinting]  # best first
+    ranked: list[RankedPrinting]  # best first
     ocr_debug: OCRDebugData | None
 
 
@@ -142,12 +142,12 @@ class Pipeline:
             return SegmentResult(warped_image, candidates, ocr_debug=None)
 
         # Stage 2: OCR reranking on the reduced search space
-        matches, ocr_debug = self.ocr.find_best_matches(
+        ranked, ocr_debug = self.ocr.find_best_matches(
             warped_image, [c.printing for c in candidates], k=self.k_final_results, thresh=0.0, debug=debug
         )
         return SegmentResult(
             warped_image=warped_image,
-            matches=matches[: self.k_final_results],
+            ranked=ranked[: self.k_final_results],
             ocr_debug=ocr_debug if debug else None,
         )
 
@@ -249,8 +249,8 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # UUID-based success check (only meaningful for single-card images)
             if stem_uuid is None:
                 success: bool | None = None
-            elif seg.matches:
-                success = seg.matches[0].printing.uuid == stem_uuid
+            elif seg.ranked:
+                success = seg.ranked[0].printing.uuid == stem_uuid
             else:
                 success = False
 
@@ -260,7 +260,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             elif success:
                 status = "✓ MATCH"
             else:
-                got = seg.matches[0].printing.uuid if seg.matches else "no match"
+                got = seg.ranked[0].printing.uuid if seg.ranked else "no match"
                 status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
 
             # Raw OCR texts and scores
@@ -275,9 +275,9 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # Terminal output
             prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "
             click.echo(f"{prefix} {status}")
-            if not seg.matches:
+            if not seg.ranked:
                 click.echo(f"{prefix}  no matches found")
-            for rank, ranked in enumerate(seg.matches, 1):
+            for rank, ranked in enumerate(seg.ranked, 1):
                 p = ranked.printing
                 click.echo(f"{prefix}  #{rank}  {p.name}  |  {p.set_code} · {p.number}  |  score: {ranked.score:.1f}")
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
@@ -288,7 +288,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                 out = {
                     "segment_idx": seg_idx,
                     "success": success,
-                    "matches": [
+                    "ranked": [
                         {
                             "rank": rank,
                             "name": ranked.printing.name,
@@ -297,7 +297,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                             "number": ranked.printing.number,
                             "score": round(ranked.score, 1),
                         }
-                        for rank, ranked in enumerate(seg.matches, 1)
+                        for rank, ranked in enumerate(seg.ranked, 1)
                     ],
                     "debug": {
                         "raw_texts": raw_texts,
