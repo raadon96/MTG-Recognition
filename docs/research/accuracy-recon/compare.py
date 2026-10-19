@@ -1,7 +1,7 @@
 """Compare two runs under /tmp/acc6: top-1 count, top-1 UUID flips, segment-count changes, timings.
 
 usage: uv run python docs/research/accuracy-recon/compare.py <baseline-run> <new-run>
-Committed runs (run1, run2, issue23) can be copied back to /tmp/acc6/<name>/ first.
+Committed runs (run1, run2, issue23, issue26) can be copied back to /tmp/acc6/<name>/ first.
 """
 
 import json

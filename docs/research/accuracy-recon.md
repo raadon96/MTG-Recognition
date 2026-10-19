@@ -77,10 +77,18 @@ Rerun on branch `refactor/pipeline-recognize` (commit `791fe69`) with the same i
 
 - **Top-1: 246/260**, the **same top-1 UUID for all 260 images** as run 1, and every image still yields exactly one segment.
 - **Runtime: 173 s** for the full set (run 1: 174 s).
-- Outputs in `accuracy-recon/issue23/` (JSON per category + `times.txt`; `*.log` is gitignored, as for runs 1 and 2). This is the reference for later refactors.
+- Outputs in `accuracy-recon/issue23/` (JSON per category + `times.txt`; `*.log` is gitignored, as for runs 1 and 2). It was the reference for later refactors until the #26 rerun below.
+
+## Rerun after #26 (`matches` renamed to `ranked`)
+
+Rerun on branch `refactor/rename-matches-to-ranked` (commit `8a468ab`) with the same inputs, CLI defaults 20/1 and machine as above, to check that "Rename `matches` to glossary vocabulary (`ranked`)" (#26) didn't change results. From this run on, the CLI `-o` JSON names the per-segment list `"ranked"` instead of `"matches"`; `compare.py` and `analyse.py` read either key.
+
+- **Top-1: 246/260**, the **same top-1 UUID for all 260 images** as the #23 rerun, and every image still yields exactly one segment.
+- **Runtime: 185 s** for the full set (#23 rerun: 173 s).
+- Outputs in `accuracy-recon/issue26/` (JSON per category + `times.txt`). This is the reference for later refactors.
 
 ### Reproducing
 
 1. `docs/research/accuracy-recon/make_inputs.sh` rebuilds `/tmp/acc6/in/` (symlinks to the 260 UUID-named images under `data/test/`; needs `uv run dvc pull`).
 2. `docs/research/accuracy-recon/run.sh <run-name>` writes `/tmp/acc6/<run-name>/`.
-3. Copy a committed reference run back, e.g. `cp -r docs/research/accuracy-recon/issue23 /tmp/acc6/issue23`, then `uv run python docs/research/accuracy-recon/compare.py issue23 <run-name>`.
+3. Copy a committed reference run back, e.g. `cp -r docs/research/accuracy-recon/issue26 /tmp/acc6/issue26`, then `uv run python docs/research/accuracy-recon/compare.py issue26 <run-name>`.

@@ -1,0 +1,5 @@
+1_photos_single_card 200 130.457783206
+4_scans_single_card_no_bg 4 7.830337695
+6_benchmark__ocr__common_layout 4 8.746574180
+6_benchmark__ocr__uncommon_layout 16 15.536035700
+6_benchmark__raw 36 22.849288933
