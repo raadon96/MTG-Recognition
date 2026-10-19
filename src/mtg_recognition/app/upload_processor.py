@@ -3,15 +3,22 @@
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-from mtg_recognition.catalog import Printing
+from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.ocr.ocr import OCRDebugData
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult
+
+
+class UploadStatus(StrEnum):
+    SUCCESS = "success"
+    NO_MATCH = "no_match"
+    ERROR = "error"
 
 
 @dataclass
@@ -20,19 +27,45 @@ class UploadResult:
 
     uploaded_filename: str
     original_image_path: str
-    matches: list[Printing] = field(default_factory=list)
-    scores: list[float] = field(default_factory=list)
+    matches: list[RankedPrinting] = field(default_factory=list)  # best first
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
     ocr_debug: OCRDebugData | None = None
 
     @property
-    def status(self) -> str:
-        """One of "success", "no_match" or "error", derived from the recognition result."""
+    def status(self) -> UploadStatus:
+        """Derived from the recognition result."""
         if self.error_message is not None:
-            return "error"
-        return "success" if self.matches else "no_match"
+            return UploadStatus.ERROR
+        return UploadStatus.SUCCESS if self.matches else UploadStatus.NO_MATCH
+
+    @property
+    def best(self) -> RankedPrinting | None:
+        """The top-ranked entry, or None if there is no match."""
+        return self.matches[0] if self.matches else None
+
+
+# Exported fields of the best printing: (JSON key, CSV/Excel column, value).
+_BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[RankedPrinting], object]]] = [
+    ("card_name", "Card Name", lambda b: b.printing.name),
+    ("uuid", "UUID", lambda b: b.printing.uuid),
+    ("score", "Score", lambda b: b.score),
+    ("set_code", "Set Code", lambda b: b.printing.set_code),
+    ("card_number", "Card Number", lambda b: b.printing.number),
+    ("base_set_size", "Base Set Size", lambda b: b.printing.base_set_size),
+    ("artist", "Artist", lambda b: b.printing.artist),
+    ("scryfall_url", "Scryfall URL", lambda b: b.printing.image_url),
+]
+
+
+def _best_printing_fields(result: UploadResult, as_columns: bool) -> dict[str, object]:
+    """The exported fields of the result's best printing (all None without a match), by JSON key or column name."""
+    best = result.best
+    return {
+        (column if as_columns else key): (get(best) if best is not None else None)
+        for key, column, get in _BEST_PRINTING_FIELDS
+    }
 
 
 class UploadProcessor:
@@ -87,7 +120,6 @@ class UploadProcessor:
                 name,
                 path,
                 matches=segment.matches,
-                scores=segment.scores,
                 warped_image_temp_path=_write_temp_png(segment.warped_image),
                 original_image_temp_path=original_tmp,
                 ocr_debug=segment.ocr_debug,
@@ -109,18 +141,10 @@ class UploadProcessor:
 
         data = []
         for result in results:
-            best = result.matches[0] if result.matches else None
             row = {
                 "Uploaded Filename": result.uploaded_filename,
-                "Status": result.status,
-                "Card Name": best.name if best else None,
-                "UUID": best.uuid if best else None,
-                "Score": result.scores[0] if result.scores else None,
-                "Set Code": best.set_code if best else None,
-                "Card Number": best.number if best else None,
-                "Base Set Size": best.base_set_size if best else None,
-                "Artist": best.artist if best else None,
-                "Scryfall URL": best.image_url if best else None,
+                "Status": result.status.value,
+                **_best_printing_fields(result, as_columns=True),
             }
             data.append(row)
 
@@ -163,18 +187,10 @@ class UploadProcessor:
 
         data = []
         for result in results:
-            best = result.matches[0] if result.matches else None
             item = {
                 "uploaded_filename": result.uploaded_filename,
-                "status": result.status,
-                "card_name": best.name if best else None,
-                "uuid": best.uuid if best else None,
-                "score": result.scores[0] if result.scores else None,
-                "set_code": best.set_code if best else None,
-                "card_number": best.number if best else None,
-                "base_set_size": best.base_set_size if best else None,
-                "artist": best.artist if best else None,
-                "scryfall_url": best.image_url if best else None,
+                "status": result.status.value,
+                **_best_printing_fields(result, as_columns=False),
                 "error_message": result.error_message,
             }
             data.append(item)

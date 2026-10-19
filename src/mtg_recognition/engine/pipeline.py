@@ -2,17 +2,50 @@ import json
 import uuid as _uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import click
 import numpy as np
 
-from mtg_recognition.catalog import CardCatalog, Printing, SqliteCardCatalog
+from mtg_recognition.catalog import CardCatalog, Printing, RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import load_image, resize_if_needed
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
+from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.settings import settings
+
+
+class CardSegmentor(Protocol):
+    """Finds the cards in an image and warps each one flat (default: YoloCardSegmentor)."""
+
+    def segment(self, img: np.ndarray) -> ImageSegmentationResult: ...
+
+
+class CandidateMatcher(Protocol):
+    """Coarse search over the reference index by printing UUID (default: PHashCardMatcher)."""
+
+    @property
+    def index_loaded(self) -> bool: ...
+
+    def find_best_matches(self, query_image: np.ndarray, *, k: int) -> tuple[list[str], list[float]]: ...
+
+    def build_index(self, force: bool = False) -> None: ...
+
+
+class CandidateReranker(Protocol):
+    """Reranks candidate printings for a warped card image (default: CardOCR)."""
+
+    def find_best_matches(
+        self,
+        query_img: np.ndarray,
+        candidates: list[Printing],
+        *,
+        k: int | None,
+        thresh: float,
+        debug: bool,
+    ) -> tuple[list[RankedPrinting], OCRDebugData | None]: ...
 
 
 @dataclass(frozen=True)
@@ -20,8 +53,7 @@ class SegmentResult:
     """Recognition result for one card found in the image."""
 
     warped_image: np.ndarray
-    matches: list[Printing]
-    scores: list[float]
+    matches: list[RankedPrinting]  # best first
     ocr_debug: OCRDebugData | None
 
 
@@ -55,9 +87,9 @@ class Pipeline:
         k_phash_candidates: int = 20,
         k_final_results: int = 1,
         catalog: CardCatalog | None = None,
-        segmentor: YoloCardSegmentor | None = None,
-        phash_matcher: PHashCardMatcher | None = None,
-        ocr: CardOCR | None = None,
+        segmentor: CardSegmentor | None = None,
+        phash_matcher: CandidateMatcher | None = None,
+        ocr: CandidateReranker | None = None,
         auto_build: bool = True,
     ):
         if not 1 <= k_final_results <= k_phash_candidates:
@@ -68,9 +100,9 @@ class Pipeline:
         self.k_final_results = k_final_results
 
         self.catalog = catalog if catalog is not None else SqliteCardCatalog()
-        self.segmentor = segmentor if segmentor is not None else YoloCardSegmentor()
-        self.phash_matcher = phash_matcher if phash_matcher is not None else PHashCardMatcher()
-        self.ocr = ocr if ocr is not None else CardOCR(use_preprocessing=True)
+        self.segmentor: CardSegmentor = segmentor if segmentor is not None else YoloCardSegmentor()
+        self.phash_matcher: CandidateMatcher = phash_matcher if phash_matcher is not None else PHashCardMatcher()
+        self.ocr: CandidateReranker = ocr if ocr is not None else CardOCR(use_preprocessing=True)
 
         if auto_build:
             self.phash_matcher.build_index(force=False)
@@ -102,26 +134,22 @@ class Pipeline:
         # Stage 1: coarse search with perceptual hashing
         uuids, phash_scores = self.phash_matcher.find_best_matches(warped_image, k=self.k_phash_candidates)
         printings = self.catalog.lookup(uuids)
-        candidates = [printings[u] for u in uuids if u in printings]
-        candidate_scores = [s for u, s in zip(uuids, phash_scores, strict=True) if u in printings]
+        candidates = [
+            RankedPrinting(printings[u], float(s)) for u, s in zip(uuids, phash_scores, strict=True) if u in printings
+        ]
 
         if len(candidates) <= 1:
-            return SegmentResult(warped_image, candidates, candidate_scores, ocr_debug=None)
+            return SegmentResult(warped_image, candidates, ocr_debug=None)
 
         # Stage 2: OCR reranking on the reduced search space
-        matches, scores, ocr_debug = self.ocr.find_best_matches(
-            warped_image, candidates, k=self.k_final_results, thresh=0.0, debug=debug
+        matches, ocr_debug = self.ocr.find_best_matches(
+            warped_image, [c.printing for c in candidates], k=self.k_final_results, thresh=0.0, debug=debug
         )
         return SegmentResult(
             warped_image=warped_image,
             matches=matches[: self.k_final_results],
-            scores=[float(s) for s in scores[: self.k_final_results]],
             ocr_debug=ocr_debug if debug else None,
         )
-
-    def build_index(self, force: bool = False):
-        """Build the pHash index."""
-        self.phash_matcher.build_index(force)
 
 
 def _stem_uuid(stem: str) -> str | None:
@@ -213,7 +241,8 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
 
         stem_uuid = _stem_uuid(img_path.stem)
         n_segs = len(segment_results)
-        click.echo(f"[{idx}/{total}] {img_display}  ({n_segs} segment(s) detected)")
+        if recognition.error is None:
+            click.echo(f"[{idx}/{total}] {img_display}  ({n_segs} segment(s) detected)")
 
         segments_json: list[dict] = []
         for seg_idx, seg in enumerate(segment_results):
@@ -221,7 +250,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             if stem_uuid is None:
                 success: bool | None = None
             elif seg.matches:
-                success = seg.matches[0].uuid == stem_uuid
+                success = seg.matches[0].printing.uuid == stem_uuid
             else:
                 success = False
 
@@ -231,7 +260,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             elif success:
                 status = "✓ MATCH"
             else:
-                got = seg.matches[0].uuid if seg.matches else "no match"
+                got = seg.matches[0].printing.uuid if seg.matches else "no match"
                 status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
 
             # Raw OCR texts and scores
@@ -248,10 +277,9 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             click.echo(f"{prefix} {status}")
             if not seg.matches:
                 click.echo(f"{prefix}  no matches found")
-            for rank, (match, score) in enumerate(zip(seg.matches, seg.scores, strict=True), 1):
-                click.echo(
-                    f"{prefix}  #{rank}  {match.name}  |  {match.set_code} · {match.number}  |  score: {score:.1f}"
-                )
+            for rank, ranked in enumerate(seg.matches, 1):
+                p = ranked.printing
+                click.echo(f"{prefix}  #{rank}  {p.name}  |  {p.set_code} · {p.number}  |  score: {ranked.score:.1f}")
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
 
@@ -263,15 +291,13 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                     "matches": [
                         {
                             "rank": rank,
-                            "name": match.name,
-                            "uuid": match.uuid,
-                            "setCode": match.set_code,
-                            "number": match.number,
-                            "score": round(score, 1),
+                            "name": ranked.printing.name,
+                            "uuid": ranked.printing.uuid,
+                            "setCode": ranked.printing.set_code,
+                            "number": ranked.printing.number,
+                            "score": round(ranked.score, 1),
                         }
-                        for rank, (match, score) in enumerate(
-                            zip(seg.matches, seg.scores, strict=True), 1
-                        )
+                        for rank, ranked in enumerate(seg.matches, 1)
                     ],
                     "debug": {
                         "raw_texts": raw_texts,

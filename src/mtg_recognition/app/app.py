@@ -5,7 +5,7 @@ import cv2
 import requests
 import streamlit as st
 
-from mtg_recognition.app.upload_processor import UploadProcessor
+from mtg_recognition.app.upload_processor import UploadProcessor, UploadStatus
 from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
@@ -47,8 +47,8 @@ def _score_color(score: float) -> str:
     return "#CC6600"
 
 
-def create_thumbnail_grid(results, results_key="batch_results"):
-    """Create an interactive grid view of batch results with improved UX."""
+def create_thumbnail_grid(results, results_key="upload_results"):
+    """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
 
     # Create columns for grid (6 cards per row - smaller thumbnails)
@@ -59,19 +59,20 @@ def create_thumbnail_grid(results, results_key="batch_results"):
         col_idx = idx % cols_per_row
 
         with cols[col_idx], st.container(border=True):
-            # Display best match image from reference database
-            if result.status == "success" and result.matches:
-                img_url = result.matches[0].image_url
+            ranked = result.best
+            if result.status == UploadStatus.SUCCESS and ranked is not None:
+                best_match = ranked.printing
+                # Display best match image from reference database
+                img_url = best_match.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
 
-            # Display card name
-            if result.status == "success" and result.matches:
-                st.markdown(f"**{result.matches[0].name}**")
+                # Display card name
+                st.markdown(f"**{best_match.name}**")
 
                 # Color-coded score indicator (scores are 0–100)
-                score = result.scores[0]
+                score = ranked.score
                 st.markdown(
                     f'<div style="background-color: {_score_color(score)}; padding: 2px 6px; border-radius: 3px; '
                     f'text-align: center; font-size: 12px; font-weight: bold; color: white;">'
@@ -79,7 +80,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                     unsafe_allow_html=True,
                 )
 
-                st.caption(f"{result.matches[0].set_code} #{result.matches[0].number}")
+                st.caption(f"{best_match.set_code} #{best_match.number}")
 
                 # Filename (truncated)
                 filename = result.uploaded_filename
@@ -97,7 +98,7 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                     st.session_state.selected_results_key = results_key
                     st.rerun()
 
-            elif result.status == "no_match":
+            elif result.status == UploadStatus.NO_MATCH:
                 st.caption("❌ No Match")
 
                 # Filename (truncated)
@@ -116,18 +117,20 @@ def create_thumbnail_grid(results, results_key="batch_results"):
                 st.caption(f"📄 {filename}")
 
 
-def display_batch_detail_view(results, selected_idx, top_k: int):
-    """Display detailed view of a selected batch result with all improvements."""
+def display_upload_detail_view(results, selected_idx, top_k: int):
+    """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
-    if result.status != "success" or not result.matches:
+    ranked = result.best
+    if result.status != UploadStatus.SUCCESS or ranked is None:
         st.error("Cannot display details for this result")
         return
+    best_match = ranked.printing
 
     debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [i for i, r in enumerate(results) if r.status == "success" and r.matches]
+    success_indices = [i for i, r in enumerate(results) if r.status == UploadStatus.SUCCESS and r.best is not None]
     try:
         pos = success_indices.index(selected_idx)
     except ValueError:
@@ -170,7 +173,6 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
     st.subheader(f"📋 {result.uploaded_filename}")
 
     matches = result.matches
-    scores = result.scores
     ocr_debug = result.ocr_debug
 
     warped_img = None
@@ -202,7 +204,6 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
             st.info("Warped image not available")
 
     # Column 3: Best Match Image
-    best_match = matches[0]
     with col3:
         st.caption("**Best Match**")
         img_url = best_match.image_url
@@ -216,7 +217,7 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
         st.markdown(f"**{best_match.name}**")
 
         # Color-coded score (scores are 0–100)
-        score = scores[0]
+        score = ranked.score
         st.markdown(
             f'<div style="background-color: {_score_color(score)}; padding: 4px 8px; border-radius: 3px; '
             f'text-align: center; font-weight: bold; color: white;">'
@@ -277,14 +278,14 @@ def display_batch_detail_view(results, selected_idx, top_k: int):
 
     if matches:
         match_cols = st.columns(top_k)
-        for col_idx, (match, score) in enumerate(zip(matches[:top_k], scores[:top_k], strict=True)):
+        for col_idx, candidate in enumerate(matches[:top_k]):
             with match_cols[col_idx]:
-                img_url = match.image_url
+                img_url = candidate.printing.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
-                st.caption(f"**{match.name}**")
-                st.caption(f"Score: {score:.2f}")
+                st.caption(f"**{candidate.printing.name}**")
+                st.caption(f"Score: {candidate.score:.2f}")
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
@@ -335,9 +336,9 @@ def main():
     st.sidebar.header("⚙️ Import")
     st.sidebar.toggle("🔬 Debug Mode", key="debug_mode", value=True)
 
-    # Initialize session state for batch mode
-    if "batch_results" not in st.session_state:
-        st.session_state.batch_results = None
+    # Initialize session state for upload results
+    if "upload_results" not in st.session_state:
+        st.session_state.upload_results = None
     if "selected_result_idx" not in st.session_state:
         st.session_state.selected_result_idx = None
     if "selected_results_key" not in st.session_state:
@@ -345,14 +346,14 @@ def main():
     if "uploader_key" not in st.session_state:
         st.session_state.uploader_key = 0
 
-    # New batch upload mode
+    # Upload
     uploaded_files = st.sidebar.file_uploader(
         label="Upload multiple card images",
         type=["jpg", "jpeg", "png", "bmp"],
         accept_multiple_files=True,
         help="Upload multiple Magic card images",
         max_upload_size=settings.MAX_UPLOAD_SIZE_MB,
-        key=f"batch_file_uploader{st.session_state.uploader_key}",
+        key=f"file_uploader{st.session_state.uploader_key}",
     )
 
     if uploaded_files:
@@ -361,7 +362,7 @@ def main():
         # Check file count
         if len(uploaded_files) > 100:
             st.sidebar.warning(
-                "⚠️ Processing 20-100 images at a time is recommended. Large batches may take several minutes."
+                "⚠️ Processing 20-100 images at a time is recommended. Large uploads may take several minutes."
             )
 
         # Start processing button
@@ -395,17 +396,17 @@ def main():
                 progress_bar.progress(progress)
                 progress_placeholder.info(f"Processing: {current}/{total} images")
 
-            # Process batch
+            # Process uploads
             try:
                 results = processor.process(temp_paths, progress_callback=progress_callback)
-                st.session_state.batch_results = results
+                st.session_state.upload_results = results
 
                 # Clean up temp directory
                 import shutil
 
                 shutil.rmtree(temp_dir)
 
-                st.success("✅ Batch processing complete!")
+                st.success("✅ Processing complete!")
                 st.rerun()
 
             except Exception as e:
@@ -415,25 +416,25 @@ def main():
                 st.error(traceback.format_exc())
 
     # Display results if available
-    if st.session_state.batch_results:
-        results = st.session_state.batch_results
+    if st.session_state.upload_results:
+        results = st.session_state.upload_results
 
         # Detail view
         if st.session_state.selected_result_idx is not None:
-            display_batch_detail_view(results, st.session_state.selected_result_idx, pipeline.k_final_results)
+            display_upload_detail_view(results, st.session_state.selected_result_idx, pipeline.k_final_results)
         else:
             # Grid view
-            create_thumbnail_grid(results, results_key="batch_results")
+            create_thumbnail_grid(results, results_key="upload_results")
 
     # Export and Clear Results in sidebar
-    if st.session_state.batch_results:
+    if st.session_state.upload_results:
         st.sidebar.markdown("---")
         st.sidebar.subheader("📥 Export Results")
 
         export_format = st.sidebar.selectbox(
             "Select format:",
             ["CSV", "Excel", "JSON"],
-            key="export_format_batch",
+            key="export_format",
         )
 
         processor = UploadProcessor(pipeline)
@@ -452,7 +453,7 @@ def main():
 
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
-            st.session_state.batch_results = None
+            st.session_state.upload_results = None
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
             st.rerun()
@@ -461,7 +462,7 @@ def main():
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "App for MTG card recognition with batch processing, detailed results view, and export functionality."
+            "App for MTG card recognition with multi-image uploads, detailed results view, and export functionality."
         )
     )
     return parser.parse_args()
