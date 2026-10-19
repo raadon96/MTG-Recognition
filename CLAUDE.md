@@ -83,6 +83,12 @@ uv run ruff check --fix src tests    # lint + autofix
 uv run ruff format src tests         # format
 ```
 
+Module boundaries are checked with [import-linter](https://import-linter.readthedocs.io/) (`[tool.importlinter]` in `pyproject.toml`): `engine.matching`, `engine.ocr` and `engine.segmentation` must not import each other.
+
+```bash
+uv run lint-imports                  # check import contracts
+```
+
 ## Dataset (DVC)
 
 Test and benchmark images are tracked by DVC with a Google Drive remote. They are **not in git**. After cloning, run `uv run dvc pull` to populate `data/test/`.
@@ -120,10 +126,10 @@ Warped output size is clamped between `WARPED_MIN_SIZE = (488, 680)` and `WARPED
 Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`, `WARPED_MAX_SIZE`, `clamp_size`, `warp_card`, `valid_aspect_ratio`, `corners_from_binary_mask`, and the `CardSegment` / `ImageSegmentationResult` dataclasses. All segmentors import from here to avoid circular dependencies.
 
 **Stage 2 — Matching** (`engine/matching/`, `engine/ocr/`):
-1. **PHash matcher**: Perceptual hash (256-bit, 16×16) compared against precomputed numpy index to get top-k candidates fast. Returns UUIDs + scores only; it does not touch the database. `Pipeline` resolves the UUIDs to `Printing`s through the card catalog.
-2. **OCR fuzzy matcher**: PaddleOCR extracts text from the card's top ~11% (name ROI) and bottom ~13% (info ROI: set code, collector number, artist). `rapidfuzz` scores OCR attributes against candidates with weights (name = 2.0, set code = 1.0, etc.) to select the best match. Each entry in `ATTRIBUTE_MAPPINGS` carries an optional `preprocessor` — `rapidfuzz.utils.default_process` (lowercase + strip) is applied for `name` and `artist`; `None` for all other attributes. The predict call is wrapped in `try/except` — PaddlePaddle's C++ backend throws intermittent `RuntimeError: std::exception` on some inputs; catching it degrades to zero-vector scoring so the phash ranking holds.
+1. **PHash matcher**: Perceptual hash (256-bit, 16×16) compared against precomputed numpy index to get top-k candidates fast (always over the whole index). Returns UUIDs + scores only; it does not touch the database. Top-k selection uses `sort_scores_with_indices` from `core/ranking.py`, shared with the OCR reranker. `Pipeline` resolves the UUIDs to `Printing`s through the card catalog.
+2. **OCR fuzzy matcher**: PaddleOCR extracts text from the card's top ~11% (name ROI) and bottom ~13% (info ROI: set code, collector number, artist). The info ROI is first adaptively upscaled (`enhance.upscale_for_ocr`) so its small text reaches ~48 px, the recognition model's native input height; the name ROI is used as-is. `rapidfuzz` scores OCR attributes against candidates with weights (name = 2.0, set code = 1.0, etc.) to select the best match. Each entry in `ATTRIBUTE_MAPPINGS` carries an optional `preprocessor` — `rapidfuzz.utils.default_process` (lowercase + strip) is applied for `name` and `artist`; `None` for all other attributes. The predict call is wrapped in `try/except` — PaddlePaddle's C++ backend throws intermittent `RuntimeError: std::exception` on some inputs; catching it degrades to zero-vector scoring so the phash ranking holds.
 
-`ocr_extraction.py` contains all text-extraction helpers: `filter_flavor_text_zone`, `extract_setcode_candidates`, `extract_number_and_base_set_size`, `extract_artist_name`, `extract_set_release_year`, `extract_power_toughness`. Artist extraction joins all info-ROI tokens into one string, splits on whitespace, and keeps only word-like tokens (letters/hyphens/apostrophes, no digits or symbols), discarding noise such as set-code artifacts (`TDM·DE`) and copyright boilerplate. `Properties.artist` is `str | None`; all other scalar fields are also `str | None` except `setcode_candidates: list[str]`.
+`ocr_extraction.py` contains all text-extraction helpers: `filter_flavor_text_zone`, `extract_card_name`, `extract_setcode_candidates`, `extract_number_and_base_set_size`, `extract_artist_name`, `extract_set_release_year`, `extract_power_toughness`. Artist extraction joins all info-ROI tokens into one string, splits on whitespace, and keeps only word-like tokens (letters/hyphens/apostrophes, no digits or symbols), discarding noise such as set-code artifacts (`TDM·DE`) and copyright boilerplate. `Properties.artist` is `str | None`; all other scalar fields are also `str | None` except `setcode_candidates: list[str]`.
 
 `filter_flavor_text_zone` is called in `ocr.py` immediately after PaddleOCR inference, before any property extraction. It discards tokens where `y1 < 0.08 * roi_height AND x2 < 0.90 * roi_width` — flavor text bleeds into the TOP of the info ROI, while P/T sits in the far-RIGHT column and is preserved. The threshold is intentionally conservative (8 % of ROI height) to avoid clipping artist names that appear near the top of the info ROI. A safety guard returns the originals unchanged if all tokens would be discarded.
 

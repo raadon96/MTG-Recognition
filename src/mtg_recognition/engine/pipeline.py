@@ -118,9 +118,7 @@ class Pipeline:
         self.phash_matcher: CandidateMatcher = (
             phash_matcher if phash_matcher is not None else PHashCardMatcher()
         )
-        self.ocr: CandidateReranker = (
-            ocr if ocr is not None else CardOCR(use_preprocessing=True)
-        )
+        self.ocr: CandidateReranker = ocr if ocr is not None else CardOCR()
 
         if auto_build:
             self.phash_matcher.build_index(force=False)
@@ -328,7 +326,6 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
 
             if output_file is not None:
-                include_debug_info = True
                 out = {
                     "segment_idx": seg_idx,
                     "success": success,
@@ -349,13 +346,6 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                         "raw_boxes": raw_boxes,
                     },
                 }
-                if include_debug_info:
-                    debug_info = {
-                        "raw_texts": raw_texts,
-                        "raw_scores": raw_scores,
-                        "raw_boxes": raw_boxes,
-                    }
-                    out.update({"debug_info": debug_info})
                 segments_json.append(out)
 
         click.echo("")

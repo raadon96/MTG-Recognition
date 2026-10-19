@@ -27,17 +27,13 @@ dependencies = [
     "opencv-contrib-python==4.10.0.84",
     "paddlepaddle==3.2.0",
     "onnxruntime>=1.23.2",
-    "paddle2onnx>=2.1.0",
     "paddleocr>=3.3.3",
     "rapidfuzz>=3.14.3",
-    "icecream>=2.1.10",
     "rich>=14.3.2",
     "streamlit>=1.54.0",
     "python-dotenv>=1.2.1",
     "openpyxl>=3.1.5",
     "click>=8.3.1",
-    "pip>=26.0.1",
-    "onnxslim>=0.1.88",
     "rembg[cli,cpu]>=2.0.73",
 ]
 
@@ -99,8 +95,20 @@ module-root = "src"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "slow: requires the segmentation model; deselect with -m 'not slow'",
+    "slow: requires models, reference data or the DVC dataset; deselect with -m 'not slow'",
     "unit: fast unit tests with no external dependencies",
+]
+
+[tool.importlinter]
+root_package = "mtg_recognition"
+
+[[tool.importlinter.contracts]]
+name = "Engine stages are independent"
+type = "independence"
+modules = [
+    "mtg_recognition.engine.matching",
+    "mtg_recognition.engine.ocr",
+    "mtg_recognition.engine.segmentation",
 ]
 
 [tool.ruff]
