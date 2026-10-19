@@ -6,13 +6,14 @@ MobileCache in production, a dict in tests) is the catalog adapter's concern.
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from sqlalchemy import Engine
 from sqlmodel import Session, col, select
 
-from mtg_recognition import database
 from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.reference import open_read_only
 
 
 @dataclass(frozen=True)
@@ -60,12 +61,17 @@ class InMemoryCardCatalog:
 
 
 class SqliteCardCatalog:
-    """Catalog backed by the read-only MobileCache SQLite database."""
+    """Catalog backed by the read-only MobileCache SQLite database at `db_path`,
+    opened the first time it is used.
+    """
 
-    def __init__(self, engine: Engine | None = None):
-        self._engine = engine if engine is not None else database.engine
+    def __init__(self, db_path: Path):
+        self._db_path = db_path
+        self._engine: Engine | None = None
 
     def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
+        if self._engine is None:
+            self._engine = open_read_only(self._db_path)
         statement = select(MobileCache).where(col(MobileCache.uuid).in_(list(uuids)))
         with Session(self._engine) as session:
             rows = session.exec(statement).all()

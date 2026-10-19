@@ -19,6 +19,7 @@ from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
 from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+from mtg_recognition.reference import ReferenceData
 from mtg_recognition.settings import settings
 
 
@@ -111,7 +112,11 @@ class Pipeline:
         self.k_phash_candidates = k_phash_candidates
         self.k_final_results = k_final_results
 
-        self.catalog = catalog if catalog is not None else SqliteCardCatalog()
+        self.catalog = (
+            catalog
+            if catalog is not None
+            else SqliteCardCatalog(ReferenceData.default().db_path)
+        )
         self.segmentor: CardSegmentor = (
             segmentor if segmentor is not None else YoloCardSegmentor()
         )
