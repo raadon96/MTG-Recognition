@@ -14,9 +14,9 @@ def sort_scores_with_indices(
     - threshold: only scores >= threshold are considered (default: 0.0)
 
     Returns:
-    - top_scores_desc: 1-D numpy array of the top-k scores in descending order
-    - top_indices_desc: 1-D numpy array of the corresponding indices in the original
-      scores
+    - top_scores_desc: list of the top-k scores in descending order
+    - top_indices_desc: list of the corresponding indices in the original scores
+    Both lists are empty when no score reaches the threshold.
     """
     # Ensure input is a NumPy array
     scores = np.asarray(scores)

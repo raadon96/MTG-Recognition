@@ -207,19 +207,24 @@ class PHashCardMatcher:
 
     def find_best_matches(
         self,
-        query_image,
-        k=5,
+        query_image: np.ndarray | Image.Image,
+        k: int = 5,
     ) -> tuple[list[str], list[float]]:
         """
-        Finds the top k matching printings using Hamming distance.
+        Finds the top k matching printings over the whole index using Hamming
+        distance.
 
         Args:
             query_image: Query image (numpy array in BGR format from OpenCV,
                         or PIL Image in RGB)
-            k: Number of top matches to return
+            k: Number of top matches to return; clamped to the index size
 
         Returns:
-            Tuple of (uuids, scores), best first; scores are floats (0-1)
+            Tuple of (uuids, scores), best first; scores are floats (0-1), where
+            1 means identical hashes
+
+        Raises:
+            ValueError: If the pHash index is not loaded
         """
         hashes, uuid_mapping = self.hashes, self.uuid_mapping
         if hashes is None or uuid_mapping is None:
