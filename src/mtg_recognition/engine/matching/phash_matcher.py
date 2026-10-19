@@ -9,7 +9,7 @@ from numpydantic import NDArray, Shape
 from PIL import Image
 from tqdm import tqdm
 
-from mtg_recognition.engine.ocr.ocr_extraction import sort_scores_with_indices
+from mtg_recognition.core.ranking import sort_scores_with_indices
 from mtg_recognition.settings import settings
 
 # --- Configuration ---
@@ -49,8 +49,6 @@ class PHashCardMatcher:
             NDArray[Shape[f"* x, {hash_size * hash_size} y"], np.uint8] | None
         ) = None
         self.uuid_mapping: list | None = None
-        # Reverse mapping for O(1) lookup
-        self.uuid_to_idx: dict[str, int] | None = None
 
         self._load_index()
 
@@ -103,11 +101,6 @@ class PHashCardMatcher:
                 # Load UUID mapping
                 with open(self.mapping_path) as f:
                     self.uuid_mapping = json.load(f)
-
-                # Build reverse mapping for O(1) UUID lookups
-                self.uuid_to_idx = {
-                    uuid: idx for idx, uuid in enumerate(self.uuid_mapping)
-                }
 
                 print(f"pHash index loaded. Contains {len(self.uuid_mapping)} cards.")
 
@@ -193,9 +186,6 @@ class PHashCardMatcher:
         self.hashes = all_hashes
         self.uuid_mapping = uuid_list
 
-        # Build reverse mapping for O(1) UUID lookups
-        self.uuid_to_idx = {uuid: idx for idx, uuid in enumerate(uuid_list)}
-
         print("pHash index build complete and loaded!")
 
     def _compute_hash(self, image: np.ndarray | Image.Image) -> np.ndarray:
@@ -215,46 +205,9 @@ class PHashCardMatcher:
         phash = imagehash.phash(image, hash_size=self.hash_size)
         return np.array(phash.hash).flatten().astype(np.uint8)
 
-    def _get_uuids_from_indices(self, indices: list[int]) -> list[str]:
-        """Convert list of indices to UUIDs."""
-        if self.uuid_mapping is None:
-            raise ValueError("UUID mapping not loaded")
-        return [self.uuid_mapping[idx] for idx in indices]
-
-    def _get_indices_from_uuids(self, uuids: list[str]) -> list[int]:
-        """Convert list of UUIDs to indices using O(1) lookup."""
-        if self.uuid_to_idx is None:
-            raise ValueError("UUID to index mapping not loaded")
-        return [self.uuid_to_idx[uuid] for uuid in uuids]
-
-    def _filter_by_uuids(self, uuids: list[str]) -> tuple[list[str], np.ndarray]:
-        """
-        Filter the hash index by specific UUIDs.
-
-        Args:
-            uuids: List of UUIDs to filter by (empty list = return all)
-
-        Returns:
-            Tuple of (filtered_uuid_mapping, filtered_hashes)
-        """
-        if not uuids:
-            # No filtering - return everything
-            if self.uuid_mapping is None or self.hashes is None:
-                raise ValueError("Index not loaded")
-            return self.uuid_mapping, self.hashes
-
-        # Filter by UUIDs using O(1) lookup
-        indices = self._get_indices_from_uuids(uuids)
-        if self.hashes is None:
-            raise ValueError("Hashes not loaded")
-        filtered_hashes = self.hashes[indices]
-
-        return uuids, filtered_hashes
-
     def find_best_matches(
         self,
         query_image,
-        candidate_uuids: list[str] | None = None,
         k=5,
     ) -> tuple[list[str], list[float]]:
         """
@@ -263,16 +216,14 @@ class PHashCardMatcher:
         Args:
             query_image: Query image (numpy array in BGR format from OpenCV,
                         or PIL Image in RGB)
-            candidate_uuids: Optional list of printing UUIDs to restrict search to
             k: Number of top matches to return
 
         Returns:
             Tuple of (uuids, scores), best first; scores are floats (0-1)
         """
-        if not self.index_loaded:
+        hashes, uuid_mapping = self.hashes, self.uuid_mapping
+        if hashes is None or uuid_mapping is None:
             raise ValueError("Error: pHash index not loaded. Call build_index() first.")
-
-        uuid_mapping, hashes = self._filter_by_uuids(candidate_uuids or [])
 
         # Compute hash for query image
         query_hash = self._compute_hash(query_image)
@@ -286,62 +237,10 @@ class PHashCardMatcher:
         scores = 1.0 - (distances.astype(float) / float(total_bits))
 
         # Get top K indices (highest similarities = best matches)
-        if k > len(scores):
-            k = len(scores)
-
         top_k_scores, top_k_indices = sort_scores_with_indices(scores, k)
         top_k_uuids = [uuid_mapping[idx] for idx in top_k_indices]
 
         return top_k_uuids, top_k_scores
-
-    def get_distance(
-        self, query_image: np.ndarray | Image.Image, reference_uuid: str
-    ) -> int:
-        """
-        Get the Hamming distance between a query image and a specific reference card.
-        Useful for verification of a candidate match.
-
-        Args:
-            query_image: Query image
-            reference_uuid: UUID of the reference card
-
-        Returns:
-            Hamming distance (int)
-        """
-        if self.uuid_to_idx is None:
-            raise ValueError("Index not loaded.")
-        if reference_uuid not in self.uuid_to_idx:
-            raise ValueError(f"UUID {reference_uuid} not found in index.")
-
-        # Find index of the reference UUID using O(1) lookup
-        ref_idx = self.uuid_to_idx[reference_uuid]
-        # Compute query hash
-        query_hash = self._compute_hash(query_image)
-        # Compute distance
-        if self.hashes is None:
-            raise ValueError("Hashes not loaded")
-        distance = np.sum(np.bitwise_xor(self.hashes[ref_idx], query_hash))
-
-        return int(distance)
-
-    def get_similarity(
-        self, query_image: np.ndarray | Image.Image, reference_uuid: str
-    ) -> float:
-        """
-        Get the similarity score between a query image and a specific reference card.
-        Similarity is in range [0, 1] where 1 is identical.
-
-        Args:
-            query_image: Query image
-            reference_uuid: UUID of the reference card
-
-        Returns:
-            Similarity score (float, 0-1)
-        """
-        distance = self.get_distance(query_image, reference_uuid)
-        total_bits = self.hash_size * self.hash_size
-        similarity = 1.0 - (float(distance) / float(total_bits))
-        return similarity
 
 
 @click.command()
@@ -376,33 +275,3 @@ def build_index(force: bool, workers: int) -> None:
 
     matcher = PHashCardMatcher()
     matcher.build_index(force=force, num_workers=workers)
-
-
-def main():
-    # Test with a sample segmented test image
-    query_image_path = Path(
-        "data/test/6_benchmark/images/ready/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg",
-        # "data/test/6_benchmark/images/ready/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg"
-    )
-    assert query_image_path.exists()
-
-    matcher = PHashCardMatcher()
-    matcher.build_index(force=False)
-
-    import cv2
-
-    k = 10
-    query_img = cv2.imread(str(query_image_path))
-    best_uuids, best_scores = matcher.find_best_matches(query_img, k=k)
-
-    print(f"\nTop {k} matches:")
-    for uuid, score in zip(best_uuids, best_scores, strict=True):
-        print(f"  UUID: {uuid}, Score: {score:.3f}")
-
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    main()
-
-
-# uv run python -m mtg_recognition.engine.matching.phash_matcher

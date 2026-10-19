@@ -245,47 +245,6 @@ def compute_intersection(line1: np.ndarray, line2: np.ndarray) -> list[float] | 
     return [float(x), float(y)]
 
 
-def crop_img(
-    img: np.ndarray,
-    bbox: tuple[int, int, int, int],
-    padding_pct: float = 0.1,
-) -> tuple[np.ndarray, tuple[int, int, int, int]]:
-    """
-    Crops the image with padding based on the bbox.
-
-    Parameters
-    ----------
-    img : np.ndarray
-        Source BGR image.
-    bbox : tuple[int, int, int, int]
-        Bounding box as (x1, y1, x2, y2). Must satisfy x1 < x2 and y1 < y2.
-    padding_pct : float
-        Fractional padding applied to each axis relative to the bbox dimensions.
-
-    Returns
-    -------
-    Cropped image and the actual (cx1, cy1, cx2, cy2) crop coordinates.
-    """
-    h_img, w_img = img.shape[:2]
-    x1, y1, x2, y2 = bbox
-
-    if x1 >= x2 or y1 >= y2:
-        raise ValueError(f"Invalid bbox: {bbox} — must satisfy x1 < x2 and y1 < y2")
-
-    w = x2 - x1
-    h = y2 - y1
-
-    pad_w = int(padding_pct * w)
-    pad_h = int(padding_pct * h)
-
-    cx1 = max(0, x1 - pad_w)
-    cy1 = max(0, y1 - pad_h)
-    cx2 = min(w_img, x2 + pad_w)
-    cy2 = min(h_img, y2 + pad_h)
-
-    return img[cy1:cy2, cx1:cx2].copy(), (cx1, cy1, cx2, cy2)
-
-
 def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
     """
     Rearrange coordinates to order: top-left, top-right, bottom-right, bottom-left
@@ -380,8 +339,3 @@ def perspective_transform(
     warped = cv2.warpPerspective(img, M, (w, h))
 
     return warped
-
-
-def sharpen(img_bgr: np.ndarray) -> np.ndarray:
-    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-    return cv2.filter2D(img_bgr, -1, kernel)

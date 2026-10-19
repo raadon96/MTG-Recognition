@@ -16,8 +16,9 @@ from PIL import Image
 
 from mtg_recognition.catalog import Printing, RankedPrinting
 from mtg_recognition.core.image_utils import _ensure_min_dim
+from mtg_recognition.core.ranking import sort_scores_with_indices
 from mtg_recognition.engine.ocr import ocr_extraction
-from mtg_recognition.engine.ocr.enhance import preprocess_for_ocr
+from mtg_recognition.engine.ocr.enhance import upscale_for_ocr
 
 # Attribute mapping configuration for fuzzy matching.
 # db_attr is the Printing field compared against the OCR property.
@@ -133,8 +134,7 @@ class OCRDebugData:
 class CardOCR:
     """OCR-based card matcher using PaddleOCR for text extraction."""
 
-    def __init__(self, use_preprocessing=False):
-        self._use_preprocessing = use_preprocessing
+    def __init__(self):
         self._paddleocr = PaddleOCR(
             # text image rectification (performs geometric transformations on images
             # to correct distortions, inclinations, perspective deformations)
@@ -155,17 +155,6 @@ class CardOCR:
             precision="fp16",  # set to "fp16" for acceleration
             lang="en",
         )
-
-    def predict(
-        self, img: np.ndarray, thresh: float = 0.0
-    ) -> tuple[list[str], list[float]]:
-        # Predict with PaddleOCR
-        result = self._paddleocr.predict(img, text_det_thresh=thresh)
-
-        # Extract raw results
-        rec_texts = result[0]["rec_texts"]
-        rec_scores = result[0]["rec_scores"]  # scores from paddleOCR
-        return rec_texts, rec_scores
 
     def extract_properties(
         self, query_img: np.ndarray, debug: bool = False
@@ -195,13 +184,7 @@ class CardOCR:
             int(w * INFO_ROI_LEFT) : int(w * INFO_ROI_RIGHT),
         ]
 
-        if self._use_preprocessing:
-            name_roi_img = preprocess_for_ocr(
-                name_roi_img, upscale=False, enhance=False, deblur=False
-            )
-            info_roi_img = preprocess_for_ocr(
-                info_roi_img, upscale=True, enhance=False, deblur=False
-            )
+        info_roi_img = upscale_for_ocr(info_roi_img)
 
         # Perform OCR on both ROIs in a single batched predict call.
         # Paddle's text-detection model requires both dimensions >= 32 px; upscale
@@ -372,9 +355,7 @@ class CardOCR:
         scores_aggregate = np.average(a=scores_matrix, axis=0, weights=weights)
 
         # Sort candidates based on score (descending)
-        top_scores, top_indices = ocr_extraction.sort_scores_with_indices(
-            scores_aggregate, k, thresh
-        )
+        top_scores, top_indices = sort_scores_with_indices(scores_aggregate, k, thresh)
 
         # Filter top candidates
         if not (top_scores and top_indices):
