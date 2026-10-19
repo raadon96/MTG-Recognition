@@ -57,7 +57,7 @@ def test_one_result_per_card_found(image_path):
     results = _processor(FakeSegmentor([card_image(1), card_image(2)]), k=1).process([image_path])
 
     assert [r.status for r in results] == [UploadStatus.SUCCESS, UploadStatus.SUCCESS]
-    assert [r.matches[0].printing.uuid for r in results] == ["p1", "p2"]
+    assert [r.ranked[0].printing.uuid for r in results] == ["p1", "p2"]
 
 
 def test_csv_export_has_one_row_per_result_with_the_best_printing(image_path, tmp_path):

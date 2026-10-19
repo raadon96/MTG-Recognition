@@ -27,7 +27,7 @@ class UploadResult:
 
     uploaded_filename: str
     original_image_path: str
-    matches: list[RankedPrinting] = field(default_factory=list)  # best first
+    ranked: list[RankedPrinting] = field(default_factory=list)  # best first
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
@@ -38,12 +38,12 @@ class UploadResult:
         """Derived from the recognition result."""
         if self.error_message is not None:
             return UploadStatus.ERROR
-        return UploadStatus.SUCCESS if self.matches else UploadStatus.NO_MATCH
+        return UploadStatus.SUCCESS if self.ranked else UploadStatus.NO_MATCH
 
     @property
     def best(self) -> RankedPrinting | None:
         """The top-ranked entry, or None if there is no match."""
-        return self.matches[0] if self.matches else None
+        return self.ranked[0] if self.ranked else None
 
 
 # Exported fields of the best printing: (JSON key, CSV/Excel column, value).
@@ -119,7 +119,7 @@ class UploadProcessor:
             UploadResult(
                 name,
                 path,
-                matches=segment.matches,
+                ranked=segment.ranked,
                 warped_image_temp_path=_write_temp_png(segment.warped_image),
                 original_image_temp_path=original_tmp,
                 ocr_debug=segment.ocr_debug,
