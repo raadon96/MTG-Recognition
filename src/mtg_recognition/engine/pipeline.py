@@ -277,9 +277,9 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             click.echo(f"{prefix} {status}")
             if not seg.ranked:
                 click.echo(f"{prefix}  no matches found")
-            for rank, ranked in enumerate(seg.ranked, 1):
-                p = ranked.printing
-                click.echo(f"{prefix}  #{rank}  {p.name}  |  {p.set_code} · {p.number}  |  score: {ranked.score:.1f}")
+            for rank, entry in enumerate(seg.ranked, 1):
+                p = entry.printing
+                click.echo(f"{prefix}  #{rank}  {p.name}  |  {p.set_code} · {p.number}  |  score: {entry.score:.1f}")
             click.echo(f"{prefix}  raw_texts:  {raw_texts}")
             click.echo(f"{prefix}  raw_scores: {raw_scores}")
 
@@ -291,13 +291,13 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                     "ranked": [
                         {
                             "rank": rank,
-                            "name": ranked.printing.name,
-                            "uuid": ranked.printing.uuid,
-                            "setCode": ranked.printing.set_code,
-                            "number": ranked.printing.number,
-                            "score": round(ranked.score, 1),
+                            "name": entry.printing.name,
+                            "uuid": entry.printing.uuid,
+                            "setCode": entry.printing.set_code,
+                            "number": entry.printing.number,
+                            "score": round(entry.score, 1),
                         }
-                        for rank, ranked in enumerate(seg.ranked, 1)
+                        for rank, entry in enumerate(seg.ranked, 1)
                     ],
                     "debug": {
                         "raw_texts": raw_texts,

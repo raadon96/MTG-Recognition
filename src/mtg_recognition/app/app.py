@@ -278,14 +278,14 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     if ranked:
         match_cols = st.columns(top_k)
-        for col_idx, candidate in enumerate(ranked[:top_k]):
+        for col_idx, entry in enumerate(ranked[:top_k]):
             with match_cols[col_idx]:
-                img_url = candidate.printing.image_url
+                img_url = entry.printing.image_url
                 st.image(
                     img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
                 )
-                st.caption(f"**{candidate.printing.name}**")
-                st.caption(f"Score: {candidate.score:.2f}")
+                st.caption(f"**{entry.printing.name}**")
+                st.caption(f"Score: {entry.score:.2f}")
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
