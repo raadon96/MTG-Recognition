@@ -119,10 +119,6 @@ class Pipeline:
             ocr_debug=ocr_debug if debug else None,
         )
 
-    def build_index(self, force: bool = False):
-        """Build the pHash index."""
-        self.phash_matcher.build_index(force)
-
 
 def _stem_uuid(stem: str) -> str | None:
     """Return stem if it is a valid UUID string, else None."""
@@ -213,7 +209,8 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
 
         stem_uuid = _stem_uuid(img_path.stem)
         n_segs = len(segment_results)
-        click.echo(f"[{idx}/{total}] {img_display}  ({n_segs} segment(s) detected)")
+        if recognition.error is None:
+            click.echo(f"[{idx}/{total}] {img_display}  ({n_segs} segment(s) detected)")
 
         segments_json: list[dict] = []
         for seg_idx, seg in enumerate(segment_results):

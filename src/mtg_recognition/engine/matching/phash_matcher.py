@@ -54,10 +54,6 @@ class PHashCardMatcher:
 
         self._load_index()
 
-    # def model_post_init(self, __context: Any) -> None:
-    #     # Try to load existing index
-    #     self._load_index()
-
     @property
     def index_loaded(self):
         """Check if the pHash index is loaded."""

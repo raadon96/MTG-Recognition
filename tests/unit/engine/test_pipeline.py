@@ -184,3 +184,57 @@ def test_missing_phash_index_raises():
 
     with pytest.raises(ValueError, match="pHash index"):
         _pipeline(FakeSegmentor([]), phash_matcher=phash)
+
+
+# --- Pipeline CLI ---
+
+
+def _run_cli(monkeypatch, tmp_path, segmentor, filename, *args):
+    import cv2
+    from click.testing import CliRunner
+
+    from mtg_recognition.engine import pipeline as pipeline_module
+
+    image_path = tmp_path / filename
+    cv2.imwrite(str(image_path), _card_image())
+    monkeypatch.setattr(
+        pipeline_module,
+        "Pipeline",
+        lambda k_phash_candidates, k_final_results: _pipeline(
+            segmentor, k_phash_candidates=k_phash_candidates, k_final_results=k_final_results
+        ),
+    )
+    return CliRunner().invoke(pipeline_module.main, ["-i", str(image_path), *args])
+
+
+def test_cli_writes_ranked_matches_to_the_output_json(monkeypatch, tmp_path):
+    import json
+
+    output = tmp_path / "out.json"
+
+    result = _run_cli(
+        monkeypatch, tmp_path, FakeSegmentor([_card_image(3)]), "p0.jpg", "--k-phash", "2", "-k", "2", "-o", str(output)
+    )
+
+    assert result.exit_code == 0, result.output
+    [image] = json.loads(output.read_text())
+    [segment] = image["segments"]
+    assert segment["segment_idx"] == 0
+    assert segment["success"] is None  # "p0" is not a UUID
+    assert segment["matches"] == [
+        {"rank": 1, "name": "Card p0", "uuid": "p0", "setCode": "TST", "number": "1", "score": 90.0},
+        {"rank": 2, "name": "Card p3", "uuid": "p3", "setCode": "TST", "number": "1", "score": 89.0},
+    ]
+    assert set(segment["debug"]) == {"raw_texts", "raw_scores", "raw_boxes"}
+
+
+def test_cli_reports_an_error_without_a_segment_count(monkeypatch, tmp_path):
+    class BrokenSegmentor(FakeSegmentor):
+        def segment(self, img):
+            raise RuntimeError("model exploded")
+
+    result = _run_cli(monkeypatch, tmp_path, BrokenSegmentor([]), "card.jpg")
+
+    assert result.exit_code == 0
+    assert "ERROR: RuntimeError: model exploded" in result.output
+    assert "segment(s) detected" not in result.output
