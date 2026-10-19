@@ -8,7 +8,6 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "aiohttp>=3.13.2",
     "ijson>=3.4.0.post0",
     "imagehash>=4.3.2",
     "numpydantic>=1.7.0",
@@ -35,6 +34,7 @@ dependencies = [
     "openpyxl>=3.1.5",
     "click>=8.3.1",
     "rembg[cli,cpu]>=2.0.73",
+    "httpx>=0.28.1",
 ]
 
 [project.scripts]

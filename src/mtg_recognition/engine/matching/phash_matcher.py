@@ -1,7 +1,6 @@
 import json
 from multiprocessing import Pool, cpu_count
 
-import click
 import imagehash
 import numpy as np
 from numpydantic import NDArray, Shape
@@ -13,7 +12,7 @@ from mtg_recognition.reference import ReferenceData
 
 # --- Configuration ---
 HASH_SIZE = 16  # 16x16 = 256-bit hash (higher = more precise, but slower)
-DEFAULT_NUM_WORKERS = cpu_count() - 1
+DEFAULT_NUM_WORKERS = max(1, cpu_count() - 1)
 
 
 class PHashCardMatcher:
@@ -85,6 +84,23 @@ class PHashCardMatcher:
             print(f"Error processing {image_path}: {e}")
             return None
 
+    def _compute_hashes(self, worker_args, num_workers):
+        """Yield `_compute_hash_worker` results, in this process when
+        `num_workers` is 1, else from a process pool.
+        """
+        if num_workers == 1:
+            yield from map(self._compute_hash_worker, worker_args)
+            return
+
+        with Pool(processes=num_workers) as pool:
+            # imap_unordered returns results as they complete (faster than map)
+            # chunksize determines how many tasks each worker gets at once
+            # Optimal chunksize: total_images / (num_workers * 4)
+            chunksize = max(1, len(worker_args) // (num_workers * 4))
+            yield from pool.imap_unordered(
+                self._compute_hash_worker, worker_args, chunksize=chunksize
+            )
+
     def _load_index(self):
         """Internal method to load hashes and mapping from disk."""
         if self.index_path.exists() and self.mapping_path.exists():
@@ -113,7 +129,8 @@ class PHashCardMatcher:
 
         Args:
             force: If True, rebuilds even if index files exist
-            num_workers: Number of parallel processes (default: cpu_count())
+            num_workers: Number of parallel processes (default: cpu_count() - 1);
+                1 hashes in this process, without a process pool
         """
         if self.index_path.exists() and self.mapping_path.exists():
             print(
@@ -145,24 +162,15 @@ class PHashCardMatcher:
         hash_list = []
         uuid_list = []
 
-        with Pool(processes=num_workers) as pool:
-            # imap_unordered returns results as they complete (faster than map)
-            # chunksize determines how many tasks each worker gets at once
-            # Optimal chunksize: total_images / (num_workers * 4)
-            chunksize = max(1, len(image_paths) // (num_workers * 4))
-
-            results = pool.imap_unordered(
-                self._compute_hash_worker, worker_args, chunksize=chunksize
-            )
-
-            # Collect results with progress bar
-            for result in tqdm(
-                results, total=len(image_paths), desc="Computing pHashes"
-            ):
-                if result is not None:
-                    uuid, hash_array = result
-                    uuid_list.append(uuid)
-                    hash_list.append(hash_array)
+        for result in tqdm(
+            self._compute_hashes(worker_args, num_workers),
+            total=len(image_paths),
+            desc="Computing pHashes",
+        ):
+            if result is not None:
+                uuid, hash_array = result
+                uuid_list.append(uuid)
+                hash_list.append(hash_array)
 
         if not hash_list:
             raise ValueError("No hashes were extracted.")
@@ -241,38 +249,3 @@ class PHashCardMatcher:
         top_k_uuids = [uuid_mapping[idx] for idx in top_k_indices]
 
         return top_k_uuids, top_k_scores
-
-
-@click.command()
-@click.option(
-    "--force",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Rebuild pHash index even if it already exists.",
-)
-@click.option(
-    "--workers",
-    type=click.INT,
-    default=cpu_count() - 1,
-    show_default=True,
-    help="Number of parallel worker processes for hash computation.",
-)
-def build_index(force: bool, workers: int) -> None:
-    """Rebuild the pHash index from reference images already on disk.
-
-    Requires data/reference/images/ to be populated first (run 'mtg sync'
-    to download reference images if you haven't already).
-    """
-    # Preflight check (D-10): image directory must exist and be non-empty.
-    reference = ReferenceData.default()
-    img_dir = reference.images_dir
-    if not img_dir.exists() or not any(img_dir.iterdir()):
-        click.echo(
-            f"Error: {img_dir}/ is missing or empty. Run 'mtg sync' first.",
-            err=True,
-        )
-        raise SystemExit(1)
-
-    matcher = PHashCardMatcher(reference=reference)
-    matcher.build_index(force=force, num_workers=workers)

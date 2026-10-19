@@ -11,6 +11,7 @@ data/test/
 data/reference_test
 
 data/reference/tmp
+data/reference/mtgjson/
 data/reference/download_errors.log
 # data/reference/.mtg-sync-state.json
 data/examples/

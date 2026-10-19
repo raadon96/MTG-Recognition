@@ -66,10 +66,10 @@ uv run python -m mtg_recognition.engine.segmentation.cli -i data/test/images -o 
 
 # mtg CLI (registered console script — available after activating the venv)
 mtg --help
-mtg sync                      # download missing reference images (pinned to committed DB)
-mtg sync --update-db          # fetch latest MTGJSON release and rebuild all artifacts
-mtg sync --force              # unconditional full rebuild
-mtg build-index               # rebuild pHash index from existing reference images
+mtg status                    # versions, images on disk, latest MTGJSON release, command to run
+mtg update                    # rebuild the DB if a new MTGJSON release is out, then build-index
+mtg update --force            # unconditional rebuild of the DB and the index
+mtg build-index               # download missing reference images, rebuild pHash index if stale
 mtg build-index --force --workers 8
 mtg recognize -i card.jpg
 mtg segment -i card.jpg --mode auto
@@ -154,11 +154,11 @@ Shared geometry helpers (`seg_utils.py`): `CARD_ASPECT_RATIO`, `WARPED_MIN_SIZE`
 - `upload_processor.py` — `UploadProcessor` loops over uploaded paths, decodes them, calls `Pipeline.recognize` per image and writes temp images; also exports CSV/Excel/JSON. Returns `UploadResult`s (one per card found, or one per image with no card or an error) carrying the full top-K `ranked: list[RankedPrinting]`, `ocr_debug` and temp image paths so the detail view is self-contained; `best` is the top-ranked entry or `None`, and `status` is an `UploadStatus` `StrEnum` (`SUCCESS`, `NO_MATCH`, `ERROR`; exported as `"success"`/`"no_match"`/`"error"`) derived from the result's fields. The CSV/Excel and JSON exporters share one field map, `_BEST_PRINTING_FIELDS`. Always recognizes with `debug=True` so `OCRDebugData` is available on demand without a second pipeline call.
 
 **Data jobs** (`jobs/`):
-- `sync.py` — manages the full reference data stack: builds MobileCache, downloads reference images, and builds the pHash index. Exposes `mtg sync` as the CLI entry point. Three modes: default (images-only, DB pinned to git), `--update-db` (fetches remote MTGJSON version, rebuilds if changed), `--force` (unconditional full rebuild). Every path and the state go through `ReferenceData`. Download errors are written to `ReferenceData.log_file` by a file handler attached only during the download step (no root-logger setup, nothing at import). State file, MobileCache, and pHash index are git-tracked; only `data/reference/images/` is not.
-- `schemas.py` — SQLModel ORM models (`Cards`, `CardIdentifiers`, `Sets`).
+- `sync.py` — the reference data jobs, behind three Click commands: `mtg status` (read-only report, always exits 0), `mtg update [--force]` (fetches the latest release from MTGJSON `Meta.json`; if it differs from the database's, makes `ReferenceData.allprintings_path` that release, downloading the ZIP only when the file's `meta` version differs, rebuilds MobileCache and records the version read from AllPrintings' `meta` table; then runs the build-index step) and `mtg build-index [--force] [--workers N]` (downloads missing images, rebuilds the index from the images on disk, records `phash_version = mobilecache_version`; does nothing without `--force` when they already match). The module functions `status`, `update`, `build_index` take a `ReferenceData` and an `httpx.Client` (all network access, created by the Click command; tests pass a `MockTransport` client via Click's `obj`) and return result dataclasses; state is saved after each step so an interrupted `update` resumes. Images download on a 25-thread pool (3 attempts for timeouts/429/5xx, none for 404) into a `DownloadReport`; failures don't stop the build and are written to `ReferenceData.log_file`. `--workers 1` hashes in-process. Tests: `tests/unit/test_sync.py` on the fake network in `tests/unit/sync_fakes.py`.
+- `schemas.py` — SQLModel ORM models (`Cards`, `CardIdentifiers`, `Sets`, `Meta`, `MobileCache`).
 
 **Reference data** (`reference.py`, next to `catalog.py`; see `GLOSSARY.md`):
-`ReferenceData(root)` owns the reference data layout; no other module builds these paths or reads the sync state file. `ReferenceData.default()` is `settings.DATA_DIR / "reference"`. It exposes `db_path`, `phash_files` (hashes `.npy`, UUID mapping `.json`), `images_dir`, `image_path(uuid)` (the `{uuid}.jpg` convention), `tmp_dir`, `allprintings_zip_path`, `allprintings_path`, `log_file`; `load_state()`/`save_state()` for the frozen `SyncState(mobilecache_version, images_version, phash_version)` (missing or corrupt file → all `None`, unknown keys ignored); and `missing_images()` → `(uuid, url)` of printings with a URL but no image file. `Settings` holds no reference data paths.
+`ReferenceData(root)` owns the reference data layout; no other module builds these paths or reads the sync state file. `ReferenceData.default()` is `settings.DATA_DIR / "reference"`. It exposes `db_path`, `phash_files` (hashes `.npy`, UUID mapping `.json`), `images_dir`, `image_path(uuid)` (the `{uuid}.jpg` convention), `allprintings_path` (`mtgjson/AllPrintings.sqlite`), `allprintings_zip_path`, `log_file`; `load_state()`/`save_state()` for the frozen `SyncState(mobilecache_version, phash_version)` (image completeness is always checked on disk, never recorded) (missing or corrupt file → all `None`, unknown keys ignored); and `missing_images()` → `(uuid, url)` of printings with a URL but no image file. `Settings` holds no reference data paths.
 
 **Database**: the MobileCache SQLite (`ReferenceData.db_path`), opened read-only by `SqliteCardCatalog` through `reference.open_read_only` (a SQLite URI with `mode=ro&nolock=1&uri=true`; a plain `sqlite:///path?mode=ro` URL silently opens read-write and creates missing files). 35 MB, ~1M+ cards.
 
@@ -174,11 +174,13 @@ Thin registration file — no business logic. Each subcommand is defined in its 
   - `data/test/6_benchmark/ocr/` — 20 OCR ground-truth images
 - `data/test.dvc` — the git-tracked DVC pointer (committed; tells `dvc pull` what to fetch)
 
-**Not git-tracked** (generated by `mtg sync`):
-- `data/reference/images/` — ~1M card images indexed by UUID
+**Not git-tracked** (local caches):
+- `data/reference/images/` — ~109k card images indexed by UUID, downloaded by `mtg build-index` only to build the pHash index (recognition doesn't read them)
+- `data/reference/mtgjson/AllPrintings.sqlite` — the MTGJSON release MobileCache is built from, downloaded by `mtg update` and kept for exploration
 
 **git-tracked**
 - `data/reference/MobileCache.sqlite` — card metadata database (~35 MB, ~1M+ cards)
+- `data/reference/.mtg-sync-state.json` — MTGJSON release of the database and the pHash index
 - `data/reference/index/phash/hashes.npy` + `index_to_uuid.json` — prebuilt pHash index
 - YOLO `.pt` and rembg `.onnx` models: `src/mtg_recognition/engine/segmentation/models/prod/`
 - OCR models: `src/mtg_recognition/engine/ocr/models/prod/`
@@ -196,6 +198,6 @@ Thin registration file — no business logic. Each subcommand is defined in its 
 | Segmentation (shared helpers) | `src/mtg_recognition/engine/segmentation/seg_utils.py` |
 | pHash matcher | `src/mtg_recognition/engine/matching/phash_matcher.py` |
 | Reference data layout + sync state | `src/mtg_recognition/reference.py` |
-| Reference data sync job | `src/mtg_recognition/jobs/sync.py` |
+| Reference data jobs (`status`, `update`, `build-index`) | `src/mtg_recognition/jobs/sync.py` |
 
 
