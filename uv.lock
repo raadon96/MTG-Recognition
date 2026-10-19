@@ -2567,10 +2567,10 @@ name = "mtg-recognition"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "aiohttp" },
     { name = "click" },
     { name = "clip" },
     { name = "ftfy" },
+    { name = "httpx" },
     { name = "ijson" },
     { name = "imagehash" },
     { name = "numpydantic" },
@@ -2617,10 +2617,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.13.2" },
     { name = "click", specifier = ">=8.3.1" },
     { name = "clip", git = "https://github.com/openai/CLIP" },
     { name = "ftfy", specifier = ">=6.3.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "ijson", specifier = ">=3.4.0.post0" },
     { name = "imagehash", specifier = ">=4.3.2" },
     { name = "numpydantic", specifier = ">=1.7.0" },

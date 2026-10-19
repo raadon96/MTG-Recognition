@@ -9,7 +9,6 @@ module builds these paths itself.
 import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from urllib.parse import quote
 
 from sqlalchemy import Engine
 from sqlmodel import Session, col, create_engine, select
@@ -21,21 +20,21 @@ from mtg_recognition.settings import settings
 def open_read_only(db_path: Path) -> Engine:
     """Engine on the SQLite database at `db_path`, opened read-only: it never
     writes and never creates a missing file. (`mode=ro` is only honoured in a
-    SQLite URI, hence `file:` and `uri=true`.)
+    SQLite URI, hence the `file:` URI and `uri=true`.)
     """
     return create_engine(
-        f"sqlite:///file:{quote(str(db_path))}?mode=ro&nolock=1&uri=true"
+        f"sqlite:///{db_path.resolve().as_uri()}?mode=ro&nolock=1&uri=true"
     )
 
 
 @dataclass(frozen=True)
 class SyncState:
-    """MTGJSON version last used to build each artifact; `None` means not built
-    (or a build was interrupted).
+    """MTGJSON version last used to build each committed artifact; `None` means
+    not built (or a build was interrupted). The reference images are a local cache,
+    checked on disk (`ReferenceData.missing_images`), never recorded here.
     """
 
     mobilecache_version: str | None = None
-    images_version: str | None = None
     phash_version: str | None = None
 
 
@@ -69,20 +68,20 @@ class ReferenceData:
         return self.images_dir / f"{uuid}.jpg"
 
     @property
-    def tmp_dir(self) -> Path:
-        return self.root / "tmp"
+    def allprintings_path(self) -> Path:
+        """The MTGJSON AllPrintings database the MobileCache is built from (kept
+        for exploration, not git-tracked).
+        """
+        return self.root / "mtgjson" / "AllPrintings.sqlite"
 
     @property
     def allprintings_zip_path(self) -> Path:
-        return self.tmp_dir / "AllPrintings.sqlite.zip"
-
-    @property
-    def allprintings_path(self) -> Path:
-        return self.tmp_dir / "AllPrintings.sqlite"
+        """Where the AllPrintings ZIP is downloaded to, deleted once extracted."""
+        return self.allprintings_path.with_name("AllPrintings.sqlite.zip")
 
     @property
     def log_file(self) -> Path:
-        """Errors from the last image download."""
+        """Failures of the last image download (absent when there were none)."""
         return self.root / "download_errors.log"
 
     @property

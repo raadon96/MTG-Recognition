@@ -25,5 +25,5 @@ How well the text read off the card agrees with a printing's details, from 0 to 
 _Avoid_: confidence (it is not a probability), similarity, distance
 
 **Reference data**:
-Everything built from one MTGJSON release and used to recognise cards: the MobileCache database, the reference images and the pHash index.
+Everything built from one MTGJSON release and used to recognise cards: the MobileCache database and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).
 _Avoid_: reference catalogue, assets

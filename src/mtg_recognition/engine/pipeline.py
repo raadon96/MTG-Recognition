@@ -128,9 +128,7 @@ class Pipeline:
         if auto_build:
             self.phash_matcher.build_index(force=False)
         if not self.phash_matcher.index_loaded:
-            raise ValueError(
-                "pHash index not loaded. Run 'mtg sync' or 'mtg build-index' first."
-            )
+            raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
 
     def recognize(self, image: np.ndarray, debug: bool = False) -> RecognitionResult:
         """Recognize every card in a decoded BGR image.
