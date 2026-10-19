@@ -164,7 +164,7 @@ class Pipeline:
             if u in printings
         ]
 
-        if len(candidates) <= 1:
+        if not candidates:
             return SegmentResult(warped_image, candidates, ocr_debug=None)
 
         # Stage 2: OCR reranking on the reduced search space

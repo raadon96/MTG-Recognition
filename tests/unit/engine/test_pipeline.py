@@ -104,9 +104,9 @@ def test_candidates_missing_from_the_catalog_are_dropped_with_their_scores():
     assert [r.printing for r in segment.ranked] == [printing("p5"), printing("p4")]
 
 
-def test_a_candidate_missing_from_the_catalog_does_not_shift_the_scores():
+def test_the_lone_candidate_left_in_the_catalog_is_scored_by_ocr():
     # pHash ranks "not-in-catalog" first (1.0) and p5 second (0.99);
-    # only p5 survives, so OCR is skipped.
+    # only p5 survives, and OCR scores it.
     phash = FakePHashMatcher(index=["not-in-catalog", "p5"])
     pipeline = make_pipeline(
         FakeSegmentor([card_image(7)]),
@@ -117,10 +117,22 @@ def test_a_candidate_missing_from_the_catalog_does_not_shift_the_scores():
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.ranked == [RankedPrinting(printing("p5"), 0.99)]
+    assert segment.ranked == [RankedPrinting(printing("p5"), 90.0)]
 
 
-def test_a_single_phash_candidate_is_returned_without_ocr():
+def test_no_candidate_in_the_catalog_gives_an_empty_ranking_without_ocr():
+    phash, ocr = FakePHashMatcher(index=["not-in-catalog"]), FakeOCR()
+    pipeline = make_pipeline(
+        FakeSegmentor([card_image()]), phash_matcher=phash, ocr=ocr
+    )
+
+    [segment] = pipeline.recognize(card_image()).segments
+
+    assert segment.ranked == []
+    assert ocr.ks == []
+
+
+def test_a_single_phash_candidate_is_scored_by_ocr():
     ocr = FakeOCR()
     pipeline = make_pipeline(
         FakeSegmentor([card_image(6)]), k_phash_candidates=1, k_final_results=1, ocr=ocr
@@ -128,8 +140,8 @@ def test_a_single_phash_candidate_is_returned_without_ocr():
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.ranked == [RankedPrinting(printing("p6"), 1.0)]
-    assert ocr.ks == []
+    assert segment.ranked == [RankedPrinting(printing("p6"), 90.0)]
+    assert ocr.ks == [1]
 
 
 def test_an_exception_while_processing_becomes_the_error():
