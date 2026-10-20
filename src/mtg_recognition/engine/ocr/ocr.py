@@ -86,7 +86,8 @@ INFO_ROI_BOTTOM = 1.0
 INFO_ROI_LEFT = 0.05
 INFO_ROI_RIGHT = 0.95
 
-# for flavor text bleedthrough filtering in info ROI
+# for flavor text bleedthrough filtering in info ROI; the y threshold is kept small
+# so artist names near the top of the info ROI aren't discarded
 Y_TRESH_FRAC = 0.08
 X_RIGHT_FRAC = 0.90
 
