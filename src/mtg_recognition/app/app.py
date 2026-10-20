@@ -184,7 +184,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     st.subheader(f"📋 {result.uploaded_filename}")
 
     ranked = result.ranked
-    ocr_debug = result.ocr_debug
+    reading_debug = result.reading_debug
 
     warped_img = None
     if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
@@ -251,49 +251,38 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         if best_printing.image_url:
             st.markdown(f"[Scryfall]({best_printing.image_url})")
 
-    # Debug expanders: annotated crop, raw OCR output, extracted vs. best match
-    if debug and ocr_debug is not None:
-        if ocr_debug.ocr_result_img is not None:
-            with st.expander("🔬 Annotated Info ROI", expanded=True):
-                st.image(ocr_debug.ocr_result_img, width="stretch")
+    # Debug expanders: annotated crop, raw OCR output, reading vs. best match
+    if debug and reading_debug is not None:
+        if reading_debug.annotated_image is not None:
+            with st.expander(
+                "🔬 Annotated Information Below the Text Box", expanded=True
+            ):
+                st.image(reading_debug.annotated_image, width="stretch")
 
         with st.expander(
-            "📄 Info ROI — OCR Tokens (flavor-text filtered)",
+            "📄 Information Below the Text Box — OCR Tokens (flavor-text filtered)",
             expanded=True,
         ):
-            # st.dataframe(
-            #     dict(
-            #         texts=ocr_debug.texts_info_roi, scores=ocr_debug.scores_info_roi
-            #     ),
-            #     column_config={
-            #         "scores": st.column_config.NumberColumn(format="%.1f")
-            #     },
-            #     width="stretch",
-            # )
+            st.json(dict(text=reading_debug.texts), width="stretch")
 
-            st.json(dict(text=ocr_debug.texts_info_roi), width="stretch")
-            # st.text(ocr_debug.texts_info_roi, width="stretch")
-
-        with st.expander(
-            "📊 Table 1 — Extracted Properties vs. Best Match", expanded=True
-        ):
+    if debug and best.breakdown:
+        with st.expander("📊 Table 1 — Reading vs. Best Printing", expanded=True):
             import pandas as pd
 
-            from mtg_recognition.engine.ocr.ocr import ATTRIBUTE_MAPPINGS
-
-            rows = []
-            for mapping in ATTRIBUTE_MAPPINGS:
-                ocr_prop = mapping["ocr_property"]
-                db_attr = mapping["db_attr"]
-                ocr_val = getattr(ocr_debug.properties, ocr_prop, "—")
-                rows.append(
-                    {
-                        "attribute": db_attr,
-                        "OCR extracted": ocr_val,
-                        "best match": getattr(best_printing, db_attr, "—"),
-                    }
+            df_prop = (
+                pd.DataFrame(
+                    [
+                        {
+                            "field": s.field,
+                            "read": s.read,
+                            "best printing": s.printed,
+                        }
+                        for s in best.breakdown
+                    ]
                 )
-            df_prop = pd.DataFrame(rows).set_index("attribute").astype(str)
+                .set_index("field")
+                .astype(str)
+            )
             st.dataframe(df_prop, width="stretch")
 
     # Show top matches below
@@ -314,10 +303,23 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
                 st.caption(f"Score: {entry.score:.2f}")
 
     # Debug: score matrix below "Next Top Matches"
-    if debug and ocr_debug is not None and ocr_debug.score_matrix is not None:
+    if debug and ranked and ranked[0].breakdown:
         with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
+            import pandas as pd
+
+            # Prefix each label with its rank so duplicate card names (reprints)
+            # don't produce a non-unique index, which breaks pandas Styler.
+            score_matrix = pd.DataFrame(
+                [{s.field: s.score for s in entry.breakdown} for entry in ranked],
+                index=pd.Index(
+                    [
+                        f"#{rank} {entry.printing.name}"
+                        for rank, entry in enumerate(ranked, 1)
+                    ]
+                ),
+            )
             st.dataframe(
-                ocr_debug.score_matrix.style.background_gradient(
+                score_matrix.style.background_gradient(
                     cmap="RdYlGn", vmin=0, vmax=100
                 ).format("{:.1f}"),
                 width="stretch",

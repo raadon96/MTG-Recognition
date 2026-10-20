@@ -173,14 +173,14 @@ class TestExtractCardName:
 class TestExtractNumberAndBaseSetSize:
     """Tests for extract_number_and_base_set_size.
 
-    Returns (collector_number, base_set_size) where collector_number has leading
-    zeros stripped (matching the DB representation). base_set_size is None for
+    Returns (collector_number, base_set_size) as printed on the card, leading zeros
+    included (scoring compares numbers without them). base_set_size is None for
     old sets that print only a standalone card number with no /baseSetSize.
     """
 
     # Core functionality
     def test_simple(self):
-        assert extract_number_and_base_set_size(["011/264", "WAR-EN"]) == ("11", "264")
+        assert extract_number_and_base_set_size(["011/264", "WAR-EN"]) == ("011", "264")
 
     def test_empty_list(self):
         assert extract_number_and_base_set_size([]) == (None, None)
@@ -188,8 +188,8 @@ class TestExtractNumberAndBaseSetSize:
     def test_no_match(self):
         assert extract_number_and_base_set_size(["WAR-EN", "SOMETEXT"]) == (None, None)
 
-    def test_leading_zeros_stripped(self):
-        assert extract_number_and_base_set_size(["099/280", "A"]) == ("99", "280")
+    def test_leading_zeros_kept(self):
+        assert extract_number_and_base_set_size(["099/280", "A"]) == ("099", "280")
 
     # Longest-match strategy: prefer collector number over P/T
     def test_prefers_longer_over_power_toughness(self):
@@ -211,7 +211,10 @@ class TestExtractNumberAndBaseSetSize:
     # Embedded / substring cases
     def test_embedded_with_trailing_letter(self):
         """Trailing uppercase letter (OCR noise) is not included in the number"""
-        assert extract_number_and_base_set_size(["055/280C", "M2O-EN"]) == ("55", "280")
+        assert extract_number_and_base_set_size(["055/280C", "M2O-EN"]) == (
+            "055",
+            "280",
+        )
 
     def test_embedded_in_longer_string(self):
         assert extract_number_and_base_set_size(["C330/361EN", "TEXT"]) == (
@@ -222,37 +225,40 @@ class TestExtractNumberAndBaseSetSize:
     # Split-token cases
     def test_split_three_tokens(self):
         assert extract_number_and_base_set_size(["011", "/", "264", "WAR-EN"]) == (
-            "11",
+            "011",
             "264",
         )
 
     def test_split_two_tokens(self):
         assert extract_number_and_base_set_size(["011/", "264", "WAR-EN"]) == (
-            "11",
+            "011",
             "264",
         )
 
     def test_split_preferred_over_power_toughness(self):
-        assert extract_number_and_base_set_size(["1/2", "011/", "264"]) == ("11", "264")
+        assert extract_number_and_base_set_size(["1/2", "011/", "264"]) == (
+            "011",
+            "264",
+        )
 
     # OCR normalisation
     def test_backslash_normalised_to_slash(self):
-        assert extract_number_and_base_set_size(["011\\264", "TEXT"]) == ("11", "264")
+        assert extract_number_and_base_set_size(["011\\264", "TEXT"]) == ("011", "264")
 
     def test_spaces_around_slash_normalised(self):
-        assert extract_number_and_base_set_size(["011 / 264", "TEXT"]) == ("11", "264")
+        assert extract_number_and_base_set_size(["011 / 264", "TEXT"]) == ("011", "264")
 
     # Real-world OCR examples
     @pytest.mark.parametrize(
         "rec_texts,expected",
         [
-            (["011/264", "WAR-EN", "B0AG"], ("11", "264")),
+            (["011/264", "WAR-EN", "B0AG"], ("011", "264")),
             (["1/2", "112/280", "M20.EN", "KEE"], ("112", "280")),
             (["3/3", "173/361", "CMR-EN", "ACWANE"], ("173", "361")),
-            (["055/280C", "M2O=ENVKH TWON"], ("55", "280")),
+            (["055/280C", "M2O=ENVKH TWON"], ("055", "280")),
             (["1/1", "105/264", "C", "WaR=EN"], ("105", "264")),
             (["236/269 <", "ELD-EN"], ("236", "269")),
-            (["099/280", "A"], ("99", "280")),
+            (["099/280", "A"], ("099", "280")),
             (["330/361C", "CMR-EN"], ("330", "361")),
             (["269/289C", "TSR-EN"], ("269", "289")),
             (["2/2", "134/280C", "M2O+EN"], ("134", "280")),
@@ -297,7 +303,7 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
     def test_leading_zero_standalone(self):
         """CE/IE style 4-digit card number with leading zero"""
         assert extract_number_and_base_set_size(["CE", "0214", "Artist", "©1993"]) == (
-            "214",
+            "0214",
             None,
         )
 
@@ -369,7 +375,7 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         match
         """
         assert extract_number_and_base_set_size(["214", "011/264", "WAR-EN"]) == (
-            "11",
+            "011",
             "264",
         )
 
@@ -380,7 +386,7 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         assert extract_number_and_base_set_size(
             ["LCI", "L0398", "Artist", "©2023"]
         ) == (
-            "398",
+            "0398",
             None,
         )
 

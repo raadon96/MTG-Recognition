@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-# Adaptive upscaling constants for info ROI.
+# Adaptive upscaling constants for the information below the text box.
 # PP-OCRv5_mobile_rec native input height is 48 px; text below ~32 px degrades.
 # RATIO_TEXT_TO_CROP: approximate fraction of the crop height occupied by text lines.
 TARGET_TEXT_HEIGHT: int = 48

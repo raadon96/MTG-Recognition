@@ -1,18 +1,20 @@
-"""Pipeline.recognize with fake segmentor, pHash matcher and OCR plus the in-memory
-catalog.
+"""Pipeline.recognize with fake segmentor, pHash matcher and reader plus the in-memory
+catalog; scoring is real.
 """
 
 import numpy as np
 import pytest
 
-from mtg_recognition.catalog import RankedPrinting
+from mtg_recognition.catalog import InMemoryCardCatalog, Printing
+from mtg_recognition.engine.ocr.reading import Reading
 from tests.unit.engine.fakes import (
-    FakeOCR,
     FakePHashMatcher,
+    FakeReader,
     FakeSegmentor,
     card_image,
     make_pipeline,
     printing,
+    reading_of,
 )
 
 
@@ -23,7 +25,7 @@ def test_no_card_found_gives_no_segments_and_no_error():
     assert result.error is None
 
 
-def test_one_card_is_matched_by_phash_then_reranked_by_ocr():
+def test_one_card_is_matched_by_phash_then_ranked_by_its_reading():
     warped = card_image(3)
 
     result = make_pipeline(
@@ -33,11 +35,35 @@ def test_one_card_is_matched_by_phash_then_reranked_by_ocr():
     assert result.error is None
     [segment] = result.segments
     assert segment.warped_image is warped
-    # pHash ranks p3 then p0; the fake OCR reverses that order.
-    assert segment.ranked == [
-        RankedPrinting(printing("p0"), 90.0),
-        RankedPrinting(printing("p3"), 89.0),
-    ]
+    # pHash ranks p3 then p0; the card reads as p0.
+    assert [r.printing for r in segment.ranked] == [printing("p0"), printing("p3")]
+    assert segment.ranked[0].score == 100.0
+    assert segment.ranked[1].score < 100.0
+
+
+def test_a_reading_of_the_name_ranks_that_card_first():
+    shock = Printing(
+        uuid="shock", name="Shock", set_code="M19", number="156", base_set_size="280"
+    )
+    bolt = Printing(
+        uuid="bolt",
+        name="Lightning Bolt",
+        set_code="M10",
+        number="146",
+        base_set_size="249",
+    )
+    pipeline = make_pipeline(
+        FakeSegmentor([card_image()]),
+        k_phash_candidates=2,
+        k_final_results=2,
+        phash_matcher=FakePHashMatcher(index=["shock", "bolt"]),
+        reader=FakeReader(Reading(name="LIGHTNING BOLT")),
+        catalog=InMemoryCardCatalog([shock, bolt]),
+    )
+
+    [segment] = pipeline.recognize(card_image()).segments
+
+    assert [r.printing for r in segment.ranked] == [bolt, shock]
 
 
 def test_several_cards_give_one_segment_each_in_segmentation_order():
@@ -55,48 +81,28 @@ def test_several_cards_give_one_segment_each_in_segmentation_order():
 
 
 def test_k_parameters_are_passed_to_phash_and_bound_the_results():
-    phash, ocr = FakePHashMatcher(), FakeOCR()
+    phash = FakePHashMatcher()
     pipeline = make_pipeline(
         FakeSegmentor([card_image(5)]),
         k_phash_candidates=7,
         k_final_results=3,
         phash_matcher=phash,
-        ocr=ocr,
     )
 
     [segment] = pipeline.recognize(card_image()).segments
 
     assert phash.ks == [7]
-    assert ocr.ks == [3]
     assert len(segment.ranked) == 3
 
 
-def test_results_are_truncated_to_k_even_if_ocr_returns_more():
-    class AllCandidatesOCR(FakeOCR):
-        def find_best_matches(
-            self, query_img, candidates, k=10, thresh=0.0, debug=False
-        ):
-            return [RankedPrinting(c, 0.0) for c in candidates], None
-
-    pipeline = make_pipeline(
-        FakeSegmentor([card_image()]),
-        k_phash_candidates=5,
-        k_final_results=2,
-        ocr=AllCandidatesOCR(),
-    )
-
-    [segment] = pipeline.recognize(card_image()).segments
-
-    assert len(segment.ranked) == 2
-
-
-def test_candidates_missing_from_the_catalog_are_dropped_with_their_scores():
+def test_candidates_missing_from_the_catalog_are_dropped():
     phash = FakePHashMatcher(index=["p4", "not-in-catalog", "p5"])
     pipeline = make_pipeline(
         FakeSegmentor([card_image(4)]),
         k_phash_candidates=3,
         k_final_results=2,
         phash_matcher=phash,
+        reader=FakeReader(reading_of(printing("p5"))),
     )
 
     [segment] = pipeline.recognize(card_image()).segments
@@ -104,44 +110,55 @@ def test_candidates_missing_from_the_catalog_are_dropped_with_their_scores():
     assert [r.printing for r in segment.ranked] == [printing("p5"), printing("p4")]
 
 
-def test_the_lone_candidate_left_in_the_catalog_is_scored_by_ocr():
-    # pHash ranks "not-in-catalog" first (1.0) and p5 second (0.99);
-    # only p5 survives, and OCR scores it.
+def test_the_lone_candidate_left_in_the_catalog_is_scored():
+    # pHash ranks "not-in-catalog" first and p5 second; only p5 survives.
     phash = FakePHashMatcher(index=["not-in-catalog", "p5"])
     pipeline = make_pipeline(
         FakeSegmentor([card_image(7)]),
         k_phash_candidates=2,
         k_final_results=1,
         phash_matcher=phash,
+        reader=FakeReader(reading_of(printing("p5"))),
     )
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.ranked == [RankedPrinting(printing("p5"), 90.0)]
+    assert [(r.printing, r.score) for r in segment.ranked] == [(printing("p5"), 100.0)]
 
 
-def test_no_candidate_in_the_catalog_gives_an_empty_ranking_without_ocr():
-    phash, ocr = FakePHashMatcher(index=["not-in-catalog"]), FakeOCR()
+def test_no_candidate_in_the_catalog_gives_an_empty_ranking_without_reading():
+    phash, reader = FakePHashMatcher(index=["not-in-catalog"]), FakeReader()
     pipeline = make_pipeline(
-        FakeSegmentor([card_image()]), phash_matcher=phash, ocr=ocr
+        FakeSegmentor([card_image()]), phash_matcher=phash, reader=reader
     )
 
     [segment] = pipeline.recognize(card_image()).segments
 
     assert segment.ranked == []
-    assert ocr.ks == []
+    assert segment.reading is None
+    assert reader.debugs == []
 
 
-def test_a_single_phash_candidate_is_scored_by_ocr():
-    ocr = FakeOCR()
+def test_a_single_phash_candidate_is_scored():
     pipeline = make_pipeline(
-        FakeSegmentor([card_image(6)]), k_phash_candidates=1, k_final_results=1, ocr=ocr
+        FakeSegmentor([card_image(6)]), k_phash_candidates=1, k_final_results=1
     )
 
     [segment] = pipeline.recognize(card_image()).segments
 
-    assert segment.ranked == [RankedPrinting(printing("p6"), 90.0)]
-    assert ocr.ks == [1]
+    assert [r.printing for r in segment.ranked] == [printing("p6")]
+
+
+@pytest.mark.parametrize("debug", [False, True])
+def test_the_debug_flag_reaches_the_reader_and_the_reading_is_kept(debug):
+    reading = Reading(name="Card p0")
+    reader = FakeReader(reading)
+    pipeline = make_pipeline(FakeSegmentor([card_image()]), reader=reader)
+
+    [segment] = pipeline.recognize(card_image(), debug=debug).segments
+
+    assert reader.debugs == [debug]
+    assert segment.reading is reading
 
 
 def test_an_exception_while_processing_becomes_the_error():
@@ -234,24 +251,17 @@ def test_cli_writes_ranked_printings_to_the_output_json(monkeypatch, tmp_path):
     [segment] = image["segments"]
     assert segment["segment_idx"] == 0
     assert segment["success"] is None  # "p0" is not a UUID
-    assert segment["ranked"] == [
-        {
-            "rank": 1,
-            "name": "Card p0",
-            "uuid": "p0",
-            "setCode": "TST",
-            "number": "1",
-            "score": 90.0,
-        },
-        {
-            "rank": 2,
-            "name": "Card p3",
-            "uuid": "p3",
-            "setCode": "TST",
-            "number": "1",
-            "score": 89.0,
-        },
-    ]
+    first, second = segment["ranked"]
+    assert first == {
+        "rank": 1,
+        "name": "Card p0",
+        "uuid": "p0",
+        "setCode": "TST",
+        "number": "1",
+        "score": 100.0,
+    }
+    assert (second["rank"], second["uuid"]) == (2, "p3")
+    assert second["score"] < 100.0
     assert set(segment["debug"]) == {"raw_texts", "raw_scores", "raw_boxes"}
 
 

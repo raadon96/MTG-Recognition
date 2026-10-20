@@ -88,8 +88,8 @@ def filter_flavor_text_zone(
     """Discard tokens that appear in the flavor-text bleedthrough zone.
 
     Modern cards with flavor text have their last line(s) partially overlap the
-    info ROI. Those tokens appear near the TOP of the ROI. Actual collector line
-    tokens (set code, collector number, artist, copyright) sit in the BOTTOM
+    region below the text box. Those tokens appear near its TOP. Actual collector
+    line tokens (set code, collector number, artist, copyright) sit in the BOTTOM
     portion. P/T — the one useful token that can appear higher up — always sits
     in the far-RIGHT column of the card, so tokens with a large x2 are preserved.
 
@@ -97,7 +97,7 @@ def filter_flavor_text_zone(
                          AND  x2 < x_right_frac  * roi_width
 
     Args:
-        texts:         OCR text tokens from the info ROI.
+        texts:         OCR text tokens from below the text box.
         boxes:         Bounding boxes [[x1, y1, x2, y2], ...] parallel to texts.
         scores:        OCR confidence scores parallel to texts.
         y_thresh_frac: Upper-zone threshold as fraction of ROI height (default 0.35).
@@ -138,7 +138,7 @@ def filter_flavor_text_zone(
 
 
 def extract_setcode_candidates(texts: list[str]) -> list[str]:
-    """Extract set code candidates from raw PaddleOCR info-ROI tokens.
+    """Extract set code candidates from raw PaddleOCR tokens below the text box.
 
     Searches for language-code artifacts (e.g. "WAR·EN", "ECC ★EN", "ECL · EN")
     and returns the prefix as the set code. When no artifact is found, falls back
@@ -147,7 +147,7 @@ def extract_setcode_candidates(texts: list[str]) -> list[str]:
     tokens (artist names, years, copyright words) would only add noise.
 
     Args:
-        texts: Raw OCR text tokens from the info ROI.
+        texts: Raw OCR text tokens from below the text box.
 
     Returns:
         List of set code candidates (may be empty).
@@ -354,7 +354,8 @@ def extract_number_and_base_set_size(
     rec_texts: list[str],
 ) -> tuple[str | None, str | None]:
     """
-    Extract card number and base set size from OCR texts.
+    Extract card number and base set size from OCR texts, as printed (leading
+    zeros included).
 
     Returns (number, base_set_size). When only a standalone card number is found
     (Stage 2, no /baseSetSize), base_set_size is None.
@@ -364,10 +365,8 @@ def extract_number_and_base_set_size(
         return None, None
     if "/" not in number_field:
         # Stage 2 result: standalone card number, no set size printed on card
-        number = number_field.lstrip("0") or number_field
-        return number, None
+        return number_field, None
     number, base_set_size = number_field.split("/")
-    number = number.lstrip("0")
     return number, base_set_size
 
 
@@ -388,7 +387,7 @@ def extract_card_name(texts: list[str]) -> str | None:
 
 
 def extract_artist_name(texts: list[str]) -> str | None:
-    """Extract the artist name from info-ROI OCR tokens.
+    """Extract the artist name from OCR tokens below the text box.
 
     Keeps only tokens that look like name parts (letters, spaces, hyphens,
     apostrophes, periods) and discards tokens containing digits, copyright
@@ -396,7 +395,7 @@ def extract_artist_name(texts: list[str]) -> str | None:
     a single string suitable for fuzzy matching against candidate artist names.
 
     Args:
-        texts: Raw OCR text tokens from the info ROI.
+        texts: Raw OCR text tokens from below the text box.
 
     Returns:
         Joined artist name string, or None if no name-like tokens survive.
