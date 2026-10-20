@@ -2,7 +2,6 @@
 
 import cv2
 import numpy as np
-import pytest
 
 from mtg_recognition.engine.segmentation.box import detect_cards_cv
 from mtg_recognition.engine.segmentation.seg_utils import WARPED_MIN_SIZE

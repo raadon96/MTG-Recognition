@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
-from typing import Union
+from typing import IO
 
 import cv2
 import numpy as np
@@ -10,16 +10,16 @@ from PIL import Image, ImageOps
 
 from mtg_recognition.settings import settings
 
-# All types accepted by load_image
-ImageSource = Union[
-    str,  # file path
-    Path,  # file path
-    bytes,  # raw encoded bytes
-    bytearray,  # raw encoded bytes
-    np.ndarray,  # already decoded BGR array (passthrough)
-    Image.Image,  # PIL Image
-    # Any file-like with .read() — BytesIO, UploadedFile, open(), etc.
-]
+# All types accepted by prepare_image
+ImageSource = (
+    str  # file path
+    | Path  # file path
+    | bytes  # raw encoded bytes
+    | bytearray  # raw encoded bytes
+    | IO[bytes]  # file-like (BytesIO, UploadedFile, open(), …)
+    | np.ndarray  # already decoded BGR array (passthrough)
+    | Image.Image  # PIL Image
+)
 
 
 def get_image_files_in_directory(
@@ -34,7 +34,7 @@ def get_image_files_in_directory(
     return sorted(img_paths)
 
 
-def _resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
+def resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     """Downscale img so its longest edge does not exceed max_dimension.
 
     Returns the original array unchanged if it is already within bounds.
@@ -67,8 +67,26 @@ def _pil_to_bgr(pil_img: Image.Image) -> np.ndarray:
     return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
 
 
-def _to_ndarray(source: ImageSource) -> np.ndarray:
-    """Convert any supported image source to a BGR uint8 numpy array."""
+def prepare_image(source: ImageSource) -> np.ndarray:
+    """Produce the engine's input pixels from any supported image source.
+
+    Decodes the source, rotates it by its EXIF orientation, then shrinks it so its
+    longest edge is at most settings.MAX_IMAGE_DIMENSION (never upscaling). An
+    already-decoded array is taken as is, then shrunk.
+
+    Returns:
+        BGR uint8 numpy array.
+
+    Raises:
+        ValueError: If the source cannot be decoded.
+    """
+    return resize_if_needed(_decode(source), settings.MAX_IMAGE_DIMENSION)
+
+
+def _decode(source: ImageSource) -> np.ndarray:
+    """Decode any supported image source to a BGR uint8 numpy array, applying EXIF
+    orientation.
+    """
 
     # Already a numpy array — passthrough
     if isinstance(source, np.ndarray):
@@ -78,45 +96,13 @@ def _to_ndarray(source: ImageSource) -> np.ndarray:
     if isinstance(source, Image.Image):
         return _pil_to_bgr(source)
 
-    # Raw bytes / bytearray — wrap in BytesIO for PIL
-    if isinstance(source, (bytes, bytearray)):
-        source = io.BytesIO(source)
+    # Raw bytes / bytearray — wrap in BytesIO for PIL; paths and file-likes as is
+    stream = io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else source
 
-    # Path or file-like (BytesIO, UploadedFile, open(), …)
     try:
-        pil_img = Image.open(source)
+        pil_img = Image.open(stream)
         return _pil_to_bgr(pil_img)
     except Exception as e:
         raise ValueError(
             f"Failed to decode image from {type(source).__name__}: {e}"
         ) from e
-
-
-def load_and_resize_image(
-    source: ImageSource,
-    max_dimension: int = settings.MAX_IMAGE_DIMENSION,
-) -> np.ndarray:
-    """Load an image from any supported source and apply app-standard preprocessing.
-
-    Accepts file paths, raw bytes, file-like objects (BytesIO, UploadedFile, …),
-    PIL Images, and numpy arrays. Always returns a BGR uint8 numpy array resized
-    so its longest edge does not exceed max_dimension, matching the preprocessing
-    applied by the Streamlit app before images reach the pipeline.
-
-    EXIF orientation is applied automatically, so smartphone photos taken in
-    portrait mode are correctly rotated before reaching the pipeline.
-
-    Args:
-        source: Image source — see ImageSource type alias for accepted types.
-        max_dimension: Constrain the longest edge to this many pixels.
-                       Defaults to app_settings.MAX_IMAGE_DIMENSION (1280).
-
-    Returns:
-        BGR uint8 numpy array, downscaled if necessary.
-
-    Raises:
-        FileNotFoundError: If source is a path and the file does not exist.
-        ValueError: If the image cannot be decoded.
-        TypeError: If source is an unsupported type.
-    """
-    return _resize_if_needed(_to_ndarray(source), max_dimension)

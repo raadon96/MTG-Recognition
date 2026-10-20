@@ -11,16 +11,14 @@ Run:
 
 from pathlib import Path
 
-import cv2
 import pytest
 
-from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.core.image_utils import prepare_image
 from mtg_recognition.engine.segmentation.seg_utils import (
     WARPED_MAX_SIZE,
     WARPED_MIN_SIZE,
 )
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
-from mtg_recognition.settings import settings
 
 # ---------------------------------------------------------------------------
 # Test data directories
@@ -34,7 +32,6 @@ SCANS_SINGLE_BG = TEST_DATA / "3_scans_single_card_with_bg" / "images"
 SCANS_SINGLE_NO_BG = TEST_DATA / "4_scans_single_card_no_bg" / "images"
 
 # _TARGET_SIZE = WARPED_MIN_SIZE
-_MAX_DIMENSION = settings.MAX_IMAGE_DIMENSION
 
 
 def _img_paths(directory: Path) -> list[Path]:
@@ -67,8 +64,7 @@ class TestScanWithoutBedBypass:
         "img_path", _img_paths(SCANS_SINGLE_NO_BG), ids=lambda p: p.stem
     )
     def test_bypass_produces_one_segment(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None, f"Could not read {img_path}"
+        img = prepare_image(img_path)
 
         # Verify bypass condition is met
         h, w = img.shape[:2]
@@ -101,8 +97,7 @@ class TestPhotoSingleCard:
         "img_path", _img_paths(PHOTOS_SINGLE_CARD), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segment detected"
@@ -128,8 +123,7 @@ class TestPhotoMultipleCards:
         "img_path", _img_paths(PHOTOS_MULTI_CARD), ids=lambda p: p.stem
     )
     def test_multiple_segments_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segments detected"
@@ -152,14 +146,15 @@ class TestPhotoMultipleCards:
 
 @pytest.mark.slow
 class TestScanWithBackground:
-    """Scans with visible scanner bed background must yield exactly one segment via YOLO."""
+    """Scans with visible scanner bed background must yield exactly one segment via
+    YOLO.
+    """
 
     @pytest.mark.parametrize(
         "img_path", _img_paths(SCANS_SINGLE_BG), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segment detected"
@@ -171,50 +166,4 @@ class TestScanWithBackground:
         max_w, max_h = WARPED_MAX_SIZE
         assert min_w <= out_w <= max_w and min_h <= out_h <= max_h, (
             f"{img_path.stem}: unexpected size ({out_w}, {out_h})"
-        )
-
-
-# ---------------------------------------------------------------------------
-# Batch inference — ordering and mini-batch splitting
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.slow
-class TestBatchInference:
-    """segment_batch must return results in input order and process correctly."""
-
-    def test_batch_results_ordered(self, segmentor):
-        single_paths = _img_paths(PHOTOS_SINGLE_CARD)
-        if len(single_paths) < 2:
-            pytest.skip("Need at least 2 photos for ordering test")
-
-        imgs = [load_and_resize_image(str(p), _MAX_DIMENSION) for p in single_paths[:4]]
-        results = segmentor.segment_batch(imgs)
-
-        assert len(results) == len(imgs)
-        for i, result in enumerate(results):
-            assert result.success, f"Image {i}: no segment"
-
-    def test_batch_larger_than_default_batch_size(self, segmentor):
-        """Processing > 20 images must still produce correct results."""
-        all_paths = (
-            _img_paths(PHOTOS_SINGLE_CARD)
-            + _img_paths(PHOTOS_MULTI_CARD)
-            + _img_paths(SCANS_SINGLE_BG)
-            + _img_paths(SCANS_SINGLE_NO_BG)
-        )
-        if len(all_paths) < 21:
-            pytest.skip("Need > 20 images to test mini-batch splitting")
-
-        imgs = [
-            load_and_resize_image(str(p), settings.MAX_IMAGE_DIMENSION)
-            for p in all_paths[:25]
-        ]
-        results = segmentor.segment_batch(imgs)
-
-        assert len(results) == len(imgs)
-        # At least most should succeed
-        success_count = sum(1 for r in results if r.success)
-        assert success_count >= len(imgs) * 0.8, (
-            f"Too many failures: {len(imgs) - success_count}/{len(imgs)}"
         )

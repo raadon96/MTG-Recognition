@@ -2,21 +2,19 @@ import datetime
 import logging
 import re
 
-import numpy as np
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN", "ELD·FR", "ECC ★EN")
+# Build pattern: match anything before a language-code artifact (e.g. "WAR-EN",
+# "ELD·FR", "ECC ★EN")
 _SUPPORTED_LANG_CODES = frozenset(
     {"EN", "FR", "DE", "ES", "IT", "PT", "JA", "JP", "KO", "RU", "ZH", "TW"}
 )
 _LANG_GROUP = "|".join(sorted(_SUPPORTED_LANG_CODES))
 # Separators: ·  .  +  -  =  ★  *  ,  (optional whitespace on both sides)
 # ★ = Unicode BLACK STAR (U+2605); * = ASCII asterisk (U+002A) — OCR may output either.
-# No word boundary at end: lang code may be glued to trailing OCR noise (e.g. "M2O=ENVKH")
+# No word boundary at end: lang code may be glued to trailing OCR noise (e.g.
+# "M2O=ENVKH")
 _ARTIFACT_PATTERN = re.compile(rf"(.+?)\s*[·.+\-=★*,]\s*(?:{_LANG_GROUP})")
 
 # Artist name extraction
@@ -52,9 +50,11 @@ _SETCODE_BLOCKLIST = frozenset(
 )
 
 # Collector number extraction — Stage 1 (full cardNumber/baseSetSize)
-# Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo markers
+# Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo
+# markers
 _COLL_SUFFIX = r"[a-z★†✦]?"
-# Symmetric T/C prefix variant (T=token, C=commander): both sides must carry the same prefix class
+# Symmetric T/C prefix variant (T=token, C=commander): both sides must carry the same
+# prefix class
 _S1_BOUNDARY_PREFIX = re.compile(
     rf"\b([TC]\d{{1,4}}{_COLL_SUFFIX}/[TC]\d{{2,4}}{_COLL_SUFFIX})\b"
 )
@@ -88,8 +88,8 @@ def filter_flavor_text_zone(
     """Discard tokens that appear in the flavor-text bleedthrough zone.
 
     Modern cards with flavor text have their last line(s) partially overlap the
-    info ROI. Those tokens appear near the TOP of the ROI. Actual collector line
-    tokens (set code, collector number, artist, copyright) sit in the BOTTOM
+    region below the text box. Those tokens appear near its TOP. Actual collector
+    line tokens (set code, collector number, artist, copyright) sit in the BOTTOM
     portion. P/T — the one useful token that can appear higher up — always sits
     in the far-RIGHT column of the card, so tokens with a large x2 are preserved.
 
@@ -97,7 +97,7 @@ def filter_flavor_text_zone(
                          AND  x2 < x_right_frac  * roi_width
 
     Args:
-        texts:         OCR text tokens from the info ROI.
+        texts:         OCR text tokens from below the text box.
         boxes:         Bounding boxes [[x1, y1, x2, y2], ...] parallel to texts.
         scores:        OCR confidence scores parallel to texts.
         y_thresh_frac: Upper-zone threshold as fraction of ROI height (default 0.35).
@@ -121,22 +121,24 @@ def filter_flavor_text_zone(
 
     kept = [
         (t, b, s)
-        for t, b, s in zip(texts, boxes, scores)
+        for t, b, s in zip(texts, boxes, scores, strict=False)
         if not (b[1] < y_thresh and b[2] < x_right)
     ]
 
-    # kept = [(t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)]
+    # kept = [
+    #     (t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)
+    # ]
 
     # Safety guard: never discard everything (e.g. unusual card layouts)
     if not kept:
         return texts, boxes, scores
 
-    texts_f, boxes_f, scores_f = zip(*kept)
+    texts_f, boxes_f, scores_f = zip(*kept, strict=True)
     return list(texts_f), list(boxes_f), list(scores_f)
 
 
 def extract_setcode_candidates(texts: list[str]) -> list[str]:
-    """Extract set code candidates from raw PaddleOCR info-ROI tokens.
+    """Extract set code candidates from raw PaddleOCR tokens below the text box.
 
     Searches for language-code artifacts (e.g. "WAR·EN", "ECC ★EN", "ECL · EN")
     and returns the prefix as the set code. When no artifact is found, falls back
@@ -145,7 +147,7 @@ def extract_setcode_candidates(texts: list[str]) -> list[str]:
     tokens (artist names, years, copyright words) would only add noise.
 
     Args:
-        texts: Raw OCR text tokens from the info ROI.
+        texts: Raw OCR text tokens from below the text box.
 
     Returns:
         List of set code candidates (may be empty).
@@ -204,7 +206,8 @@ def extract_power_toughness(
     Args:
         rec_texts: List of OCR-recognized text strings
     Returns:
-        Power/toughness tuple (e.g., ("3", "2"), ("*", "*")) or (None, None) if not found
+        Power/toughness tuple (e.g., ("3", "2"), ("*", "*")) or (None, None) if not
+        found
     """
     _PT_SLOT = r"(\*|\d)"
     pattern = rf"(?<!\w){_PT_SLOT}/{_PT_SLOT}(?!\w)"
@@ -246,9 +249,7 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
         n = len(num_str)
         if n == 1:
             return False
-        if n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max:
-            return False
-        return True
+        return not (n == 4 and _S2_YEAR_MIN <= int(num_str) <= year_max)
 
     # Primary pass: bare digit tokens (e.g. "71", "338", "0214")
     # Skip tokens containing a slash — digit sub-matches there are P/T components
@@ -353,7 +354,8 @@ def extract_number_and_base_set_size(
     rec_texts: list[str],
 ) -> tuple[str | None, str | None]:
     """
-    Extract card number and base set size from OCR texts.
+    Extract card number and base set size from OCR texts, as printed (leading
+    zeros included).
 
     Returns (number, base_set_size). When only a standalone card number is found
     (Stage 2, no /baseSetSize), base_set_size is None.
@@ -363,10 +365,8 @@ def extract_number_and_base_set_size(
         return None, None
     if "/" not in number_field:
         # Stage 2 result: standalone card number, no set size printed on card
-        number = number_field.lstrip("0") or number_field
-        return number, None
+        return number_field, None
     number, base_set_size = number_field.split("/")
-    number = number.lstrip("0")
     return number, base_set_size
 
 
@@ -375,7 +375,7 @@ def extract_card_name(texts: list[str]) -> str | None:
     # filtered_list = [text.strip() for text in texts if len(text.strip()) > 1]
 
     filtered_list = [text.strip() for text in texts]
-    filtered_list = list(filter(lambda text: 2 <= len(text), texts))
+    filtered_list = list(filter(lambda text: len(text) >= 2, texts))
 
     if not filtered_list:
         return None
@@ -387,7 +387,7 @@ def extract_card_name(texts: list[str]) -> str | None:
 
 
 def extract_artist_name(texts: list[str]) -> str | None:
-    """Extract the artist name from info-ROI OCR tokens.
+    """Extract the artist name from OCR tokens below the text box.
 
     Keeps only tokens that look like name parts (letters, spaces, hyphens,
     apostrophes, periods) and discards tokens containing digits, copyright
@@ -395,7 +395,7 @@ def extract_artist_name(texts: list[str]) -> str | None:
     a single string suitable for fuzzy matching against candidate artist names.
 
     Args:
-        texts: Raw OCR text tokens from the info ROI.
+        texts: Raw OCR text tokens from below the text box.
 
     Returns:
         Joined artist name string, or None if no name-like tokens survive.
@@ -479,14 +479,16 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
                 # Validate reasonable year range for MTG (1993-2030)
                 if 1993 <= year <= 2030:
                     logger.debug(
-                        f"Found year range: {start_year}-{end_year}, using end year: {year}"
+                        f"Found year range: {start_year}-{end_year}, "
+                        f"using end year: {year}"
                     )
                     candidates.append(
                         (year, has_copyright_context, 2)
                     )  # Priority 2 for ranges
 
         # Pattern 2: Find single four-digit years
-        # Use negative lookbehind/lookahead to avoid matching years within longer numbers
+        # Use negative lookbehind/lookahead to avoid matching years within longer
+        # numbers
         year_pattern = r"(?<!\d)(\d{4})(?!\d)"
         year_matches = re.findall(year_pattern, normalized)
 
@@ -495,7 +497,8 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
             # Filter reasonable years for MTG cards (1993-2030)
             if 1993 <= year <= 2030:
                 logger.debug(
-                    f"Found single year: {year}, copyright context: {has_copyright_context}"
+                    f"Found single year: {year}, "
+                    f"copyright context: {has_copyright_context}"
                 )
                 candidates.append(
                     (year, has_copyright_context, 1)
@@ -516,61 +519,3 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
     logger.info(f"Extracted copyright year: {result}")
 
     return str(result)
-
-
-def sort_scores_with_indices(
-    scores: np.ndarray, k: int | None = None, threshold: float = 0.0
-) -> tuple[list[float], list[int]]:
-    """
-    Return top-k scores (descending) and their indices, using argpartition for efficiency.
-
-    Parameters:
-    - scores: 1-D numpy array of numeric scores
-    - k: number of top elements to return (default: None, returns all valid scores)
-    - threshold: only scores >= threshold are considered (default: 0.0)
-
-    Returns:
-    - top_scores_desc: 1-D numpy array of the top-k scores in descending order
-    - top_indices_desc: 1-D numpy array of the corresponding indices in the original scores
-    """
-    # Ensure input is a NumPy array
-    scores = np.asarray(scores)
-
-    if scores.ndim != 1:
-        raise ValueError("scores must be a 1-D array")
-
-    if k is not None and k <= 0:
-        raise ValueError("k must be > 0")
-
-    # Filter by threshold
-    valid_mask = scores >= threshold
-    valid_scores = scores[valid_mask]
-    valid_indices = np.nonzero(valid_mask)[0]
-
-    if valid_scores.size == 0:
-        return [], []
-
-    # If k is None, return all valid scores sorted
-    if k is None:
-        sort_order = np.argsort(-valid_scores)
-        return valid_scores[sort_order].tolist(), valid_indices[sort_order].tolist()
-
-    # If k is larger than number of valid scores, clamp it
-    k = min(k, valid_scores.size)
-
-    # Use argpartition to get indices of the top-k values in descending order.
-    # We partition based on the (k-1)th largest position in the *negative* scores
-    # to emulate top-k in descending order.
-    # Compute indices within the valid_scores array
-    topk_pos_in_valid = np.argpartition(-valid_scores, k - 1)[:k]
-
-    # Gather the top-k scores and their original indices
-    topk_scores = valid_scores[topk_pos_in_valid]
-    topk_indices = valid_indices[topk_pos_in_valid]
-
-    # Sort the top-k locally in descending order
-    sort_order = np.argsort(-topk_scores, kind="stable")
-    top_scores_desc = topk_scores[sort_order]
-    top_indices_desc = topk_indices[sort_order]
-
-    return top_scores_desc.tolist(), top_indices_desc.tolist()

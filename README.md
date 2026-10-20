@@ -103,22 +103,24 @@ uv sync --dev
 source .venv/bin/activate
 ```
 
-#### 5. Download reference images
+#### 5. Check the reference data
 
 ```bash
-mtg sync
+mtg status
 ```
-This downloads the ~1M reference card images (~500 MB). The card database and pHash index are committed to git and do not require a network sync. 
+The card database and pHash index are committed to git, so recognition works right after cloning. `mtg status` shows their versions, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
 
 **Maintainers only — update the card database to a new MTGJSON release:**
 ```bash
-mtg sync --update-db
+mtg update
 ```
+This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the card database, then runs `mtg build-index`.
 
-**Force a full rebuild of all artifacts (e.g. for troubleshooting):**
+**Rebuild the pHash index:**
 ```bash
-mtg sync --force
+mtg build-index
 ```
+This downloads the reference card images missing from `data/reference/images/` (~109k images, ~11 GB, a local cache used only to build the index), then rebuilds the index. Add `--force` to either command to rebuild even when the versions match.
 
 #### 6. Run Streamlit app
 

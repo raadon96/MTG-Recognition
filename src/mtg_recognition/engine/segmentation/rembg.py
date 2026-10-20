@@ -2,14 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import cv2
 import numpy as np
 from rembg import new_session, remove
-from tqdm import tqdm
-
-from mtg_recognition.core.image_utils import load_and_resize_image
 
 from .seg_utils import (
     CardSegment,
@@ -31,8 +26,7 @@ class RembgCardSegmentor:
 
     Handles multi-card images: each connected foreground blob is treated as a
     separate card candidate. Blobs are filtered by minimum area and aspect ratio.
-    The rembg session is loaded once and reused across all calls, making
-    segment_batch efficient for processing multiple images.
+    The rembg session is loaded once and reused across all calls.
     """
 
     def __init__(
@@ -94,39 +88,3 @@ class RembgCardSegmentor:
             segments.append(CardSegment(warped_image=warp_card(img, corners)))
 
         return ImageSegmentationResult(segments=segments)
-
-    def segment_batch(self, imgs: list[np.ndarray]) -> list[ImageSegmentationResult]:
-        """
-        Segment cards from multiple images, reusing the rembg session.
-
-        Args:
-            imgs: List of BGR images.
-
-        Returns:
-            One ImageSegmentationResult per input image, in the same order.
-        """
-        return [self.segment(img) for img in imgs]
-
-    def segment_from_dir(self, src_dir: str | Path, dst_dir: str | Path) -> None:
-        src_dir = Path(src_dir)
-        if not src_dir.exists():
-            raise ValueError(f"source directory does not exist: {src_dir}")
-
-        dst_dir = Path(dst_dir)
-        assert src_dir != dst_dir
-        dst_dir.mkdir(parents=True, exist_ok=True)
-
-        image_paths = list(src_dir.glob("*.jpg"))
-        for img_path in tqdm(image_paths, desc="Segmenting images"):
-            img = load_and_resize_image(img_path)
-            result = self.segment(img)
-            if not result.success:
-                print(f"no card detected: {img_path}")
-                continue
-            for i, segment in enumerate(result.segments):
-                stem = (
-                    img_path.stem
-                    if len(result.segments) == 1
-                    else f"{img_path.stem}_{i}"
-                )
-                cv2.imwrite(str(dst_dir / f"{stem}.jpg"), segment.warped_image)
