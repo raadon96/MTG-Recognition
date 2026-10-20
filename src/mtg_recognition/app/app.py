@@ -1,12 +1,9 @@
 import argparse
-from pathlib import Path
 
-import cv2
 import requests
 import streamlit as st
 
-from mtg_recognition.app.upload_processor import UploadProcessor, UploadStatus
-from mtg_recognition.core.image_utils import load_image
+from mtg_recognition.app.upload_processor import Upload, UploadProcessor, UploadStatus
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
 
@@ -186,34 +183,19 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     ranked = result.ranked
     reading_debug = result.reading_debug
 
-    warped_img = None
-    if result.warped_image_temp_path and Path(result.warped_image_temp_path).exists():
-        warped_img = cv2.imread(result.warped_image_temp_path)
-
     # Main layout: 3 columns for images + 1 column for metadata
     col1, col2, col3, col4 = st.columns([1.2, 1.2, 1.2, 1])
 
     # Column 1: Original Image
     with col1:
         st.caption("**Original Image**")
-        if (
-            result.original_image_temp_path
-            and Path(result.original_image_temp_path).exists()
-        ):
-            original_img = cv2.imread(result.original_image_temp_path)
-            if original_img is not None:
-                st.image(
-                    cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB),
-                    # use_column_width=True,
-                )
-        else:
-            st.info("Original image not available")
+        st.image(result.original_image)
 
     # Column 2: Warped Image
     with col2:
         st.caption("**Warped Image**")
-        if warped_img is not None:
-            st.image(cv2.cvtColor(warped_img, cv2.COLOR_BGR2RGB))
+        if result.warped_image_jpeg is not None:
+            st.image(result.warped_image_jpeg)
         else:
             st.info("Warped image not available")
 
@@ -400,22 +382,7 @@ def main():
 
         # Start processing button
         if st.sidebar.button("🚀 START PROCESSING", type="primary"):
-            # Save uploaded files to temporary directory
-            import tempfile
-
-            temp_dir = tempfile.mkdtemp()
-            temp_paths = []
-
-            for uploaded_file in uploaded_files:
-                img = load_image(uploaded_file)
-                stem = Path(uploaded_file.name).stem
-                temp_path = Path(temp_dir) / f"{stem}.jpg"
-                cv2.imwrite(
-                    str(temp_path),
-                    img,
-                    [cv2.IMWRITE_JPEG_QUALITY, settings.JPEG_QUALITY],
-                )
-                temp_paths.append(str(temp_path))
+            uploads = [Upload(name=f.name, data=f.getvalue()) for f in uploaded_files]
 
             processor = UploadProcessor(pipeline)
 
@@ -432,14 +399,9 @@ def main():
             # Process uploads
             try:
                 results = processor.process(
-                    temp_paths, progress_callback=progress_callback
+                    uploads, progress_callback=progress_callback
                 )
                 st.session_state.upload_results = results
-
-                # Clean up temp directory
-                import shutil
-
-                shutil.rmtree(temp_dir)
 
                 st.success("✅ Processing complete!")
                 st.rerun()

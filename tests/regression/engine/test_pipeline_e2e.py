@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.pipeline import Pipeline
 
 RAW_BENCHMARK = Path("data/test/6_benchmark/images/raw")
@@ -29,7 +28,7 @@ def test_recognizes_the_printing_named_by_the_file(pipeline, uuid):
     if not img_path.exists():
         pytest.skip(f"{img_path} missing; run `uv run dvc pull`")
 
-    result = pipeline.recognize(load_image(img_path))
+    result = pipeline.recognize(img_path)
 
     assert result.error is None
     [segment] = result.segments

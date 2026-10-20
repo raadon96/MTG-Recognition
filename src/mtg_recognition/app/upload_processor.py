@@ -1,18 +1,26 @@
 """Recognition of uploaded card images for the Streamlit app."""
 
-import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
-from pathlib import Path
 
 import cv2
 import numpy as np
 
 from mtg_recognition.catalog import RankedPrinting
-from mtg_recognition.core.image_utils import load_image
 from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult
+
+# Quality of the warped card's display copy; recognition never sees it.
+_DISPLAY_JPEG_QUALITY = 90
+
+
+@dataclass(frozen=True)
+class Upload:
+    """One uploaded image file: its name and its encoded bytes, as uploaded."""
+
+    name: str
+    data: bytes
 
 
 class UploadStatus(StrEnum):
@@ -28,11 +36,10 @@ class UploadResult:
     """
 
     uploaded_filename: str
-    original_image_path: str
+    original_image: bytes  # the upload itself, as uploaded
     ranked: list[RankedPrinting] = field(default_factory=list)  # best first
     error_message: str | None = None
-    warped_image_temp_path: str | None = None  # Temp file path for warped image
-    original_image_temp_path: str | None = None  # Temp file path for original image
+    warped_image_jpeg: bytes | None = None  # the warped card, for display only
     reading_debug: ReadingDebug | None = None
 
     @property
@@ -81,14 +88,14 @@ class UploadProcessor:
 
     def process(
         self,
-        image_paths: list[str],
+        uploads: list[Upload],
         progress_callback: Callable[[int, int], None] | None = None,
     ) -> list[UploadResult]:
         """
         Recognize each uploaded image.
 
         Args:
-            image_paths: Paths of the uploaded image files.
+            uploads: The uploaded image files.
             progress_callback: Optional callback(images_done, total).
 
         Returns:
@@ -96,44 +103,30 @@ class UploadProcessor:
             that has no card or failed.
         """
         results: list[UploadResult] = []
-        total = len(image_paths)
+        total = len(uploads)
 
-        for done, image_path in enumerate(image_paths, 1):
-            results.extend(self._process_one(Path(image_path)))
+        for done, upload in enumerate(uploads, 1):
+            results.extend(self._process_one(upload))
             if progress_callback:
                 progress_callback(done, total)
 
         return results
 
-    def _process_one(self, image_file: Path) -> list[UploadResult]:
-        name, path = image_file.name, str(image_file)
-        try:
-            img = load_image(image_file)
-        except Exception as e:
-            return [UploadResult(name, path, error_message=str(e))]
-
-        original_tmp = _write_temp_png(img)
-        recognition: RecognitionResult = self.pipeline.recognize(img, debug=True)
+    def _process_one(self, upload: Upload) -> list[UploadResult]:
+        name, data = upload.name, upload.data
+        recognition: RecognitionResult = self.pipeline.recognize(data, debug=True)
 
         if recognition.error is not None:
-            return [
-                UploadResult(
-                    name,
-                    path,
-                    error_message=recognition.error,
-                    original_image_temp_path=original_tmp,
-                )
-            ]
+            return [UploadResult(name, data, error_message=recognition.error)]
         if not recognition.segments:
-            return [UploadResult(name, path, original_image_temp_path=original_tmp)]
+            return [UploadResult(name, data)]
 
         return [
             UploadResult(
                 name,
-                path,
+                data,
                 ranked=segment.ranked,
-                warped_image_temp_path=_write_temp_png(segment.warped_image),
-                original_image_temp_path=original_tmp,
+                warped_image_jpeg=_encode_jpeg(segment.warped_image),
                 reading_debug=(
                     segment.reading.debug if segment.reading is not None else None
                 ),
@@ -213,7 +206,10 @@ class UploadProcessor:
             json.dump(data, f, indent=2)
 
 
-def _write_temp_png(img: np.ndarray) -> str:
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        cv2.imwrite(tmp.name, img)
-        return tmp.name
+def _encode_jpeg(img: np.ndarray) -> bytes:
+    ok, buffer = cv2.imencode(
+        ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, _DISPLAY_JPEG_QUALITY]
+    )
+    if not ok:
+        raise ValueError("Failed to encode the warped card as JPEG")
+    return buffer.tobytes()

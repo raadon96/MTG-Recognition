@@ -13,13 +13,12 @@ from pathlib import Path
 
 import pytest
 
-from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.core.image_utils import prepare_image
 from mtg_recognition.engine.segmentation.seg_utils import (
     WARPED_MAX_SIZE,
     WARPED_MIN_SIZE,
 )
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
-from mtg_recognition.settings import settings
 
 # ---------------------------------------------------------------------------
 # Test data directories
@@ -33,7 +32,6 @@ SCANS_SINGLE_BG = TEST_DATA / "3_scans_single_card_with_bg" / "images"
 SCANS_SINGLE_NO_BG = TEST_DATA / "4_scans_single_card_no_bg" / "images"
 
 # _TARGET_SIZE = WARPED_MIN_SIZE
-_MAX_DIMENSION = settings.MAX_IMAGE_DIMENSION
 
 
 def _img_paths(directory: Path) -> list[Path]:
@@ -66,8 +64,7 @@ class TestScanWithoutBedBypass:
         "img_path", _img_paths(SCANS_SINGLE_NO_BG), ids=lambda p: p.stem
     )
     def test_bypass_produces_one_segment(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None, f"Could not read {img_path}"
+        img = prepare_image(img_path)
 
         # Verify bypass condition is met
         h, w = img.shape[:2]
@@ -100,8 +97,7 @@ class TestPhotoSingleCard:
         "img_path", _img_paths(PHOTOS_SINGLE_CARD), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segment detected"
@@ -127,8 +123,7 @@ class TestPhotoMultipleCards:
         "img_path", _img_paths(PHOTOS_MULTI_CARD), ids=lambda p: p.stem
     )
     def test_multiple_segments_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segments detected"
@@ -159,8 +154,7 @@ class TestScanWithBackground:
         "img_path", _img_paths(SCANS_SINGLE_BG), ids=lambda p: p.stem
     )
     def test_one_segment_detected(self, segmentor, img_path):
-        img = load_and_resize_image(str(img_path), _MAX_DIMENSION)
-        assert img is not None
+        img = prepare_image(img_path)
 
         result = segmentor.segment(img)
         assert result.success, f"{img_path.stem}: no segment detected"

@@ -12,6 +12,7 @@ from tests.unit.engine.fakes import (
     FakeReader,
     FakeSegmentor,
     card_image,
+    card_png,
     make_pipeline,
     printing,
     reading_of,
@@ -178,6 +179,37 @@ def test_large_images_are_downscaled_before_segmentation():
     make_pipeline(segmentor).recognize(np.zeros((4000, 3000, 3), dtype=np.uint8))
 
     assert segmentor.inputs[0].shape == (2048, 1536, 3)
+
+
+def test_an_image_file_path_is_recognized(tmp_path):
+    path = tmp_path / "card.png"
+    path.write_bytes(card_png(9))
+    segmentor = FakeSegmentor([])
+
+    result = make_pipeline(segmentor).recognize(path)
+
+    assert result.error is None
+    assert (segmentor.inputs[0] == card_image(9)).all()
+
+
+def test_encoded_image_bytes_are_recognized():
+    segmentor = FakeSegmentor([])
+
+    result = make_pipeline(segmentor).recognize(card_png(9))
+
+    assert result.error is None
+    assert (segmentor.inputs[0] == card_image(9)).all()
+
+
+def test_an_unreadable_source_becomes_the_error():
+    segmentor = FakeSegmentor([])
+
+    result = make_pipeline(segmentor).recognize(b"not an image")
+
+    assert result.segments == []
+    assert result.error is not None
+    assert result.error.startswith("ValueError: ")
+    assert segmentor.inputs == []
 
 
 def test_small_images_reach_the_segmentor_unchanged():
