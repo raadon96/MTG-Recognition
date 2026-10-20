@@ -11,7 +11,7 @@ import numpy as np
 
 from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.core.image_utils import load_image
-from mtg_recognition.engine.ocr.ocr import OCRDebugData
+from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult
 
 
@@ -33,7 +33,7 @@ class UploadResult:
     error_message: str | None = None
     warped_image_temp_path: str | None = None  # Temp file path for warped image
     original_image_temp_path: str | None = None  # Temp file path for original image
-    ocr_debug: OCRDebugData | None = None
+    reading_debug: ReadingDebug | None = None
 
     @property
     def status(self) -> UploadStatus:
@@ -134,7 +134,9 @@ class UploadProcessor:
                 ranked=segment.ranked,
                 warped_image_temp_path=_write_temp_png(segment.warped_image),
                 original_image_temp_path=original_tmp,
-                ocr_debug=segment.ocr_debug,
+                reading_debug=(
+                    segment.reading.debug if segment.reading is not None else None
+                ),
             )
             for segment in recognition.segments
         ]

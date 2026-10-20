@@ -7,16 +7,12 @@ from typing import Protocol
 import click
 import numpy as np
 
-from mtg_recognition.catalog import (
-    CardCatalog,
-    Printing,
-    RankedPrinting,
-    SqliteCardCatalog,
-)
+from mtg_recognition.catalog import CardCatalog, RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import load_image, resize_if_needed
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
-from mtg_recognition.engine.ocr.ocr import CardOCR, OCRDebugData
+from mtg_recognition.engine.ocr import scoring
+from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.reference import ReferenceData
@@ -44,18 +40,10 @@ class CandidateMatcher(Protocol):
     ) -> tuple[list[str], list[float]]: ...
 
 
-class CandidateReranker(Protocol):
-    """Reranks candidate printings for a warped card image (default: CardOCR)."""
+class CardReader(Protocol):
+    """Reads a warped card image (default: PaddleCardReader)."""
 
-    def find_best_matches(
-        self,
-        query_img: np.ndarray,
-        candidates: list[Printing],
-        *,
-        k: int | None,
-        thresh: float,
-        debug: bool,
-    ) -> tuple[list[RankedPrinting], OCRDebugData | None]: ...
+    def read(self, card_image: np.ndarray, *, debug: bool) -> Reading: ...
 
 
 @dataclass(frozen=True)
@@ -64,7 +52,7 @@ class SegmentResult:
 
     warped_image: np.ndarray
     ranked: list[RankedPrinting]  # best first
-    ocr_debug: OCRDebugData | None
+    reading: Reading | None  # None when no candidate was left to compare it with
 
 
 @dataclass(frozen=True)
@@ -79,13 +67,15 @@ class Pipeline:
     """The engine's recognition module: image in, ranked Printings per card out.
 
     Segments the image, finds pHash candidates, resolves them to Printings
-    through the catalog and reranks them with OCR.
+    through the catalog, reads each card and ranks the candidates by scoring the
+    reading against them.
 
     Args:
         k_phash_candidates: Number of candidates from the pHash stage.
-        k_final_results: Number of matches returned per card after OCR reranking.
+        k_final_results: Number of printings ranked per card.
         catalog: Resolves printing UUIDs to Printings (default: MobileCache SQLite).
-        segmentor, phash_matcher, ocr: Stage implementations (defaults built here).
+        segmentor, phash_matcher, reader: Stage implementations (defaults built
+            here).
 
     Raises:
         ValueError: If the k parameters are invalid or the pHash index is not loaded.
@@ -98,7 +88,7 @@ class Pipeline:
         catalog: CardCatalog | None = None,
         segmentor: CardSegmentor | None = None,
         phash_matcher: CandidateMatcher | None = None,
-        ocr: CandidateReranker | None = None,
+        reader: CardReader | None = None,
     ):
         if not 1 <= k_final_results <= k_phash_candidates:
             raise ValueError(
@@ -119,7 +109,7 @@ class Pipeline:
         self.phash_matcher: CandidateMatcher = (
             phash_matcher if phash_matcher is not None else PHashCardMatcher()
         )
-        self.ocr: CandidateReranker = ocr if ocr is not None else CardOCR()
+        self.reader: CardReader = reader if reader is not None else PaddleCardReader()
 
         if not self.phash_matcher.index_loaded:
             raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
@@ -133,7 +123,7 @@ class Pipeline:
 
         Args:
             image: Decoded BGR image (EXIF orientation already applied).
-            debug: When True, ocr_debug inside each SegmentResult is populated.
+            debug: When True, each reading carries the reader's debug artefacts.
         """
         try:
             image = resize_if_needed(image, settings.MAX_IMAGE_DIMENSION)
@@ -146,35 +136,22 @@ class Pipeline:
         return RecognitionResult(segments=segments, error=None)
 
     def _match_one(self, warped_image: np.ndarray, debug: bool) -> SegmentResult:
-        """Run pHash + OCR matching on a single warped card image."""
+        """Find pHash candidates for one warped card and rank them by its reading."""
 
         # Stage 1: coarse search with perceptual hashing
-        uuids, phash_scores = self.phash_matcher.find_best_matches(
+        uuids, _ = self.phash_matcher.find_best_matches(
             warped_image, k=self.k_phash_candidates
         )
         printings = self.catalog.lookup(uuids)
-        candidates = [
-            RankedPrinting(printings[u], float(s))
-            for u, s in zip(uuids, phash_scores, strict=True)
-            if u in printings
-        ]
+        candidates = [printings[u] for u in uuids if u in printings]
 
         if not candidates:
-            return SegmentResult(warped_image, candidates, ocr_debug=None)
+            return SegmentResult(warped_image, ranked=[], reading=None)
 
-        # Stage 2: OCR reranking on the reduced search space
-        ranked, ocr_debug = self.ocr.find_best_matches(
-            warped_image,
-            [c.printing for c in candidates],
-            k=self.k_final_results,
-            thresh=0.0,
-            debug=debug,
-        )
-        return SegmentResult(
-            warped_image=warped_image,
-            ranked=ranked[: self.k_final_results],
-            ocr_debug=ocr_debug if debug else None,
-        )
+        # Stage 2: read the card and score the reading against the candidates
+        reading = self.reader.read(warped_image, debug=debug)
+        ranked = scoring.rank(reading, candidates, k=self.k_final_results)
+        return SegmentResult(warped_image, ranked=ranked, reading=reading)
 
 
 def _stem_uuid(stem: str) -> str | None:
@@ -303,10 +280,11 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             raw_texts: list[str] = []
             raw_scores: list[float] = []
             raw_boxes: list[tuple[int, int, int, int]] = []
-            if seg.ocr_debug is not None:
-                raw_texts = seg.ocr_debug.texts_info_roi
-                raw_scores = seg.ocr_debug.scores_info_roi
-                raw_boxes = seg.ocr_debug.boxes_info_roi
+            reading_debug = seg.reading.debug if seg.reading is not None else None
+            if reading_debug is not None:
+                raw_texts = reading_debug.texts
+                raw_scores = reading_debug.scores
+                raw_boxes = reading_debug.boxes
 
             # Terminal output
             prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "

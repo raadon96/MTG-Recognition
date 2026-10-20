@@ -4,8 +4,8 @@ models.
 
 import numpy as np
 
-from mtg_recognition.catalog import InMemoryCardCatalog, Printing, RankedPrinting
-from mtg_recognition.engine.ocr.ocr import OCRDebugData
+from mtg_recognition.catalog import InMemoryCardCatalog, Printing
+from mtg_recognition.engine.ocr.reading import Reading
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.seg_utils import (
     CardSegment,
@@ -15,7 +15,29 @@ from mtg_recognition.engine.segmentation.seg_utils import (
 
 def printing(uuid: str) -> Printing:
     return Printing(
-        uuid=uuid, name=f"Card {uuid}", set_code="TST", number="1", base_set_size="100"
+        uuid=uuid,
+        name=f"Card {uuid}",
+        set_code="TST",
+        number="1",
+        base_set_size="100",
+        artist="Artist",
+        set_release_year="2020",
+        power="1",
+        toughness="1",
+    )
+
+
+def reading_of(p: Printing) -> Reading:
+    """A reading that agrees with every field of the printing, so it scores 100."""
+    return Reading(
+        name=p.name,
+        set_code_candidates=[p.set_code],
+        number=p.number,
+        base_set_size=p.base_set_size,
+        artist=p.artist,
+        set_release_year=p.set_release_year,
+        power=p.power,
+        toughness=p.toughness,
     )
 
 
@@ -62,23 +84,16 @@ class FakePHashMatcher:
         return ranked, [1.0 - 0.01 * i for i in range(len(ranked))]
 
 
-class FakeOCR:
-    """Reverses the pHash order, so its effect on the ranking is visible."""
+class FakeReader:
+    """Reads the given reading off every card image (default: a reading of p0)."""
 
-    def __init__(self):
-        self.ks: list[int | None] = []
+    def __init__(self, reading: Reading | None = None):
+        self.reading = reading if reading is not None else reading_of(PRINTINGS[0])
+        self.debugs: list[bool] = []
 
-    def find_best_matches(
-        self,
-        query_img: np.ndarray,
-        candidates: list[Printing],
-        k: int | None = 10,
-        thresh: float = 0.0,
-        debug: bool = False,
-    ) -> tuple[list[RankedPrinting], OCRDebugData | None]:
-        self.ks.append(k)
-        reranked = list(reversed(candidates))[:k]
-        return [RankedPrinting(p, 90.0 - i) for i, p in enumerate(reranked)], None
+    def read(self, card_image: np.ndarray, *, debug: bool = False) -> Reading:
+        self.debugs.append(debug)
+        return self.reading
 
 
 def make_pipeline(
@@ -86,15 +101,16 @@ def make_pipeline(
     k_phash_candidates: int = 20,
     k_final_results: int = 1,
     phash_matcher: FakePHashMatcher | None = None,
-    ocr: FakeOCR | None = None,
+    reader: FakeReader | None = None,
+    catalog: InMemoryCardCatalog = CATALOG,
 ) -> Pipeline:
     return Pipeline(
         k_phash_candidates=k_phash_candidates,
         k_final_results=k_final_results,
-        catalog=CATALOG,
+        catalog=catalog,
         segmentor=segmentor,
         phash_matcher=phash_matcher
         if phash_matcher is not None
         else FakePHashMatcher(),
-        ocr=ocr if ocr is not None else FakeOCR(),
+        reader=reader if reader is not None else FakeReader(),
     )

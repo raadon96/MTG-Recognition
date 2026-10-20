@@ -4,8 +4,14 @@ import cv2
 import pytest
 
 from mtg_recognition.app.upload_processor import UploadProcessor, UploadStatus
-from mtg_recognition.catalog import RankedPrinting
-from tests.unit.engine.fakes import FakeSegmentor, card_image, make_pipeline, printing
+from mtg_recognition.engine.ocr.reading import Reading, ReadingDebug
+from tests.unit.engine.fakes import (
+    FakeReader,
+    FakeSegmentor,
+    card_image,
+    make_pipeline,
+    printing,
+)
 
 
 class BrokenSegmentor(FakeSegmentor):
@@ -20,9 +26,11 @@ def image_path(tmp_path) -> str:
     return str(path)
 
 
-def _processor(segmentor: FakeSegmentor, k: int = 2) -> UploadProcessor:
+def _processor(
+    segmentor: FakeSegmentor, k: int = 2, reader: FakeReader | None = None
+) -> UploadProcessor:
     return UploadProcessor(
-        make_pipeline(segmentor, k_phash_candidates=k, k_final_results=k)
+        make_pipeline(segmentor, k_phash_candidates=k, k_final_results=k, reader=reader)
     )
 
 
@@ -94,11 +102,11 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(image_path, tm
             "Status": "success",
             "Card Name": "Card p0",
             "UUID": "p0",
-            "Score": "90.0",
+            "Score": "100.0",
             "Set Code": "TST",
             "Card Number": "1",
             "Base Set Size": "100",
-            "Artist": "",
+            "Artist": "Artist",
             "Scryfall URL": "",
         },
         {
@@ -147,11 +155,11 @@ def test_json_export_has_one_item_per_result_with_the_best_printing(
             "status": "success",
             "card_name": "Card p0",
             "uuid": "p0",
-            "score": 90.0,
+            "score": 100.0,
             "set_code": "TST",
             "card_number": "1",
             "base_set_size": "100",
-            "artist": None,
+            "artist": "Artist",
             "scryfall_url": None,
             "error_message": None,
         },
@@ -186,10 +194,25 @@ def test_json_export_has_one_item_per_result_with_the_best_printing(
 def test_best_is_the_top_ranked_entry(image_path):
     [result] = _processor(FakeSegmentor([card_image(3)])).process([image_path])
 
-    assert result.best == RankedPrinting(printing("p0"), 90.0)
+    assert result.best is not None
+    assert (result.best.printing, result.best.score) == (printing("p0"), 100.0)
 
 
 def test_best_is_none_without_a_match(image_path):
     [result] = _processor(FakeSegmentor([])).process([image_path])
 
     assert result.best is None
+
+
+def test_a_result_carries_the_readers_debug_artefacts(image_path):
+    debug = ReadingDebug(
+        annotated_image=None, texts=["M10·EN"], scores=[0.9], boxes=[(0, 0, 9, 9)]
+    )
+    reader = FakeReader(Reading(name="Card p0", debug=debug))
+
+    [result] = _processor(FakeSegmentor([card_image()]), reader=reader).process(
+        [image_path]
+    )
+
+    assert result.reading_debug is debug
+    assert reader.debugs == [True]
