@@ -20,8 +20,12 @@ _Avoid_: match, hit
 The candidates for one card after closer inspection, ordered from most to least likely, each with a score.
 _Avoid_: matches, results, top-k
 
+**Reading**:
+The details read off one card's image before they are compared with any printing: its name, power/toughness and the information below the text box (set code, collector number, illustration credit, copyright year). A reading can be wrong or incomplete, which is why it is scored rather than looked up.
+_Avoid_: properties, OCR result, printing properties
+
 **Score**:
-How well the text read off the card agrees with a printing's details, from 0 to 100; higher is better.
+How well a card's reading agrees with a printing's details, from 0 to 100; higher is better.
 _Avoid_: confidence (it is not a probability), similarity, distance
 
 **Reference data**:
