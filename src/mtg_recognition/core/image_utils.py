@@ -49,17 +49,6 @@ def resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     )
 
 
-def _ensure_min_dim(img: np.ndarray, min_dim: int) -> np.ndarray:
-    """Upscale img so both dimensions are >= min_dim (aspect ratio preserved)."""
-    h, w = img.shape[:2]
-    if h >= min_dim and w >= min_dim:
-        return img
-    scale = max(min_dim / h, min_dim / w)
-    new_h = max(min_dim, round(h * scale))
-    new_w = max(min_dim, round(w * scale))
-    return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
-
-
 def _pil_to_bgr(pil_img: Image.Image) -> np.ndarray:
     """Convert a PIL Image to a BGR uint8 numpy array."""
     pil_img = ImageOps.exif_transpose(pil_img)

@@ -80,11 +80,11 @@ def _normalize_slash_variants(text: str) -> str:
 
 def filter_flavor_text_zone(
     texts: list[str],
-    boxes: list[tuple[int, int, int, int]],
+    boxes: list[tuple[float, float, float, float]],
     scores: list[float],
     y_thresh_frac: float = 0.35,
     x_right_frac: float = 0.80,
-) -> tuple[list[str], list[tuple[int, int, int, int]], list[float]]:
+) -> tuple[list[str], list[tuple[float, float, float, float]], list[float]]:
     """Discard tokens that appear in the flavor-text bleedthrough zone.
 
     Modern cards with flavor text have their last line(s) partially overlap the

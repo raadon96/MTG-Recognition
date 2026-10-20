@@ -12,7 +12,7 @@ from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import ImageSource, prepare_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr import scoring
-from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
+from mtg_recognition.engine.ocr.reading import CardReader, Reading
 from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.reference import ReferenceData
@@ -39,8 +39,8 @@ class CandidateMatcher(Protocol):
     ) -> tuple[list[str], list[float]]: ...
 
 
-class CardReader(Protocol):
-    """Reads a warped card image (default: PaddleCardReader)."""
+class Reader(Protocol):
+    """Reads a warped card image (default: CardReader)."""
 
     def read(self, card_image: np.ndarray, *, debug: bool) -> Reading: ...
 
@@ -87,7 +87,7 @@ class Pipeline:
         catalog: CardCatalog | None = None,
         segmentor: CardSegmentor | None = None,
         phash_matcher: CandidateMatcher | None = None,
-        reader: CardReader | None = None,
+        reader: Reader | None = None,
     ):
         if not 1 <= k_final_results <= k_phash_candidates:
             raise ValueError(
@@ -108,7 +108,7 @@ class Pipeline:
         self.phash_matcher: CandidateMatcher = (
             phash_matcher if phash_matcher is not None else PHashCardMatcher()
         )
-        self.reader: CardReader = reader if reader is not None else PaddleCardReader()
+        self.reader: Reader = reader if reader is not None else CardReader()
 
         if not self.phash_matcher.index_loaded:
             raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
@@ -268,7 +268,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # Raw OCR texts and scores
             raw_texts: list[str] = []
             raw_scores: list[float] = []
-            raw_boxes: list[tuple[int, int, int, int]] = []
+            raw_boxes: list[tuple[float, float, float, float]] = []
             reading_debug = seg.reading.debug if seg.reading is not None else None
             if reading_debug is not None:
                 raw_texts = reading_debug.texts
