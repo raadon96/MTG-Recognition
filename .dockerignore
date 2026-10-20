@@ -36,7 +36,7 @@ dist/
 # Local data and generated artifacts
 data/reference/images/
 data/reference/tmp/
-data/reference/download_errors.log
+data/reference/image_errors.log
 benchmarks/results/
 data/test/
 data/examples/

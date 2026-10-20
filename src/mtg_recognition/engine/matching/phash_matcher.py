@@ -1,5 +1,7 @@
 import json
+from collections.abc import Mapping
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
 
 import imagehash
 import numpy as np
@@ -22,8 +24,8 @@ class PHashCardMatcher:
     If not, the matcher is ready for build_index() to be called explicitly.
 
     Args:
-        reference: Reference data holding the index files and the reference
-            card images (default: `ReferenceData.default()`, resolved here)
+        reference: Reference data holding the index files (default:
+            `ReferenceData.default()`, resolved here)
         hash_size: Size of the perceptual hash (default 16 = 256-bit hash)
     """
 
@@ -34,7 +36,6 @@ class PHashCardMatcher:
     ):
         reference = reference or ReferenceData.default()
         self.index_path, self.mapping_path = reference.phash_files
-        self.img_dir = reference.images_dir
         self.hash_size = hash_size
 
         # type and shape validation using numpydantic
@@ -58,31 +59,20 @@ class PHashCardMatcher:
         Must be a static method or top-level function for pickling.
 
         Args:
-            args: Tuple of (image_path, hash_size)
+            args: Tuple of (uuid, image_path, hash_size)
 
         Returns:
-            Tuple of (uuid, hash_array) or None if failed
+            Tuple of (uuid, hash_array, None), or (uuid, None, error) when the
+            image can't be read
         """
-        image_path, hash_size = args
+        uuid, image_path, hash_size = args
 
         try:
-            # Open image
             img = Image.open(image_path).convert("RGB")
-
-            # Compute perceptual hash
             phash = imagehash.phash(img, hash_size=hash_size)
-
-            # Convert to numpy array
-            hash_array = np.array(phash.hash).flatten().astype(np.uint8)
-
-            # Extract UUID from filename
-            uuid = image_path.stem
-
-            return (uuid, hash_array)
-
+            return (uuid, np.array(phash.hash).flatten().astype(np.uint8), None)
         except Exception as e:
-            print(f"Error processing {image_path}: {e}")
-            return None
+            return (uuid, None, f"{type(e).__name__}: {e}")
 
     def _compute_hashes(self, worker_args, num_workers):
         """Yield `_compute_hash_worker` results, in this process when
@@ -120,62 +110,55 @@ class PHashCardMatcher:
             except Exception as e:
                 print(f"Error loading pHash index: {e}")
         else:
-            print("Warning: pHash index files not found. Call build_index() to create.")
+            print(
+                "Warning: pHash index files not found. "
+                "Run `mtg build-index` to create them."
+            )
 
-    def build_index(self, force=False, num_workers=DEFAULT_NUM_WORKERS):
+    def build_index(
+        self,
+        images: Mapping[str, Path],
+        num_workers: int = DEFAULT_NUM_WORKERS,
+    ) -> dict[str, str]:
         """
-        Scans the reference directory and builds a pHash index using parallel
-        processing.
+        Builds the pHash index from `images` (printing UUID -> image file) using
+        parallel processing, saves it and loads it.
 
         Args:
-            force: If True, rebuilds even if index files exist
+            images: The image of each printing to index
             num_workers: Number of parallel processes (default: cpu_count() - 1);
                 1 hashes in this process, without a process pool
+
+        Returns:
+            The error of each image that couldn't be hashed, by UUID; those
+            printings are left out of the index
+
+        Raises:
+            ValueError: If no image could be hashed
         """
-        if self.index_path.exists() and self.mapping_path.exists():
-            print(
-                f"pHash index already exists at {self.index_path} and "
-                f"{self.mapping_path}..."
-            )
-            if not force:
-                return
-
-        print(f"Building pHash index from {self.img_dir}...")
-
-        # Ensure output directories exist
-        self.index_path.parent.mkdir(parents=True, exist_ok=True)
-        assert self.index_path.parent.exists()
-
-        # 1. Find all images
-        image_paths = list(self.img_dir.glob("*.jpg"))
-        if not image_paths:
-            raise ValueError(f"Error: No images found in {self.img_dir}")
-
-        print(f"Found {len(image_paths)} images.")
+        print(f"Building pHash index from {len(images)} images...")
         print(f"Using {num_workers} parallel workers...")
+        self.index_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 2. Prepare arguments for workers
-        # Each worker gets (image_path, hash_size)
-        worker_args = [(path, self.hash_size) for path in image_paths]
-
-        # 3. Process in parallel with progress bar
+        worker_args = [(uuid, path, self.hash_size) for uuid, path in images.items()]
         hash_list = []
         uuid_list = []
+        failures: dict[str, str] = {}
 
-        for result in tqdm(
+        for uuid, hash_array, error in tqdm(
             self._compute_hashes(worker_args, num_workers),
-            total=len(image_paths),
+            total=len(worker_args),
             desc="Computing pHashes",
         ):
-            if result is not None:
-                uuid, hash_array = result
+            if error is not None:
+                failures[uuid] = error
+            else:
                 uuid_list.append(uuid)
                 hash_list.append(hash_array)
 
         if not hash_list:
             raise ValueError("No hashes were extracted.")
 
-        # 4. Convert to numpy array
         all_hashes = np.array(hash_list, dtype=np.uint8)
 
         print(f"Saving {all_hashes.shape[0]} hashes to {self.index_path}...")
@@ -185,11 +168,11 @@ class PHashCardMatcher:
         with open(self.mapping_path, "w") as f:
             json.dump(uuid_list, f)
 
-        # 5. Load into memory
         self.hashes = all_hashes
         self.uuid_mapping = uuid_list
 
         print("pHash index build complete and loaded!")
+        return failures
 
     def _compute_hash(self, image: np.ndarray | Image.Image) -> np.ndarray:
         """

@@ -19,7 +19,7 @@ UUIDS = [
 
 @pytest.fixture(scope="module")
 def pipeline() -> Pipeline:
-    return Pipeline(auto_build=False)
+    return Pipeline()
 
 
 @pytest.mark.slow

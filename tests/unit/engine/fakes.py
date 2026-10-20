@@ -61,9 +61,6 @@ class FakePHashMatcher:
         ranked = sorted(self.index, key=lambda uuid: uuid != f"p{value}")[:k]
         return ranked, [1.0 - 0.01 * i for i in range(len(ranked))]
 
-    def build_index(self, force: bool = False) -> None:
-        pass
-
 
 class FakeOCR:
     """Reverses the pHash order, so its effect on the ranking is visible."""
