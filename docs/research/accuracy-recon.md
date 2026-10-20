@@ -85,10 +85,26 @@ Rerun on branch `refactor/rename-matches-to-ranked` (commit `8a468ab`) with the 
 
 - **Top-1: 246/260**, the **same top-1 UUID for all 260 images** as the #23 rerun, and every image still yields exactly one segment.
 - **Runtime: 185 s** for the full set (#23 rerun: 173 s).
-- Outputs in `accuracy-recon/issue26/` (JSON per category + `times.txt`). This is the reference for later refactors.
+- Outputs in `accuracy-recon/issue26/` (JSON per category + `times.txt`). It was the reference for later refactors until the #37 data refresh below.
+
+## Reference data refresh (#37)
+
+"Refresh the mislabelled reference data to the latest MTGJSON release" (#37, PR #41) rebuilt the database and pHash index. Runs 1 and 2 and the #23 and #26 reruns used data built from MTGJSON `5.3.0+20260302`, recorded as `5.3.0+20260517` because of the stale-ZIP bug fixed in #36. The refresh moved the data to `5.3.0+20261019`: 109,018 → 114,855 printings, 109,013 → 114,855 index entries. Before the index rebuild, 301 images of printings no longer in MTGJSON and one truncated image were removed from the images directory (#40; their UUIDs are in `accuracy-recon/issue37-stale-uuids.txt`).
+
+Both runs used code at `65bb76e` on `dev`, with the same inputs, CLI defaults 20/1 and machine as above, so they differ only in the data:
+
+| | Before (`20260302` data) | After (`20261019` data) |
+|---|---|---|
+| Top-1 | 246/260 | **246/260** |
+| Newly passing / newly failing images | – | none / none |
+| Runtime | 161 s | 167 s |
+
+5 of the 14 misses now return a different wrong card: 4 back-face photos (#18: `3b78d1a8`, `d3451c0f`, `d63e8a74`, `de33b83e`) and Traveler's Amulet (#21: `c4db37a8`). The before run matches the #26 rerun for all 260 images.
+
+- Outputs in `accuracy-recon/issue37-before/` and `accuracy-recon/issue37-after/` (JSON per category + `times.txt`). `issue37-after` is the reference for later refactors.
 
 ### Reproducing
 
 1. `docs/research/accuracy-recon/make_inputs.sh` rebuilds `/tmp/acc6/in/` (symlinks to the 260 UUID-named images under `data/test/`; needs `uv run dvc pull`).
 2. `docs/research/accuracy-recon/run.sh <run-name>` writes `/tmp/acc6/<run-name>/`.
-3. Copy a committed reference run back, e.g. `cp -r docs/research/accuracy-recon/issue26 /tmp/acc6/issue26`, then `uv run python docs/research/accuracy-recon/compare.py issue26 <run-name>`.
+3. Copy a committed reference run back, e.g. `cp -r docs/research/accuracy-recon/issue37-after /tmp/acc6/issue37-after`, then `uv run python docs/research/accuracy-recon/compare.py issue37-after <run-name>`.

@@ -1,0 +1,2694 @@
+[
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/01013cab-be73-532f-b6bf-0f24d0c3792f.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Enforcer Griffin",
+            "uuid": "01013cab-be73-532f-b6bf-0f24d0c3792f",
+            "setCode": "WAR",
+            "number": "11",
+            "score": 85.4
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "3/4",
+            "011/264",
+            "C",
+            "WAR\u00b7EN",
+            "BOMAS GNMR"
+          ],
+          "raw_scores": [
+            0.9485055804252625,
+            0.9848365187644958,
+            0.7538298964500427,
+            0.9436959624290466,
+            0.5123409032821655
+          ],
+          "raw_boxes": [
+            [
+              1482,
+              60,
+              1651,
+              166
+            ],
+            [
+              11,
+              139,
+              242,
+              206
+            ],
+            [
+              255,
+              156,
+              299,
+              202
+            ],
+            [
+              12,
+              196,
+              242,
+              251
+            ],
+            [
+              317,
+              189,
+              654,
+              260
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Sanitarium Skeleton",
+            "uuid": "0a2f85cd-f66d-5330-a9d5-314554f871a1",
+            "setCode": "M20",
+            "number": "112",
+            "score": 94.4
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/2",
+            "112/280",
+            "C",
+            "KrWAIRER",
+            "M20-EN",
+            "2010"
+          ],
+          "raw_scores": [
+            0.9956849217414856,
+            0.934086263179779,
+            0.3227500021457672,
+            0.549150824546814,
+            0.8939544558525085,
+            0.6623506546020508
+          ],
+          "raw_boxes": [
+            [
+              1500,
+              68,
+              1655,
+              163
+            ],
+            [
+              60,
+              173,
+              279,
+              232
+            ],
+            [
+              287,
+              161,
+              388,
+              279
+            ],
+            [
+              354,
+              208,
+              628,
+              273
+            ],
+            [
+              57,
+              221,
+              291,
+              276
+            ],
+            [
+              1221,
+              214,
+              1314,
+              255
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/0c941678-45c6-5aab-a863-136c1e0b7a7f.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Ogre Errant",
+            "uuid": "0c941678-45c6-5aab-a863-136c1e0b7a7f",
+            "setCode": "ELD",
+            "number": "132",
+            "score": 78.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "IL",
+            "3/4",
+            "132/",
+            "269",
+            "C",
+            "ELDOEN",
+            "MALIoA"
+          ],
+          "raw_scores": [
+            0.6089498996734619,
+            0.9887120127677917,
+            0.980400800704956,
+            0.8755488395690918,
+            0.9411036968231201,
+            0.7737467288970947,
+            0.5981327891349792
+          ],
+          "raw_boxes": [
+            [
+              628,
+              27,
+              679,
+              81
+            ],
+            [
+              1487,
+              59,
+              1659,
+              164
+            ],
+            [
+              59,
+              186,
+              188,
+              236
+            ],
+            [
+              169,
+              186,
+              280,
+              234
+            ],
+            [
+              295,
+              191,
+              342,
+              237
+            ],
+            [
+              59,
+              225,
+              289,
+              287
+            ],
+            [
+              559,
+              226,
+              723,
+              268
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/12b77048-ebad-51b2-99e8-c7dcaccf7a67.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Convolute",
+            "uuid": "12b77048-ebad-51b2-99e8-c7dcaccf7a67",
+            "setCode": "M20",
+            "number": "55",
+            "score": 59.2
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "C",
+            "055/280",
+            "M2O-EN",
+            "VKIOR",
+            "TroV"
+          ],
+          "raw_scores": [
+            0.7714064121246338,
+            0.8961213231086731,
+            0.8146474957466125,
+            0.6091961860656738,
+            0.5339770913124084
+          ],
+          "raw_boxes": [
+            [
+              1172,
+              134,
+              1679,
+              201
+            ],
+            [
+              26,
+              153,
+              244,
+              202
+            ],
+            [
+              21,
+              197,
+              251,
+              253
+            ],
+            [
+              324,
+              198,
+              486,
+              247
+            ],
+            [
+              478,
+              199,
+              608,
+              248
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/15683485-77f7-5c6f-b94d-93dab47a662b.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Henge Walker",
+            "uuid": "15683485-77f7-5c6f-b94d-93dab47a662b",
+            "setCode": "ELD",
+            "number": "221",
+            "score": 85.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "through",
+            "the",
+            "Great",
+            "2/2",
+            "221/",
+            "269",
+            "C",
+            "ELD",
+            "\u00b7EN",
+            "Taus",
+            "LNER"
+          ],
+          "raw_scores": [
+            0.9964755177497864,
+            0.9539555907249451,
+            0.9470525979995728,
+            0.9844208359718323,
+            0.9554885029792786,
+            0.9945592880249023,
+            0.9526543021202087,
+            0.8718976974487305,
+            0.7931364178657532,
+            0.8140034079551697,
+            0.5304597616195679
+          ],
+          "raw_boxes": [
+            [
+              105,
+              29,
+              412,
+              142
+            ],
+            [
+              416,
+              32,
+              551,
+              120
+            ],
+            [
+              565,
+              31,
+              793,
+              118
+            ],
+            [
+              1495,
+              93,
+              1660,
+              184
+            ],
+            [
+              69,
+              190,
+              186,
+              248
+            ],
+            [
+              181,
+              190,
+              286,
+              247
+            ],
+            [
+              302,
+              198,
+              348,
+              246
+            ],
+            [
+              66,
+              240,
+              172,
+              293
+            ],
+            [
+              178,
+              243,
+              291,
+              290
+            ],
+            [
+              365,
+              241,
+              488,
+              288
+            ],
+            [
+              482,
+              239,
+              645,
+              289
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/19827ebf-3b49-5021-ac7f-f6c125a3bdd6.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Blindblast",
+            "uuid": "19827ebf-3b49-5021-ac7f-f6c125a3bdd6",
+            "setCode": "WAR",
+            "number": "114",
+            "score": 57.0
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "814/264",
+            "C",
+            "WAR\u00b7EN",
+            "ARNCA",
+            "OIN"
+          ],
+          "raw_scores": [
+            0.8246665596961975,
+            0.8951500654220581,
+            0.9369601607322693,
+            0.5407213568687439,
+            0.49461570382118225
+          ],
+          "raw_boxes": [
+            [
+              2,
+              118,
+              220,
+              187
+            ],
+            [
+              242,
+              139,
+              281,
+              184
+            ],
+            [
+              4,
+              176,
+              226,
+              228
+            ],
+            [
+              405,
+              178,
+              657,
+              252
+            ],
+            [
+              633,
+              198,
+              782,
+              248
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/1abeffd9-3c8d-58ca-b9df-76b25fec0ed2.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Epicure of Blood",
+            "uuid": "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2",
+            "setCode": "M20",
+            "number": "99",
+            "score": 85.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "4/4",
+            "099/280",
+            "C",
+            "M20-EN",
+            "LAEASYTENAATG"
+          ],
+          "raw_scores": [
+            0.9250434041023254,
+            0.9798285365104675,
+            0.880364179611206,
+            0.7722803950309753,
+            0.488604336977005
+          ],
+          "raw_boxes": [
+            [
+              1480,
+              72,
+              1646,
+              168
+            ],
+            [
+              0,
+              121,
+              229,
+              188
+            ],
+            [
+              245,
+              141,
+              295,
+              195
+            ],
+            [
+              2,
+              179,
+              230,
+              232
+            ],
+            [
+              319,
+              173,
+              684,
+              251
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/1d54b6cc-3d3b-5be2-966b-21c75e788bf1.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Dragon Egg",
+            "uuid": "1d54b6cc-3d3b-5be2-966b-21c75e788bf1",
+            "setCode": "CMR",
+            "number": "173",
+            "score": 79.9
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "the",
+            "entice",
+            "young",
+            "eggs.",
+            "1O",
+            "0/2",
+            "173/361",
+            "aC",
+            "CMR\u00b7EN"
+          ],
+          "raw_scores": [
+            0.8938490748405457,
+            0.9903439879417419,
+            0.8844152688980103,
+            0.7685518860816956,
+            0.5293484926223755,
+            0.9855116009712219,
+            0.9776932597160339,
+            0.21806815266609192,
+            0.9357957243919373
+          ],
+          "raw_boxes": [
+            [
+              383,
+              24,
+              531,
+              124
+            ],
+            [
+              161,
+              33,
+              383,
+              117
+            ],
+            [
+              511,
+              25,
+              771,
+              130
+            ],
+            [
+              1149,
+              29,
+              1343,
+              130
+            ],
+            [
+              67,
+              52,
+              150,
+              114
+            ],
+            [
+              1457,
+              69,
+              1637,
+              176
+            ],
+            [
+              22,
+              180,
+              240,
+              238
+            ],
+            [
+              1030,
+              219,
+              1296,
+              275
+            ],
+            [
+              21,
+              229,
+              252,
+              289
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/3261737f-2698-5f05-b714-6d1dffcf20cd.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Searing Barrage",
+            "uuid": "3261737f-2698-5f05-b714-6d1dffcf20cd",
+            "setCode": "ELD",
+            "number": "140",
+            "score": 56.7
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "3019",
+            "140/269",
+            "C",
+            "ELO",
+            "EN"
+          ],
+          "raw_scores": [
+            0.8021405935287476,
+            0.9222326874732971,
+            0.7568334937095642,
+            0.8369896411895752,
+            0.968969464302063
+          ],
+          "raw_boxes": [
+            [
+              1206,
+              152,
+              1353,
+              198
+            ],
+            [
+              44,
+              166,
+              275,
+              218
+            ],
+            [
+              278,
+              164,
+              345,
+              232
+            ],
+            [
+              45,
+              218,
+              159,
+              266
+            ],
+            [
+              159,
+              218,
+              274,
+              262
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/327751c7-6d08-5ee0-a9dc-f02ad1398eca.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Omenspeaker",
+            "uuid": "327751c7-6d08-5ee0-a9dc-f02ad1398eca",
+            "setCode": "BBD",
+            "number": "125",
+            "score": 82.8
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/3",
+            "125/284",
+            "C",
+            "DALLAS WLLANS",
+            "20151",
+            "BBD",
+            "\u00b7EN"
+          ],
+          "raw_scores": [
+            0.9853270649909973,
+            0.9549120664596558,
+            0.9217620491981506,
+            0.884441614151001,
+            0.8919193148612976,
+            0.8795092701911926,
+            0.7822038531303406
+          ],
+          "raw_boxes": [
+            [
+              1498,
+              44,
+              1650,
+              139
+            ],
+            [
+              32,
+              168,
+              261,
+              221
+            ],
+            [
+              280,
+              175,
+              325,
+              222
+            ],
+            [
+              330,
+              196,
+              714,
+              262
+            ],
+            [
+              1208,
+              193,
+              1336,
+              235
+            ],
+            [
+              32,
+              220,
+              147,
+              271
+            ],
+            [
+              149,
+              215,
+              263,
+              271
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/342a9886-3eec-51ee-bf23-fdc7069d98a1.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Jousting Dummy",
+            "uuid": "342a9886-3eec-51ee-bf23-fdc7069d98a1",
+            "setCode": "ELD",
+            "number": "224",
+            "score": 80.8
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/1",
+            "224/269",
+            "C",
+            "Mnno CEeAN",
+            "ELO",
+            "EN"
+          ],
+          "raw_scores": [
+            0.9909965991973877,
+            0.9958480000495911,
+            0.8565942049026489,
+            0.619280993938446,
+            0.8102169036865234,
+            0.9856882095336914
+          ],
+          "raw_boxes": [
+            [
+              1474,
+              64,
+              1630,
+              156
+            ],
+            [
+              30,
+              172,
+              253,
+              221
+            ],
+            [
+              251,
+              163,
+              321,
+              232
+            ],
+            [
+              325,
+              212,
+              640,
+              266
+            ],
+            [
+              31,
+              223,
+              142,
+              267
+            ],
+            [
+              135,
+              222,
+              255,
+              265
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Weapon Rack",
+            "uuid": "40bc1031-6cc8-5e10-9ff3-12f8a7b70c78",
+            "setCode": "ELD",
+            "number": "236",
+            "score": 56.5
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "rackjor eons",
+            "Burning",
+            "Yard",
+            "236/269",
+            "EUD",
+            "EN"
+          ],
+          "raw_scores": [
+            0.6754149794578552,
+            0.9475346803665161,
+            0.9874927997589111,
+            0.9955816864967346,
+            0.7743138670921326,
+            0.9783909320831299
+          ],
+          "raw_boxes": [
+            [
+              856,
+              0,
+              1287,
+              42
+            ],
+            [
+              76,
+              42,
+              372,
+              132
+            ],
+            [
+              362,
+              36,
+              540,
+              125
+            ],
+            [
+              37,
+              181,
+              263,
+              237
+            ],
+            [
+              36,
+              231,
+              149,
+              282
+            ],
+            [
+              143,
+              234,
+              263,
+              278
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/46bd1799-9a0a-5fd1-93d6-708a585dc71b.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Crush Dissent",
+            "uuid": "46bd1799-9a0a-5fd1-93d6-708a585dc71b",
+            "setCode": "WAR",
+            "number": "47",
+            "score": 56.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "047/204",
+            "29",
+            "M",
+            "WAR-EN"
+          ],
+          "raw_scores": [
+            0.9293826222419739,
+            0.38611549139022827,
+            0.8433292508125305,
+            0.9295773506164551
+          ],
+          "raw_boxes": [
+            [
+              22,
+              165,
+              253,
+              221
+            ],
+            [
+              1073,
+              160,
+              1576,
+              215
+            ],
+            [
+              325,
+              207,
+              608,
+              269
+            ],
+            [
+              24,
+              216,
+              254,
+              269
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/47b367b0-ffea-514a-8ccc-7474cb2c23df.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Perilous Myr",
+            "uuid": "47b367b0-ffea-514a-8ccc-7474cb2c23df",
+            "setCode": "CMR",
+            "number": "330",
+            "score": 85.9
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/1",
+            "330/361",
+            "C",
+            "CMR\u00b7EN",
+            "2",
+            "LASON",
+            "Fuc",
+            "202W"
+          ],
+          "raw_scores": [
+            0.9838938117027283,
+            0.9861469268798828,
+            0.9204888343811035,
+            0.927000105381012,
+            0.05556761473417282,
+            0.763217568397522,
+            0.41011419892311096,
+            0.4814431071281433
+          ],
+          "raw_boxes": [
+            [
+              1506,
+              65,
+              1648,
+              150
+            ],
+            [
+              20,
+              130,
+              261,
+              198
+            ],
+            [
+              262,
+              144,
+              319,
+              205
+            ],
+            [
+              22,
+              187,
+              255,
+              239
+            ],
+            [
+              271,
+              184,
+              331,
+              231
+            ],
+            [
+              325,
+              180,
+              462,
+              241
+            ],
+            [
+              455,
+              185,
+              584,
+              247
+            ],
+            [
+              1202,
+              196,
+              1458,
+              249
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/4f7caf33-25ba-5280-b86e-a730d86010f4.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Roving Keep",
+            "uuid": "4f7caf33-25ba-5280-b86e-a730d86010f4",
+            "setCode": "ELD",
+            "number": "228",
+            "score": 56.9
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "Great",
+            "Henge",
+            "Beyond",
+            "the",
+            "57",
+            "228/269",
+            "SIYTIN IILESON",
+            "ELO\u00b7EN"
+          ],
+          "raw_scores": [
+            0.9782955050468445,
+            0.9900549650192261,
+            0.99690842628479,
+            0.9720601439476013,
+            0.8688945770263672,
+            0.9806965589523315,
+            0.44338828325271606,
+            0.8906130194664001
+          ],
+          "raw_boxes": [
+            [
+              589,
+              29,
+              806,
+              100
+            ],
+            [
+              810,
+              23,
+              1065,
+              111
+            ],
+            [
+              140,
+              24,
+              446,
+              128
+            ],
+            [
+              446,
+              31,
+              578,
+              107
+            ],
+            [
+              1495,
+              52,
+              1658,
+              150
+            ],
+            [
+              23,
+              172,
+              259,
+              230
+            ],
+            [
+              332,
+              205,
+              685,
+              265
+            ],
+            [
+              22,
+              218,
+              262,
+              276
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/58ba82cb-f820-5bc3-b18b-11a85dcb2a44.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Swamp",
+            "uuid": "58ba82cb-f820-5bc3-b18b-11a85dcb2a44",
+            "setCode": "SNC",
+            "number": "266",
+            "score": 62.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "266/281",
+            "m8020220",
+            "CHRSTAN OMIMOR",
+            "SNC-EN"
+          ],
+          "raw_scores": [
+            0.9756329655647278,
+            0.45858433842658997,
+            0.5385595560073853,
+            0.9260725975036621
+          ],
+          "raw_boxes": [
+            [
+              0,
+              167,
+              224,
+              226
+            ],
+            [
+              1041,
+              168,
+              1483,
+              226
+            ],
+            [
+              293,
+              200,
+              755,
+              282
+            ],
+            [
+              0,
+              213,
+              226,
+              279
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/61fa7145-af2b-59a2-92dd-48d19be60152.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "No Escape",
+            "uuid": "61fa7145-af2b-59a2-92dd-48d19be60152",
+            "setCode": "WAR",
+            "number": "63",
+            "score": 60.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "He",
+            "in",
+            "Bolas's",
+            "felt",
+            "joy",
+            "righz",
+            "trap.",
+            "70",
+            "063/264",
+            "C Spotlgh ActI",
+            "",
+            "30101",
+            "WAR-EN",
+            "G-IOSYLOE"
+          ],
+          "raw_scores": [
+            0.9971429109573364,
+            0.9296971559524536,
+            0.9780722260475159,
+            0.9758410453796387,
+            0.9606752395629883,
+            0.9401677846908569,
+            0.7999707460403442,
+            0.8028436899185181,
+            0.994300365447998,
+            0.7210226655006409,
+            0.0,
+            0.7344714999198914,
+            0.9717472195625305,
+            0.6430224180221558
+          ],
+          "raw_boxes": [
+            [
+              534,
+              24,
+              681,
+              135
+            ],
+            [
+              1046,
+              28,
+              1142,
+              117
+            ],
+            [
+              70,
+              31,
+              355,
+              127
+            ],
+            [
+              651,
+              24,
+              807,
+              135
+            ],
+            [
+              904,
+              30,
+              1046,
+              138
+            ],
+            [
+              1345,
+              17,
+              1554,
+              129
+            ],
+            [
+              348,
+              34,
+              527,
+              138
+            ],
+            [
+              806,
+              40,
+              914,
+              124
+            ],
+            [
+              25,
+              199,
+              254,
+              252
+            ],
+            [
+              262,
+              194,
+              679,
+              255
+            ],
+            [
+              1056,
+              235,
+              1214,
+              283
+            ],
+            [
+              1195,
+              235,
+              1313,
+              279
+            ],
+            [
+              20,
+              248,
+              260,
+              299
+            ],
+            [
+              324,
+              247,
+              586,
+              296
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/64359c4f-a984-5135-9d52-7c591ac684e3.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Destructive Digger",
+            "uuid": "64359c4f-a984-5135-9d52-7c591ac684e3",
+            "setCode": "M20",
+            "number": "134",
+            "score": 73.9
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "3/2",
+            "134/280",
+            "C",
+            "M20",
+            "EN",
+            "ZOAIAN BOILON",
+            "18"
+          ],
+          "raw_scores": [
+            0.9895665645599365,
+            0.9701194763183594,
+            0.8354774713516235,
+            0.9390975832939148,
+            0.9698547720909119,
+            0.729521632194519,
+            0.41078630089759827
+          ],
+          "raw_boxes": [
+            [
+              1471,
+              62,
+              1642,
+              162
+            ],
+            [
+              20,
+              152,
+              239,
+              207
+            ],
+            [
+              246,
+              153,
+              310,
+              219
+            ],
+            [
+              17,
+              206,
+              140,
+              253
+            ],
+            [
+              128,
+              205,
+              245,
+              256
+            ],
+            [
+              319,
+              203,
+              622,
+              255
+            ],
+            [
+              1037,
+              212,
+              1139,
+              252
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/7246a4e8-0537-5016-b07a-433c59c2c285.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Guild Globe",
+            "uuid": "7246a4e8-0537-5016-b07a-433c59c2c285",
+            "setCode": "WAR",
+            "number": "239",
+            "score": 61.6
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "239/264",
+            "U2",
+            "J",
+            "WAR\u00b7EN",
+            "DANLE LNE4"
+          ],
+          "raw_scores": [
+            0.9151192903518677,
+            0.21174266934394836,
+            0.3888443112373352,
+            0.9685733914375305,
+            0.6033498048782349
+          ],
+          "raw_boxes": [
+            [
+              5,
+              122,
+              240,
+              188
+            ],
+            [
+              248,
+              137,
+              307,
+              227
+            ],
+            [
+              1201,
+              158,
+              1309,
+              194
+            ],
+            [
+              9,
+              176,
+              237,
+              232
+            ],
+            [
+              307,
+              169,
+              621,
+              246
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/74b27345-3ebb-53c3-9587-c86f2c74b154.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Brimstone Trebuchet",
+            "uuid": "74b27345-3ebb-53c3-9587-c86f2c74b154",
+            "setCode": "ELD",
+            "number": "116",
+            "score": 82.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/3",
+            "116/269",
+            "ELO-EN",
+            "HONE-HAOHLAN"
+          ],
+          "raw_scores": [
+            0.984582245349884,
+            0.9883916974067688,
+            0.8000372052192688,
+            0.6576624512672424
+          ],
+          "raw_boxes": [
+            [
+              1482,
+              55,
+              1636,
+              154
+            ],
+            [
+              41,
+              153,
+              262,
+              212
+            ],
+            [
+              38,
+              194,
+              274,
+              257
+            ],
+            [
+              343,
+              189,
+              697,
+              254
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/89ba71fa-c8c6-55f3-a1df-138cbd5a4319.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Spark Harvest",
+            "uuid": "89ba71fa-c8c6-55f3-a1df-138cbd5a4319",
+            "setCode": "WAR",
+            "number": "105",
+            "score": 60.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "105/264",
+            "C",
+            "Spotsglt Act u",
+            "ANRAYIA",
+            "WAR-EN"
+          ],
+          "raw_scores": [
+            0.9763615727424622,
+            0.6503449082374573,
+            0.5841768980026245,
+            0.27248111367225647,
+            0.9397090077400208
+          ],
+          "raw_boxes": [
+            [
+              31,
+              164,
+              267,
+              218
+            ],
+            [
+              277,
+              173,
+              338,
+              218
+            ],
+            [
+              338,
+              163,
+              699,
+              226
+            ],
+            [
+              336,
+              208,
+              677,
+              264
+            ],
+            [
+              32,
+              216,
+              266,
+              267
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/8fe1d06a-2e8d-5352-8459-58ed34475b1a.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Deranged Assistant",
+            "uuid": "8fe1d06a-2e8d-5352-8459-58ed34475b1a",
+            "setCode": "CMR",
+            "number": "65",
+            "score": 91.7
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "$0",
+            "1/1",
+            "065/361",
+            "G",
+            "NSLSHAM",
+            "CHR\u00b7EN",
+            "2000"
+          ],
+          "raw_scores": [
+            0.49427223205566406,
+            0.9890926480293274,
+            0.9069279432296753,
+            0.9345900416374207,
+            0.5457383394241333,
+            0.8310143351554871,
+            0.8326090574264526
+          ],
+          "raw_boxes": [
+            [
+              472,
+              22,
+              560,
+              87
+            ],
+            [
+              1485,
+              64,
+              1630,
+              157
+            ],
+            [
+              17,
+              148,
+              241,
+              199
+            ],
+            [
+              255,
+              156,
+              298,
+              203
+            ],
+            [
+              308,
+              185,
+              561,
+              254
+            ],
+            [
+              17,
+              201,
+              242,
+              249
+            ],
+            [
+              1189,
+              206,
+              1288,
+              251
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/a8b5f870-8abd-5029-9e90-0897ff8a80e0.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Murder",
+            "uuid": "a8b5f870-8abd-5029-9e90-0897ff8a80e0",
+            "setCode": "CMR",
+            "number": "134",
+            "score": 62.6
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "134/361",
+            "C",
+            "ALLLN WULLAMS",
+            "CMR-EN"
+          ],
+          "raw_scores": [
+            0.9943047761917114,
+            0.6388713717460632,
+            0.6624698638916016,
+            0.9335454106330872
+          ],
+          "raw_boxes": [
+            [
+              28,
+              163,
+              244,
+              229
+            ],
+            [
+              249,
+              163,
+              336,
+              272
+            ],
+            [
+              321,
+              205,
+              660,
+              278
+            ],
+            [
+              31,
+              218,
+              255,
+              271
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/ac252653-ebaa-5f7f-83f0-860f1142d650.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Undead Servant",
+            "uuid": "ac252653-ebaa-5f7f-83f0-860f1142d650",
+            "setCode": "M20",
+            "number": "118",
+            "score": 65.2
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "3/2",
+            "18/200",
+            "C",
+            "EN",
+            "Ls5 2ama",
+            "420"
+          ],
+          "raw_scores": [
+            0.9847105145454407,
+            0.9661769866943359,
+            0.6793907880783081,
+            0.8026704788208008,
+            0.3579425811767578,
+            0.8743810653686523
+          ],
+          "raw_boxes": [
+            [
+              1473,
+              65,
+              1646,
+              169
+            ],
+            [
+              3,
+              135,
+              218,
+              196
+            ],
+            [
+              234,
+              141,
+              292,
+              203
+            ],
+            [
+              104,
+              188,
+              229,
+              243
+            ],
+            [
+              305,
+              179,
+              597,
+              259
+            ],
+            [
+              9,
+              195,
+              115,
+              243
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/b845b1d7-5205-5424-9642-549635b88b39.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Filigree Familiar",
+            "uuid": "b845b1d7-5205-5424-9642-549635b88b39",
+            "setCode": "CMR",
+            "number": "308",
+            "score": 82.0
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "curio",
+            "2/2",
+            "308/361",
+            "CMR\u00b7EN",
+            "a"
+          ],
+          "raw_scores": [
+            0.9123757481575012,
+            0.865185022354126,
+            0.9721917510032654,
+            0.904975950717926,
+            0.17253710329532623
+          ],
+          "raw_boxes": [
+            [
+              563,
+              31,
+              761,
+              102
+            ],
+            [
+              1498,
+              62,
+              1663,
+              156
+            ],
+            [
+              66,
+              174,
+              289,
+              223
+            ],
+            [
+              62,
+              218,
+              292,
+              273
+            ],
+            [
+              358,
+              217,
+              454,
+              267
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/bb947042-cd1d-5fbf-875c-9404dc33d8c1.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Reduce to Ashes",
+            "uuid": "bb947042-cd1d-5fbf-875c-9404dc33d8c1",
+            "setCode": "M20",
+            "number": "155",
+            "score": 49.2
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "Adudicator",
+            "155/280",
+            "C",
+            "14503 4. 0\u226521",
+            "M20",
+            "EN"
+          ],
+          "raw_scores": [
+            0.9157392382621765,
+            0.986699104309082,
+            0.8731920719146729,
+            0.5598354935646057,
+            0.8692155480384827,
+            0.9825137853622437
+          ],
+          "raw_boxes": [
+            [
+              573,
+              0,
+              1068,
+              84
+            ],
+            [
+              25,
+              169,
+              262,
+              230
+            ],
+            [
+              267,
+              183,
+              312,
+              230
+            ],
+            [
+              325,
+              213,
+              644,
+              280
+            ],
+            [
+              29,
+              223,
+              143,
+              271
+            ],
+            [
+              142,
+              225,
+              261,
+              269
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/bd5fdd3b-f2c5-530f-a6c0-dc527369e384.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Jalum Tome",
+            "uuid": "bd5fdd3b-f2c5-530f-a6c0-dc527369e384",
+            "setCode": "CMR",
+            "number": "318",
+            "score": 48.4
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "8/301",
+            "MR-EN",
+            "Tiamuu"
+          ],
+          "raw_scores": [
+            0.8221949338912964,
+            0.857266902923584,
+            0.7383827567100525
+          ],
+          "raw_boxes": [
+            [
+              3,
+              99,
+              176,
+              165
+            ],
+            [
+              0,
+              146,
+              190,
+              218
+            ],
+            [
+              391,
+              157,
+              593,
+              225
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/c5d34f95-1670-5766-b824-c4d580d76cb0.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Moorland Inquisitor",
+            "uuid": "c5d34f95-1670-5766-b824-c4d580d76cb0",
+            "setCode": "M20",
+            "number": "31",
+            "score": 72.4
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/2",
+            "031/280",
+            "M20",
+            "D1D PNBO",
+            "EN",
+            "7"
+          ],
+          "raw_scores": [
+            0.9849181175231934,
+            0.98663330078125,
+            0.8900888562202454,
+            0.4660096764564514,
+            0.9768573641777039,
+            0.17135918140411377
+          ],
+          "raw_boxes": [
+            [
+              1489,
+              61,
+              1659,
+              161
+            ],
+            [
+              14,
+              132,
+              249,
+              188
+            ],
+            [
+              14,
+              185,
+              139,
+              234
+            ],
+            [
+              316,
+              177,
+              664,
+              248
+            ],
+            [
+              124,
+              187,
+              248,
+              236
+            ],
+            [
+              263,
+              188,
+              318,
+              228
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/c6c52721-af48-5268-8c84-26d9e1bafbb5.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Kitesail Corsair",
+            "uuid": "c6c52721-af48-5268-8c84-26d9e1bafbb5",
+            "setCode": "CMR",
+            "number": "76",
+            "score": 78.8
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/1",
+            "076/363",
+            "GNNRS",
+            "",
+            "CMR-EN"
+          ],
+          "raw_scores": [
+            0.9856383800506592,
+            0.9005852341651917,
+            0.24957434833049774,
+            0.0,
+            0.9561030864715576
+          ],
+          "raw_boxes": [
+            [
+              1496,
+              50,
+              1647,
+              135
+            ],
+            [
+              22,
+              153,
+              253,
+              208
+            ],
+            [
+              454,
+              196,
+              675,
+              248
+            ],
+            [
+              1058,
+              191,
+              1271,
+              239
+            ],
+            [
+              20,
+              201,
+              255,
+              258
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Krark-Clan Shaman",
+            "uuid": "cd9aa095-f999-5a2c-91e5-4acd94d45416",
+            "setCode": "MRD",
+            "number": "98",
+            "score": 27.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "ethohas M Bavs",
+            "",
+            ""
+          ],
+          "raw_scores": [
+            0.6952024102210999,
+            0.0,
+            0.0
+          ],
+          "raw_boxes": [
+            [
+              31,
+              88,
+              660,
+              200
+            ],
+            [
+              1426,
+              94,
+              1563,
+              186
+            ],
+            [
+              166,
+              177,
+              451,
+              248
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/cdb02719-a9de-5f4c-be59-0bd8787fcd9f.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Jhoira's Timebug",
+            "uuid": "cdb02719-a9de-5f4c-be59-0bd8787fcd9f",
+            "setCode": "TSR",
+            "number": "269",
+            "score": 85.1
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/2",
+            "269/289",
+            "C",
+            "DANTRATO",
+            "TSR",
+            "EN"
+          ],
+          "raw_scores": [
+            0.994204044342041,
+            0.8830836415290833,
+            0.9221096038818359,
+            0.64798903465271,
+            0.9546094536781311,
+            0.9762908220291138
+          ],
+          "raw_boxes": [
+            [
+              1492,
+              66,
+              1647,
+              166
+            ],
+            [
+              27,
+              149,
+              257,
+              206
+            ],
+            [
+              278,
+              162,
+              323,
+              209
+            ],
+            [
+              328,
+              188,
+              621,
+              265
+            ],
+            [
+              26,
+              204,
+              152,
+              253
+            ],
+            [
+              127,
+              203,
+              259,
+              253
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/d3a75fe2-c639-50d7-968a-c2dd97e50640.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Crow of Dark Tidings",
+            "uuid": "d3a75fe2-c639-50d7-968a-c2dd97e50640",
+            "setCode": "SOI",
+            "number": "105",
+            "score": 86.0
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "2/1",
+            "105/297",
+            "C",
+            "TLARHUA X",
+            "SOI\u00b7EN",
+            "e"
+          ],
+          "raw_scores": [
+            0.9880722165107727,
+            0.9940656423568726,
+            0.32050442695617676,
+            0.633524477481842,
+            0.8517065048217773,
+            0.3168566823005676
+          ],
+          "raw_boxes": [
+            [
+              1488,
+              80,
+              1646,
+              172
+            ],
+            [
+              49,
+              175,
+              270,
+              233
+            ],
+            [
+              278,
+              176,
+              345,
+              273
+            ],
+            [
+              329,
+              190,
+              583,
+              291
+            ],
+            [
+              47,
+              222,
+              276,
+              278
+            ],
+            [
+              1202,
+              223,
+              1347,
+              266
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/f132a5cb-b9cc-5c02-9d01-55890124ceec.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Raise the Alarm",
+            "uuid": "f132a5cb-b9cc-5c02-9d01-55890124ceec",
+            "setCode": "M20",
+            "number": "34",
+            "score": 56.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "034/280",
+            "C",
+            "YM",
+            "2",
+            "ZOITAN",
+            "BOOS",
+            "M2O0N"
+          ],
+          "raw_scores": [
+            0.9967073798179626,
+            0.768256425857544,
+            0.34414416551589966,
+            0.5235435366630554,
+            0.8581745028495789,
+            0.7066351175308228,
+            0.7519744634628296
+          ],
+          "raw_boxes": [
+            [
+              3,
+              117,
+              235,
+              175
+            ],
+            [
+              254,
+              125,
+              300,
+              173
+            ],
+            [
+              1060,
+              118,
+              1210,
+              166
+            ],
+            [
+              1211,
+              115,
+              1655,
+              166
+            ],
+            [
+              315,
+              162,
+              496,
+              218
+            ],
+            [
+              469,
+              163,
+              631,
+              223
+            ],
+            [
+              4,
+              173,
+              236,
+              222
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/f5404ea9-21e9-5b58-abe3-11de6f13c482.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Stone Golem",
+            "uuid": "f5404ea9-21e9-5b58-abe3-11de6f13c482",
+            "setCode": "M20",
+            "number": "240",
+            "score": 59.9
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "4/4",
+            "240/280",
+            "C",
+            "MARTINA PICERCAA",
+            "M2O\u00b7EN",
+            "7",
+            "201012"
+          ],
+          "raw_scores": [
+            0.9875593185424805,
+            0.984523355960846,
+            0.8508180975914001,
+            0.7746270298957825,
+            0.8338572382926941,
+            0.26176565885543823,
+            0.7133457660675049
+          ],
+          "raw_boxes": [
+            [
+              1476,
+              102,
+              1637,
+              194
+            ],
+            [
+              34,
+              187,
+              262,
+              240
+            ],
+            [
+              279,
+              197,
+              321,
+              240
+            ],
+            [
+              329,
+              221,
+              756,
+              286
+            ],
+            [
+              32,
+              235,
+              263,
+              286
+            ],
+            [
+              279,
+              236,
+              337,
+              275
+            ],
+            [
+              1066,
+              234,
+              1421,
+              278
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Charmed Sleep",
+            "uuid": "f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d",
+            "setCode": "ELD",
+            "number": "40",
+            "score": 56.2
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "040/269",
+            "C",
+            "",
+            "ELO.EN"
+          ],
+          "raw_scores": [
+            0.9533848166465759,
+            0.3498513996601105,
+            0.0,
+            0.853499710559845
+          ],
+          "raw_boxes": [
+            [
+              29,
+              152,
+              258,
+              209
+            ],
+            [
+              269,
+              154,
+              347,
+              254
+            ],
+            [
+              1206,
+              150,
+              1472,
+              205
+            ],
+            [
+              29,
+              206,
+              261,
+              255
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "image": "/home/raadon96/Insync/Programming/decksray/MTG-Recognition/data/test/6_benchmark/images/raw/fc0f3291-22a4-58e5-b03e-b971c5403c53.jpg",
+    "segments": [
+      {
+        "segment_idx": 0,
+        "success": true,
+        "ranked": [
+          {
+            "rank": 1,
+            "name": "Banehound",
+            "uuid": "fc0f3291-22a4-58e5-b03e-b971c5403c53",
+            "setCode": "WAR",
+            "number": "77",
+            "score": 85.3
+          }
+        ],
+        "debug": {
+          "raw_texts": [
+            "1/1",
+            "077/264",
+            "IWZAN",
+            "WAR\u00b7EN"
+          ],
+          "raw_scores": [
+            0.97810959815979,
+            0.9827594757080078,
+            0.4528736174106598,
+            0.9590745568275452
+          ],
+          "raw_boxes": [
+            [
+              1521,
+              30,
+              1662,
+              122
+            ],
+            [
+              14,
+              124,
+              248,
+              189
+            ],
+            [
+              314,
+              156,
+              532,
+              241
+            ],
+            [
+              17,
+              180,
+              251,
+              231
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]
