@@ -84,8 +84,11 @@ def main(input_path: Path, output_dir: Path, mode: str) -> None:
 
     saved = 0
     for img_path in tqdm(img_paths, desc="Segmenting"):
-        # img = image_utils.load_and_resize_image(img_path)
-        img = cv2.imread(img_path)
+        try:
+            img = image_utils.prepare_image(img_path)
+        except ValueError:
+            click.echo(f"  unreadable image, skipped: {img_path.name}", err=True)
+            continue
         result = segmentor.segment(img)
         if not result.success:
             click.echo(f"  no card detected: {img_path.name}", err=True)

@@ -9,14 +9,13 @@ import numpy as np
 
 from mtg_recognition.catalog import CardCatalog, RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
-from mtg_recognition.core.image_utils import load_image, resize_if_needed
+from mtg_recognition.core.image_utils import ImageSource, prepare_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.reference import ReferenceData
-from mtg_recognition.settings import settings
 
 
 class CardSegmentor(Protocol):
@@ -114,20 +113,19 @@ class Pipeline:
         if not self.phash_matcher.index_loaded:
             raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
 
-    def recognize(self, image: np.ndarray, debug: bool = False) -> RecognitionResult:
-        """Recognize every card in a decoded BGR image.
+    def recognize(self, image: ImageSource, debug: bool = False) -> RecognitionResult:
+        """Recognize every card in an image.
 
-        The image is downscaled so its longest edge is at most
-        settings.MAX_IMAGE_DIMENSION. Failures while processing the image are
-        returned in RecognitionResult.error rather than raised.
+        The image is prepared with prepare_image. Failures, an unreadable image
+        included, are returned in RecognitionResult.error rather than raised.
 
         Args:
-            image: Decoded BGR image (EXIF orientation already applied).
+            image: A path, encoded bytes, a file-like upload, a PIL image or an
+                already-decoded BGR array.
             debug: When True, each reading carries the reader's debug artefacts.
         """
         try:
-            image = resize_if_needed(image, settings.MAX_IMAGE_DIMENSION)
-            segmentation = self.segmentor.segment(image)
+            segmentation = self.segmentor.segment(prepare_image(image))
             segments = [
                 self._match_one(s.warped_image, debug) for s in segmentation.segments
             ]
@@ -236,16 +234,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
         except ValueError:
             img_display = img_abs
 
-        try:
-            query_img = load_image(img_path)
-        except (OSError, ValueError) as e:
-            click.echo(
-                f"[{idx}/{total}] {img_display}  ERROR: failed to load image: {e}",
-                err=True,
-            )
-            continue
-
-        recognition = pipeline.recognize(query_img, debug=True)
+        recognition = pipeline.recognize(img_path, debug=True)
         if recognition.error is not None:
             click.echo(
                 f"[{idx}/{total}] {img_display}  ERROR: {recognition.error}", err=True

@@ -31,7 +31,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from mtg_recognition.core.image_utils import load_and_resize_image
+from mtg_recognition.core.image_utils import prepare_image
 from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 
 SRC_BASE = Path("data/test")
@@ -148,7 +148,7 @@ def _process(
             skipped.append(stem)
             continue
 
-        img = load_and_resize_image(img_path)
+        img = prepare_image(img_path)
         h, w = img.shape[:2]
 
         ref_mask_full = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)

@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 import pytest
 
+from mtg_recognition.core.image_utils import prepare_image
 from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
 from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 
@@ -292,8 +293,7 @@ class TestBenchmarkSuccessRate:
 
         failures = []
         for path in image_paths:
-            img = cv2.imread(str(path))
-            result = segmentor.segment(img)
+            result = segmentor.segment(prepare_image(path))
             if not result.success or len(result.segments) != 1:
                 failures.append(
                     f"{path.name}: success={result.success}, "

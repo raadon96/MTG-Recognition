@@ -2,6 +2,7 @@
 models.
 """
 
+import cv2
 import numpy as np
 
 from mtg_recognition.catalog import InMemoryCardCatalog, Printing
@@ -47,6 +48,13 @@ CATALOG = InMemoryCardCatalog(PRINTINGS)
 
 def card_image(value: int = 0) -> np.ndarray:
     return np.full((680, 488, 3), value, dtype=np.uint8)
+
+
+def card_png(value: int = 0) -> bytes:
+    """card_image(value) encoded as PNG, as an uploaded or saved file holds it."""
+    ok, buffer = cv2.imencode(".png", card_image(value))
+    assert ok
+    return buffer.tobytes()
 
 
 class FakeSegmentor:
