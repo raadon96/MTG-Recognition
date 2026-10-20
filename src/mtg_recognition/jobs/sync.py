@@ -6,6 +6,7 @@ the index. Every HTTP request goes through the `httpx.Client` passed to the step
 functions, which the Click commands build.
 """
 
+import io
 import os
 import shutil
 import time
@@ -15,9 +16,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Literal
 
 import click
 import httpx
+from PIL import Image
 from rich.console import Console
 from rich.panel import Panel
 from sqlalchemy import func
@@ -264,9 +267,12 @@ def _extract_allprintings(zip_path: Path, allprintings_path: Path) -> None:
 
 
 @dataclass(frozen=True)
-class FailedDownload:
+class ImageFailure:
+    """A reference image that failed to download, or to hash during the build."""
+
     uuid: str
-    url: str
+    url: str | None
+    step: Literal["download", "hash"]
     error: str
 
 
@@ -275,17 +281,22 @@ class DownloadReport:
     """Outcome of downloading the missing reference images."""
 
     downloaded: int
-    failed: tuple[FailedDownload, ...]
+    failed: tuple[ImageFailure, ...]
     missing_url: int  # printings with no image URL, so nothing to download
+    removed: int  # images deleted because they are not a printing in the database
 
 
 def download_images(reference: ReferenceData, client: httpx.Client) -> DownloadReport:
-    """Download the reference images missing from disk. Failures don't stop the
-    download; they are reported and written to `reference.log_file`.
+    """Delete the images that are not a printing in the database, then download
+    the missing ones. Failures don't stop the download; they are reported.
     """
+    stray = reference.stray_images()
+    for path in stray:
+        path.unlink()
+
     missing = reference.missing_images()
     reference.images_dir.mkdir(parents=True, exist_ok=True)
-    failed: list[FailedDownload] = []
+    failed: list[ImageFailure] = []
 
     with ThreadPoolExecutor(max_workers=IMAGE_DOWNLOAD_WORKERS) as pool:
         futures = {
@@ -304,13 +315,13 @@ def download_images(reference: ReferenceData, client: httpx.Client) -> DownloadR
             error = future.result()
             if error is not None:
                 uuid, url = futures[future]
-                failed.append(FailedDownload(uuid, url, error))
+                failed.append(ImageFailure(uuid, url, "download", error))
 
-    _write_download_log(reference, failed)
     return DownloadReport(
         downloaded=len(missing) - len(failed),
         failed=tuple(failed),
         missing_url=_count_printings(reference, with_url=False),
+        removed=len(stray),
     )
 
 
@@ -318,7 +329,7 @@ def _download_image(client: httpx.Client, url: str, path: Path) -> str | None:
     """Download `url` to `path`; returns the error, or `None` on success.
 
     Timeouts, connection errors, 429 and 5xx are retried; other HTTP errors
-    (404 above all) are not.
+    (404 above all) and a body that doesn't decode as an image are not.
     """
     error = ""
     for attempt in range(IMAGE_DOWNLOAD_ATTEMPTS):
@@ -330,24 +341,53 @@ def _download_image(client: httpx.Client, url: str, path: Path) -> str | None:
             error = f"{type(exc).__name__}: {exc}"
             continue
         if response.status_code == 200:
-            with _replacing(path) as part_path:
-                part_path.write_bytes(response.content)
-            return None
+            error = _decode_error(response.content)
+            if error is None:
+                with _replacing(path) as part_path:
+                    part_path.write_bytes(response.content)
+            return error
         error = f"HTTP {response.status_code}"
         if response.status_code != 429 and response.status_code < 500:
             return error
     return error
 
 
-def _write_download_log(reference: ReferenceData, failed: list[FailedDownload]) -> None:
-    """Write the failures of this download to `reference.log_file`, or remove the
-    log of an earlier one when there are none.
+def _decode_error(content: bytes) -> str | None:
+    """Why `content` doesn't decode as an image, or `None` when it does."""
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            image.load()
+    except Exception as exc:  # PIL raises OSError, SyntaxError, ValueError...
+        return f"Undecodable image: {type(exc).__name__}: {exc}"
+    return None
+
+
+def hash_images(reference: ReferenceData, workers: int) -> tuple[ImageFailure, ...]:
+    """Rebuild the pHash index from the printings in the database that have an
+    image on disk. Images that fail to hash are deleted, so the next build
+    downloads them again, and reported.
+    """
+    urls = dict(reference.present_images())
+    matcher = PHashCardMatcher(reference=reference)
+    errors = matcher.build_index(
+        {uuid: reference.image_path(uuid) for uuid in urls}, num_workers=workers
+    )
+    for uuid in errors:
+        reference.image_path(uuid).unlink(missing_ok=True)
+    return tuple(
+        ImageFailure(uuid, urls[uuid], "hash", error) for uuid, error in errors.items()
+    )
+
+
+def _write_image_log(reference: ReferenceData, failed: list[ImageFailure]) -> None:
+    """Write the image failures of this build to `reference.log_file`, or remove
+    the log of an earlier one when there are none.
     """
     if not failed:
         reference.log_file.unlink(missing_ok=True)
         return
     reference.log_file.write_text(
-        "".join(f"{f.uuid}\t{f.url}\t{f.error}\n" for f in failed)
+        "".join(f"{f.uuid}\t{f.url or ''}\t{f.step}\t{f.error}\n" for f in failed)
     )
 
 
@@ -360,6 +400,7 @@ def _write_download_log(reference: ReferenceData, failed: list[FailedDownload]) 
 class IndexResult:
     phash_version: str | None
     downloads: DownloadReport | None  # None when the index was already up to date
+    unhashable: tuple[ImageFailure, ...] = ()  # deleted, downloaded again next build
 
     @property
     def built(self) -> bool:
@@ -411,9 +452,11 @@ def build_index(
     force: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> IndexResult:
-    """Download the missing reference images, then rebuild the pHash index from the
-    images on disk and record it as built from the database's release. Without
-    `force`, does nothing when the index already is.
+    """Bring the reference images in line with the database (delete the strays,
+    download the missing), then rebuild the pHash index from the database's
+    printings with an image on disk and record it as built from the database's
+    release. Without `force`, does nothing when the index already is. Image
+    failures are written to `reference.log_file`.
     """
     state = reference.load_state()
     if not force and _index_matches(reference, state):
@@ -422,16 +465,21 @@ def build_index(
     state = replace(state, phash_version=None)
     reference.save_state(state)
 
-    console.print("\n[bold]--- Reference images ---[/bold]")
-    downloads = download_images(reference, client)
+    failed: list[ImageFailure] = []
+    try:
+        console.print("\n[bold]--- Reference images ---[/bold]")
+        downloads = download_images(reference, client)
+        failed += downloads.failed
 
-    console.print("\n[bold]--- pHash index ---[/bold]")
-    matcher = PHashCardMatcher(reference=reference)
-    matcher.build_index(force=True, num_workers=workers)
+        console.print("\n[bold]--- pHash index ---[/bold]")
+        unhashable = hash_images(reference, workers)
+        failed += unhashable
+    finally:
+        _write_image_log(reference, failed)
 
     state = replace(state, phash_version=state.mobilecache_version)
     reference.save_state(state)
-    return IndexResult(state.phash_version, downloads)
+    return IndexResult(state.phash_version, downloads, unhashable)
 
 
 def update(
@@ -524,10 +572,16 @@ def _index_summary(reference: ReferenceData, index: IndexResult) -> list[str]:
     lines = [
         f"Reference images: {report.downloaded} downloaded, "
         f"{len(report.failed)} failed, {report.missing_url} without URL",
+        f"Removed images (no printing): {report.removed}",
         f"pHash index: rebuilt ({index.phash_version})",
     ]
-    if report.failed:
-        lines.append(f"Failed downloads written to {reference.log_file}")
+    if index.unhashable:
+        lines.append(
+            f"Unreadable images deleted: {len(index.unhashable)}; "
+            "run `mtg build-index` again"
+        )
+    if report.failed or index.unhashable:
+        lines.append(f"Image failures written to {reference.log_file}")
     return lines
 
 
@@ -598,8 +652,9 @@ def update_command(ctx: click.Context, force: bool, workers: int) -> None:
 @_workers_option
 @click.pass_context
 def build_index_command(ctx: click.Context, force: bool, workers: int) -> None:
-    """Download the missing reference images, then rebuild the pHash index from
-    the images on disk.
+    """Delete the reference images that are not a printing, download the missing
+    ones, then rebuild the pHash index from the database's printings with an
+    image on disk.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), _client(ctx) as client:

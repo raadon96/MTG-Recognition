@@ -43,8 +43,6 @@ class CandidateMatcher(Protocol):
         self, query_image: np.ndarray, *, k: int
     ) -> tuple[list[str], list[float]]: ...
 
-    def build_index(self, force: bool = False) -> None: ...
-
 
 class CandidateReranker(Protocol):
     """Reranks candidate printings for a warped card image (default: CardOCR)."""
@@ -88,7 +86,6 @@ class Pipeline:
         k_final_results: Number of matches returned per card after OCR reranking.
         catalog: Resolves printing UUIDs to Printings (default: MobileCache SQLite).
         segmentor, phash_matcher, ocr: Stage implementations (defaults built here).
-        auto_build: Build the pHash index if it is missing on disk.
 
     Raises:
         ValueError: If the k parameters are invalid or the pHash index is not loaded.
@@ -102,7 +99,6 @@ class Pipeline:
         segmentor: CardSegmentor | None = None,
         phash_matcher: CandidateMatcher | None = None,
         ocr: CandidateReranker | None = None,
-        auto_build: bool = True,
     ):
         if not 1 <= k_final_results <= k_phash_candidates:
             raise ValueError(
@@ -125,8 +121,6 @@ class Pipeline:
         )
         self.ocr: CandidateReranker = ocr if ocr is not None else CardOCR()
 
-        if auto_build:
-            self.phash_matcher.build_index(force=False)
         if not self.phash_matcher.index_loaded:
             raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
 

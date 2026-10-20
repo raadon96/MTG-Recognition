@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 from sqlalchemy import Engine
-from sqlmodel import Session, col, create_engine, select
+from sqlmodel import Session, create_engine, select
 
 from mtg_recognition.jobs.schemas import MobileCache
 from mtg_recognition.settings import settings
@@ -81,8 +81,10 @@ class ReferenceData:
 
     @property
     def log_file(self) -> Path:
-        """Failures of the last image download (absent when there were none)."""
-        return self.root / "download_errors.log"
+        """Images the last index build failed to download or hash (absent when
+        there were none).
+        """
+        return self.root / "image_errors.log"
 
     @property
     def _state_file(self) -> Path:
@@ -92,20 +94,40 @@ class ReferenceData:
         """`(uuid, url)` of the printings in the database that have an image URL
         but no image file.
         """
-        engine = open_read_only(self.db_path)
-        try:
-            statement = select(MobileCache.uuid, MobileCache.url).where(
-                col(MobileCache.url).is_not(None)
-            )
-            with Session(engine) as session:
-                rows = session.exec(statement).all()
-        finally:
-            engine.dispose()
         return [
             (uuid, url)
-            for uuid, url in rows
+            for uuid, url in self._printing_urls()
             if url is not None and not self.image_path(uuid).exists()
         ]
+
+    def present_images(self) -> list[tuple[str, str | None]]:
+        """`(uuid, url)` of the printings in the database that have an image
+        file.
+        """
+        return [
+            (uuid, url)
+            for uuid, url in self._printing_urls()
+            if self.image_path(uuid).exists()
+        ]
+
+    def stray_images(self) -> list[Path]:
+        """The image files in `images_dir` that are not a printing in the
+        database.
+        """
+        uuids = {uuid for uuid, _ in self._printing_urls()}
+        return sorted(
+            path for path in self.images_dir.glob("*.jpg") if path.stem not in uuids
+        )
+
+    def _printing_urls(self) -> list[tuple[str, str | None]]:
+        """`(uuid, url)` of every printing in the database."""
+        engine = open_read_only(self.db_path)
+        try:
+            statement = select(MobileCache.uuid, MobileCache.url)
+            with Session(engine) as session:
+                return list(session.exec(statement).all())
+        finally:
+            engine.dispose()
 
     def load_state(self) -> SyncState:
         """Read the sync state. A missing or corrupt file is treated as a first

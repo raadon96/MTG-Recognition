@@ -29,6 +29,7 @@ from .sync_fakes import (
     V1,
     V2,
     build_allprintings,
+    jpeg,
 )
 
 
@@ -135,7 +136,9 @@ class TestUpdate:
             ("uuid-bolt", bolt_url, "HTTP 404")
         ]
         assert network.requests.count(bolt_url) == 1  # 404s are not retried
-        assert "uuid-bolt" in reference.log_file.read_text()
+        assert reference.log_file.read_text() == (
+            f"uuid-bolt\t{bolt_url}\tdownload\tHTTP 404\n"
+        )
         assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
         assert reference.load_state() == SyncState(V1, V1)
 
@@ -222,6 +225,69 @@ class TestBuildIndex:
             "mobilecache_version": V2,
             "phash_version": V2,
         }
+
+    def test_image_with_no_printing_is_removed(self, reference, network) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        stray = reference.image_path("uuid-removed-by-mtgjson")
+        stray.write_bytes(jpeg(9))
+
+        with network.client() as client:
+            result = build_index(reference, client, force=True, workers=1)
+
+        assert result.downloads is not None
+        assert result.downloads.removed == 1
+        assert not stray.exists()
+        assert indexed_uuids(reference) == database_uuids(reference)
+
+    def test_download_that_does_not_decode_is_a_failure(
+        self, reference, network
+    ) -> None:
+        bolt_url = generate_image_uri(PRINTINGS_V1[0][2])
+        network.images[bolt_url] = jpeg(0)[:200]
+
+        with network.client() as client:
+            result = update(reference, client, workers=1)
+
+        downloads = result.index.downloads
+        assert downloads is not None
+        assert [(f.uuid, f.step) for f in downloads.failed] == [
+            ("uuid-bolt", "download")
+        ]
+        assert network.requests.count(bolt_url) == 1
+        assert list(reference.images_dir.glob("uuid-bolt*")) == []
+        assert reference.log_file.read_text().startswith(
+            f"uuid-bolt\t{bolt_url}\tdownload\t"
+        )
+        assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
+
+    def test_unreadable_image_on_disk_is_deleted_then_downloaded_again(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        bolt = reference.image_path("uuid-bolt")
+        bolt.write_bytes(bolt.read_bytes()[:200])
+
+        with network.client() as client:
+            result = build_index(reference, client, force=True, workers=1)
+
+        assert [(f.uuid, f.step) for f in result.unhashable] == [("uuid-bolt", "hash")]
+        assert not bolt.exists()
+        assert "uuid-bolt" not in indexed_uuids(reference)
+        bolt_url = generate_image_uri(PRINTINGS_V1[0][2])
+        assert reference.log_file.read_text().startswith(
+            f"uuid-bolt\t{bolt_url}\thash\t"
+        )
+
+        with network.client() as client:
+            result = build_index(reference, client, force=True, workers=1)
+
+        assert result.downloads is not None
+        assert result.downloads.downloaded == 1
+        assert result.unhashable == ()
+        assert indexed_uuids(reference) == database_uuids(reference)
+        assert not reference.log_file.exists()
 
     def test_does_nothing_when_the_index_matches(self, reference, network) -> None:
         with network.client() as client:
