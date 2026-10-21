@@ -1,6 +1,6 @@
 ---
 name: direct-python
-description: Direct Python style: plain data, linear functions, abstractions only when earned, no wasted work. Use when writing, refactoring or reviewing Python, or when another skill needs the directness vocabulary.
+description: Direct Python style. Plain data, linear functions, abstractions only when earned, no wasted work. Use when writing, refactoring or reviewing Python, or when another skill needs the directness vocabulary.
 ---
 
 # Direct Python
