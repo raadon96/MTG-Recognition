@@ -1,7 +1,8 @@
 # Opencode config
 .vscode/
 .opencode/
-.claude/
+.claude/*
+!.claude/skills/
 .memsearch/
 .planning/
 
