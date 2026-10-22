@@ -5,7 +5,25 @@ import numpy as np
 from click.testing import CliRunner
 
 from mtg_recognition.engine.segmentation import cli as segment_cli
-from tests.unit.engine.fakes import FakeSegmentor, card_image
+from mtg_recognition.engine.segmentation.seg_utils import (
+    CardSegment,
+    ImageSegmentationResult,
+)
+from tests.unit.engine.builders import card_image
+
+
+class FakeSegmentor:
+    """Finds the given warped images in every input image."""
+
+    def __init__(self, warped_images: list[np.ndarray]):
+        self.warped_images = warped_images
+        self.inputs: list[np.ndarray] = []
+
+    def segment(self, img: np.ndarray) -> ImageSegmentationResult:
+        self.inputs.append(img)
+        return ImageSegmentationResult(
+            segments=[CardSegment(warped_image=w) for w in self.warped_images]
+        )
 
 
 def _run(monkeypatch, segmentor, input_path, output_dir):
