@@ -26,7 +26,11 @@ _Avoid_: properties, OCR result, printing properties
 
 **Score**:
 How well a card's reading agrees with a printing's details, from 0 to 100; higher is better.
-_Avoid_: confidence (it is not a probability), similarity, distance
+_Avoid_: confidence (it is not a probability), distance
+
+**Similarity**:
+How alike a card's image looks to a printing's reference image, from 0 to 1; higher is more alike. It shortlists candidates and is never shown as a score.
+_Avoid_: score, confidence
 
 **Reference data**:
 Everything built from one MTGJSON release and used to recognise cards: the MobileCache database and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).

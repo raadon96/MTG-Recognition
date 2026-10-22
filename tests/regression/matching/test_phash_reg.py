@@ -7,7 +7,12 @@ from pathlib import Path
 import cv2
 import pytest
 
-from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
+from mtg_recognition.engine.matching.phash import (
+    PHashIndex,
+    load_phash_index,
+    shortlist,
+)
+from mtg_recognition.reference import ReferenceData
 
 READY_BENCHMARK = Path("data/test/6_benchmark/images/ready")
 # The Pipeline's default k_phash_candidates: the printing must survive into OCR.
@@ -17,8 +22,8 @@ IMG_PATHS = sorted(READY_BENCHMARK.glob("*.jpg"))
 
 
 @pytest.fixture(scope="module")
-def matcher() -> PHashCardMatcher:
-    return PHashCardMatcher()
+def index() -> PHashIndex:
+    return load_phash_index(ReferenceData.default())
 
 
 @pytest.mark.slow
@@ -26,7 +31,7 @@ def matcher() -> PHashCardMatcher:
     not IMG_PATHS, reason=f"{READY_BENCHMARK} missing; run `uv run dvc pull`"
 )
 @pytest.mark.parametrize("img_path", IMG_PATHS, ids=lambda p: p.stem)
-def test_top_k_contains_the_printing_named_by_the_file(matcher, img_path):
-    uuids, _ = matcher.find_best_matches(cv2.imread(str(img_path)), k=K)
+def test_top_k_contains_the_printing_named_by_the_file(index, img_path):
+    uuids, _ = shortlist(index, cv2.imread(str(img_path)), k=K)
 
     assert img_path.stem in uuids

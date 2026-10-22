@@ -27,10 +27,7 @@ from sqlalchemy import func
 from sqlmodel import Session, SQLModel, col, create_engine, select
 from tqdm import tqdm
 
-from mtg_recognition.engine.matching.phash_matcher import (
-    DEFAULT_NUM_WORKERS,
-    PHashCardMatcher,
-)
+from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS, build_phash_index
 from mtg_recognition.reference import ReferenceData, SyncState, open_read_only
 from mtg_recognition.settings import settings
 
@@ -368,9 +365,8 @@ def hash_images(reference: ReferenceData, workers: int) -> tuple[ImageFailure, .
     downloads them again, and reported.
     """
     urls = dict(reference.present_images())
-    matcher = PHashCardMatcher(reference=reference)
-    errors = matcher.build_index(
-        {uuid: reference.image_path(uuid) for uuid in urls}, num_workers=workers
+    errors = build_phash_index(
+        {uuid: reference.image_path(uuid) for uuid in urls}, reference, workers=workers
     )
     for uuid in errors:
         reference.image_path(uuid).unlink(missing_ok=True)
