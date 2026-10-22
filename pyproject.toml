@@ -34,6 +34,7 @@ dependencies = [
     "click>=8.3.1",
     "rembg[cli,cpu]>=2.0.73",
     "httpx>=0.28.1",
+    "numpy>=2.0",
 ]
 
 [project.scripts]

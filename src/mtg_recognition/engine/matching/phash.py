@@ -17,7 +17,7 @@ DEFAULT_NUM_WORKERS = max(1, cpu_count() - 1)
 
 @dataclass(slots=True)
 class PHashIndex:
-    hashes: np.ndarray  # (printings, 256) uint8, one fingerprint per row
+    hashes: np.ndarray  # (printings, 32) uint8, one bit-packed fingerprint per row
     uuids: list[str]  # the printing UUID of each row
 
 
@@ -42,7 +42,8 @@ def load_phash_index(reference: ReferenceData) -> PHashIndex:
             f"pHash index holds {hashes.shape[0]} hashes but {len(uuids)} UUIDs. "
             "Run `mtg build-index` to rebuild it."
         )
-    return PHashIndex(hashes=hashes, uuids=uuids)
+    # the file stores one byte per bit; pack 8 per byte for `shortlist`
+    return PHashIndex(hashes=np.packbits(hashes, axis=1), uuids=uuids)
 
 
 def build_phash_index(
@@ -105,8 +106,9 @@ def shortlist(
         from 0 to 1, where 1 means identical fingerprints
     """
     bits = _phash_bits(Image.fromarray(image[:, :, ::-1]))
-    # Hamming distance: XOR sets the bits that differ
-    distances = np.sum(np.bitwise_xor(index.hashes, bits), axis=1)
+    # Hamming distance: XOR sets the bits that differ, bitwise_count counts them
+    differing = np.bitwise_xor(index.hashes, np.packbits(bits))
+    distances = np.bitwise_count(differing).sum(axis=1, dtype=np.int32)
     similarities = 1.0 - distances / bits.size
 
     # top k, best first: argpartition then a stable sort of the k only
