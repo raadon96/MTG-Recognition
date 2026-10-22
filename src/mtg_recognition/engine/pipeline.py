@@ -9,7 +9,7 @@ import numpy as np
 from mtg_recognition.catalog import RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import ImageSource, prepare_image
-from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
+from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
@@ -45,7 +45,9 @@ class Pipeline:
         k_final_results: Number of printings ranked per card.
 
     Raises:
-        ValueError: If the k parameters are invalid or the pHash index is not loaded.
+        ValueError: If the k parameters are invalid, or the pHash index files hold
+            different numbers of hashes and UUIDs.
+        FileNotFoundError: If a pHash index file is missing.
     """
 
     def __init__(self, k_phash_candidates: int = 20, k_final_results: int = 1):
@@ -57,10 +59,9 @@ class Pipeline:
         self.k_phash_candidates = k_phash_candidates
         self.k_final_results = k_final_results
 
-        self.phash_matcher = PHashCardMatcher()
-        if not self.phash_matcher.index_loaded:
-            raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
-        self.catalog = SqliteCardCatalog(ReferenceData.default().db_path)
+        reference = ReferenceData.default()
+        self.phash_index = load_phash_index(reference)
+        self.catalog = SqliteCardCatalog(reference.db_path)
         self.segmentor = YoloCardSegmentor()
         self.reader = PaddleCardReader()
 
@@ -83,8 +84,8 @@ class Pipeline:
                 warped = card.warped_image
 
                 # shortlist pHash candidates
-                uuids, _ = self.phash_matcher.find_best_matches(
-                    warped, k=self.k_phash_candidates
+                uuids, _ = shortlist(
+                    self.phash_index, warped, k=self.k_phash_candidates
                 )
 
                 # resolve them through the catalog, keeping pHash order and

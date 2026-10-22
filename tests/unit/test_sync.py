@@ -12,7 +12,7 @@ import zipfile
 
 import pytest
 
-from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
+from mtg_recognition.engine.matching.phash import load_phash_index
 from mtg_recognition.jobs.sync import (
     META_URL,
     allprintings_version,
@@ -39,7 +39,7 @@ def reference(tmp_path) -> ReferenceData:
 
 
 def indexed_uuids(reference: ReferenceData) -> set[str]:
-    return set(PHashCardMatcher(reference=reference).uuid_mapping or [])
+    return set(load_phash_index(reference).uuids)
 
 
 def database_uuids(reference: ReferenceData) -> set[str]:
