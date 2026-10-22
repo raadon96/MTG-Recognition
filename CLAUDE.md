@@ -4,6 +4,10 @@ MTG card recognition app: takes a photo of a Magic: The Gathering card, segments
 
 The engine (`engine/`) recognises one image at a time in two stages: segmentation (find and warp each card) then matching (pHash shortlists candidates, OCR reranks them against the card catalog). `app/` is the Streamlit UI over the engine; `jobs/` builds the reference data (`mtg update`, `mtg build-index`); `cli.py` registers the `mtg` subcommands defined in their domain modules.
 
+## Code style
+
+Before writing, refactoring or reviewing Python, call the Skill tool with `direct-python`. See `CODING_STANDARDS.md`.
+
 ## Agent skills
 
 ### Issue tracker
