@@ -2,9 +2,12 @@ import json
 from pathlib import Path
 
 import cv2
+import numpy as np
 import pytest
+from PIL import Image
 
 from mtg_recognition.engine.matching.phash import (
+    _phash_bits,
     build_phash_index,
     load_phash_index,
     shortlist,
@@ -52,6 +55,20 @@ class TestShortlist:
         assert len(uuids) == 3
         assert uuids[0] == "uuid-b"
         assert similarities[0] == pytest.approx(1.0)
+
+    def test_similarities_match_the_unpacked_hamming_distance(self, tmp_path) -> None:
+        reference = ReferenceData(tmp_path / "reference")
+        build_phash_index(write_jpegs(tmp_path, ["a", "b", "c"]), reference, workers=1)
+        query = cv2.imread(str(tmp_path / "a.jpg"))
+        assert query is not None
+        index_path, mapping_path = reference.phash_files
+        hashes, uuids = np.load(index_path), json.loads(mapping_path.read_text())
+        bits = _phash_bits(Image.fromarray(query[:, :, ::-1]))
+        expected = dict(zip(uuids, 1 - (hashes != bits).sum(axis=1) / 256, strict=True))
+
+        shortlisted, similarities = shortlist(load_phash_index(reference), query, k=3)
+
+        assert similarities == [expected[uuid] for uuid in shortlisted]
 
 
 @pytest.mark.unit
