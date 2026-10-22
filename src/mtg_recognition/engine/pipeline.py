@@ -2,47 +2,18 @@ import json
 import uuid as _uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
 
 import click
 import numpy as np
 
-from mtg_recognition.catalog import CardCatalog, RankedPrinting, SqliteCardCatalog
+from mtg_recognition.catalog import RankedPrinting, SqliteCardCatalog
 from mtg_recognition.core import image_utils
 from mtg_recognition.core.image_utils import ImageSource, prepare_image
 from mtg_recognition.engine.matching.phash_matcher import PHashCardMatcher
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
-from mtg_recognition.engine.segmentation.seg_utils import ImageSegmentationResult
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.reference import ReferenceData
-
-
-class CardSegmentor(Protocol):
-    """Finds the cards in an image and warps each one flat (default:
-    YoloCardSegmentor).
-    """
-
-    def segment(self, img: np.ndarray) -> ImageSegmentationResult: ...
-
-
-class CandidateMatcher(Protocol):
-    """Coarse search over the reference index by printing UUID (default:
-    PHashCardMatcher).
-    """
-
-    @property
-    def index_loaded(self) -> bool: ...
-
-    def find_best_matches(
-        self, query_image: np.ndarray, *, k: int
-    ) -> tuple[list[str], list[float]]: ...
-
-
-class CardReader(Protocol):
-    """Reads a warped card image (default: PaddleCardReader)."""
-
-    def read(self, card_image: np.ndarray, *, debug: bool) -> Reading: ...
 
 
 @dataclass(frozen=True)
@@ -66,29 +37,18 @@ class Pipeline:
     """The engine's recognition module: image in, ranked Printings per card out.
 
     Segments the image, finds pHash candidates, resolves them to Printings
-    through the catalog, reads each card and ranks the candidates by scoring the
-    reading against them.
+    through the MobileCache SQLite catalog, reads each card and ranks the
+    candidates by scoring the reading against them.
 
     Args:
         k_phash_candidates: Number of candidates from the pHash stage.
         k_final_results: Number of printings ranked per card.
-        catalog: Resolves printing UUIDs to Printings (default: MobileCache SQLite).
-        segmentor, phash_matcher, reader: Stage implementations (defaults built
-            here).
 
     Raises:
         ValueError: If the k parameters are invalid or the pHash index is not loaded.
     """
 
-    def __init__(
-        self,
-        k_phash_candidates: int = 20,
-        k_final_results: int = 1,
-        catalog: CardCatalog | None = None,
-        segmentor: CardSegmentor | None = None,
-        phash_matcher: CandidateMatcher | None = None,
-        reader: CardReader | None = None,
-    ):
+    def __init__(self, k_phash_candidates: int = 20, k_final_results: int = 1):
         if not 1 <= k_final_results <= k_phash_candidates:
             raise ValueError(
                 f"Need 1 <= k_final_results <= k_phash_candidates, "
@@ -97,21 +57,12 @@ class Pipeline:
         self.k_phash_candidates = k_phash_candidates
         self.k_final_results = k_final_results
 
-        self.catalog = (
-            catalog
-            if catalog is not None
-            else SqliteCardCatalog(ReferenceData.default().db_path)
-        )
-        self.segmentor: CardSegmentor = (
-            segmentor if segmentor is not None else YoloCardSegmentor()
-        )
-        self.phash_matcher: CandidateMatcher = (
-            phash_matcher if phash_matcher is not None else PHashCardMatcher()
-        )
-        self.reader: CardReader = reader if reader is not None else PaddleCardReader()
-
+        self.phash_matcher = PHashCardMatcher()
         if not self.phash_matcher.index_loaded:
             raise ValueError("pHash index not loaded. Run 'mtg build-index' first.")
+        self.catalog = SqliteCardCatalog(ReferenceData.default().db_path)
+        self.segmentor = YoloCardSegmentor()
+        self.reader = PaddleCardReader()
 
     def recognize(self, image: ImageSource, debug: bool = False) -> RecognitionResult:
         """Recognize every card in an image.
@@ -125,31 +76,34 @@ class Pipeline:
             debug: When True, each reading carries the reader's debug artefacts.
         """
         try:
+            # prepare and segment the image
             segmentation = self.segmentor.segment(prepare_image(image))
-            segments = [
-                self._match_one(s.warped_image, debug) for s in segmentation.segments
-            ]
+            segments: list[SegmentResult] = []
+            for card in segmentation.segments:
+                warped = card.warped_image
+
+                # shortlist pHash candidates
+                uuids, _ = self.phash_matcher.find_best_matches(
+                    warped, k=self.k_phash_candidates
+                )
+
+                # resolve them through the catalog, keeping pHash order and
+                # dropping UUIDs not in it
+                printings = self.catalog.lookup(uuids)
+                candidates = [printings[u] for u in uuids if u in printings]
+
+                # no candidate left: empty ranking, no reading
+                if not candidates:
+                    segments.append(SegmentResult(warped, ranked=[], reading=None))
+                    continue
+
+                # read the card and rank the candidates by its reading
+                reading = self.reader.read(warped, debug=debug)
+                ranked = scoring.rank(reading, candidates, k=self.k_final_results)
+                segments.append(SegmentResult(warped, ranked=ranked, reading=reading))
         except Exception as e:
             return RecognitionResult(segments=[], error=f"{type(e).__name__}: {e}")
         return RecognitionResult(segments=segments, error=None)
-
-    def _match_one(self, warped_image: np.ndarray, debug: bool) -> SegmentResult:
-        """Find pHash candidates for one warped card and rank them by its reading."""
-
-        # Stage 1: coarse search with perceptual hashing
-        uuids, _ = self.phash_matcher.find_best_matches(
-            warped_image, k=self.k_phash_candidates
-        )
-        printings = self.catalog.lookup(uuids)
-        candidates = [printings[u] for u in uuids if u in printings]
-
-        if not candidates:
-            return SegmentResult(warped_image, ranked=[], reading=None)
-
-        # Stage 2: read the card and score the reading against the candidates
-        reading = self.reader.read(warped_image, debug=debug)
-        ranked = scoring.rank(reading, candidates, k=self.k_final_results)
-        return SegmentResult(warped_image, ranked=ranked, reading=reading)
 
 
 def _stem_uuid(stem: str) -> str | None:

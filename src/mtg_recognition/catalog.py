@@ -1,13 +1,12 @@
 """Card catalog: resolves printing UUIDs to Printing records.
 
-The engine only ever sees `Printing`s; where they come from (the SQLite
-MobileCache in production, a dict in tests) is the catalog adapter's concern.
+The engine only ever sees `Printing`s; reading them out of the SQLite
+MobileCache is the catalog's concern.
 """
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
 
 from sqlalchemy import Engine
 from sqlmodel import Session, col, select
@@ -55,24 +54,6 @@ class RankedPrinting:
     printing: Printing
     score: float
     breakdown: list[FieldScore] = field(default_factory=list)
-
-
-class CardCatalog(Protocol):
-    def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
-        """Return the known printings among `uuids`, keyed by UUID. Unknown UUIDs are
-        omitted.
-        """
-        ...
-
-
-class InMemoryCardCatalog:
-    """Catalog backed by a dict; for tests."""
-
-    def __init__(self, printings: Iterable[Printing]):
-        self._printings = {p.uuid: p for p in printings}
-
-    def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
-        return {u: self._printings[u] for u in uuids if u in self._printings}
 
 
 class SqliteCardCatalog:
