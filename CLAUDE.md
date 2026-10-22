@@ -32,6 +32,8 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 - Feature work:
   - Branch off `dev`, never `main`.
   - Worktrees default to `main`, so base them on `dev` explicitly.
+  - For work on a GitHub issue, create the branch with `gh issue develop <issue> --base dev --name <branch> --checkout`. This links the branch to the issue, in its Development section. For a worktree, drop `--checkout`, then `git fetch` and base the worktree on the new branch.
+  - For a branch with no issue (see Branch naming), use `git switch -c <branch> dev`.
   - Open PRs against `dev`: always pass `gh pr create --base dev`.
   - Feature PRs are squash-merged into `dev`.
 - Releases:
@@ -53,7 +55,7 @@ Types (use only these):
 - `chore` – maintenance (config, dependencies, `.gitignore`, cleanup)
 
 Rules:
-- Always include the GitHub issue number. If there is no issue, ask before creating the branch.
+- Always include the GitHub issue number. If there is no issue, ask before creating the branch; once approved, name it `<type>/<short-slug>`.
 - If a change spans several types, pick the main one.
 
 ### Attribution
