@@ -35,3 +35,15 @@ _Avoid_: score, confidence
 **Reference data**:
 Everything built from one MTGJSON release and used to recognise cards: the MobileCache database and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).
 _Avoid_: reference catalogue, assets
+
+**Benchmark**:
+The fixed set of labelled images that recognition is measured against, covering every case the engine must handle: one or several cards, on a photo or a scan.
+_Avoid_: test images, test data
+
+**Label**:
+What an image should be recognised as: the expected printing of each card in it, and so how many cards it holds.
+_Avoid_: ground truth (in names), UUID image
+
+**Baseline**:
+The benchmark results the maintainer has adopted as the reference that new results are compared with.
+_Avoid_: reference (that is the reference data)
