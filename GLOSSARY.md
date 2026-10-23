@@ -33,8 +33,12 @@ How alike a card's image looks to a printing's reference image, from 0 to 1; hig
 _Avoid_: score, confidence
 
 **Reference data**:
-Everything built from one MTGJSON release and used to recognise cards: the MobileCache database and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).
-_Avoid_: reference catalogue, assets
+Everything built from one MTGJSON release and used to recognise cards: the catalog and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).
+_Avoid_: assets
+
+**Catalog**:
+The details of every printing (name, set, collector number, artist, and so on), looked up by the printing's UUID. Part of the reference data.
+_Avoid_: MobileCache, cache, database
 
 **Benchmark**:
 The fixed set of labelled images that recognition is measured against, covering every case the engine must handle: one or several cards, on a photo or a scan.
