@@ -123,7 +123,7 @@ assert parse_receipt(["TOTAL 12.50"]).total == 12.50
 
 ### Callers above helpers
 
-A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches, not a reorder of the rest of the file.
+A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches; the rest of the file keeps its order.
 
 In the test-seam example above, `read_receipt` sits above `parse_receipt`, the helper it calls.
 
