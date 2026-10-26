@@ -13,7 +13,7 @@ uv run pre-commit install
 
 Every commit then runs `ruff check --fix`, `ruff format`, `lint-imports` and the fast tests (`pytest -m "not slow"`), and commits to `main` are refused. Run the hooks by hand with `uv run pre-commit run --all-files`.
 
-If `pre-commit install` refuses because `core.hooksPath` is set, run `git config --unset-all core.hooksPath` first.
+If `pre-commit install` refuses because `core.hooksPath` is set, check where it points (`git config --show-origin core.hooksPath`). If it is the default `.git/hooks`, run `git config --unset-all core.hooksPath` first.
 
 ## Dataset Setup
 

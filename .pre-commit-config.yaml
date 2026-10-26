@@ -25,11 +25,11 @@ repos:
         name: lint-imports
         entry: uv run lint-imports
         language: system
-        types: [python]
+        files: \.py$|^pyproject\.toml$|^uv\.lock$
         pass_filenames: false
       - id: pytest
         name: pytest (not slow)
         entry: uv run pytest -m "not slow" -q
         language: system
-        types: [python]
+        files: \.py$|^pyproject\.toml$|^uv\.lock$
         pass_filenames: false
