@@ -74,13 +74,9 @@ def total_area(shapes: list[Shape]) -> float:
     return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
 ```
 
-### Dependencies are plain arguments
-
-Pass what a function needs as ordinary parameters: values, data, or the object it works on. Call real functions directly. A dependency-injection framework, a service locator, or a parameter that exists only so something can be substituted is indirection.
-
 ### Test seams are existing entry points
 
-A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
+A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. When the heavy step already takes its dependency as an argument (an HTTP client), a test may pass a fake through that argument; it never earns a new one. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
 
 Avoid:
 
