@@ -68,6 +68,7 @@ Rules:
 ```bash
 uv sync --dev                        # install dependencies (includes DVC)
 uv run pre-commit install            # once per clone; hooks listed in CONTRIBUTING.md
+uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run ruff check --fix src tests && uv run ruff format src tests
