@@ -17,7 +17,29 @@ Use these terms exactly when naming problems and fixes.
 
 **Jump**: one time the reader leaves the main path to understand it: into another function, another file, or a dispatch target. Jumps are the unit of readability: count them along the main path, before and after a change. Scattered logic makes jumps without any indirection.
 
-**Plain data**: values with no behaviour attached: `@dataclass(slots=True)`, tuples, dicts, lists, numpy arrays. Functions take plain data and return plain data. Fields are read directly, with no getters or properties for encapsulation's sake. Kinds that behave differently are a `kind` field plus `match`, or a table indexed by kind when only constants differ, so every case is visible in one place.
+**Plain data**: values with no behaviour attached: `@dataclass(slots=True)`, tuples, dicts, lists, numpy arrays. Functions take plain data and return plain data. Fields are read directly, with no getters or properties for encapsulation's sake.
+
+**Linear function**: a function that reads top to bottom as a sequence of steps, with short comments marking the steps. One longer linear function beats several tiny ones the reader must jump between. Extract a helper when it is called from two places, or when it names a real concept and the call site reads better for it.
+
+**Earned abstraction**: a Protocol, ABC, base class, shared helper, option flag or module with at least two real uses in the code today. A test fake is not a use. Abstractions are earned through **semantic compression**: write the specific code for the case at hand first (usable before reusable); when the same logic appears a second time, factor out what the real instances share and name it in the problem's language.
+
+**Multiresolution entry points**: a convenient high-level call plus the lower-level functions it is built from, each callable on its own. Callers and tests drop down a level when they need to, rather than injecting a substitute into the high-level call.
+
+**Locality**: code that works together lives together, in one function or one file, so following a path takes few jumps between files. Split a file when it holds separate concerns that are used independently.
+
+### Problem tags
+
+Tag every problem you report with one of:
+
+- **Unearned abstraction**: fails the earned-abstraction test.
+- **Indirection**: indirection where a direct call would do.
+- **Scattered logic**: one sequence of steps spread across tiny functions or files.
+
+## Rules
+
+### Kinds are a field, not subclasses
+
+Kinds that behave differently are a `kind` field plus `match`, or a table indexed by kind when only constants differ, so every case is visible in one place.
 
 Avoid:
 
@@ -51,24 +73,6 @@ class Shape:
 def total_area(shapes: list[Shape]) -> float:
     return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
 ```
-
-**Linear function**: a function that reads top to bottom as a sequence of steps, with short comments marking the steps. One longer linear function beats several tiny ones the reader must jump between. Extract a helper when it is called from two places, or when it names a real concept and the call site reads better for it.
-
-**Earned abstraction**: a Protocol, ABC, base class, shared helper, option flag or module with at least two real uses in the code today. A test fake is not a use. Abstractions are earned through **semantic compression**: write the specific code for the case at hand first (usable before reusable); when the same logic appears a second time, factor out what the real instances share and name it in the problem's language.
-
-**Multiresolution entry points**: a convenient high-level call plus the lower-level functions it is built from, each callable on its own. Callers and tests drop down a level when they need to, rather than injecting a substitute into the high-level call.
-
-**Locality**: code that works together lives together, in one function or one file, so following a path takes few jumps between files. Split a file when it holds separate concerns that are used independently.
-
-### Problem tags
-
-Tag every problem you report with one of:
-
-- **Unearned abstraction**: fails the earned-abstraction test.
-- **Indirection**: indirection where a direct call would do.
-- **Scattered logic**: one sequence of steps spread across tiny functions or files.
-
-## Rules
 
 ### Dependencies are plain arguments
 
