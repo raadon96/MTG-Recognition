@@ -2,11 +2,46 @@
 
 MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against a ~1M-card SQLite database. Served as a Streamlit web app via Docker.
 
-The engine (`engine/`) recognises one image at a time in two stages: segmentation (find and warp each card) then matching (pHash shortlists candidates, OCR reranks them against the card catalog). `app/` is the Streamlit UI over the engine; `jobs/` builds the reference data (`mtg update`, `mtg build-index`); `cli.py` registers the `mtg` subcommands defined in their domain modules.
+## Structure
+
+```
+src/mtg_recognition/
+├── engine/        recognises one query image: segmentation, then matching
+│   ├── pipeline.py      runs both stages
+│   ├── segmentation/    turns each card in a query image into a card image
+│   ├── matching/        shortlists candidates by pHash similarity
+│   └── ocr/             reads each card image and scores candidates against the reading
+├── app/           Streamlit UI over the engine
+├── jobs/          builds the reference data from MTGJSON releases (`mtg update`, `mtg build-index`)
+├── core/          loads, resizes and lists images for the engine
+├── catalog.py     reads printings out of the catalog
+├── reference.py   on-disk layout and sync state of the reference data
+├── settings.py    configuration from the environment and `.env`
+└── cli.py         the `mtg` group; each command is defined in its domain package
+data/reference/    the reference data
+tests/             unit and regression tests
+```
 
 ## Code style
 
 Before writing, refactoring or reviewing Python, call the Skill tool with `direct-python`. See `CODING_STANDARDS.md`.
+
+## Plain language
+
+In code, comments, issues, PR bodies and commit messages, write the literal word. These metaphors recur in this repo; use the literal word beside each:
+
+- pin → set, fix to a value
+- land → merge, ship
+- settle → decide
+- guard → check
+- carry → hold, keep
+- sharp → precise, exact
+- load-bearing → required, depended on
+
+Name domain things with the terms in `GLOSSARY.md`; when a term exists, use it rather than a new name.
+
+- Before: "Pin the candidate count so the top match lands in the shortlist; the OCR crop is load-bearing."
+- After: "Set the candidate count so the best printing is among the candidates; scoring needs the collector information crop."
 
 ## Agent skills
 
@@ -78,4 +113,4 @@ uv run mtg --help                    # recognize, segment, status, update, build
 
 Test images are DVC-tracked on Google Drive; setup and adding images: `CONTRIBUTING.md`.
 
-`data/reference/` (database, sync state, pHash index) is committed; change it only through `mtg update` and `mtg build-index`.
+`data/reference/` (catalog, sync state, pHash index) is committed; change it only through `mtg update` and `mtg build-index`.
