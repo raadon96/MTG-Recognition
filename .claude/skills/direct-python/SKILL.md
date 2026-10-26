@@ -19,6 +19,39 @@ Use these terms exactly when naming problems and fixes.
 
 **Plain data**: values with no behaviour attached: `@dataclass(slots=True)`, tuples, dicts, lists, numpy arrays. Functions take plain data and return plain data. Fields are read directly, with no getters or properties for encapsulation's sake. Kinds that behave differently are a `kind` field plus `match`, or a table indexed by kind when only constants differ, so every case is visible in one place.
 
+Avoid:
+
+```python
+class Shape(ABC):
+    @abstractmethod
+    def area(self) -> float: ...
+
+class Square(Shape):
+    def __init__(self, side): self.side = side
+    def area(self): return self.side * self.side
+
+class Circle(Shape):
+    def __init__(self, r): self.r = r
+    def area(self): return math.pi * self.r * self.r
+
+total = sum(s.area() for s in shapes)
+```
+
+Prefer:
+
+```python
+AREA_COEFF = {"square": 1.0, "rectangle": 1.0, "triangle": 0.5, "circle": math.pi}
+
+@dataclass(slots=True)
+class Shape:
+    kind: str
+    width: float
+    height: float  # squares and circles store width in height too
+
+def total_area(shapes: list[Shape]) -> float:
+    return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
+```
+
 **Linear function**: a function that reads top to bottom as a sequence of steps, with short comments marking the steps. One longer linear function beats several tiny ones the reader must jump between. Extract a helper when it is called from two places, or when it names a real concept and the call site reads better for it.
 
 **Earned abstraction**: a Protocol, ABC, base class, shared helper, option flag or module with at least two real uses in the code today. A test fake is not a use. Abstractions are earned through **semantic compression**: write the specific code for the case at hand first (usable before reusable); when the same logic appears a second time, factor out what the real instances share and name it in the problem's language.
@@ -92,13 +125,7 @@ assert parse_receipt(["TOTAL 12.50"]).total == 12.50
 
 A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches, not a reorder of the rest of the file.
 
-```python
-def read_receipt(image: np.ndarray) -> Receipt:
-    lines = pytesseract.image_to_string(image).splitlines()
-    return parse_receipt(lines)
-
-def parse_receipt(lines: list[str]) -> Receipt: ...
-```
+In the test-seam example above, `read_receipt` sits above `parse_receipt`, the helper it calls.
 
 ### Comments say why
 
@@ -129,43 +156,6 @@ Python runs many machine instructions per line, so the large wins come from remo
 - Build invariant structures once, before the loop.
 
 A claim that one version is faster comes with a measurement: `timeit`, or `time.perf_counter` over repeated runs, taking the minimum.
-
-## Examples
-
-### Plain data over a type hierarchy
-
-Avoid:
-
-```python
-class Shape(ABC):
-    @abstractmethod
-    def area(self) -> float: ...
-
-class Square(Shape):
-    def __init__(self, side): self.side = side
-    def area(self): return self.side * self.side
-
-class Circle(Shape):
-    def __init__(self, r): self.r = r
-    def area(self): return math.pi * self.r * self.r
-
-total = sum(s.area() for s in shapes)
-```
-
-Prefer:
-
-```python
-AREA_COEFF = {"square": 1.0, "rectangle": 1.0, "triangle": 0.5, "circle": math.pi}
-
-@dataclass(slots=True)
-class Shape:
-    kind: str
-    width: float
-    height: float  # squares and circles store width in height too
-
-def total_area(shapes: list[Shape]) -> float:
-    return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
-```
 
 ## Before finishing
 
