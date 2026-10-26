@@ -2,6 +2,19 @@
 
 This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the test/benchmark dataset, and share new test images.
 
+## Development Setup
+
+Install the dependencies and the git hooks:
+
+```bash
+uv sync --dev
+uv run pre-commit install
+```
+
+Every commit then runs `ruff check --fix`, `ruff format`, `lint-imports` and the fast tests (`pytest -m "not slow"`), and commits to `main` are refused. Run the hooks by hand with `uv run pre-commit run --all-files`.
+
+If `pre-commit install` refuses because `core.hooksPath` is set, check where it points (`git config --show-origin core.hooksPath`). If it is the default `.git/hooks`, run `git config --unset-all core.hooksPath` first.
+
 ## Dataset Setup
 
 The test and benchmark dataset is versioned with [DVC](https://dvc.org/) and hosted on a shared Google Drive folder. To pull the dataset, you need a one-time Google Cloud Platform (GCP) OAuth setup, then a single `dvc pull` command.
