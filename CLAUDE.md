@@ -67,6 +67,7 @@ Rules:
 
 ```bash
 uv sync --dev                        # install dependencies (includes DVC)
+uv run pre-commit install            # once per clone: ruff, lint-imports, fast tests and a main-branch guard on every commit
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run ruff check --fix src tests && uv run ruff format src tests

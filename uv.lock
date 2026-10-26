@@ -2606,6 +2606,7 @@ dev = [
     { name = "ipykernel" },
     { name = "ipyplot" },
     { name = "pre-commit" },
+    { name = "pre-commit-hooks" },
     { name = "pyarrow" },
     { name = "pytest" },
     { name = "rapidocr" },
@@ -2654,6 +2655,7 @@ dev = [
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "ipyplot", specifier = ">=1.1.2" },
     { name = "pre-commit", specifier = ">=4.7.0" },
+    { name = "pre-commit-hooks", specifier = ">=6.0.0" },
     { name = "pyarrow", specifier = ">=22.0.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "rapidocr", specifier = ">=3.7.0" },
@@ -3365,6 +3367,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/c3/6965c2690ddce885ec75121572d065a5b94c5a5d8d3e657927ecda9fd715/pre_commit-4.7.0.tar.gz", hash = "sha256:1f3deee12b914c8fa184bd2b5953391c2e4f36763e403d4a23dc9983fa7c6e86", size = 198120, upload-time = "2026-10-12T20:45:40.32Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/83/ce0a196e4f7b20b11ce3aa1fc72fb973f64b7628d51c1b8aebad37fb7f81/pre_commit-4.7.0-py2.py3-none-any.whl", hash = "sha256:2e229038ad3656081b70c27913157e4b636ef306f643f024a8a8e3f0f7b2f877", size = 226261, upload-time = "2026-10-12T20:45:38.858Z" },
+]
+
+[[package]]
+name = "pre-commit-hooks"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ruamel-yaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/4d/93e63e48f8fd16d6c1e4cef5dabadcade4d1325c7fd6f29f075a4d2284f3/pre_commit_hooks-6.0.0.tar.gz", hash = "sha256:76d8370c006f5026cdd638a397a678d26dda735a3c88137e05885a020f824034", size = 28293, upload-time = "2025-08-09T19:25:04.6Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/12/46/eba9be9daa403fa94854ce16a458c29df9a01c6c047931c3d8be6016cd9a/pre_commit_hooks-6.0.0-py2.py3-none-any.whl", hash = "sha256:76161b76d321d2f8ee2a8e0b84c30ee8443e01376121fd1c90851e33e3bd7ee2", size = 41338, upload-time = "2025-08-09T19:25:03.513Z" },
 ]
 
 [[package]]
