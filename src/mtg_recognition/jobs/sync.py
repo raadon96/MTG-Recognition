@@ -13,7 +13,7 @@ import time
 import zipfile
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import AbstractContextManager, contextmanager, nullcontext
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
@@ -543,15 +543,6 @@ def status(reference: ReferenceData, client: httpx.Client) -> Status:
 # ---------------------------------------------------------------------------
 
 
-def _client(ctx: click.Context) -> AbstractContextManager[httpx.Client]:
-    """The client for a command: `ctx.obj` when the caller passes one (tests pass
-    a client on a fake transport), else a new one, closed when the command ends.
-    """
-    if isinstance(ctx.obj, httpx.Client):
-        return nullcontext(ctx.obj)
-    return make_client()
-
-
 @contextmanager
 def _exit_on_error() -> Generator[None]:
     try:
@@ -559,26 +550,6 @@ def _exit_on_error() -> Generator[None]:
     except Exception as exc:
         click.echo(f"Error: {type(exc).__name__}: {exc}", err=True)
         raise SystemExit(1) from exc
-
-
-def _index_summary(reference: ReferenceData, index: IndexResult) -> list[str]:
-    if index.downloads is None:
-        return [f"pHash index: up to date ({index.phash_version})"]
-    report = index.downloads
-    lines = [
-        f"Reference images: {report.downloaded} downloaded, "
-        f"{len(report.failed)} failed, {report.missing_url} without URL",
-        f"Removed images (no printing): {report.removed}",
-        f"pHash index: rebuilt ({index.phash_version})",
-    ]
-    if index.unhashable:
-        lines.append(
-            f"Unreadable images deleted: {len(index.unhashable)}; "
-            "run `mtg build-index` again"
-        )
-    if report.failed or index.unhashable:
-        lines.append(f"Image failures written to {reference.log_file}")
-    return lines
 
 
 _force_option = click.option(
@@ -597,15 +568,52 @@ _workers_option = click.option(
 
 
 @click.command(name="status")
-@click.pass_context
-def status_command(ctx: click.Context) -> None:
+def status_command() -> None:
     """Show the reference data versions, the images on disk and the latest MTGJSON
     release, then the command to run, if any.
     """
     reference = ReferenceData.default()
-    with _exit_on_error(), _client(ctx) as client:
+    with _exit_on_error(), make_client() as client:
         report = status(reference, client)
 
+    lines, next_step = status_summary(report)
+    console.print(Panel("\n".join(lines), title="Reference data", expand=False))
+    console.print(next_step)
+
+
+@click.command(name="update")
+@_force_option
+@_workers_option
+def update_command(force: bool, workers: int) -> None:
+    """Update the database to the latest MTGJSON release, then rebuild the pHash
+    index if it no longer matches the database.
+    """
+    reference = ReferenceData.default()
+    with _exit_on_error(), make_client() as client:
+        result = update(reference, client, force=force, workers=workers)
+
+    lines = update_summary(reference, result)
+    console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
+
+
+@click.command(name="build-index")
+@_force_option
+@_workers_option
+def build_index_command(force: bool, workers: int) -> None:
+    """Delete the reference images that are not a printing, download the missing
+    ones, then rebuild the pHash index from the database's printings with an
+    image on disk.
+    """
+    reference = ReferenceData.default()
+    with _exit_on_error(), make_client() as client:
+        result = build_index(reference, client, force=force, workers=workers)
+
+    lines = index_summary(reference, result)
+    console.print(Panel("\n".join(lines), title="Build-index Summary", expand=False))
+
+
+def status_summary(report: Status) -> tuple[list[str], str]:
+    """The lines of the panel, and the line after it naming the command to run."""
     match = "matches" if report.index_matches else "does not match"
     lines = [
         f"MobileCache: {report.database_version}",
@@ -615,46 +623,35 @@ def status_command(ctx: click.Context) -> None:
         f"{report.images_missing} missing",
         f"Latest MTGJSON release: {report.latest_version or 'unknown'}",
     ]
-    console.print(Panel("\n".join(lines), title="Reference data", expand=False))
     if report.next_command is None:
-        console.print("Up to date: nothing to run.")
-    else:
-        console.print(f"Run: {report.next_command}")
+        return lines, "Up to date: nothing to run."
+    return lines, f"Run: {report.next_command}"
 
 
-@click.command(name="update")
-@_force_option
-@_workers_option
-@click.pass_context
-def update_command(ctx: click.Context, force: bool, workers: int) -> None:
-    """Update the database to the latest MTGJSON release, then rebuild the pHash
-    index if it no longer matches the database.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), _client(ctx) as client:
-        result = update(reference, client, force=force, workers=workers)
-
+def update_summary(reference: ReferenceData, result: UpdateResult) -> list[str]:
     database = "rebuilt" if result.database_rebuilt else "up to date"
     lines = [f"MobileCache: {database} ({result.database_version})"]
     if result.database_rebuilt:
         source = "downloaded" if result.allprintings_downloaded else "reused"
         lines.append(f"AllPrintings: {source} ({result.database_version})")
-    lines += _index_summary(reference, result.index)
-    console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
+    return lines + index_summary(reference, result.index)
 
 
-@click.command(name="build-index")
-@_force_option
-@_workers_option
-@click.pass_context
-def build_index_command(ctx: click.Context, force: bool, workers: int) -> None:
-    """Delete the reference images that are not a printing, download the missing
-    ones, then rebuild the pHash index from the database's printings with an
-    image on disk.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), _client(ctx) as client:
-        result = build_index(reference, client, force=force, workers=workers)
-
-    lines = _index_summary(reference, result)
-    console.print(Panel("\n".join(lines), title="Build-index Summary", expand=False))
+def index_summary(reference: ReferenceData, index: IndexResult) -> list[str]:
+    if index.downloads is None:
+        return [f"pHash index: up to date ({index.phash_version})"]
+    report = index.downloads
+    lines = [
+        f"Reference images: {report.downloaded} downloaded, "
+        f"{len(report.failed)} failed, {report.missing_url} without URL",
+        f"Removed images (no printing): {report.removed}",
+        f"pHash index: rebuilt ({index.phash_version})",
+    ]
+    if index.unhashable:
+        lines.append(
+            f"Unreadable images deleted: {len(index.unhashable)}; "
+            "run `mtg build-index` again"
+        )
+    if report.failed or index.unhashable:
+        lines.append(f"Image failures written to {reference.log_file}")
+    return lines
