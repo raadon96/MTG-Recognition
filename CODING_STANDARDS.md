@@ -13,5 +13,5 @@ A test states one thing the code does, through the interface its callers use. In
 - **Reads like a spec**: the name states the behaviour (`test_a_card_without_candidates_is_no_match`), not the function under test.
 - **One behaviour per test**: several asserts are fine when they check the same outcome.
 - **Verify through the interface**: check results through the public API (save, then load), not through a side channel such as querying the database or inspecting a mock's calls.
-- **Fake only at the boundary**: replace what leaves the process (the network) and pass the fake in through the public interface, like `FakeNetwork`. Never replace an internal step.
+- **Fake only at the boundary**: replace what leaves the process (the network) and pass the fake through the argument the code already takes for it, like a `FakeNetwork` client passed to the sync steps. Never replace an internal step.
 - **Earn its place**: no test that only exercises a library (Click printing a declared option) or a one-line property.
