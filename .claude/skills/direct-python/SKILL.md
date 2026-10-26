@@ -31,6 +31,8 @@ Use these terms exactly when naming problems and fixes.
 - It is deep.
 - It is one of Martin Fowler's two cases where indirection pays ("Inversion of Control Containers and the Dependency Injection pattern", 2004): an implementation chosen per deployment or configuration, and code reused across several applications.
 
+Depth earns a function, class or module. A Protocol, ABC or injection point is earned only by two production implementations today (see the dependency order).
+
 Abstractions are earned through **semantic compression** _(Casey Muratori)_: write the specific code for the case at hand first (usable before reusable); factor out the second time the same logic appears, taking what the real instances share and naming it in the problem's language.
 
 **Multiresolution entry points**: a convenient high-level call plus the lower-level functions it is built from, each callable on its own. Callers and tests drop down a level when they need to, rather than injecting a substitute into the high-level call.
