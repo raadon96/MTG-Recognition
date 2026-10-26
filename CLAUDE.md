@@ -34,6 +34,7 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
   - Worktrees default to `main`, so base them on `dev` explicitly.
   - For work on a GitHub issue, create the branch with `gh issue develop <issue> --base dev --name <branch> --checkout`. This links the branch to the issue, in its Development section. For a worktree, drop `--checkout`, then `git fetch` and base the worktree on the new branch.
   - For a branch with no issue (see Branch naming), use `git switch -c <branch> dev`.
+  - Before committing, run `uv run pre-commit run --all-files`; the hooks may not be installed in this clone.
   - Open PRs against `dev`: always pass `gh pr create --base dev`.
   - Feature PRs are squash-merged into `dev`.
 - Releases:
@@ -67,7 +68,6 @@ Rules:
 
 ```bash
 uv sync --dev                        # install dependencies (includes DVC)
-uv run pre-commit install            # once per clone; hooks listed in CONTRIBUTING.md
 uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
