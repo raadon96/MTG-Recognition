@@ -31,7 +31,7 @@ Then spawn a sub-agent to trace the hot spots. Give it the absolute path of the 
 
 The exploration is done when every main path through the scoped hot spots is traced end to end and every abstraction on it has a use count, and every one-use abstraction has its hidden decision and interface size.
 
-Turn what it found into **candidates**. A candidate is subtractive by default: inline a pass-through or a one-use helper that is not deep, collapse an abstraction with one real use that is not deep into a direct call, merge scattered steps into a linear function, replace a class hierarchy following **kinds are a field, not subclasses**, move code that works together into one file, or move I/O up to the caller so the logic takes plain data and the injection point goes. Anything a candidate adds is an **earned abstraction**. Abstractions marked "seen, earned" are not candidates: they stay out of the report and need no ADR.
+Turn what it found into **candidates**. A candidate is subtractive by default: inline a pass-through or a one-use helper that is not deep, collapse an abstraction with one real use that is not deep into a direct call, merge scattered steps into a linear function, replace a class hierarchy following **kinds are data, not subclasses**, move code that works together into one file, or move I/O up to the caller so the logic takes plain data and the injection point goes. Anything a candidate adds is an **earned abstraction**. Abstractions marked "seen, earned" are not candidates: they stay out of the report and need no ADR.
 
 For each candidate, work out the jumps on its main path before and after, and the multiresolution entry points tests would call afterwards. Tests that rely on fakes need a replacement chosen by the **dependency order**.
 

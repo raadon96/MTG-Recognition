@@ -49,7 +49,7 @@ Tag every problem you report with one of:
 
 ## Rules
 
-### Kinds are a field, not subclasses
+### Kinds are data, not subclasses
 
 Kinds with the same fields are one dataclass with a `kind` field, plus a table indexed by kind when only constants differ, or `match` on the kind when the steps differ. Kinds whose fields differ are one dataclass per kind, joined by a union type (`Square | Circle`) and handled with `match` on the class. Either way the behaviour lives in one function, so every case is visible in one place, and no subclass holds it.
 
