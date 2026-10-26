@@ -17,7 +17,7 @@ Use these terms exactly when naming problems and fixes.
 
 **Jump**: one time the reader leaves the main path to understand it: into another function, another file, or a dispatch target. Jumps are the unit of readability: count them along the main path, before and after a change. Scattered logic makes jumps without any indirection.
 
-**Plain data**: values with no behaviour attached: `@dataclass(slots=True)`, tuples, dicts, lists, numpy arrays. Functions take plain data and return plain data. Fields are read directly, with no getters or properties for encapsulation's sake. Kinds that behave differently are a `kind` field plus `match`, or a table indexed by kind when only constants differ, so every case is visible in one place.
+**Plain data**: values with no behaviour attached: `@dataclass(slots=True)`, tuples, dicts, lists, numpy arrays. Functions take plain data and return plain data. Fields are read directly, with no getters or properties for encapsulation's sake.
 
 **Linear function**: a function that reads top to bottom as a sequence of steps, with short comments marking the steps. One longer linear function beats several tiny ones the reader must jump between. Extract a helper when it is called from two places, or when it names a real concept and the call site reads better for it.
 
@@ -37,29 +37,9 @@ Tag every problem you report with one of:
 
 ## Rules
 
-### Dependencies are plain arguments
+### Kinds are a field, not subclasses
 
-Pass what a function needs as ordinary parameters: values, data, or the object it works on. Call real functions directly. A dependency-injection framework, a service locator, or a parameter that exists only so something can be substituted is indirection.
-
-### Test seams are existing entry points
-
-A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
-
-### Big performance pitfalls
-
-Python runs many machine instructions per line, so the large wins come from removing work. When the data is large enough to matter:
-
-- Batch I/O: one query, request or file write for many items, outside the loop.
-- Decode or parse each input once and pass the result along.
-- Use a set or dict for membership and lookup.
-- Use one numpy expression for math over large numeric arrays.
-- Build invariant structures once, before the loop.
-
-A claim that one version is faster comes with a measurement: `timeit`, or `time.perf_counter` over repeated runs, taking the minimum.
-
-## Examples
-
-### Plain data over a type hierarchy
+Kinds that behave differently are a `kind` field plus `match`, or a table indexed by kind when only constants differ, so every case is visible in one place.
 
 Avoid:
 
@@ -94,7 +74,13 @@ def total_area(shapes: list[Shape]) -> float:
     return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
 ```
 
-### A seam added for tests
+### Dependencies are plain arguments
+
+Pass what a function needs as ordinary parameters: values, data, or the object it works on. Call real functions directly. A dependency-injection framework, a service locator, or a parameter that exists only so something can be substituted is indirection.
+
+### Test seams are existing entry points
+
+A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
 
 Avoid:
 
@@ -139,10 +125,48 @@ assert parse_receipt(["TOTAL 12.50"]).total == 12.50
 
 `read_receipt` is covered by a regression test on real receipt images.
 
+### Callers above helpers
+
+A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches; the rest of the file keeps its order.
+
+In the test-seam example above, `read_receipt` sits above `parse_receipt`, the helper it calls.
+
+### Comments say why
+
+Names and structure say what the code does. A comment says what they can't: the reason for a heuristic, a threshold or a workaround. Short step comments in a linear function stay. This covers the comments a change writes or touches.
+
+Avoid:
+
+```python
+# divide the matched count by the number of words
+overlap = matched / len(words)
+```
+
+Prefer:
+
+```python
+# long names match more words by chance, so normalise by length
+overlap = matched / len(words)
+```
+
+### Big performance pitfalls
+
+Python runs many machine instructions per line, so the large wins come from removing work. When the data is large enough to matter:
+
+- Batch I/O: one query, request or file write for many items, outside the loop.
+- Decode or parse each input once and pass the result along.
+- Use a set or dict for membership and lookup.
+- Use one numpy expression for math over large numeric arrays.
+- Build invariant structures once, before the loop.
+
+A claim that one version is faster comes with a measurement: `timeit`, or `time.perf_counter` over repeated runs, taking the minimum.
+
 ## Before finishing
 
 - Every Protocol, ABC, base class, wrapper, helper and file you added is an earned abstraction, or a helper that names a real concept.
 - The main path has as few jumps as a linear function allows.
+- Each function you wrote or touched sits below its first caller.
+- Each comment you wrote or touched says why, or marks a step.
 - Tests call existing entry points with plain data.
 - Large data avoids all five pitfalls.
 - The code is as general as today's requirements, and no more.
