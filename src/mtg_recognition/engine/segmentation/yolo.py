@@ -146,8 +146,8 @@ class YoloCardSegmentor:
             segments is empty if no cards were found.
         """
         # -- Path 1: bypass for scan-without-background images --------------
-        if self._is_scan_without_bg(img):
-            return ImageSegmentationResult(segments=[self._bypass_warp(img)])
+        if is_scan_without_bg(img):
+            return ImageSegmentationResult(segments=[bypass_warp(img)])
 
         # -- Path 2: YOLO ----------------------------------------------------
         proc_img = enhance_contrast(img)
@@ -159,40 +159,6 @@ class YoloCardSegmentor:
             segments = self._fallback_segment(img, proc_img)
 
         return ImageSegmentationResult(segments=segments)
-
-    # ------------------------------------------------------------------
-    # Path 1 — Bypass
-    # ------------------------------------------------------------------
-
-    def _is_scan_without_bg(self, img: np.ndarray) -> bool:
-        h, w = img.shape[:2]
-        ratio = min(w, h) / max(w, h)
-        if not (_BYPASS_LO <= ratio <= _BYPASS_HI):
-            return False
-        # Secondary check: the outer border must be dark (card's black border).
-        # Scanner-bed images have a bright border; card-only scans do not.
-        bh = max(1, int(h * _BYPASS_BORDER_PCT))
-        bw = max(1, int(w * _BYPASS_BORDER_PCT))
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        border = np.concatenate(
-            [
-                gray[:bh, :].ravel(),
-                gray[-bh:, :].ravel(),
-                gray[:, :bw].ravel(),
-                gray[:, -bw:].ravel(),
-            ]
-        )
-        return bool(np.mean(border) < _BYPASS_BORDER_MAX_MEAN)
-
-    def _bypass_warp(self, img: np.ndarray) -> CardSegment:
-        out = img
-        if out.shape[1] > out.shape[0]:
-            out = cv2.rotate(out, cv2.ROTATE_90_CLOCKWISE)
-        h, w = out.shape[:2]
-        out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
-        if (out_w, out_h) != (w, h):
-            out = cv2.resize(out, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
-        return CardSegment(warped_image=out)
 
     # ------------------------------------------------------------------
     # Path 2 — YOLO mask → corners → warp
@@ -252,6 +218,40 @@ class YoloCardSegmentor:
                 aspect_ratio_tolerance=self.aspect_ratio_tolerance,
             )
         return self._rembg_segmentor
+
+
+def is_scan_without_bg(img: np.ndarray) -> bool:
+    """Whether a query image is already a card image: card ratio, dark border."""
+    h, w = img.shape[:2]
+    ratio = min(w, h) / max(w, h)
+    if not (_BYPASS_LO <= ratio <= _BYPASS_HI):
+        return False
+    # Secondary check: the outer border must be dark (card's black border).
+    # Scanner-bed images have a bright border; card-only scans do not.
+    bh = max(1, int(h * _BYPASS_BORDER_PCT))
+    bw = max(1, int(w * _BYPASS_BORDER_PCT))
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    border = np.concatenate(
+        [
+            gray[:bh, :].ravel(),
+            gray[-bh:, :].ravel(),
+            gray[:, :bw].ravel(),
+            gray[:, -bw:].ravel(),
+        ]
+    )
+    return bool(np.mean(border) < _BYPASS_BORDER_MAX_MEAN)
+
+
+def bypass_warp(img: np.ndarray) -> CardSegment:
+    """The card image of a scan without background: upright, size clamped."""
+    out = img
+    if out.shape[1] > out.shape[0]:
+        out = cv2.rotate(out, cv2.ROTATE_90_CLOCKWISE)
+    h, w = out.shape[:2]
+    out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+    if (out_w, out_h) != (w, h):
+        out = cv2.resize(out, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+    return CardSegment(warped_image=out)
 
 
 def enhance_contrast(img: np.ndarray) -> np.ndarray:

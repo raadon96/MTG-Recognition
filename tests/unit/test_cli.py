@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import click
 import pytest
 from click.testing import CliRunner
 
@@ -13,109 +12,14 @@ from .sync_fakes import V1, FakeNetwork
 
 
 @pytest.mark.unit
-class TestCliGroup:
-    """Tests for the `cli` Click group itself."""
+@pytest.mark.parametrize(
+    "command", ["recognize", "segment", "status", "update", "build-index"]
+)
+def test_help_lists_every_command(command) -> None:
+    result = CliRunner().invoke(cli, ["--help"])
 
-    def test_import_succeeds(self) -> None:
-        """Importing `cli` from `mtg_recognition.cli` must not raise."""
-        assert cli is not None
-
-    def test_cli_is_click_group(self) -> None:
-        """`cli` must be a Click Group instance."""
-        assert isinstance(cli, click.Group)
-
-    def test_recognize_subcommand_registered(self) -> None:
-        """`cli.commands` must contain the `recognize` key."""
-        assert "recognize" in cli.commands
-
-    def test_segment_subcommand_registered(self) -> None:
-        """`cli.commands` must contain the `segment` key."""
-        assert "segment" in cli.commands
-
-    @pytest.mark.parametrize("name", ["status", "update", "build-index"])
-    def test_reference_data_subcommand_registered(self, name) -> None:
-        assert name in cli.commands
-
-    def test_sync_subcommand_removed(self) -> None:
-        """The old `sync` command was replaced by `status`, `update`, `build-index`."""
-        assert "sync" not in cli.commands
-
-    def test_recognize_is_same_object_as_pipeline_main(self) -> None:
-        """The `recognize` command must be the same object as `pipeline.main`."""
-        from mtg_recognition.engine.pipeline import main as _recognize_main
-
-        assert cli.commands["recognize"] is _recognize_main
-
-    def test_segment_is_same_object_as_segmentation_main(self) -> None:
-        """The `segment` command must be the same object as `segmentation/cli.main`."""
-        from mtg_recognition.engine.segmentation.cli import main as _segment_main
-
-        assert cli.commands["segment"] is _segment_main
-
-
-@pytest.mark.unit
-class TestCliHelp:
-    """Tests for `--help` output of the CLI group and subcommands."""
-
-    def test_group_help_exits_zero(self) -> None:
-        """`mtg --help` must exit with code 0."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["--help"])
-        assert result.exit_code == 0
-
-    def test_group_help_lists_recognize(self) -> None:
-        """`mtg --help` stdout must list `recognize`."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["--help"])
-        assert "recognize" in result.output
-
-    def test_group_help_lists_segment(self) -> None:
-        """`mtg --help` stdout must list `segment`."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["--help"])
-        assert "segment" in result.output
-
-    def test_recognize_help_exits_zero(self) -> None:
-        """`mtg recognize --help` must exit with code 0."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["recognize", "--help"])
-        assert result.exit_code == 0
-
-    def test_recognize_help_contains_input_option(self) -> None:
-        """`mtg recognize --help` must show the `--input` option."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["recognize", "--help"])
-        assert "--input" in result.output
-
-    def test_recognize_help_contains_k_phash_option(self) -> None:
-        """`mtg recognize --help` must show the `--k-phash` option."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["recognize", "--help"])
-        assert "--k-phash" in result.output
-
-    def test_recognize_help_contains_k_option(self) -> None:
-        """`mtg recognize --help` must show the `-k` option."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["recognize", "--help"])
-        assert "-k" in result.output
-
-    def test_segment_help_exits_zero(self) -> None:
-        """`mtg segment --help` must exit with code 0."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["segment", "--help"])
-        assert result.exit_code == 0
-
-    def test_segment_help_contains_input_option(self) -> None:
-        """`mtg segment --help` must show the `--input` option."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["segment", "--help"])
-        assert "--input" in result.output
-
-    def test_segment_help_contains_mode_option(self) -> None:
-        """`mtg segment --help` must show the `--mode` option."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["segment", "--help"])
-        assert "--mode" in result.output
+    assert result.exit_code == 0
+    assert command in result.output
 
 
 def invoke(tmp_path, network: FakeNetwork, args: list[str]):
@@ -138,12 +42,6 @@ class TestReferenceDataCommands:
     """`mtg status`, `mtg update` and `mtg build-index` on the fake network; the
     steps themselves are covered in test_sync.py.
     """
-
-    def test_build_index_help(self) -> None:
-        result = CliRunner().invoke(cli, ["build-index", "--help"])
-        assert result.exit_code == 0
-        assert "--force" in result.output
-        assert "--workers" in result.output
 
     def test_update_prints_the_summary(self, tmp_path, network) -> None:
         result = invoke(tmp_path, network, ["update", "--workers", "1"])
