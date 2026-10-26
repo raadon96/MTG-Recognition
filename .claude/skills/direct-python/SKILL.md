@@ -45,6 +45,49 @@ Pass what a function needs as ordinary parameters: values, data, or the object i
 
 A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
 
+Avoid:
+
+```python
+class TextRecognizer(Protocol):
+    def recognize(self, image: np.ndarray) -> list[str]: ...
+
+class ReceiptReader:
+    def __init__(self, recognizer: TextRecognizer | None = None):
+        self._recognizer = recognizer or TesseractRecognizer()
+
+    def read(self, image: np.ndarray) -> Receipt:
+        lines = self._recognizer.recognize(image)
+        return Receipt(total=_find_total(lines), date=_find_date(lines))
+
+# test
+reader = ReceiptReader(recognizer=FakeRecognizer(["TOTAL 12.50"]))
+assert reader.read(blank_image).total == 12.50
+```
+
+Prefer:
+
+```python
+def read_receipt(image: np.ndarray) -> Receipt:
+    lines = pytesseract.image_to_string(image).splitlines()
+    return parse_receipt(lines)
+
+def parse_receipt(lines: list[str]) -> Receipt:
+    total, date = None, None
+    for line in lines:
+        # total: "TOTAL 12.50"
+        if line.startswith("TOTAL"):
+            total = float(line.split()[-1])
+        # date: "2026-10-21"
+        elif DATE_RE.fullmatch(line):
+            date = line
+    return Receipt(total=total, date=date)
+
+# test: the lower-level entry point, on plain data
+assert parse_receipt(["TOTAL 12.50"]).total == 12.50
+```
+
+`read_receipt` is covered by a regression test on real receipt images.
+
 ### Functions read top to bottom
 
 A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches, not a reorder of the rest of the file.
@@ -123,51 +166,6 @@ class Shape:
 def total_area(shapes: list[Shape]) -> float:
     return sum(AREA_COEFF[s.kind] * s.width * s.height for s in shapes)
 ```
-
-### A seam added for tests
-
-Avoid:
-
-```python
-class TextRecognizer(Protocol):
-    def recognize(self, image: np.ndarray) -> list[str]: ...
-
-class ReceiptReader:
-    def __init__(self, recognizer: TextRecognizer | None = None):
-        self._recognizer = recognizer or TesseractRecognizer()
-
-    def read(self, image: np.ndarray) -> Receipt:
-        lines = self._recognizer.recognize(image)
-        return Receipt(total=_find_total(lines), date=_find_date(lines))
-
-# test
-reader = ReceiptReader(recognizer=FakeRecognizer(["TOTAL 12.50"]))
-assert reader.read(blank_image).total == 12.50
-```
-
-Prefer:
-
-```python
-def read_receipt(image: np.ndarray) -> Receipt:
-    lines = pytesseract.image_to_string(image).splitlines()
-    return parse_receipt(lines)
-
-def parse_receipt(lines: list[str]) -> Receipt:
-    total, date = None, None
-    for line in lines:
-        # total: "TOTAL 12.50"
-        if line.startswith("TOTAL"):
-            total = float(line.split()[-1])
-        # date: "2026-10-21"
-        elif DATE_RE.fullmatch(line):
-            date = line
-    return Receipt(total=total, date=date)
-
-# test: the lower-level entry point, on plain data
-assert parse_receipt(["TOTAL 12.50"]).total == 12.50
-```
-
-`read_receipt` is covered by a regression test on real receipt images.
 
 ## Before finishing
 
