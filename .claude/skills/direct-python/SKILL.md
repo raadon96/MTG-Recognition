@@ -121,7 +121,7 @@ assert parse_receipt(["TOTAL 12.50"]).total == 12.50
 
 `read_receipt` is covered by a regression test on real receipt images.
 
-### Functions read top to bottom
+### Callers above helpers
 
 A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches, not a reorder of the rest of the file.
 
@@ -161,7 +161,7 @@ A claim that one version is faster comes with a measurement: `timeit`, or `time.
 
 - Every Protocol, ABC, base class, wrapper, helper and file you added is an earned abstraction, or a helper that names a real concept.
 - The main path has as few jumps as a linear function allows.
-- Each function you added sits below its first caller.
+- Each function you wrote or touched sits below its first caller.
 - Each comment you wrote or touched says why, or marks a step.
 - Tests call existing entry points with plain data.
 - Large data avoids all five pitfalls.
