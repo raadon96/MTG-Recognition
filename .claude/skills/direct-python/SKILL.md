@@ -45,6 +45,36 @@ Pass what a function needs as ordinary parameters: values, data, or the object i
 
 A test seam is a function that already exists, called by a test with plain data. Testability alone never earns a new Protocol, callable parameter or injection point. To test logic without a heavy dependency (an ML model, the network, a database), let the logic run on the plain data the heavy step produces, expose it as a lower-level entry point, and test that directly. Cover the heavy step itself with regression tests on real inputs.
 
+### Functions read top to bottom
+
+A function sits below its callers; a helper with several callers goes below the first one. The reader meets each step before its details, as in a linear function. This covers the functions a change writes or touches, not a reorder of the rest of the file.
+
+```python
+def read_receipt(image: np.ndarray) -> Receipt:
+    lines = pytesseract.image_to_string(image).splitlines()
+    return parse_receipt(lines)
+
+def parse_receipt(lines: list[str]) -> Receipt: ...
+```
+
+### Comments say why
+
+Names and structure say what the code does. A comment says what they can't: the reason for a heuristic, a threshold or a workaround. Short step comments in a linear function stay. This covers the comments a change writes or touches.
+
+Avoid:
+
+```python
+# divide the matched count by the number of words
+overlap = matched / len(words)
+```
+
+Prefer:
+
+```python
+# long names match more words by chance, so normalise by length
+overlap = matched / len(words)
+```
+
 ### Big performance pitfalls
 
 Python runs many machine instructions per line, so the large wins come from removing work. When the data is large enough to matter:
@@ -143,6 +173,8 @@ assert parse_receipt(["TOTAL 12.50"]).total == 12.50
 
 - Every Protocol, ABC, base class, wrapper, helper and file you added is an earned abstraction, or a helper that names a real concept.
 - The main path has as few jumps as a linear function allows.
+- Each function you added sits below its first caller.
+- Each comment you wrote or touched says why, or marks a step.
 - Tests call existing entry points with plain data.
 - Large data avoids all five pitfalls.
 - The code is as general as today's requirements, and no more.
