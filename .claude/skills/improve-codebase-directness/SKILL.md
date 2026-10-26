@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Surface code that is harder to follow than it needs to be and propose **directness** refactors: removing unearned abstractions, collapsing indirection, gathering scattered logic into linear functions. The aim is readability, measured in **jumps** along the main path.
 
-Read the `direct-python` skill first (`../direct-python/SKILL.md`, a sibling of this skill). Its vocabulary (indirection, jump, plain data, linear function, earned abstraction, multiresolution entry points, locality) and its three problem tags are the terms for every candidate. The domain language in `GLOSSARY.md` names things; ADRs in `docs/adr/` record decisions this command does not re-litigate.
+Read the `direct-python` skill first (`../direct-python/SKILL.md`, a sibling of this skill). Its Vocabulary and its three problem tags are the terms for every candidate. The domain language in `GLOSSARY.md` names things; ADRs in `docs/adr/` record decisions this command does not re-litigate.
 
 ## Process
 
@@ -25,13 +25,15 @@ Then spawn a sub-agent to trace the hot spots. Give it the absolute path of the 
 
 - every jump, with `file:line`, tagged as indirection or scattered logic;
 - every Protocol, ABC, base class, callable parameter, wrapper and helper on the path, with its count of real uses, and test fakes listed separately;
+- for each abstraction with one real use, the decision it hides (or "none") and the size of its interface (public functions and parameters);
+- each abstraction that is an **earned abstraction**, marked "seen, earned";
 - classes carrying behaviour where plain data would do.
 
-The exploration is done when every main path through the scoped hot spots is traced end to end and every abstraction on it has a use count.
+The exploration is done when every main path through the scoped hot spots is traced end to end and every abstraction on it has a use count, and every one-use abstraction has its hidden decision and interface size.
 
-Turn what it found into **candidates**. A candidate is subtractive by default: inline a pass-through or a one-use helper, collapse an abstraction with one real use into a direct call, merge scattered steps into a linear function, replace a class hierarchy with plain data plus `match` or a table, move code that works together into one file. A candidate adds a Protocol, ABC or injection point only when two production implementations exist today, and extracts a shared function only when the same logic exists twice today.
+Turn what it found into **candidates**. A candidate is subtractive by default: inline a pass-through or a one-use helper that is not deep, collapse an abstraction with one real use that is not deep into a direct call, merge scattered steps into a linear function, replace a class hierarchy following **kinds are data, not subclasses**, move code that works together into one file, or move I/O up to the caller so the logic takes plain data and the injection point goes. Anything a candidate adds is an **earned abstraction**. Abstractions marked "seen, earned" are not candidates: they stay out of the report and need no ADR.
 
-For each candidate, work out the jumps on its main path before and after, and the multiresolution entry points tests would call afterwards. Tests that rely on fakes need a stated replacement.
+For each candidate, work out the jumps on its main path before and after, and the multiresolution entry points tests would call afterwards. Tests that rely on fakes need a replacement chosen by the **dependency order**.
 
 ### 2. Present candidates as an HTML report
 

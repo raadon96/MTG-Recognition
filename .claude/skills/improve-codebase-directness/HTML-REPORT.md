@@ -45,10 +45,13 @@ Each candidate is one `<article>`:
 - **Badge row**: recommendation strength (`Strong` = emerald, `Worth exploring` = amber, `Speculative` = slate), plus the problem tag (`unearned abstraction`, `indirection`, `scattered logic`).
 - **Files**: monospaced list, `font-mono text-sm`.
 - **Before / After diagram**: the centrepiece, two columns side by side. See the patterns below.
-- **Jumps**: one line, `before 7 → after 2`, on the main path the diagram shows.
+- **Metrics row**: one row of at most three values, the metrics that decide the candidate:
+  - **Jumps** `7 → 2`, on the main path the diagram shows (every card);
+  - **Abstractions removed** `3` (cards that remove any);
+  - **Deletion test**, in four words at most, e.g. `hides nothing` (cards that remove an abstraction).
 - **Problem**: one sentence. What the reader has to jump through.
 - **Solution**: one sentence. What disappears or moves.
-- **Wins**: bullets, ≤6 words each, e.g. "Delete 3 pass-throughs", "Main path fits one screen", "Tests call `parse_receipt` directly".
+- **Wins**: bullets, ≤6 words each, for gains the metrics row can't show, e.g. "Main path fits one screen", "Tests call `parse_receipt` directly".
 - **Tests**: the entry points tests call afterwards.
 - **ADR callout** (if applicable): one line in an amber-tinted box.
 
@@ -60,7 +63,7 @@ Pick the pattern that fits the candidate.
 
 ### Call flow (Mermaid, the workhorse)
 
-A `flowchart` of the main path with each jump numbered. Before: the hops through wrappers and Protocols, indirection edges in red, abstractions dashed. After: the same path with the hops gone.
+A `flowchart` of the main path with each jump numbered. Before: the hops through wrappers and Protocols, indirection edges in red, abstractions dashed. After: the same path with the hops gone. For a candidate that moves I/O up to the caller, draw the I/O node first in the after column, followed by the logic on plain data.
 
 ```html
 <div class="rounded-lg border border-slate-200 bg-white p-4">
@@ -102,6 +105,6 @@ One larger card: candidate name, one sentence on why, anchor link to its card.
 
 ## Tone
 
-Plain and concise. **Use exactly:** indirection, jump, plain data, linear function, earned abstraction, multiresolution entry points, locality, and the three problem tags. Wins name the gain in those terms or as a count (jumps, files, lines, abstractions removed), e.g. _"locality: the main path stays in one file"_, _"plain data: three subclasses become a table"_.
+Plain and concise. Name problems and gains with the terms in the `direct-python` Vocabulary and its problem tags, e.g. _"locality: the main path stays in one file"_, _"plain data: three subclasses become a table"_. The report and the issues filed from it cite no sources.
 
 If a sentence could be a bullet, make it a bullet. If a bullet could be cut, cut it.
