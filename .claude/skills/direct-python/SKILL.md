@@ -23,7 +23,7 @@ Use these terms exactly when naming problems and fixes.
 
 **Interface**: everything a caller must know to use the code: the signature, plus its invariants, error modes and ordering constraints.
 
-**Depth** _(David Parnas, John Ousterhout)_: how much behaviour a caller gets per unit of interface they learn. Apply the **deletion test**: imagine deleting the abstraction. If complexity vanishes, it was a pass-through; if it reappears across callers, it was earning its keep. An abstraction with one use is deep only if it hides a decision likely to change: a storage layout, a file format, a library's API. A class around one long step that only one caller uses is not deep; it becomes a linear function. A pass-through is never deep.
+**Depth** _(David Parnas, John Ousterhout)_: how much a caller is spared per unit of interface they learn, meaning the code they would otherwise write and the decisions they would otherwise have to know. Apply the **deletion test**: imagine deleting the abstraction. If complexity vanishes, it was a pass-through; if it reappears across callers, it was earning its keep. An abstraction with one use is deep only if it hides a decision likely to change: a storage layout, a file format, a library's API. A class around one long step that only one caller uses is not deep; it becomes a linear function. A pass-through is never deep.
 
 **Earned abstraction**: a Protocol, ABC, base class, shared helper, option flag or module that is earned in one of these ways:
 
@@ -210,7 +210,7 @@ A claim that one version is faster comes with a measurement: `timeit`, or `time.
 - **Subclass polymorphism instead of a `kind` field** (Hynek Schlawack, "Subclassing in Python Redux"): his objection is to one class with optional fields that depend on the kind, which the union of dataclasses answers; his class per kind is kept, without behaviour.
 - **Rule of Three**: factor out on the second copy, after Muratori.
 - **"Somewhat general-purpose" interfaces** (Ousterhout): naming the interface in the problem's terms is kept; extra features or parameters are not.
-- **Depth as a ratio of implementation lines to interface lines** (Ousterhout): it rewards padding the implementation.
+- **Depth as a ratio of implementation lines to interface lines**: it rewards padding the implementation.
 - **Very short functions** (Robert C. Martin, in the `aposd-vs-clean-code` debate with Ousterhout, 2024–2025): linear functions instead.
 - **Explicit dependencies added for easier tests** (Harry Percival and Bob Gregory, *Architecture Patterns with Python*, ch. 13): step 1 of the dependency order removes the need.
 
