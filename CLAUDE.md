@@ -78,7 +78,7 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 
 #### Pull requests
 
-Open PRs against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
+When the user asks to open a PR (without saying "main", which starts a release), open it against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
 
 Feature PRs are squash-merged into `dev`, with GitHub's default commit message: the PR title followed by `(#<pr>)`. Merge one only when the user says "merge", then:
 
