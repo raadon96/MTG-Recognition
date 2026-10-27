@@ -2,6 +2,12 @@
 reference data, and the `mtg recognize` CLI over a stubbed Pipeline.
 
 Recognition with the real models is covered end to end in tests/regression/engine.
+
+The recognition tests replace the YOLO and PaddleOCR classes in the pipeline module,
+which CODING_STANDARDS.md forbids (no patching a module's internals): loading the
+real models takes seconds, and the behaviour under test is how `recognize` handles a
+reader error, which a plain-data function can't show. Whether to allow this is
+decided in #127.
 """
 
 import json
