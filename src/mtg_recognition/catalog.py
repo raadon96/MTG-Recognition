@@ -5,7 +5,7 @@ MobileCache is the catalog's concern.
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from sqlalchemy import Engine
@@ -31,29 +31,6 @@ class Printing:
     power: str | None = None
     toughness: str | None = None
     image_url: str | None = None
-
-
-@dataclass(frozen=True)
-class FieldScore:
-    """A field score: how well one field of a card's reading agrees with a
-    printing's.
-    """
-
-    field: str
-    read: str | list[str] | None  # as read off the card
-    printed: str | None  # the printing's value
-    score: float  # 0-100
-
-
-@dataclass(frozen=True)
-class RankedPrinting:
-    """A candidate printing with its score (0-100, higher is better; see GLOSSARY.md)
-    and the per-field scores it was computed from.
-    """
-
-    printing: Printing
-    score: float
-    breakdown: list[FieldScore] = field(default_factory=list)
 
 
 class SqliteCardCatalog:

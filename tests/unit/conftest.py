@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from mtg_recognition.core.image_utils import prepare_image
+from mtg_recognition.engine.image import prepare_image
 
 from .sync_fakes import FakeNetwork
 

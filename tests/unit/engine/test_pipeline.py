@@ -10,10 +10,10 @@ import cv2
 import pytest
 from click.testing import CliRunner
 
-from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.engine import pipeline as pipeline_module
 from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import Pipeline, RecognitionResult, SegmentResult
+from mtg_recognition.engine.ranking import RankedPrinting
 from tests.unit.engine.builders import card_image, printing, reading_of
 
 

@@ -15,9 +15,9 @@ from mtg_recognition.app.uploads import (
     results_table,
     upload_results,
 )
-from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.engine.ocr.reading import Reading, ReadingDebug
 from mtg_recognition.engine.pipeline import RecognitionResult, SegmentResult
+from mtg_recognition.engine.ranking import RankedPrinting
 from tests.unit.engine.builders import card_image, printing
 
 ERROR = RecognitionResult(segments=[], error="RuntimeError: model exploded")

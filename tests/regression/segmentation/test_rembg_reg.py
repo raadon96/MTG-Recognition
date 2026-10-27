@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.core.image_utils import prepare_image
+from mtg_recognition.engine.image import prepare_image
 from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
 from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 

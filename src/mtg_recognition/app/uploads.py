@@ -11,9 +11,9 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from mtg_recognition.catalog import RankedPrinting
 from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import RecognitionResult
+from mtg_recognition.engine.ranking import RankedPrinting
 
 # Quality of the warped card's display copy; recognition never sees it.
 _DISPLAY_JPEG_QUALITY = 90
