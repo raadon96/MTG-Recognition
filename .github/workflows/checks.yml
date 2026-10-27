@@ -8,8 +8,8 @@ on:
 permissions:
   contents: read
 
-# A new commit on a PR cancels the run already going; pushes to dev and main
-# each run to completion.
+# A run on a superseded PR commit only spends runner minutes, but every commit
+# on dev and main needs its own result.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
