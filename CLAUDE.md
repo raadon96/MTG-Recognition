@@ -104,7 +104,7 @@ When the user says "merge" on the release PR:
 1. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
 2. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
 3. `gh release create v<version> --generate-notes`
-4. `git switch dev`
+4. Bring `dev` up to `main`: `git switch dev && git merge --ff-only main && git push`
 
 ### Branch naming
 
