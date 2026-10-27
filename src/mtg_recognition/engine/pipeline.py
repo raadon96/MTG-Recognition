@@ -203,20 +203,16 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
 
         segments_json: list[dict] = []
         for seg_idx, seg in enumerate(segment_results):
-            # UUID-based success check (only meaningful for single-card images)
+            # UUID-based success check and status label (only meaningful for
+            # single-card images)
             if stem_uuid is None:
                 success: bool | None = None
-            elif seg.ranked:
-                success = seg.ranked[0].printing.uuid == stem_uuid
-            else:
-                success = False
-
-            # Status label
-            if success is None:
                 status = "—"
-            elif success:
+            elif seg.ranked and seg.ranked[0].printing.uuid == stem_uuid:
+                success = True
                 status = "✓ MATCH"
             else:
+                success = False
                 got = seg.ranked[0].printing.uuid if seg.ranked else "no match"
                 status = f"✗ MISS  (expected: {stem_uuid[:8]}…, got: {got[:8]}…)"
 
