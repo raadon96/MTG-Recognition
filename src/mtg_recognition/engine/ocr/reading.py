@@ -105,6 +105,9 @@ class PaddleCardReader:
         Args:
             card_image: Warped card image (BGR format from OpenCV).
             debug: When True, the reading carries a ReadingDebug.
+
+        Raises:
+            RuntimeError: If PaddleOCR fails.
         """
         h, w, _ = card_image.shape
 
@@ -126,23 +129,13 @@ class PaddleCardReader:
         name_img = _ensure_min_dim(name_img, _MIN_DIM)
         below_text_box_img = _ensure_min_dim(below_text_box_img, _MIN_DIM)
 
-        texts_name: list[str] = []
-        texts: list[str] = []
-        boxes: list[tuple[int, int, int, int]] = []
-        scores: list[float] = []
-        raw_results = None
-
-        try:
-            raw_results = self._paddleocr.predict(
-                [name_img, below_text_box_img], text_det_thresh=0.05
-            )
-            texts_name = raw_results[0]["rec_texts"]
-            texts = raw_results[1]["rec_texts"]
-            boxes = raw_results[1]["rec_boxes"].tolist()
-            scores = raw_results[1]["rec_scores"]
-        except RuntimeError as e:
-            print(f"OCR prediction failed: {e}\nProceeding with empty OCR results...")
-            pass  # leave all text lists empty; the reading will be empty
+        raw_results = self._paddleocr.predict(
+            [name_img, below_text_box_img], text_det_thresh=0.05
+        )
+        texts_name: list[str] = raw_results[0]["rec_texts"]
+        texts: list[str] = raw_results[1]["rec_texts"]
+        boxes: list[tuple[int, int, int, int]] = raw_results[1]["rec_boxes"].tolist()
+        scores: list[float] = raw_results[1]["rec_scores"]
 
         # Remove tokens in the flavor-text bleedthrough zone before extraction.
         # Tokens near the TOP of the region and not in the far-right column
@@ -182,8 +175,6 @@ class PaddleCardReader:
 
 def _annotated_image(raw_results) -> Image.Image | None:
     """PaddleOCR's annotated crop of the information below the text box, if any."""
-    if raw_results is None:
-        return None
     try:
         return raw_results[1].img["ocr_res_img"]
     except Exception as e:
