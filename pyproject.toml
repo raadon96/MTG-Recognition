@@ -10,7 +10,6 @@ requires-python = ">=3.12"
 dependencies = [
     "ijson>=3.4.0.post0",
     "imagehash>=4.3.2",
-    "numpydantic>=1.7.0",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
     "pydantic-settings>=2.12.0",
@@ -35,6 +34,7 @@ dependencies = [
     "click>=8.3.1",
     "rembg[cli,cpu]>=2.0.73",
     "httpx>=0.28.1",
+    "numpy>=2.0",
 ]
 
 [project.scripts]
@@ -56,6 +56,7 @@ dev = [
     "pytest>=9.1.1",
     "import-linter>=2.15",
     "pre-commit>=4.7.0",
+    "pre-commit-hooks>=6.0.0",
 ]
 
 [build-system]
@@ -133,10 +134,3 @@ line_length = 88 # keep consistent with ruff's line-length
 [tool.marimo.save]
 format_on_save = true
 
-[tool.ty.src]
-# tests/ is not type-checked, except the Pipeline fakes and their tests, which must satisfy the stage protocols.
-include = [
-    "src",
-    "tests/unit/engine/fakes.py",
-    "tests/unit/engine/test_pipeline.py",
-]

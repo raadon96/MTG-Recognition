@@ -73,7 +73,12 @@ class TestMissingImages:
     def test_lists_printings_without_an_image_file(self, tmp_path) -> None:
         reference = ReferenceData(tmp_path)
         engine = create_engine(f"sqlite:///{reference.db_path}")
-        SQLModel.metadata.create_all(engine, tables=[MobileCache.__table__])
+        # SQLModel sets __table__ on table models at runtime but doesn't
+        # declare it on the class.
+        SQLModel.metadata.create_all(
+            engine,
+            tables=[MobileCache.__table__],  # ty: ignore[unresolved-attribute]
+        )
         with Session(engine) as session:
             session.add_all(
                 [

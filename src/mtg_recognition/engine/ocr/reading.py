@@ -11,7 +11,7 @@ import numpy as np
 from paddleocr import PaddleOCR
 from PIL import Image
 
-from mtg_recognition.core.image_utils import _ensure_min_dim
+from mtg_recognition.engine.image import _ensure_min_dim
 from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import upscale_for_ocr
 

@@ -2,9 +2,10 @@
 
 import pytest
 
-from mtg_recognition.catalog import FieldScore, Printing
+from mtg_recognition.catalog import Printing
 from mtg_recognition.engine.ocr.reading import Reading
 from mtg_recognition.engine.ocr.scoring import rank
+from mtg_recognition.engine.ranking import FieldScore
 
 BOLT_M10 = Printing(
     uuid="bolt-m10",

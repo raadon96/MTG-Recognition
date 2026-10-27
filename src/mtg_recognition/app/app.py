@@ -1,9 +1,17 @@
 import argparse
+import io
 
 import requests
 import streamlit as st
 
-from mtg_recognition.app.upload_processor import Upload, UploadProcessor, UploadStatus
+from mtg_recognition.app.uploads import (
+    Upload,
+    UploadResult,
+    UploadStatus,
+    results_json,
+    results_table,
+    upload_results,
+)
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
 
@@ -312,29 +320,42 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     _nav_bar("bottom")
 
 
-def export_results(results, export_format: str, processor: UploadProcessor):
-    """Generate export file for results."""
+EXPORT_FORMATS = {  # format -> (MIME type, file name)
+    "CSV": ("text/csv", "results.csv"),
+    "Excel": (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "results.xlsx",
+    ),
+    "JSON": ("application/json", "results.json"),
+}
 
-    import tempfile
 
-    if export_format == "CSV":
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            processor.export_to_csv(results, f.name)
-            return f.name, "text/csv", "results.csv"
+def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
+    """The export file's contents, built when the user clicks Download.
 
-    elif export_format == "Excel":
-        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as f:
-            processor.export_to_excel(results, f.name)
-            return (
-                f.name,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "results.xlsx",
-            )
-
-    elif export_format == "JSON":
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            processor.export_to_json(results, f.name)
-            return f.name, "application/json", "results.json"
+    Streamlit ignores st.* calls made here, so a failure is raised with an
+    "Export failed: ..." message, which Streamlit shows on the download button.
+    """
+    try:
+        match export_format:
+            case "CSV":
+                return results_table(results).to_csv(index=False).encode()
+            case "Excel":
+                buffer = io.BytesIO()
+                # pandas' stub types reject BytesIO, which to_excel accepts.
+                results_table(results).to_excel(
+                    buffer,  # ty: ignore[invalid-argument-type]
+                    index=False,
+                    sheet_name="Results",
+                    engine="openpyxl",
+                )
+                return buffer.getvalue()
+            case "JSON":
+                return results_json(results).encode()
+            case _:
+                raise ValueError(f"unknown format {export_format!r}")
+    except Exception as e:
+        raise RuntimeError(f"Export failed: {e}") from e
 
 
 def main():
@@ -384,23 +405,20 @@ def main():
         if st.sidebar.button("🚀 START PROCESSING", type="primary"):
             uploads = [Upload(name=f.name, data=f.getvalue()) for f in uploaded_files]
 
-            processor = UploadProcessor(pipeline)
-
             # Progress container
             progress_placeholder = st.empty()
             progress_bar = st.progress(0)
 
-            def progress_callback(current: int, total: int):
-                """Update progress UI."""
-                progress = current / total if total > 0 else 0
-                progress_bar.progress(progress)
-                progress_placeholder.info(f"Processing: {current}/{total} images")
-
             # Process uploads
             try:
-                results = processor.process(
-                    uploads, progress_callback=progress_callback
-                )
+                results = []
+                for done, upload in enumerate(uploads, 1):
+                    recognition = pipeline.recognize(upload.data, debug=True)
+                    results.extend(upload_results(upload, recognition))
+                    progress_bar.progress(done / len(uploads))
+                    progress_placeholder.info(
+                        f"Processing: {done}/{len(uploads)} images"
+                    )
                 st.session_state.upload_results = results
 
                 st.success("✅ Processing complete!")
@@ -432,25 +450,18 @@ def main():
 
         export_format = st.sidebar.selectbox(
             "Select format:",
-            ["CSV", "Excel", "JSON"],
+            list(EXPORT_FORMATS),
             key="export_format",
         )
 
-        processor = UploadProcessor(pipeline)
-        try:
-            file_path, mime_type, filename = export_results(
-                results, export_format, processor
-            )
-            with open(file_path, "rb") as f:
-                st.sidebar.download_button(
-                    label=f"⬇️ Download {filename}",
-                    data=f.read(),
-                    file_name=filename,
-                    mime=mime_type,
-                    width="stretch",
-                )
-        except Exception as e:
-            st.sidebar.error(f"Export failed: {str(e)}")
+        mime, file_name = EXPORT_FORMATS[export_format]
+        st.sidebar.download_button(
+            label=f"⬇️ Download {file_name}",
+            data=lambda: export_bytes(results, export_format),
+            mime=mime,
+            file_name=file_name,
+            width="stretch",
+        )
 
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", width="stretch"):

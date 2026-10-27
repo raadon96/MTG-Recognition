@@ -35,7 +35,7 @@ import click
 import cv2
 from tqdm import tqdm
 
-from mtg_recognition.core import image_utils
+from mtg_recognition.engine.image import get_image_files_in_directory, prepare_image
 
 
 @click.command()
@@ -73,7 +73,7 @@ def main(input_path: Path, output_dir: Path, mode: str) -> None:
     img_paths = (
         [input_path]
         if input_path.is_file()
-        else image_utils.get_image_files_in_directory(input_path)
+        else get_image_files_in_directory(input_path)
     )
 
     if not img_paths:
@@ -85,7 +85,7 @@ def main(input_path: Path, output_dir: Path, mode: str) -> None:
     saved = 0
     for img_path in tqdm(img_paths, desc="Segmenting"):
         try:
-            img = image_utils.prepare_image(img_path)
+            img = prepare_image(img_path)
         except ValueError:
             click.echo(f"  unreadable image, skipped: {img_path.name}", err=True)
             continue

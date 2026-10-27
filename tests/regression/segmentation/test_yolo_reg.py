@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from mtg_recognition.core.image_utils import prepare_image
+from mtg_recognition.engine.image import prepare_image
 from mtg_recognition.engine.segmentation.seg_utils import (
     WARPED_MAX_SIZE,
     WARPED_MIN_SIZE,

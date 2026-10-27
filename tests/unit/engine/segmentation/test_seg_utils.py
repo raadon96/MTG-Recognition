@@ -1,12 +1,11 @@
 """
 Unit tests for seg_utils helpers: corners_from_binary_mask, valid_aspect_ratio,
-clamp_size, warp_card, ImageSegmentationResult / CardSegment.
+clamp_size and warp_card.
 """
 
 import cv2
 import numpy as np
 
-from mtg_recognition.engine.segmentation import CardSegment, ImageSegmentationResult
 from mtg_recognition.engine.segmentation.seg_utils import (
     WARPED_MAX_SIZE,
     WARPED_MIN_SIZE,
@@ -145,19 +144,3 @@ class TestWarpCard:
         corners = _rect_corners(600, 840)
         result = warp_card(_blank_img(600, 840), corners, target_size=(488, 680))
         assert result.shape[:2] == (680, 488)
-
-    def test_output_is_three_channel_bgr(self):
-        corners = _rect_corners(488, 680)
-        result = warp_card(_blank_img(488, 680), corners)
-        assert result.ndim == 3 and result.shape[2] == 3
-
-
-class TestImageSegmentationResult:
-    def test_empty_segments_not_success(self):
-        result = ImageSegmentationResult(segments=[])
-        assert result.success is False
-
-    def test_nonempty_segments_is_success(self):
-        dummy = CardSegment(warped_image=np.zeros((680, 488, 3), dtype=np.uint8))
-        result = ImageSegmentationResult(segments=[dummy])
-        assert result.success is True
