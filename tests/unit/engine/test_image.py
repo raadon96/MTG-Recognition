@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from mtg_recognition.core.image_utils import prepare_image
+from mtg_recognition.engine.image import prepare_image
 from mtg_recognition.settings import settings
 
 _EXIF_ORIENTATION = 0x0112

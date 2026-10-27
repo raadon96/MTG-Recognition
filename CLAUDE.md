@@ -10,10 +10,11 @@ src/mtg_recognition/
 │   ├── pipeline.py      runs both stages
 │   ├── segmentation/    turns each card in a query image into a card image
 │   ├── matching/        shortlists candidates by pHash similarity
-│   └── ocr/             reads each card image and scores candidates against the reading
+│   ├── ocr/             reads each card image and scores candidates against the reading
+│   ├── image.py         loads, resizes and lists images for the engine
+│   └── ranking.py       ranked candidates and their field scores
 ├── app/           Streamlit UI over the engine
 ├── jobs/          builds the reference data from MTGJSON releases (`mtg update`, `mtg build-index`)
-├── core/          loads, resizes and lists images for the engine
 ├── catalog.py     reads printings out of the catalog
 ├── reference.py   on-disk layout and sync state of the reference data
 ├── settings.py    configuration from the environment and `.env`

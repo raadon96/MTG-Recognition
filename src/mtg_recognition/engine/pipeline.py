@@ -6,12 +6,16 @@ from pathlib import Path
 import click
 import numpy as np
 
-from mtg_recognition.catalog import RankedPrinting, SqliteCardCatalog
-from mtg_recognition.core import image_utils
-from mtg_recognition.core.image_utils import ImageSource, prepare_image
+from mtg_recognition.catalog import SqliteCardCatalog
+from mtg_recognition.engine.image import (
+    ImageSource,
+    get_image_files_in_directory,
+    prepare_image,
+)
 from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
+from mtg_recognition.engine.ranking import RankedPrinting
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 from mtg_recognition.reference import ReferenceData
 
@@ -168,7 +172,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     img_paths = (
         [input_path]
         if input_path.is_file()
-        else image_utils.get_image_files_in_directory(input_path)
+        else get_image_files_in_directory(input_path)
     )
 
     if not img_paths:
