@@ -108,7 +108,7 @@ uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run ruff check --fix src tests && uv run ruff format src tests
-uv run ty check                      # type-check the files listed in [tool.ty.src]
+uv run ty check                      # type-check src and tests
 uv run lint-imports                  # engine.matching, engine.ocr and engine.segmentation must not import each other
 uv run mtg --help                    # recognize, segment, status, update, build-index
 ```

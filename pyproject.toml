@@ -134,10 +134,3 @@ line_length = 88 # keep consistent with ruff's line-length
 [tool.marimo.save]
 format_on_save = true
 
-[tool.ty.src]
-# tests/ is not type-checked, except the Pipeline fakes and their tests, which must satisfy the stage protocols.
-include = [
-    "src",
-    "tests/unit/engine/fakes.py",
-    "tests/unit/engine/test_pipeline.py",
-]

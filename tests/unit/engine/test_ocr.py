@@ -566,7 +566,7 @@ class TestFilterFlavorTextZone:
 
     def test_mismatched_lengths_passthrough(self):
         texts = ["foo"]
-        boxes = [[0, 0, 100, 50], [0, 0, 100, 50]]  # one extra box
+        boxes = [(0, 0, 100, 50), (0, 0, 100, 50)]  # one extra box
         scores = [0.9]
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
         assert t == texts
@@ -578,7 +578,7 @@ class TestFilterFlavorTextZone:
         # roi_height = 300, y_thresh = 0.35*300 = 105
         # Both tokens have y1 = 150 > 105 → both kept
         texts = ["048/271", "ONE·EN"]
-        boxes = [[0, 150, 200, 220], [0, 200, 200, 260]]
+        boxes = [(0, 150, 200, 220), (0, 200, 200, 260)]
         scores = [0.98, 0.93]
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
         assert t == texts
@@ -591,11 +591,11 @@ class TestFilterFlavorTextZone:
         # "trials" box: y1=20 < 105 AND x2=100 < 160 → DISCARDED
         # "048/271" box: y1=150 > 105 → KEPT
         texts = ["trials", "048/271"]
-        boxes = [[10, 20, 100, 60], [0, 150, 200, 220]]
+        boxes = [(10, 20, 100, 60), (0, 150, 200, 220)]
         scores = [0.95, 0.98]
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
         assert t == ["048/271"]
-        assert b == [[0, 150, 200, 220]]
+        assert b == [(0, 150, 200, 220)]
         assert s == [0.98]
 
     def test_pt_in_top_right_kept(self):
@@ -605,9 +605,9 @@ class TestFilterFlavorTextZone:
         # Flavor "pretend" box: y1=5 < 105 AND x2=400 < 1360 → DISCARDED
         texts = ["pretend", "3/4", "132/269"]
         boxes = [
-            [50, 5, 400, 80],  # flavor text
-            [1500, 60, 1660, 170],  # P/T — far right
-            [20, 170, 250, 230],  # collector number
+            (50, 5, 400, 80),  # flavor text
+            (1500, 60, 1660, 170),  # P/T — far right
+            (20, 170, 250, 230),  # collector number
         ]
         scores = [0.99, 0.98, 0.99]
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
@@ -620,7 +620,7 @@ class TestFilterFlavorTextZone:
         # roi_height = 100 → y_thresh = 35; roi_width = 200 → x_right = 160
         # Both tokens: y1 < 35 AND x2 < 160 → would all be discarded
         texts = ["foo", "bar"]
-        boxes = [[0, 5, 100, 30], [10, 10, 120, 28]]
+        boxes = [(0, 5, 100, 30), (10, 10, 120, 28)]
         scores = [0.8, 0.7]
         t, b, s = filter_flavor_text_zone(texts, boxes, scores)
         assert t == texts  # safety guard: originals returned
@@ -650,17 +650,17 @@ class TestFilterFlavorTextZone:
             "AMA",
         ]
         boxes = [
-            [36, 17, 371, 130],  # "perform"       — flavor
-            [373, 25, 607, 120],  # "trials"        — flavor
-            [734, 25, 885, 120],  # "the"           — flavor
-            [888, 25, 1271, 119],  # "scientists."   — flavor
-            [608, 35, 739, 119],  # "on"            — flavor
-            [1503, 67, 1668, 177],  # "2/1"           — P/T (right side, kept)
-            [1, 164, 237, 232],  # "048/271"       — collector number
-            [0, 214, 238, 280],  # "ONE*EN"        — set code
-            [300, 217, 673, 300],  # "BUY CHRISTIAN" — artist
-            [1198, 203, 1728, 293],  # "2023Wizards..."— copyright
-            [1061, 231, 1224, 276],  # "AMA"           — noise
+            (36, 17, 371, 130),  # "perform"       — flavor
+            (373, 25, 607, 120),  # "trials"        — flavor
+            (734, 25, 885, 120),  # "the"           — flavor
+            (888, 25, 1271, 119),  # "scientists."   — flavor
+            (608, 35, 739, 119),  # "on"            — flavor
+            (1503, 67, 1668, 177),  # "2/1"           — P/T (right side, kept)
+            (1, 164, 237, 232),  # "048/271"       — collector number
+            (0, 214, 238, 280),  # "ONE*EN"        — set code
+            (300, 217, 673, 300),  # "BUY CHRISTIAN" — artist
+            (1198, 203, 1728, 293),  # "2023Wizards..."— copyright
+            (1061, 231, 1224, 276),  # "AMA"           — noise
         ]
         scores = [0.99] * len(texts)
 

@@ -32,6 +32,8 @@ def index() -> PHashIndex:
 )
 @pytest.mark.parametrize("img_path", IMG_PATHS, ids=lambda p: p.stem)
 def test_top_k_contains_the_printing_named_by_the_file(index, img_path):
-    uuids, _ = shortlist(index, cv2.imread(str(img_path)), k=K)
+    image = cv2.imread(str(img_path))
+    assert image is not None
+    uuids, _ = shortlist(index, image, k=K)
 
     assert img_path.stem in uuids
