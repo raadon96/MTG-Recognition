@@ -78,15 +78,16 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 
 #### Pull requests
 
-When the user asks to open a PR (without saying "main", which starts a release), open it against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
+Feature PRs go into `dev` and are squash-merged, with GitHub's default commit message: the PR title followed by `(#<pr>)`.
 
-Feature PRs are squash-merged into `dev`, with GitHub's default commit message: the PR title followed by `(#<pr>)`. Merge one only when the user says "merge", then:
+When the user asks to open a PR (without saying "main", which starts a release), start at step 1. When the user says "merge" on an open feature PR, start at step 2.
 
-1. Wait for CI: `gh pr checks <pr> --watch`. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix.
-2. `gh pr merge <pr> --squash`
-3. `git switch dev && git pull`
-4. Delete the branch: `git push origin --delete <branch>`, then `git branch -D <branch>` (`-D` because git doesn't recognize a squash-merged branch as merged). If the branch is checked out in a worktree, run `git worktree remove <path>` first.
-5. If the branch name has an issue number, close the issue: `gh issue close <issue> --comment "Done in #<pr>."` GitHub only closes issues for merges into `main`. If the PR body says the work is partial, leave the issue open and tell the user.
+1. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
+2. Wait for CI: `gh pr checks <pr> --watch`. This can take several minutes; if no checks are reported yet, wait a few seconds and retry. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix. If CI passes and the user hasn't already said "merge", ask whether to merge, and stop unless they say yes.
+3. `gh pr merge <pr> --squash`
+4. `git switch dev && git pull`
+5. Delete the branch: `git push origin --delete <branch>`, then `git branch -D <branch>` (`-D` because git doesn't recognize a squash-merged branch as merged). If the branch is checked out in a worktree, run `git worktree remove <path>` first.
+6. If the branch name has an issue number, close the issue: `gh issue close <issue> --comment "Done in #<pr>."` GitHub only closes issues for merges into `main`. If the PR body says the work is partial, leave the issue open and tell the user.
 
 #### Releases
 
@@ -96,15 +97,14 @@ When the user says "open a PR against main" or "release":
 2. Choose the version from `git log --oneline main..dev`: minor if there is a `feat` commit or a breaking change, otherwise patch. Never major; `1.0.0` is the user's decision. Tell the user the version and why.
 3. `uv version --bump <minor|patch>`, then `git add pyproject.toml uv.lock && git commit -m "chore: release v<version>" && git push`
 4. `gh pr create --base main --head dev --title "Release v<version>"`, with the output of `git log --oneline main..dev` as the body.
-5. Stop and give the user the version and the PR link.
+5. Wait for CI as for feature PRs, then give the user the version and the PR link and ask whether to merge.
 
 When the user says "merge" on the release PR:
 
-1. Wait for CI as for feature PRs.
-2. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
-3. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
-4. `gh release create v<version> --generate-notes`
-5. `git switch dev`
+1. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
+2. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
+3. `gh release create v<version> --generate-notes`
+4. `git switch dev`
 
 ### Branch naming
 
