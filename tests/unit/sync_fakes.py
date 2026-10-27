@@ -33,13 +33,15 @@ def build_allprintings(
 ) -> None:
     """Write a tiny AllPrintings database: one set holding `printings`."""
     engine = create_engine(f"sqlite:///{path}")
+    # SQLModel sets __table__ on table models at runtime but doesn't declare it
+    # on the class.
     SQLModel.metadata.create_all(
         engine,
         tables=[
-            Cards.__table__,
-            CardIdentifiers.__table__,
-            Sets.__table__,
-            Meta.__table__,
+            Cards.__table__,  # ty: ignore[unresolved-attribute]
+            CardIdentifiers.__table__,  # ty: ignore[unresolved-attribute]
+            Sets.__table__,  # ty: ignore[unresolved-attribute]
+            Meta.__table__,  # ty: ignore[unresolved-attribute]
         ],
     )
     with Session(engine) as session:

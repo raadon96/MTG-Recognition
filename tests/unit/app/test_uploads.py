@@ -92,6 +92,7 @@ def test_a_result_carries_the_original_upload_and_the_warped_card_as_jpeg(upload
     warped = cv2.imdecode(
         np.frombuffer(result.warped_image_jpeg, np.uint8), cv2.IMREAD_COLOR
     )
+    assert warped is not None
     assert warped.shape == card_image().shape
     assert abs(int(warped[0, 0, 0]) - 3) <= 2
 
