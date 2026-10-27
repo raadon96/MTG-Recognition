@@ -1,0 +1,36 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+# A new commit on a PR cancels the run already going; pushes to dev and main
+# each run to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-uv publishes no major-version tag, only full versions.
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # uv reads the Python version from .python-version.
+      - run: uv sync --locked --dev
+
+      # no-commit-to-branch stops local commits to main; on a push to main it
+      # would fail every run.
+      - run: uv run pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch

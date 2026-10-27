@@ -1,0 +1,23 @@
+name: release-branch
+
+# Releases go from dev to main. Branch protection isn't available on this plan,
+# so this red status is the check.
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  release-branch:
+    runs-on: ubuntu-latest
+    steps:
+      # The head branch name comes from the PR author, so it goes through an
+      # environment variable rather than into the script.
+      - run: |
+          if [ "$HEAD_REF" != dev ]; then
+            echo "::error::PRs into main must come from dev, not '$HEAD_REF'."
+            exit 1
+          fi
+        env:
+          HEAD_REF: ${{ github.head_ref }}
