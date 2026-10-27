@@ -26,7 +26,10 @@ class SegmentResult:
 
     warped_image: np.ndarray
     ranked: list[RankedPrinting]  # best first
-    reading: Reading | None  # None when no candidate was left to compare it with
+    # None when no candidate was left to compare it with, or OCR failed
+    reading: Reading | None
+    # Set when OCR failed and the ranking fell back to pHash order
+    ocr_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -103,10 +106,27 @@ class Pipeline:
                     segments.append(SegmentResult(warped, ranked=[], reading=None))
                     continue
 
-                # read the card and rank the candidates by its reading
-                reading = self.reader.read(warped, debug=debug)
-                ranked = scoring.rank(reading, candidates, k=self.k_final_results)
-                segments.append(SegmentResult(warped, ranked=ranked, reading=reading))
+                # read the card; when OCR fails, the empty reading scores every
+                # candidate 0 and ties keep pHash order, so the ranking falls
+                # back to pHash alone
+                reading: Reading | None = None
+                ocr_error: str | None = None
+                try:
+                    reading = self.reader.read(warped, debug=debug)
+                except RuntimeError as e:
+                    ocr_error = f"{type(e).__name__}: {e}"
+
+                # rank the candidates by the card's reading
+                ranked = scoring.rank(
+                    reading if reading is not None else Reading(),
+                    candidates,
+                    k=self.k_final_results,
+                )
+                segments.append(
+                    SegmentResult(
+                        warped, ranked=ranked, reading=reading, ocr_error=ocr_error
+                    )
+                )
         except Exception as e:
             return RecognitionResult(segments=[], error=f"{type(e).__name__}: {e}")
         return RecognitionResult(segments=segments, error=None)
@@ -235,6 +255,8 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # Terminal output
             prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "
             click.echo(f"{prefix} {status}")
+            if seg.ocr_error is not None:
+                click.echo(f"{prefix}  OCR failed, ranked by pHash: {seg.ocr_error}")
             if not seg.ranked:
                 click.echo(f"{prefix}  no matches found")
             for rank, entry in enumerate(seg.ranked, 1):
@@ -261,6 +283,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                         }
                         for rank, entry in enumerate(seg.ranked, 1)
                     ],
+                    "ocr_error": seg.ocr_error,
                     "debug": {
                         "raw_texts": raw_texts,
                         "raw_scores": raw_scores,
