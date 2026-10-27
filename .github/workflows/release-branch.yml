@@ -1,7 +1,7 @@
 name: release-branch
 
-# Releases go from dev to main. Branch protection isn't available on this plan,
-# so this red status is the check.
+# Releases go from dev to main. The main ruleset requires this check, since
+# rulesets can't restrict which branch a PR comes from.
 on:
   # edited reruns the check when an open PR's base is changed to main.
   pull_request:

@@ -16,12 +16,12 @@ docker --version
 
 HTTPS (recommended):
 ```bash
-git clone https://github.com/decksray/MTG-Recognition.git
+git clone https://github.com/raadon96/MTG-Recognition.git
 ```
 
 SSH (if your SSH keys are configured):
 ```bash
-git clone git@github.com:decksray/MTG-Recognition.git
+git clone git@github.com:raadon96/MTG-Recognition.git
 ```
 
 #### 2. Enter the project directory
