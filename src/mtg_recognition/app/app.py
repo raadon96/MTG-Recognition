@@ -294,7 +294,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ranked and ranked[0].breakdown:
-        with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
+        with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
             import pandas as pd
 
             # Prefix each label with its rank so duplicate card names (reprints)
