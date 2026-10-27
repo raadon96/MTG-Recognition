@@ -40,7 +40,7 @@ def fetch_scryfall_data_from_url(scryfall_id):
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(k_phash_candidates=50, k_final_results=5)
+    return Pipeline(k_phash_candidates=20, k_final_results=5)
 
 
 def _score_color(score: float) -> str:

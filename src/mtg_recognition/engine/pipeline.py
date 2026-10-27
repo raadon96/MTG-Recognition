@@ -45,7 +45,8 @@ class Pipeline:
     candidates by scoring the reading against them.
 
     Args:
-        k_phash_candidates: Number of candidates from the pHash stage.
+        k_phash_candidates: Number of candidates per card: printings shortlisted
+            by pHash similarity, each scored against the card's reading.
         k_final_results: Number of printings ranked per card.
 
     Raises:
