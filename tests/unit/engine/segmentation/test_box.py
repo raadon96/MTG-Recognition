@@ -74,6 +74,3 @@ class TestDetectCardsCv:
         # The result should be predominantly blue (from warp_img)
         warped = segments[0].warped_image
         assert int(warped[:, :, 0].mean()) > int(warped[:, :, 2].mean())
-
-
-broken = undefined_name
