@@ -14,6 +14,7 @@ from PIL import Image
 from mtg_recognition.engine.image import _ensure_min_dim
 from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import upscale_for_ocr
+from mtg_recognition.settings import settings
 
 # Regions as fractions of image dimensions (H x W)
 # Name: horizontal text area at top of card
@@ -87,10 +88,10 @@ class PaddleCardReader:
             use_textline_orientation=False,
             # text detection (locating and marking text-containing regions in images)
             text_detection_model_name="PP-OCRv5_mobile_det",
-            text_detection_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_det",
+            text_detection_model_dir=str(settings.OCR_DETECTION_MODEL_DIR),
             # text recognition
             text_recognition_model_name="PP-OCRv5_mobile_rec",
-            text_recognition_model_dir="src/mtg_recognition/engine/ocr/models/prod/PP-OCRv5_mobile_rec",
+            text_recognition_model_dir=str(settings.OCR_RECOGNITION_MODEL_DIR),
             # other params
             device="cpu",
             enable_hpi=False,  # enable high-performance inference
