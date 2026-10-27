@@ -75,9 +75,10 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 - For work on a GitHub issue, create the branch with `gh issue develop <issue> --base dev --name <branch> --checkout`. This links the branch to the issue, in its Development section. For a worktree, drop `--checkout`, then `git fetch` and base the worktree on the new branch.
 - For a branch with no issue (see Branch naming), use `git switch -c <branch> dev`.
 - Before committing, run `uv run pre-commit run --all-files`; the hooks may not be installed in this clone.
-- Open PRs against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
 
-#### Feature merging
+#### Pull requests
+
+Open PRs against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
 
 Feature PRs are squash-merged into `dev`, with GitHub's default commit message: the PR title followed by `(#<pr>)`. Merge one only when the user says "merge", then:
 
@@ -99,7 +100,7 @@ When the user says "open a PR against main" or "release":
 
 When the user says "merge" on the release PR:
 
-1. Wait for CI as for feature merging.
+1. Wait for CI as for feature PRs.
 2. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
 3. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
 4. `gh release create v<version> --generate-notes`
