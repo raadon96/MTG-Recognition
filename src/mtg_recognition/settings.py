@@ -37,8 +37,12 @@ class Settings(BaseSettings):
 
     # --- Derived paths (reference data paths live in reference.ReferenceData) ---
     @property
+    def SEGMENTATION_MODEL_DIR(self) -> Path:
+        return self.MODELS_DIR / "segmentation" / "prod"
+
+    @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
-        return self.MODELS_DIR / "segmentation" / "prod" / "yoloe-11s-seg.pt"
+        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.pt"
 
     @property
     def OCR_DETECTION_MODEL_DIR(self) -> Path:
@@ -55,7 +59,7 @@ class Settings(BaseSettings):
             self.PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK
         )
         # rembg looks for its model files in U2NET_HOME
-        os.environ["U2NET_HOME"] = str(self.MODELS_DIR / "segmentation" / "prod")
+        os.environ["U2NET_HOME"] = str(self.SEGMENTATION_MODEL_DIR)
         return self
 
 
