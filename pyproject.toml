@@ -1,6 +1,6 @@
 [project]
 name = "mtg-recognition"
-version = "0.1.1"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -115,8 +115,6 @@ modules = [
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-# Vendored model directories (e.g. PaddleOCR model cards) are not ours to format.
-extend-exclude = ["src/mtg_recognition/engine/**/models/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

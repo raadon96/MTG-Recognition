@@ -26,7 +26,10 @@ class SegmentResult:
 
     warped_image: np.ndarray
     ranked: list[RankedPrinting]  # best first
-    reading: Reading | None  # None when no candidate was left to compare it with
+    # None when no candidate was left to compare it with, or OCR failed
+    reading: Reading | None
+    # Set when OCR failed and the ranking fell back to pHash order
+    ocr_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -38,14 +41,15 @@ class RecognitionResult:
 
 
 class Pipeline:
-    """The engine's recognition module: image in, ranked Printings per card out.
+    """The engine's recognition module: image in, a ranking per card out.
 
-    Segments the image, finds pHash candidates, resolves them to Printings
-    through the MobileCache SQLite catalog, reads each card and ranks the
-    candidates by scoring the reading against them.
+    Segments the image, finds pHash candidates, resolves them to printings
+    through the SQLite catalog, reads each card and ranks the candidates by
+    scoring the reading against them.
 
     Args:
-        k_phash_candidates: Number of candidates from the pHash stage.
+        k_phash_candidates: Number of candidates per card: printings shortlisted
+            by pHash similarity, each scored against the card's reading.
         k_final_results: Number of printings ranked per card.
 
     Raises:
@@ -102,10 +106,27 @@ class Pipeline:
                     segments.append(SegmentResult(warped, ranked=[], reading=None))
                     continue
 
-                # read the card and rank the candidates by its reading
-                reading = self.reader.read(warped, debug=debug)
-                ranked = scoring.rank(reading, candidates, k=self.k_final_results)
-                segments.append(SegmentResult(warped, ranked=ranked, reading=reading))
+                # read the card; when OCR fails, the empty reading scores every
+                # candidate 0 and ties keep pHash order, so the ranking falls
+                # back to pHash alone
+                reading: Reading | None = None
+                ocr_error: str | None = None
+                try:
+                    reading = self.reader.read(warped, debug=debug)
+                except RuntimeError as e:
+                    ocr_error = f"{type(e).__name__}: {e}"
+
+                # rank the candidates by the card's reading
+                ranked = scoring.rank(
+                    reading if reading is not None else Reading(),
+                    candidates,
+                    k=self.k_final_results,
+                )
+                segments.append(
+                    SegmentResult(
+                        warped, ranked=ranked, reading=reading, ocr_error=ocr_error
+                    )
+                )
         except Exception as e:
             return RecognitionResult(segments=[], error=f"{type(e).__name__}: {e}")
         return RecognitionResult(segments=segments, error=None)
@@ -144,14 +165,15 @@ def _stem_uuid(stem: str) -> str | None:
     type=click.INT,
     default=20,
     show_default=True,
-    help="Number of pHash candidates for the coarse retrieval stage.",
+    help="Number of candidates per card: printings shortlisted by pHash "
+    "similarity, each scored against the card's reading.",
 )
 @click.option(
     "-k",
     type=click.INT,
     default=1,
     show_default=True,
-    help="Number of top matches to return after OCR refinement.",
+    help="Number of printings in each card's ranking.",
 )
 def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> None:
     """Run the full MTG card recognition pipeline on one image or a directory.
@@ -165,7 +187,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     \b
     uv run python -m mtg_recognition.engine.pipeline -i card.jpg -o runs/output.json
     uv run python -m mtg_recognition.engine.pipeline \\
-        -i data/test/6_benchmark/images/raw -k 3 --k-phash 50
+        -i data/test/6_benchmark/images/raw -k 3 --k-phash 20
     uv run python -m mtg_recognition.engine.pipeline \\
         -i data/test/images -o output/results.json
     """
@@ -233,6 +255,8 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
             # Terminal output
             prefix = f"  [seg {seg_idx}]" if n_segs > 1 else " "
             click.echo(f"{prefix} {status}")
+            if seg.ocr_error is not None:
+                click.echo(f"{prefix}  OCR failed, ranked by pHash: {seg.ocr_error}")
             if not seg.ranked:
                 click.echo(f"{prefix}  no matches found")
             for rank, entry in enumerate(seg.ranked, 1):
@@ -259,6 +283,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
                         }
                         for rank, entry in enumerate(seg.ranked, 1)
                     ],
+                    "ocr_error": seg.ocr_error,
                     "debug": {
                         "raw_texts": raw_texts,
                         "raw_scores": raw_scores,

@@ -49,7 +49,7 @@ runs/
 
 
 # Test models
-**/models/test/
+models/*/test/
 
 # Mobileclip models
 mobileclip2_b.ts

@@ -20,6 +20,7 @@ src/mtg_recognition/
 ├── settings.py    configuration from the environment and `.env`
 └── cli.py         the `mtg` group; each command is defined in its domain package
 data/reference/    the reference data
+models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
 tests/             unit and regression tests
 ```
 
@@ -43,6 +44,8 @@ Name domain things with the terms in `GLOSSARY.md`; when a term exists, use it r
 
 - Before: "Pin the candidate count so the top match lands in the shortlist; the OCR crop is load-bearing."
 - After: "Set the candidate count so the best printing is among the candidates; scoring needs the collector information crop."
+
+When passing on review findings, state each in plain words with a short before/after example, rather than citing the rule it breaks.
 
 ## Agent skills
 
@@ -74,7 +77,7 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
 - Worktrees default to `main`, so base them on `dev` explicitly.
 - For work on a GitHub issue, create the branch with `gh issue develop <issue> --base dev --name <branch> --checkout`. This links the branch to the issue, in its Development section. For a worktree, drop `--checkout`, then `git fetch` and base the worktree on the new branch.
 - For a branch with no issue (see Branch naming), use `git switch -c <branch> dev`.
-- Before committing, run `uv run pre-commit run --all-files`; the hooks may not be installed in this clone.
+- The pre-commit hook runs the checks on `git commit`; if a commit prints no hook output, run `uv run pre-commit install`.
 
 #### Pull requests
 
@@ -104,7 +107,7 @@ When the user says "merge" on the release PR:
 1. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
 2. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
 3. `gh release create v<version> --generate-notes`
-4. `git switch dev`
+4. Bring `dev` up to `main`: `git switch dev && git merge --ff-only main && git push`
 
 ### Branch naming
 
@@ -134,8 +137,6 @@ uv sync --dev                        # install dependencies (includes DVC)
 uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
-uv run ruff check --fix src tests && uv run ruff format src tests
-uv run ty check                      # type-check src and tests
 uv run lint-imports                  # engine.matching, engine.ocr and engine.segmentation must not import each other
 uv run mtg --help                    # recognize, segment, status, update, build-index
 ```

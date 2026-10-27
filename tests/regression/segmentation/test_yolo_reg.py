@@ -2,7 +2,7 @@
 Regression tests for the three-path segmentation pipeline.
 
 Requires:
-  - YOLO model at src/mtg_recognition/engine/segmentation/models/prod/yoloe-11s-seg.pt
+  - YOLO model at models/segmentation/prod/yoloe-11s-seg.pt
   - Test images in data/test/ (see TEST_DATA structure below)
 
 Run:

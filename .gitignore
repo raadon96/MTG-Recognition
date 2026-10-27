@@ -17,7 +17,7 @@ data/reference/image_errors.log
 # data/reference/.mtg-sync-state.json
 data/examples/
 # test models
-**/models/test/
+models/*/test/
 
 # CLIP models
 mobileclip2_b.ts
