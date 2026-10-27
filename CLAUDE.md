@@ -71,12 +71,26 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/ag
   - For work on a GitHub issue, create the branch with `gh issue develop <issue> --base dev --name <branch> --checkout`. This links the branch to the issue, in its Development section. For a worktree, drop `--checkout`, then `git fetch` and base the worktree on the new branch.
   - For a branch with no issue (see Branch naming), use `git switch -c <branch> dev`.
   - Before committing, run `uv run pre-commit run --all-files`; the hooks may not be installed in this clone.
-  - Open PRs against `dev`: always pass `gh pr create --base dev`.
-  - Feature PRs are squash-merged into `dev`.
-- Releases:
-  - Open a PR from `dev` to `main`.
-  - Merge it with a merge commit, never squash.
-  - Tag the release afterwards (e.g. `v0.2.0`).
+  - Open PRs against `dev`: always pass `gh pr create --base dev`. Title the PR as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
+  - Feature PRs are squash-merged into `dev`, with GitHub's default commit message: the PR title followed by `(#<pr>)`.
+  - Merge a feature PR only when the user says "merge", then:
+    1. Wait for CI: `gh pr checks <pr> --watch`. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix.
+    2. `gh pr merge <pr> --squash`
+    3. `git switch dev && git pull`
+    4. Delete the branch: `git push origin --delete <branch>`, then `git branch -D <branch>` (`-D` because git doesn't recognize a squash-merged branch as merged). If the branch is checked out in a worktree, run `git worktree remove <path>` first.
+    5. If the branch name has an issue number, close the issue: `gh issue close <issue> --comment "Done in #<pr>."` GitHub only closes issues for merges into `main`. If the PR body says the work is partial, leave the issue open and tell the user.
+- Releases: when the user says "open a PR against main" or "release":
+  1. `git switch dev && git pull`. Stop if the working tree has uncommitted changes, or if `git log --oneline main..dev` is empty.
+  2. Choose the version from `git log --oneline main..dev`: minor if there is a `feat` commit or a breaking change, otherwise patch. Never major; `1.0.0` is the user's decision. Tell the user the version and why.
+  3. `uv version --bump <minor|patch>`, then `git add pyproject.toml uv.lock && git commit -m "chore: release v<version>" && git push`
+  4. `gh pr create --base main --head dev --title "Release v<version>"`, with the output of `git log --oneline main..dev` as the body.
+  5. Stop and give the user the version and the PR link.
+- Merge a release PR only when the user says "merge", then:
+  1. Wait for CI as for feature PRs.
+  2. `gh pr merge <pr> --merge`: a merge commit, never squash. Don't delete `dev`.
+  3. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
+  4. `gh release create v<version> --generate-notes`
+  5. `git switch dev`
 - Never commit to `main` directly; fixes go through `dev` and a release.
 
 ### Branch naming
