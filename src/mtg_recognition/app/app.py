@@ -40,7 +40,7 @@ def fetch_scryfall_data_from_url(scryfall_id):
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(k_phash_candidates=50, k_final_results=5)
+    return Pipeline(k_phash_candidates=20, k_final_results=5)
 
 
 def _score_color(score: float) -> str:
@@ -294,7 +294,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     # Debug: score matrix below "Next Top Matches"
     if debug and ranked and ranked[0].breakdown:
-        with st.expander("📈 Table 2 — Score Matrix (top 5 candidates)", expanded=True):
+        with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
             import pandas as pd
 
             # Prefix each label with its rank so duplicate card names (reprints)

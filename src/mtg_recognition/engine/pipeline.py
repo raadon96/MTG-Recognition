@@ -38,14 +38,15 @@ class RecognitionResult:
 
 
 class Pipeline:
-    """The engine's recognition module: image in, ranked Printings per card out.
+    """The engine's recognition module: image in, a ranking per card out.
 
-    Segments the image, finds pHash candidates, resolves them to Printings
-    through the MobileCache SQLite catalog, reads each card and ranks the
-    candidates by scoring the reading against them.
+    Segments the image, finds pHash candidates, resolves them to printings
+    through the SQLite catalog, reads each card and ranks the candidates by
+    scoring the reading against them.
 
     Args:
-        k_phash_candidates: Number of candidates from the pHash stage.
+        k_phash_candidates: Number of candidates per card: printings shortlisted
+            by pHash similarity, each scored against the card's reading.
         k_final_results: Number of printings ranked per card.
 
     Raises:
@@ -144,14 +145,15 @@ def _stem_uuid(stem: str) -> str | None:
     type=click.INT,
     default=20,
     show_default=True,
-    help="Number of pHash candidates for the coarse retrieval stage.",
+    help="Number of candidates per card: printings shortlisted by pHash "
+    "similarity, each scored against the card's reading.",
 )
 @click.option(
     "-k",
     type=click.INT,
     default=1,
     show_default=True,
-    help="Number of top matches to return after OCR refinement.",
+    help="Number of printings in each card's ranking.",
 )
 def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> None:
     """Run the full MTG card recognition pipeline on one image or a directory.
@@ -165,7 +167,7 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     \b
     uv run python -m mtg_recognition.engine.pipeline -i card.jpg -o runs/output.json
     uv run python -m mtg_recognition.engine.pipeline \\
-        -i data/test/6_benchmark/images/raw -k 3 --k-phash 50
+        -i data/test/6_benchmark/images/raw -k 3 --k-phash 20
     uv run python -m mtg_recognition.engine.pipeline \\
         -i data/test/images -o output/results.json
     """
