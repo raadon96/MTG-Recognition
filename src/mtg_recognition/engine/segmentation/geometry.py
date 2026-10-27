@@ -6,6 +6,8 @@ The canonical four-corner order throughout is: top-left, top-right,
 bottom-right, bottom-left (as produced by :func:`order_points`).
 """
 
+from collections.abc import Sequence
+
 import cv2
 import numpy as np
 
@@ -65,7 +67,7 @@ def _corners_via_hough(contour_xy: np.ndarray) -> np.ndarray | None:
         return None
 
     canvas = np.zeros((y_max + 1, x_max + 1), dtype=np.uint8)
-    cv2.drawContours(canvas, [local_xy], -1, 255, 1)
+    cv2.drawContours(canvas, [local_xy], -1, (255,), 1)
 
     diag = np.sqrt(x_max**2 + y_max**2)
     raw = cv2.HoughLinesP(
@@ -154,9 +156,13 @@ def _corners_via_farthest_split(contour_xy: np.ndarray) -> np.ndarray | None:
     n = len(contour_xy)
 
     # Diameter search on the convex hull vertices (much smaller than full contour).
-    hull_idx = cv2.convexHull(
-        contour_xy.astype(np.float32).reshape(-1, 1, 2), returnPoints=False
-    ).flatten()
+    hull_idx = (
+        cv2.convexHull(
+            contour_xy.astype(np.float32).reshape(-1, 1, 2), returnPoints=False
+        )
+        .flatten()
+        .astype(np.intp)
+    )
     hull_pts = contour_xy[hull_idx].astype(float)
     diffs = hull_pts[:, np.newaxis, :] - hull_pts[np.newaxis, :, :]
     dists_sq = np.sum(diffs**2, axis=2)
@@ -245,12 +251,12 @@ def compute_intersection(line1: np.ndarray, line2: np.ndarray) -> list[float] | 
     return [float(x), float(y)]
 
 
-def order_points(pts: list[tuple[float, float]]) -> list[list[int]]:
+def order_points(pts: Sequence[Sequence[float]]) -> list[list[int]]:
     """
     Rearrange coordinates to order: top-left, top-right, bottom-right, bottom-left
 
     Args:
-        pts (List[Tuple[float, float]]): List of 4 points in the format of (x, y)
+        pts (Sequence[Sequence[float]]): 4 points in the format of (x, y)
 
     Returns:
         List[List[int]]: List of 4 points in the format of
@@ -330,12 +336,15 @@ def perspective_transform(
     if corners.shape != (4, 1, 2):
         raise ValueError(f"corners must have shape (4, 1, 2), got {corners.shape}")
 
-    corners = order_points(np.concatenate(corners).tolist())
+    ordered_corners = order_points(np.concatenate(corners).tolist())
 
-    dest_corners = find_dest(corners)
+    dest_corners = find_dest(ordered_corners)
     w, h = dest_corners[2][0], dest_corners[2][1]
 
-    M = cv2.getPerspectiveTransform(np.float32(corners), np.float32(dest_corners))
+    M = cv2.getPerspectiveTransform(
+        np.array(ordered_corners, dtype=np.float32),
+        np.array(dest_corners, dtype=np.float32),
+    )
     warped = cv2.warpPerspective(img, M, (w, h))
 
     return warped

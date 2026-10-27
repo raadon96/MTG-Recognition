@@ -102,13 +102,19 @@ def build_database(allprintings_path: Path, db_path: Path) -> int:
         source_engine = open_read_only(allprintings_path)
         dest_engine = create_engine(f"sqlite:///{part_path}")
         try:
-            SQLModel.metadata.create_all(dest_engine, tables=[MobileCache.__table__])
+            # SQLModel sets __table__ on table models at runtime but doesn't
+            # declare it on the class.
+            SQLModel.metadata.create_all(
+                dest_engine,
+                tables=[MobileCache.__table__],  # ty: ignore[unresolved-attribute]
+            )
             with (
                 Session(source_engine) as source_session,
                 Session(dest_engine) as dest_session,
             ):
+                # sqlmodel's select overloads stop at 4 columns; this takes 13.
                 statement = (
-                    select(
+                    select(  # ty: ignore[no-matching-overload]
                         CardIdentifiers.uuid,
                         Cards.name,
                         Cards.manaCost,

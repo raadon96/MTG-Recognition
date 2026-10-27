@@ -15,7 +15,7 @@ computed from the original, unprocessed image.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -53,7 +53,7 @@ _BYPASS_BORDER_MAX_MEAN = 100
 
 YOLO_SEG_CLASSES: list[str] = ["book cover", "art work"]
 
-_DEFAULT_PREDICT_KWARGS: dict[str, object] = {
+_DEFAULT_PREDICT_KWARGS: dict[str, Any] = {
     "conf": 0.1,  # Higher confidence to filter weak overlaps
     "iou": 0.0,  # Lower IoU for more aggressive suppression
     "agnostic_nms": True,  # Prevent overlaps between different classes
@@ -178,7 +178,7 @@ class YoloCardSegmentor:
                 continue
 
             mask = np.zeros((h, w), dtype=np.uint8)
-            cv2.fillPoly(mask, [polygon.astype(np.int32)], 255)
+            cv2.fillPoly(mask, [polygon.astype(np.int32)], (255,))
 
             corners = corners_from_binary_mask(mask, erode=False)
             if corners is None:
