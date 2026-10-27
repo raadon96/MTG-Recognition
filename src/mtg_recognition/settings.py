@@ -30,17 +30,23 @@ class Settings(BaseSettings):
     DATA_DIR: Path = Path("data")
     # DATA_DIR: Path = Path("scratch/test_download")
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
+    MODELS_DIR: Path = Path("models")
 
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
-    U2NET_HOME: str = "src/mtg_recognition/engine/segmentation/models/prod"
 
     # --- Derived paths (reference data paths live in reference.ReferenceData) ---
     @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
-        return Path(
-            "src/mtg_recognition/engine/segmentation/models/prod/yoloe-11s-seg.pt"
-        )
+        return self.MODELS_DIR / "segmentation" / "prod" / "yoloe-11s-seg.pt"
+
+    @property
+    def OCR_DETECTION_MODEL_DIR(self) -> Path:
+        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv5_mobile_det"
+
+    @property
+    def OCR_RECOGNITION_MODEL_DIR(self) -> Path:
+        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv5_mobile_rec"
 
     @model_validator(mode="after")
     def _apply_third_party_env_vars(self) -> "Settings":
@@ -48,7 +54,8 @@ class Settings(BaseSettings):
         os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = str(
             self.PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK
         )
-        os.environ["U2NET_HOME"] = self.U2NET_HOME
+        # rembg looks for its model files in U2NET_HOME
+        os.environ["U2NET_HOME"] = str(self.MODELS_DIR / "segmentation" / "prod")
         return self
 
 

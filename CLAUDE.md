@@ -20,6 +20,7 @@ src/mtg_recognition/
 ├── settings.py    configuration from the environment and `.env`
 └── cli.py         the `mtg` group; each command is defined in its domain package
 data/reference/    the reference data
+models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
 tests/             unit and regression tests
 ```
 

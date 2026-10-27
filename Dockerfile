@@ -86,12 +86,12 @@ COPY data/reference/index/phash/hashes.npy ./data/reference/index/phash/hashes.n
 COPY data/reference/index/phash/index_to_uuid.json ./data/reference/index/phash/index_to_uuid.json
 # Copy pHash artifacts
 
-COPY src/mtg_recognition/engine/segmentation/models/prod ./src/mtg_recognition/engine/segmentation/models/prod
+COPY models/segmentation/prod ./models/segmentation/prod
 # COPY mobileclip_blt.ts ./
 # COPY mobileclip2_b.ts ./
 # Copy segmentation models and mobileclip files
 
-COPY src/mtg_recognition/engine/ocr/models/prod ./src/mtg_recognition/engine/ocr/models/prod
+COPY models/ocr/prod ./models/ocr/prod
 # Copy OCR models
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
