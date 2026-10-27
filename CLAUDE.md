@@ -48,7 +48,7 @@ Name domain things with the terms in `GLOSSARY.md`; when a term exists, use it r
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues on `decksray/MTG-Recognition` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues on `raadon96/MTG-Recognition` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

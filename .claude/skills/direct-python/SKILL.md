@@ -214,4 +214,4 @@ A claim that one version is faster comes with a measurement: `timeit`, or `time.
 - **Very short functions** (Robert C. Martin, in the `aposd-vs-clean-code` debate with Ousterhout, 2024–2025): linear functions instead.
 - **Explicit dependencies added for easier tests** (Harry Percival and Bob Gregory, *Architecture Patterns with Python*, ch. 13): step 1 of the dependency order removes the need.
 
-People editing this skill: the sources behind it are checked in https://github.com/decksray/MTG-Recognition/issues/106.
+People editing this skill: the sources behind it are checked in https://github.com/raadon96/MTG-Recognition/issues/106.
