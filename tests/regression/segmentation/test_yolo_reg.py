@@ -3,7 +3,7 @@ Regression tests for the three-path segmentation pipeline.
 
 Requires:
   - YOLO model at models/segmentation/prod/yoloe-11s-seg.pt
-  - Test images in data/test/ (see TEST_DATA structure below)
+  - Benchmark images in data/benchmark/ (see the folders below)
 
 Run:
     uv run pytest tests/regression/ -v -m slow
@@ -21,15 +21,15 @@ from mtg_recognition.engine.segmentation.seg_utils import (
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
 # ---------------------------------------------------------------------------
-# Test data directories
+# Benchmark folders
 # ---------------------------------------------------------------------------
 
-TEST_DATA = Path("data/test")
+BENCHMARK = Path("data/benchmark")
 
-PHOTOS_SINGLE_CARD = TEST_DATA / "1_photos_single_card" / "images"
-PHOTOS_MULTI_CARD = TEST_DATA / "2_photos_multiple_cards" / "images"
-SCANS_SINGLE_BG = TEST_DATA / "3_scans_single_card_with_bg" / "images"
-SCANS_SINGLE_NO_BG = TEST_DATA / "4_scans_single_card_no_bg" / "images"
+PHOTOS_SINGLE_CARD = BENCHMARK / "1_photos_single_card"
+PHOTOS_MULTI_CARD = BENCHMARK / "2_photos_multiple_cards"
+SCANS_SINGLE_BG = BENCHMARK / "3_scans_single_card_with_bg"
+SCANS_SINGLE_NO_BG = BENCHMARK / "4_scans_single_card_no_bg"
 
 # _TARGET_SIZE = WARPED_MIN_SIZE
 

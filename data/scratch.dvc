@@ -1,0 +1,6 @@
+outs:
+- md5: 12d51040fe95d5761fac9ed13805a4ad.dir
+  size: 46256866
+  nfiles: 32
+  hash: md5
+  path: scratch

@@ -1,6 +1,6 @@
 # Contributing to Decksray MTG Recognition
 
-This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the test/benchmark dataset, and share new test images.
+This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the benchmark and scratch datasets, and share new benchmark images.
 
 ## Development Setup
 
@@ -17,26 +17,19 @@ If `pre-commit install` refuses because `core.hooksPath` is set, check where it 
 
 ## Dataset Setup
 
-The test and benchmark dataset is versioned with [DVC](https://dvc.org/) and hosted on a shared Google Drive folder. To pull the dataset, you need a one-time Google Cloud Platform (GCP) OAuth setup, then a single `dvc pull` command.
+The test and benchmark dataset is versioned with [DVC](https://dvc.org/) and hosted in a Google Drive folder owned by a Google account that holds nothing but the dataset ([ADR 0001](docs/adr/0001-benchmark-dataset-on-google-drive-via-dvc.md)). Contributors and CI pull with a read-only key; only the maintainer pushes.
 
 ### One-time setup (per developer)
 
-DVC's default Google OAuth app is blocked by Google. Each contributor must create a personal GCP OAuth Desktop app:
-
-1. Go to <https://console.cloud.google.com/> and create a new project (or pick an existing one).
-2. Enable the **Google Drive API** under APIs & Services -> Library.
-3. Configure the **OAuth consent screen**: User Type = External; add your own email as a Test user.
-4. Create credentials: APIs & Services -> Credentials -> Create Credentials -> OAuth client ID -> Application type = **Desktop app**. Note the `client_id` and `client_secret`.
-5. Ask a project maintainer to share the Google Drive folder `decksray/MTG-Recognition/data/test` with your Google account (read access for pull, write access for push).
-
-Then configure your local DVC with the secret (note the `--local` flag — this writes to `.dvc/config.local`, which is gitignored, NOT to the committed `.dvc/config`):
+Ask the maintainer for a read-only key: a JSON key file for the `dataset-reader` service account, which can view the dataset folder and nothing else. Keep it outside the repo, e.g. at `~/.config/mtg-recognition/dataset-reader.json`, then point your local DVC at it:
 
 ```bash
 uv sync --dev
-uv run dvc remote modify --local origin gdrive_client_secret '<your-client-secret>'
+uv run dvc remote modify --local origin gdrive_use_service_account true
+uv run dvc remote modify --local origin gdrive_service_account_json_file_path ~/.config/mtg-recognition/dataset-reader.json
 ```
 
-The committed `.dvc/config` already contains the public `gdrive_client_id`, the remote URL (`gdrive://root/decksray/MTG-Recognition/data/test`), and the remote name (`origin`).
+The `--local` flag writes to `.dvc/config.local`, which is gitignored. Never put these two settings in the committed `.dvc/config`: the maintainer pushes through OAuth, not the service account. The committed `.dvc/config` already holds the remote name (`origin`), its URL (`gdrive://<folder-id>`) and the public `gdrive_client_id`.
 
 ### Pull the dataset
 
@@ -44,28 +37,36 @@ The committed `.dvc/config` already contains the public `gdrive_client_id`, the 
 uv run dvc pull
 ```
 
-On first run, your browser will open Google's OAuth consent screen. Sign in with the Google account that was added as a Test user in step 3. After grant, DVC caches your token at `~/.cache/pydrive2fs/<client_id>/default.json` and subsequent pulls run non-interactively.
+The pull fills `data/benchmark/` with the 7 image categories, and `data/scratch/` with query images that fail recognition, kept for debugging (`error/`, `failure_cases/`, `uncommon_layout/`). To fetch only the benchmark, run `uv run dvc pull data/benchmark.dvc`. The key is read-only: `dvc push` with it fails with "Insufficient permissions for the specified parent".
 
-The pull will populate `data/test/` with all 7 image categories plus the migrated `data/test/6_benchmark/`.
+## Adding New Benchmark Images
 
-## Adding New Test Images
+Only the maintainer can push to the dataset folder. To contribute images, open an issue or PR describing them and share them with the maintainer, who adds them as follows.
 
-Anyone with write access to the Google Drive folder can contribute new test images. The workflow:
+### Maintainer setup
 
-### 1. Drop the new images under `data/test/`
+The maintainer pushes through the project's OAuth client, signed in as the dataset account. Put the client secret in the local config:
 
-Place new images under the appropriate category subdirectory (e.g. `data/test/1_photos_single_card/`). Filenames are typically the card UUID — see existing files for examples.
+```bash
+uv run dvc remote modify --local origin gdrive_client_secret '<client-secret>'
+```
+
+The first push opens Google's consent screen in the browser: pick the dataset account (not a personal one), click Advanced → Go to mtg-recognition (the app is unverified on purpose, see ADR 0001), and tick both Drive permissions. DVC caches the token at `~/.cache/pydrive2fs/<client_id>/default.json`, so later pushes run without a browser.
+
+### 1. Drop the new images under `data/benchmark/` or `data/scratch/`
+
+Place new images in the appropriate category folder (e.g. `data/benchmark/1_photos_single_card/`). Query images that fail recognition and aren't part of the benchmark go in a `data/scratch/` folder instead. Don't add an image that is byte-identical to one already in either dataset. Filenames are typically the card UUID — see existing files for examples.
 
 ### 2. Re-track and push
 
 ```bash
-uv run dvc add data/test
+uv run dvc add data/benchmark data/scratch
 uv run dvc push
-git add data/test.dvc
-git commit -m "data: add new test images for <description>"
+git add data/benchmark.dvc data/scratch.dvc
+git commit -m "data: add benchmark images for <description>"
 ```
 
-`dvc add` re-hashes `data/test/`, updating `data/test.dvc` with the new content hash. `dvc push` uploads only the new blobs (existing blobs are deduplicated by MD5). The `git commit` of the updated `data/test.dvc` is what tells future `dvc pull`s to fetch the new images.
+`dvc add` re-hashes each folder, updating its pointer (`data/benchmark.dvc`, `data/scratch.dvc`) with the new content hash. `dvc push` uploads only the new blobs (existing blobs are deduplicated by MD5). The `git commit` of the updated pointers is what tells future `dvc pull`s to fetch the new images.
 
 ### 3. Open a PR
 
@@ -73,11 +74,17 @@ Push your branch and open a pull request. Reviewers will `git pull && uv run dvc
 
 ## Troubleshooting
 
-### "This app is blocked"
-Your `gdrive_client_id`/`gdrive_client_secret` are missing or stale. Re-run the One-time setup above.
+### `dvc pull` says "File not found: <folder-id>"
+The service account can't see the dataset folder: the key is for another account, or the folder isn't shared with `dataset-reader` as Viewer. The share must be on the folder the remote URL points at, not on the `files` folder inside it. Ask the maintainer.
+
+### `module 'OpenSSL.crypto' has no attribute 'sign'`
+Your environment has pyOpenSSL 24.3 or later, which PyDrive2's service-account sign-in can't use. PyDrive2 1.21.3 requires an older one; run `uv sync --dev` to get the locked versions.
+
+### `invalid_grant: Token has been expired or revoked` (maintainer)
+The cached OAuth token is no longer valid. Delete `~/.cache/pydrive2fs/<client_id>/default.json` and push again, signing in as the dataset account.
 
 ### `dvc pull` says "no data to pull"
-The `data/test.dvc` file is missing from your branch. Run `git pull` to fetch the latest pointer file.
+The `data/benchmark.dvc` and `data/scratch.dvc` files are missing from your branch. Run `git pull` to fetch the latest pointer files.
 
 ### `dvc pull` says "file not found in remote"
-The contributor who added the data forgot to `dvc push` (or pushed to the wrong remote). Ask them to re-push.
+The maintainer hasn't pushed the data that `data/benchmark.dvc` or `data/scratch.dvc` points to yet. Ask them to push it.
