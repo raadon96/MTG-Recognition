@@ -1,5 +1,5 @@
 [core]
     remote = origin
 ['remote "origin"']
-    url = gdrive://root/decksray/MTG-Recognition/data/test
+    url = gdrive://10bFfSl2E0RGDAufp8pp4KyeNNLB21fmn
     gdrive_client_id = 924012539001-tkb5himeq4ts54ndtfm5inl8klu9niae.apps.googleusercontent.com
