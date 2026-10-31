@@ -3,23 +3,23 @@ CLI for card segmentation.
 
 Usage examples:
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/1_photos_single_card/images \
+        -i data/benchmark/1_photos_single_card \
         -o output/1.0_seg/1_photos_single_card --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/2_photos_multiple_cards/images \
+        -i data/benchmark/2_photos_multiple_cards \
         -o output/1.0_seg/2_photos_multiple_cards --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/3_scans_single_card_with_bg/images \
+        -i data/benchmark/3_scans_single_card_with_bg \
         -o output/1.0_seg/3_scans_single_card_with_bg --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/4_scans_single_card_no_bg/images \
+        -i data/benchmark/4_scans_single_card_no_bg \
         -o output/1.0_seg/4_scans_single_card_no_bg --mode auto
 
     uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/test/5_scans_multiple_cards/images \
+        -i data/benchmark/5_scans_multiple_cards \
         -o output/1.0_seg/5_scans_multiple_cards --mode auto
 
 

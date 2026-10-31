@@ -1,6 +1,6 @@
 # Maintaining the benchmark dataset
 
-How the DVC remote for `data/test/` is set up, and the tasks only the maintainer does. Contributors only need [CONTRIBUTING.md](../../CONTRIBUTING.md#dataset-setup); the reasons behind this setup are in [ADR 0001](../adr/0001-benchmark-dataset-on-google-drive-via-dvc.md).
+How the DVC remote for `data/benchmark/` and `data/scratch/` is set up, and the tasks only the maintainer does. Contributors only need [CONTRIBUTING.md](../../CONTRIBUTING.md#dataset-setup); the reasons behind this setup are in [ADR 0001](../adr/0001-benchmark-dataset-on-google-drive-via-dvc.md).
 
 ## Who is who
 
@@ -34,7 +34,7 @@ Create a key as in onboarding, then `gh secret set GDRIVE_CREDENTIALS_DATA < key
 
 ## Push new images
 
-See [CONTRIBUTING.md › Adding New Test Images](../../CONTRIBUTING.md#adding-new-test-images). Contributors can't push, so they send you their images and you add them.
+See [CONTRIBUTING.md › Adding New Benchmark Images](../../CONTRIBUTING.md#adding-new-benchmark-images). Contributors can't push, so they send you their images and you add them.
 
 When DVC opens the browser to sign in, pick the **dataset account**. If you pick your personal account, the push fails with "File not found", because your personal account can't see the folder.
 

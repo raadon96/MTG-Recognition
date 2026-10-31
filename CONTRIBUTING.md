@@ -1,6 +1,6 @@
 # Contributing to Decksray MTG Recognition
 
-This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the test/benchmark dataset, and share new test images.
+This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the benchmark and scratch datasets, and share new benchmark images.
 
 ## Development Setup
 
@@ -37,9 +37,9 @@ The `--local` flag writes to `.dvc/config.local`, which is gitignored. Never put
 uv run dvc pull
 ```
 
-The pull fills `data/test/` with all 7 image categories plus the migrated `data/test/6_benchmark/`. The key is read-only: `dvc push` with it fails with "Insufficient permissions for the specified parent".
+The pull fills `data/benchmark/` with the 7 image categories, and `data/scratch/` with query images that fail recognition, kept for debugging (`error/`, `failure_cases/`, `uncommon_layout/`). To fetch only the benchmark, run `uv run dvc pull data/benchmark.dvc`. The key is read-only: `dvc push` with it fails with "Insufficient permissions for the specified parent".
 
-## Adding New Test Images
+## Adding New Benchmark Images
 
 Only the maintainer can push to the dataset folder. To contribute images, open an issue or PR describing them and share them with the maintainer, who adds them as follows.
 
@@ -53,20 +53,20 @@ uv run dvc remote modify --local origin gdrive_client_secret '<client-secret>'
 
 The first push opens Google's consent screen in the browser: pick the dataset account (not a personal one), click Advanced → Go to mtg-recognition (the app is unverified on purpose, see ADR 0001), and tick both Drive permissions. DVC caches the token at `~/.cache/pydrive2fs/<client_id>/default.json`, so later pushes run without a browser.
 
-### 1. Drop the new images under `data/test/`
+### 1. Drop the new images under `data/benchmark/` or `data/scratch/`
 
-Place new images under the appropriate category subdirectory (e.g. `data/test/1_photos_single_card/`). Filenames are typically the card UUID — see existing files for examples.
+Place new images in the appropriate category folder (e.g. `data/benchmark/1_photos_single_card/`). Query images that fail recognition and aren't part of the benchmark go in a `data/scratch/` folder instead. Don't add an image that is byte-identical to one already in either dataset. Filenames are typically the card UUID — see existing files for examples.
 
 ### 2. Re-track and push
 
 ```bash
-uv run dvc add data/test
+uv run dvc add data/benchmark data/scratch
 uv run dvc push
-git add data/test.dvc
-git commit -m "data: add new test images for <description>"
+git add data/benchmark.dvc data/scratch.dvc
+git commit -m "data: add benchmark images for <description>"
 ```
 
-`dvc add` re-hashes `data/test/`, updating `data/test.dvc` with the new content hash. `dvc push` uploads only the new blobs (existing blobs are deduplicated by MD5). The `git commit` of the updated `data/test.dvc` is what tells future `dvc pull`s to fetch the new images.
+`dvc add` re-hashes each folder, updating its pointer (`data/benchmark.dvc`, `data/scratch.dvc`) with the new content hash. `dvc push` uploads only the new blobs (existing blobs are deduplicated by MD5). The `git commit` of the updated pointers is what tells future `dvc pull`s to fetch the new images.
 
 ### 3. Open a PR
 
@@ -84,7 +84,7 @@ Your environment has pyOpenSSL 24.3 or later, which PyDrive2's service-account s
 The cached OAuth token is no longer valid. Delete `~/.cache/pydrive2fs/<client_id>/default.json` and push again, signing in as the dataset account.
 
 ### `dvc pull` says "no data to pull"
-The `data/test.dvc` file is missing from your branch. Run `git pull` to fetch the latest pointer file.
+The `data/benchmark.dvc` and `data/scratch.dvc` files are missing from your branch. Run `git pull` to fetch the latest pointer files.
 
 ### `dvc pull` says "file not found in remote"
-The maintainer hasn't pushed the data that `data/test.dvc` points to yet. Ask them to push it.
+The maintainer hasn't pushed the data that `data/benchmark.dvc` or `data/scratch.dvc` points to yet. Ask them to push it.

@@ -10,7 +10,7 @@ import pytest
 from mtg_recognition.engine.pipeline import Pipeline
 from tests.unit.engine.builders import card_image, card_png
 
-RAW_BENCHMARK = Path("data/test/6_benchmark/images/raw")
+TEXTURED_BG_DIR = Path("data/benchmark/6_photos_single_card_textured_bg")
 UUIDS = [
     "01013cab-be73-532f-b6bf-0f24d0c3792f",
     "0a2f85cd-f66d-5330-a9d5-314554f871a1",
@@ -71,7 +71,7 @@ def test_encoded_image_bytes_are_recognized(pipeline):
 @pytest.mark.slow
 @pytest.mark.parametrize("uuid", UUIDS)
 def test_recognizes_the_printing_named_by_the_file(pipeline, uuid):
-    img_path = RAW_BENCHMARK / f"{uuid}.jpg"
+    img_path = TEXTURED_BG_DIR / f"{uuid}.jpg"
     if not img_path.exists():
         pytest.skip(f"{img_path} missing; run `uv run dvc pull`")
 

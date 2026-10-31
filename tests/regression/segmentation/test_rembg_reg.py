@@ -6,7 +6,7 @@ Requires:
   - Fixture images, birefnet masks and golden corners in
     tests/regression/segmentation/fixtures/. They are frozen goldens; the script
     that generated them, generate_fixtures.py, is in git history.
-  - Benchmark images in data/test/6_benchmark/images/raw/
+  - Benchmark images in data/benchmark/6_photos_single_card_textured_bg/
 
 Run:
     uv run pytest tests/regression/segmentation/ -v -m slow -k rembg
@@ -29,7 +29,7 @@ FAILURE_CASES_DIR = FIXTURE_DIR / "0_failure_cases"
 PHOTOS_SINGLE_CARD_DIR = FIXTURE_DIR / "1_photos_single_card"
 PHOTOS_MULTI_CARD_DIR = FIXTURE_DIR / "2_photos_multiple_cards"
 
-BENCHMARK_RAW_DIR = Path("data/test/6_benchmark/images/raw")
+TEXTURED_BG_DIR = Path("data/benchmark/6_photos_single_card_textured_bg")
 
 CORNER_TOLERANCE_PX = 5
 MIN_AREA_FRACTION = 0.01
@@ -205,8 +205,8 @@ class TestBenchmarkSuccessRate:
     """
 
     def test_all_benchmark_images_succeed(self, segmentor):
-        image_paths = sorted(BENCHMARK_RAW_DIR.glob("*.jpg"))
-        assert image_paths, f"No benchmark images found in {BENCHMARK_RAW_DIR}"
+        image_paths = sorted(TEXTURED_BG_DIR.glob("*.jpg"))
+        assert image_paths, f"No benchmark images found in {TEXTURED_BG_DIR}"
 
         failures = []
         for path in image_paths:
