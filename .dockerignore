@@ -38,7 +38,8 @@ data/reference/images/
 data/reference/tmp/
 data/reference/image_errors.log
 benchmarks/results/
-data/test/
+data/benchmark/
+data/scratch/
 data/examples/
 notebooks/
 scratch/

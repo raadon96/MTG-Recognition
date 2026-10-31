@@ -8,7 +8,8 @@
 
 # Reference cards dataset
 data/reference/images
-data/test/
+data/benchmark/
+data/scratch/
 data/reference_test
 
 data/reference/tmp

@@ -187,9 +187,9 @@ def main(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> No
     \b
     uv run python -m mtg_recognition.engine.pipeline -i card.jpg -o runs/output.json
     uv run python -m mtg_recognition.engine.pipeline \\
-        -i data/test/6_benchmark/images/raw -k 3 --k-phash 20
+        -i data/benchmark/6_photos_single_card_textured_bg -k 3 --k-phash 20
     uv run python -m mtg_recognition.engine.pipeline \\
-        -i data/test/images -o output/results.json
+        -i data/benchmark/1_photos_single_card -o output/results.json
     """
     img_paths = (
         [input_path]
