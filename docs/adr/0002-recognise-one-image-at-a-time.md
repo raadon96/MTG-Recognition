@@ -6,3 +6,4 @@ The engine segments and matches one image per call; there is no batch path. Batc
 
 - `Pipeline.recognize(image)` is the only recognition entry point; clients loop over their images. Re-adding batching must keep that interface and first show, on the accuracy benchmark, a speed-up with identical top-1 results.
 - The measurement was taken on 2026-10-18 on CPU with ultralytics 8.4.21 and `data/benchmark/1_photos_single_card`. A GPU or a different runtime (e.g. the WASM port) may change the speed trade-off, but not the letterbox difference.
+
