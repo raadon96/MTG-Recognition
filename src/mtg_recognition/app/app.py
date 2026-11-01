@@ -385,7 +385,7 @@ def main():
 
     # Upload
     # ADR 0004: the app encourages a plain, bright background but doesn't require one
-    st.sidebar.caption(
+    st.sidebar.info(
         "📷 For best results, photograph cards in good light on a bright plain "
         "surface, such as a white desk, and avoid glare and reflections, "
         "especially on foils. Scans work as they are."
