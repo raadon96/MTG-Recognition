@@ -1,9 +1,9 @@
-"""Tests for `mtg_recognition.catalog.SqliteCardCatalog`."""
+"""Tests for `mtg_recognition.reference.catalog.SqliteCardCatalog`."""
 
 import pytest
 from sqlalchemy.exc import OperationalError
 
-from mtg_recognition.catalog import SqliteCardCatalog
+from mtg_recognition.reference.catalog import SqliteCardCatalog
 
 
 @pytest.mark.unit

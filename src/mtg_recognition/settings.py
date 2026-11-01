@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
 
-    # --- Derived paths (reference data paths live in reference.ReferenceData) ---
+    # --- Derived paths (reference data paths: reference.layout.ReferenceData) ---
     @property
     def SEGMENTATION_MODEL_DIR(self) -> Path:
         return self.MODELS_DIR / "segmentation" / "prod"

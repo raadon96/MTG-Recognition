@@ -12,7 +12,7 @@ from mtg_recognition.engine.matching.phash import (
     load_phash_index,
     shortlist,
 )
-from mtg_recognition.reference import ReferenceData
+from mtg_recognition.reference.layout import ReferenceData
 
 from ..sync_fakes import jpeg
 

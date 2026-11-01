@@ -101,6 +101,22 @@ markers = [
 
 [tool.importlinter]
 root_package = "mtg_recognition"
+include_external_packages = true
+
+# A layer may import the layers below it, never one above; `|` siblings can't
+# import each other. `jobs` imports `engine.matching.phash` on purpose: index and
+# query hashes must come from the same code. The benchmark package doesn't exist
+# yet, so its layer is optional (in parentheses).
+[[tool.importlinter.contracts]]
+name = "Layers"
+type = "layers"
+layers = [
+    "mtg_recognition.cli",
+    "mtg_recognition.app | mtg_recognition.jobs | (mtg_recognition.benchmark)",
+    "mtg_recognition.engine",
+    "mtg_recognition.reference",
+    "mtg_recognition.settings",
+]
 
 [[tool.importlinter.contracts]]
 name = "Engine stages are independent"

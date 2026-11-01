@@ -1,8 +1,4 @@
-"""Reference data: everything built from one MTGJSON release and used to recognise
-cards (the catalog, the reference images and the pHash index; see
-GLOSSARY.md).
-
-`ReferenceData` owns the on-disk layout and the sync state file, so no other
+"""`ReferenceData` owns the on-disk layout and the sync state file, so no other
 module builds these paths itself.
 """
 
@@ -10,21 +6,11 @@ import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
-from sqlalchemy import Engine
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, select
 
-from mtg_recognition.jobs.schemas import CatalogPrinting
+from mtg_recognition.reference.catalog import CatalogPrinting
+from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
-
-
-def open_read_only(db_path: Path) -> Engine:
-    """Engine on the SQLite database at `db_path`, opened read-only: it never
-    writes and never creates a missing file. (`mode=ro` is only honoured in a
-    SQLite URI, hence the `file:` URI and `uri=true`.)
-    """
-    return create_engine(
-        f"sqlite:///{db_path.resolve().as_uri()}?mode=ro&nolock=1&uri=true"
-    )
 
 
 @dataclass(frozen=True)

@@ -6,7 +6,6 @@ from pathlib import Path
 import click
 import numpy as np
 
-from mtg_recognition.catalog import SqliteCardCatalog
 from mtg_recognition.engine.image import (
     ImageSource,
     get_image_files_in_directory,
@@ -17,7 +16,8 @@ from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.ranking import RankedPrinting
 from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
-from mtg_recognition.reference import ReferenceData
+from mtg_recognition.reference.catalog import SqliteCardCatalog
+from mtg_recognition.reference.layout import ReferenceData
 
 
 @dataclass(frozen=True)
