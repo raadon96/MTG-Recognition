@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-from mtg_recognition.reference import ReferenceData
+from mtg_recognition.reference.layout import ReferenceData
 
 HASH_SIZE = 16  # 16x16 = 256-bit hash
 DEFAULT_NUM_WORKERS = max(1, cpu_count() - 1)

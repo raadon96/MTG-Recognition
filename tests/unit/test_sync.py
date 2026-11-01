@@ -30,7 +30,7 @@ from mtg_recognition.jobs.sync import (
     update,
     update_summary,
 )
-from mtg_recognition.reference import ReferenceData, SyncState
+from mtg_recognition.reference.layout import ReferenceData, SyncState
 
 from .sync_fakes import (
     PRINTING_V2,

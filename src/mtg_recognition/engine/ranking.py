@@ -4,7 +4,7 @@ scores.
 
 from dataclasses import dataclass, field
 
-from mtg_recognition.catalog import Printing
+from mtg_recognition.reference.catalog import Printing
 
 
 @dataclass(frozen=True)

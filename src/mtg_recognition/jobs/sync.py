@@ -28,10 +28,12 @@ from sqlmodel import Session, SQLModel, col, create_engine, select
 from tqdm import tqdm
 
 from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS, build_phash_index
-from mtg_recognition.reference import ReferenceData, SyncState, open_read_only
+from mtg_recognition.reference.catalog import CatalogPrinting
+from mtg_recognition.reference.layout import ReferenceData, SyncState
+from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
 
-from .schemas import CardIdentifiers, Cards, CatalogPrinting, Meta, Sets
+from .schemas import CardIdentifiers, Cards, Meta, Sets
 
 SCRYFALL_HEADERS = {
     "User-Agent": "mtg-recognition/1.0 (contact: adnen.boumessouer@gmail.com)",

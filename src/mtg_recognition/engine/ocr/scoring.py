@@ -10,9 +10,9 @@ from dataclasses import dataclass
 
 from rapidfuzz import fuzz, utils
 
-from mtg_recognition.catalog import Printing
 from mtg_recognition.engine.ocr.reading import Reading
 from mtg_recognition.engine.ranking import FieldScore, RankedPrinting
+from mtg_recognition.reference.catalog import Printing
 
 
 def _as_is(value: str) -> str:

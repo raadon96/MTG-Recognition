@@ -1,4 +1,4 @@
-"""Tests for `mtg_recognition.reference.ReferenceData`."""
+"""Tests for `mtg_recognition.reference.layout.ReferenceData`."""
 
 import json
 
@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, SQLModel, create_engine
 
-from mtg_recognition.jobs.schemas import CatalogPrinting
-from mtg_recognition.reference import ReferenceData, SyncState
+from mtg_recognition.reference.catalog import CatalogPrinting
+from mtg_recognition.reference.layout import ReferenceData, SyncState
 
 
 @pytest.mark.unit

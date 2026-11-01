@@ -15,8 +15,10 @@ src/mtg_recognition/
 │   └── ranking.py       ranked candidates and their field scores
 ├── app/           Streamlit UI over the engine
 ├── jobs/          builds the reference data from MTGJSON releases (`mtg update`, `mtg build-index`)
-├── catalog.py     reads printings out of the catalog
-├── reference.py   on-disk layout and sync state of the reference data
+├── reference/     the reference data, read by the engine and written by jobs
+│   ├── layout.py        on-disk layout and sync state
+│   ├── catalog.py       the catalog table schema, and reads printings out of the catalog
+│   └── sqlite.py        opens the SQLite files read-only
 ├── settings.py    configuration from the environment and `.env`
 └── cli.py         the `mtg` group; each command is defined in its domain package
 data/reference/    the reference data
