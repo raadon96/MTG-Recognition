@@ -55,7 +55,7 @@ uv run mtg benchmark status --failures # also list the images that fail exact pr
 
 The `engine` workflow (`.github/workflows/engine.yml`) runs `pytest -m slow` and `mtg benchmark run` on every PR, except PRs that only change Markdown files, `docs/` or `.claude/`. It pulls `data/benchmark.dvc` with the `dataset-reader` key in the `GDRIVE_CREDENTIALS_DATA` secret, and uploads `output/benchmark/latest.json` as the `benchmark-latest` artifact. It caches the dataset and the files the libraries download on first use; the comments in `engine.yml` say what each cache is keyed on. A PR can restore only its own caches and those of its base branch, so after the dataset or `uv.lock` changes, run the workflow by hand on `dev` (Actions → engine → Run workflow), and on `main` after a release. A docs-only PR reports no `engine` check at all, so don't make it a required check.
 
-A GitHub runner and a laptop give the same results: at the same commit, all 257 benchmark images had the same results on both, apart from runtimes (#95). So record baselines locally with `mtg benchmark update-baseline` and commit them, as above. If the engine job ever fails on a baseline that passes locally, the two have drifted apart: CI is then the authority, and the baseline to commit is the `benchmark-latest` artifact of the failing run.
+Whose results become the committed baseline, a GitHub runner's or a laptop's, is undecided: the engine job has given different results for the same engine code across runs (#146). Until then, record baselines locally with `mtg benchmark update-baseline` as above, and don't treat a failing engine job on its own as a regression.
 
 ## Adding New Benchmark Images
 
