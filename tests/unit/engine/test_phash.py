@@ -7,6 +7,7 @@ import pytest
 from PIL import Image
 
 from mtg_recognition.engine.matching.phash import (
+    PHashIndex,
     _phash_bits,
     build_phash_index,
     load_phash_index,
@@ -69,6 +70,28 @@ class TestShortlist:
         shortlisted, similarities = shortlist(load_phash_index(reference), query, k=3)
 
         assert similarities == [expected[uuid] for uuid in shortlisted]
+
+    def test_tied_printings_keep_index_order(self, tmp_path) -> None:
+        # Hamming distances are whole bits, so ties are common; their order must
+        # not depend on the CPU (#146)
+        reference = ReferenceData(tmp_path / "reference")
+        build_phash_index(write_jpegs(tmp_path, ["a"]), reference, workers=1)
+        bits = np.unpackbits(load_phash_index(reference).hashes[0])
+        one_bit_off = bits.copy()
+        one_bit_off[0] ^= 1
+        # 1000 tied printings, then the printing with the identical fingerprint
+        rows = [one_bit_off] * 1000 + [bits]
+        index = PHashIndex(
+            hashes=np.packbits(np.array(rows), axis=1),
+            uuids=[f"uuid-{i}" for i in range(len(rows))],
+        )
+        query = cv2.imread(str(tmp_path / "a.jpg"))
+        assert query is not None
+
+        uuids, similarities = shortlist(index, query, k=20)
+
+        assert uuids == ["uuid-1000"] + [f"uuid-{i}" for i in range(19)]
+        assert similarities == [1.0] + [255 / 256] * 19
 
 
 @pytest.mark.unit
