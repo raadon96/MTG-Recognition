@@ -1,5 +1,5 @@
 {
-  "commit": "de788307e8b4bd9f79118cc9b389bca55868fb0b",
+  "commit": "1166941f3a6fcbaff095c6ac611aef4399943d31",
   "mtgjson_version": "5.3.0+20261019",
   "totals": {
     "images": 257,
@@ -7,7 +7,7 @@
     "card_count": 256,
     "same_card_name": 245,
     "ocr_fallbacks": 0,
-    "runtime_s": 142.103
+    "runtime_s": 149.726
   },
   "images": {
     "1_photos_single_card/00f6a8fe-62d8-5996-9ad6-e4e0577a3ab7.jpg": {
@@ -19,7 +19,7 @@
       "recognised": [
         "00f6a8fe-62d8-5996-9ad6-e4e0577a3ab7"
       ],
-      "runtime_s": 0.996,
+      "runtime_s": 0.857,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -32,7 +32,7 @@
       "recognised": [
         "01013cab-be73-532f-b6bf-0f24d0c3792f"
       ],
-      "runtime_s": 0.67,
+      "runtime_s": 0.478,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -45,7 +45,7 @@
       "recognised": [
         "01a72980-f328-577f-a23f-205fc6e10e8b"
       ],
-      "runtime_s": 0.466,
+      "runtime_s": 0.532,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -58,7 +58,7 @@
       "recognised": [
         "0636f33e-e5c4-5840-9d56-17290e39615e"
       ],
-      "runtime_s": 0.452,
+      "runtime_s": 0.513,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -71,7 +71,7 @@
       "recognised": [
         "0731017a-2eef-5795-afa6-69ef12b416b3"
       ],
-      "runtime_s": 0.419,
+      "runtime_s": 0.616,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -84,7 +84,7 @@
       "recognised": [
         "0891d4f8-d695-5ae0-9ad1-46016c4fc947"
       ],
-      "runtime_s": 0.485,
+      "runtime_s": 0.505,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -97,7 +97,7 @@
       "recognised": [
         "08f8bb29-6091-50d2-afab-6b80087ce067"
       ],
-      "runtime_s": 0.421,
+      "runtime_s": 0.481,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -110,7 +110,7 @@
       "recognised": [
         "095deb11-a6c2-5dbd-9765-1bbadeb2896a"
       ],
-      "runtime_s": 0.403,
+      "runtime_s": 0.37,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -123,7 +123,7 @@
       "recognised": [
         "09ebac3a-adde-538f-8474-b7aee7e969ae"
       ],
-      "runtime_s": 0.456,
+      "runtime_s": 0.46,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -136,7 +136,7 @@
       "recognised": [
         "0a2f85cd-f66d-5330-a9d5-314554f871a1"
       ],
-      "runtime_s": 0.393,
+      "runtime_s": 0.47,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -149,7 +149,7 @@
       "recognised": [
         "0b382265-73df-5d46-b2b1-b802d97075f4"
       ],
-      "runtime_s": 0.618,
+      "runtime_s": 0.528,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -162,7 +162,7 @@
       "recognised": [
         "0c50a4ef-a68f-56aa-a637-3038d3b3dd79"
       ],
-      "runtime_s": 0.58,
+      "runtime_s": 0.432,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -175,7 +175,7 @@
       "recognised": [
         "0c941678-45c6-5aab-a863-136c1e0b7a7f"
       ],
-      "runtime_s": 0.594,
+      "runtime_s": 0.611,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -188,7 +188,7 @@
       "recognised": [
         "118a45de-465b-56e3-a460-4b2670b367ef"
       ],
-      "runtime_s": 0.581,
+      "runtime_s": 0.512,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -201,7 +201,7 @@
       "recognised": [
         "12b77048-ebad-51b2-99e8-c7dcaccf7a67"
       ],
-      "runtime_s": 0.449,
+      "runtime_s": 0.42,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -214,7 +214,7 @@
       "recognised": [
         "13c0f7f1-743a-52f0-a4a1-f10d57fb0524"
       ],
-      "runtime_s": 0.476,
+      "runtime_s": 0.461,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -227,7 +227,7 @@
       "recognised": [
         "15683485-77f7-5c6f-b94d-93dab47a662b"
       ],
-      "runtime_s": 0.518,
+      "runtime_s": 0.516,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -240,7 +240,7 @@
       "recognised": [
         "5c0ec142-09fe-550a-8f7d-0d977000724d"
       ],
-      "runtime_s": 0.416,
+      "runtime_s": 0.54,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -253,7 +253,7 @@
       "recognised": [
         "18460453-2820-55af-9cc3-15b29903f999"
       ],
-      "runtime_s": 0.46,
+      "runtime_s": 0.458,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -266,7 +266,7 @@
       "recognised": [
         "186f22ef-b3a2-5304-9f41-d5b9729834cb"
       ],
-      "runtime_s": 0.485,
+      "runtime_s": 0.526,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -279,7 +279,7 @@
       "recognised": [
         "19827ebf-3b49-5021-ac7f-f6c125a3bdd6"
       ],
-      "runtime_s": 0.461,
+      "runtime_s": 0.4,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -292,7 +292,7 @@
       "recognised": [
         "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
       ],
-      "runtime_s": 0.476,
+      "runtime_s": 0.501,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -305,7 +305,7 @@
       "recognised": [
         "1b414b20-21c1-53e9-86c4-98944dd9d36d"
       ],
-      "runtime_s": 0.478,
+      "runtime_s": 0.453,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -318,7 +318,7 @@
       "recognised": [
         "1d54b6cc-3d3b-5be2-966b-21c75e788bf1"
       ],
-      "runtime_s": 0.449,
+      "runtime_s": 0.503,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -331,7 +331,7 @@
       "recognised": [
         "1f02ee50-90a0-52d6-8809-7dfb091568fe"
       ],
-      "runtime_s": 0.564,
+      "runtime_s": 0.712,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -344,7 +344,7 @@
       "recognised": [
         "1f36d944-7a4b-5fdf-8c17-63e550a58c0a"
       ],
-      "runtime_s": 0.454,
+      "runtime_s": 0.647,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -357,7 +357,7 @@
       "recognised": [
         "1f92d38a-5dc2-5ff0-8318-56ca814157ac"
       ],
-      "runtime_s": 0.677,
+      "runtime_s": 0.545,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -370,7 +370,7 @@
       "recognised": [
         "2173ed89-4787-5e42-a879-6edf99761a0d"
       ],
-      "runtime_s": 0.475,
+      "runtime_s": 0.426,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -383,7 +383,7 @@
       "recognised": [
         "224fc334-346e-5777-b2c9-03a96813616d"
       ],
-      "runtime_s": 0.623,
+      "runtime_s": 0.543,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -396,7 +396,7 @@
       "recognised": [
         "225ff3ef-7b44-5df0-a69e-27e2f0166a5a"
       ],
-      "runtime_s": 0.513,
+      "runtime_s": 0.47,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -409,7 +409,7 @@
       "recognised": [
         "82f200ea-32fa-57cc-8df1-5112443a3236"
       ],
-      "runtime_s": 0.579,
+      "runtime_s": 0.619,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -422,7 +422,7 @@
       "recognised": [
         "24c7a4f6-7955-52da-865b-22224297b3b8"
       ],
-      "runtime_s": 0.686,
+      "runtime_s": 0.571,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -435,7 +435,7 @@
       "recognised": [
         "252a6a8d-6c67-54c6-9a5e-3fddc553e63e"
       ],
-      "runtime_s": 0.483,
+      "runtime_s": 0.867,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -448,7 +448,7 @@
       "recognised": [
         "25b3bd7a-aa42-56c8-9a53-3cc093e9c818"
       ],
-      "runtime_s": 0.508,
+      "runtime_s": 0.584,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -461,7 +461,7 @@
       "recognised": [
         "2782664f-5eca-5358-ae37-cce8fa1cfcca"
       ],
-      "runtime_s": 0.483,
+      "runtime_s": 0.565,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -474,7 +474,7 @@
       "recognised": [
         "27da5926-3e3d-5d06-b642-cb5a32d7491c"
       ],
-      "runtime_s": 0.547,
+      "runtime_s": 0.498,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -487,7 +487,7 @@
       "recognised": [
         "2b64717e-6f69-5426-82ad-a97d16289321"
       ],
-      "runtime_s": 0.451,
+      "runtime_s": 0.616,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -500,7 +500,7 @@
       "recognised": [
         "2cc4f8a8-3866-5907-bcff-9d7bb6b61e7d"
       ],
-      "runtime_s": 0.86,
+      "runtime_s": 0.596,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -513,7 +513,7 @@
       "recognised": [
         "2e2b8656-c379-5efa-b798-3d71eb82e924"
       ],
-      "runtime_s": 0.698,
+      "runtime_s": 0.568,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -526,7 +526,7 @@
       "recognised": [
         "2e6cca3c-78ca-55c3-a76e-9025d20a04bb"
       ],
-      "runtime_s": 0.634,
+      "runtime_s": 0.633,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -539,7 +539,7 @@
       "recognised": [
         "2fa84bf9-74e5-5302-899d-db6c2150c70f"
       ],
-      "runtime_s": 0.489,
+      "runtime_s": 0.661,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -552,7 +552,7 @@
       "recognised": [
         "31694a90-2e78-55dc-ac15-01f8bdbd35fc"
       ],
-      "runtime_s": 0.455,
+      "runtime_s": 0.525,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -565,7 +565,7 @@
       "recognised": [
         "3171448a-6b1e-5d72-a2e3-1d8d7913198d"
       ],
-      "runtime_s": 0.646,
+      "runtime_s": 0.514,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -578,7 +578,7 @@
       "recognised": [
         "3261737f-2698-5f05-b714-6d1dffcf20cd"
       ],
-      "runtime_s": 0.484,
+      "runtime_s": 0.511,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -591,7 +591,7 @@
       "recognised": [
         "327751c7-6d08-5ee0-a9dc-f02ad1398eca"
       ],
-      "runtime_s": 0.55,
+      "runtime_s": 0.475,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -604,7 +604,7 @@
       "recognised": [
         "32bfae5c-a2f8-5e7a-adfc-f51d6af69966"
       ],
-      "runtime_s": 0.455,
+      "runtime_s": 0.448,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -617,7 +617,7 @@
       "recognised": [
         "342a9886-3eec-51ee-bf23-fdc7069d98a1"
       ],
-      "runtime_s": 0.435,
+      "runtime_s": 0.474,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -630,7 +630,7 @@
       "recognised": [
         "a924b6af-95bf-58de-8749-b9b65c1ef0ea"
       ],
-      "runtime_s": 0.528,
+      "runtime_s": 0.382,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -643,7 +643,7 @@
       "recognised": [
         "3eb78409-5a2e-5ce0-b91d-7e52883ff5cf"
       ],
-      "runtime_s": 0.54,
+      "runtime_s": 0.41,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -656,7 +656,7 @@
       "recognised": [
         "40bc1031-6cc8-5e10-9ff3-12f8a7b70c78"
       ],
-      "runtime_s": 0.543,
+      "runtime_s": 0.663,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -669,7 +669,7 @@
       "recognised": [
         "412bb17e-58bf-5e6f-80a8-8926151ab9f4"
       ],
-      "runtime_s": 0.337,
+      "runtime_s": 0.621,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -682,7 +682,7 @@
       "recognised": [
         "434ab927-1bda-565a-bb69-bbdb27ca9d5a"
       ],
-      "runtime_s": 0.527,
+      "runtime_s": 0.623,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -695,7 +695,7 @@
       "recognised": [
         "43c61b32-95c0-5e67-80da-a36c28219d6d"
       ],
-      "runtime_s": 0.507,
+      "runtime_s": 0.56,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -708,7 +708,7 @@
       "recognised": [
         "44f527ec-4f8b-565a-b846-cb56f31fe52e"
       ],
-      "runtime_s": 0.476,
+      "runtime_s": 0.673,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -721,7 +721,7 @@
       "recognised": [
         "46bd1799-9a0a-5fd1-93d6-708a585dc71b"
       ],
-      "runtime_s": 0.405,
+      "runtime_s": 0.455,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -734,7 +734,7 @@
       "recognised": [
         "477e0ae4-6441-5bf4-8ef8-bc5a6fb60751"
       ],
-      "runtime_s": 0.666,
+      "runtime_s": 0.571,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -747,7 +747,7 @@
       "recognised": [
         "47b367b0-ffea-514a-8ccc-7474cb2c23df"
       ],
-      "runtime_s": 0.602,
+      "runtime_s": 0.502,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -760,7 +760,7 @@
       "recognised": [
         "4b4c1e76-e3e2-5ecc-b50b-54b24cd4091e"
       ],
-      "runtime_s": 0.568,
+      "runtime_s": 0.571,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -773,7 +773,7 @@
       "recognised": [
         "4ecf57d2-2328-5485-957d-fe61ef8255ca"
       ],
-      "runtime_s": 0.611,
+      "runtime_s": 0.492,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -786,7 +786,7 @@
       "recognised": [
         "4f7caf33-25ba-5280-b86e-a730d86010f4"
       ],
-      "runtime_s": 0.598,
+      "runtime_s": 0.937,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -799,7 +799,7 @@
       "recognised": [
         "56133d99-6df5-55c2-bdd8-dc6e83b5b3fd"
       ],
-      "runtime_s": 0.574,
+      "runtime_s": 0.608,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -812,7 +812,7 @@
       "recognised": [
         "573d9cfa-c531-56de-a0f1-bafcac074eef"
       ],
-      "runtime_s": 0.501,
+      "runtime_s": 0.622,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -825,7 +825,7 @@
       "recognised": [
         "586dfcb7-ce0b-5857-a7ee-c47a9005b1c7"
       ],
-      "runtime_s": 0.463,
+      "runtime_s": 0.516,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -838,7 +838,7 @@
       "recognised": [
         "58ba82cb-f820-5bc3-b18b-11a85dcb2a44"
       ],
-      "runtime_s": 0.453,
+      "runtime_s": 0.641,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -851,7 +851,7 @@
       "recognised": [
         "5914c6df-b12d-57e6-857b-ad6f8bcc3f3a"
       ],
-      "runtime_s": 0.47,
+      "runtime_s": 0.585,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -864,7 +864,7 @@
       "recognised": [
         "5b48d071-e765-512c-b989-3fd3aa2e5a63"
       ],
-      "runtime_s": 0.539,
+      "runtime_s": 0.608,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -877,7 +877,7 @@
       "recognised": [
         "5ced0151-b7e1-5ed7-8509-765b1fede911"
       ],
-      "runtime_s": 0.595,
+      "runtime_s": 0.69,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -890,7 +890,7 @@
       "recognised": [
         "6162336c-2a08-5b38-9b83-a59d158b9e33"
       ],
-      "runtime_s": 0.732,
+      "runtime_s": 0.619,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -903,7 +903,7 @@
       "recognised": [
         "617a1e98-5b17-5e79-96c3-1275b79d3690"
       ],
-      "runtime_s": 0.529,
+      "runtime_s": 0.689,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -916,7 +916,7 @@
       "recognised": [
         "61fa7145-af2b-59a2-92dd-48d19be60152"
       ],
-      "runtime_s": 0.686,
+      "runtime_s": 0.85,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -929,7 +929,7 @@
       "recognised": [
         "64359c4f-a984-5135-9d52-7c591ac684e3"
       ],
-      "runtime_s": 0.558,
+      "runtime_s": 0.688,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -942,7 +942,7 @@
       "recognised": [
         "64c55d37-47bc-51d9-816e-3574aa4c01ea"
       ],
-      "runtime_s": 0.556,
+      "runtime_s": 0.646,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -955,7 +955,7 @@
       "recognised": [
         "64e959fa-ca41-5549-bf30-45d27fdd642c"
       ],
-      "runtime_s": 0.563,
+      "runtime_s": 0.652,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -968,7 +968,7 @@
       "recognised": [
         "66d20282-5804-54f0-a579-ffc6351a6fe2"
       ],
-      "runtime_s": 0.567,
+      "runtime_s": 0.773,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -981,7 +981,7 @@
       "recognised": [
         "66f7bf77-082f-584d-bf7b-c0ddba4d94b2"
       ],
-      "runtime_s": 0.622,
+      "runtime_s": 0.564,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -994,7 +994,7 @@
       "recognised": [
         "67df542e-fb46-5268-a7ae-c73ec7bc357a"
       ],
-      "runtime_s": 0.463,
+      "runtime_s": 0.526,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1007,7 +1007,7 @@
       "recognised": [
         "696ed9e8-c0ee-5ace-832d-68b01466842d"
       ],
-      "runtime_s": 0.605,
+      "runtime_s": 0.742,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1020,7 +1020,7 @@
       "recognised": [
         "6f1afcdb-2efb-5ee2-a4a3-91b4c70e451c"
       ],
-      "runtime_s": 0.558,
+      "runtime_s": 0.589,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1033,7 +1033,7 @@
       "recognised": [
         "710cd074-c5c1-507c-8fd9-8cab17108edd"
       ],
-      "runtime_s": 0.606,
+      "runtime_s": 0.55,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1046,7 +1046,7 @@
       "recognised": [
         "714b9b3c-2d29-559d-8060-e872a04282cc"
       ],
-      "runtime_s": 0.569,
+      "runtime_s": 0.609,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1059,7 +1059,7 @@
       "recognised": [
         "7246a4e8-0537-5016-b07a-433c59c2c285"
       ],
-      "runtime_s": 0.463,
+      "runtime_s": 0.561,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1072,7 +1072,7 @@
       "recognised": [
         "74b27345-3ebb-53c3-9587-c86f2c74b154"
       ],
-      "runtime_s": 0.641,
+      "runtime_s": 0.551,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1085,7 +1085,7 @@
       "recognised": [
         "74d61fc1-bd4f-5c3d-816e-cf3d673b05d1"
       ],
-      "runtime_s": 0.458,
+      "runtime_s": 0.483,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1098,7 +1098,7 @@
       "recognised": [
         "77fd7ff8-4330-543c-9276-cf9208ccdbb2"
       ],
-      "runtime_s": 0.689,
+      "runtime_s": 0.594,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1111,7 +1111,7 @@
       "recognised": [
         "78fc0983-5f67-5af5-a342-eb8f4d131408"
       ],
-      "runtime_s": 0.647,
+      "runtime_s": 0.529,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1124,7 +1124,7 @@
       "recognised": [
         "7a62762f-5c46-5fff-8c01-eade42eaa0e7"
       ],
-      "runtime_s": 0.531,
+      "runtime_s": 0.536,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1137,7 +1137,7 @@
       "recognised": [
         "7c1edbcd-96fd-50ea-bf02-ca79be2b9512"
       ],
-      "runtime_s": 0.524,
+      "runtime_s": 0.48,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1150,7 +1150,7 @@
       "recognised": [
         "7d35d671-86ad-5f1e-8b9f-3e899ff50c2c"
       ],
-      "runtime_s": 0.529,
+      "runtime_s": 0.474,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1163,7 +1163,7 @@
       "recognised": [
         "7dc01727-9e47-5ce9-85fe-eb61ee65decf"
       ],
-      "runtime_s": 0.674,
+      "runtime_s": 0.607,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1176,7 +1176,7 @@
       "recognised": [
         "7f573fd2-8251-5ad7-8ea2-f6cd8957b275"
       ],
-      "runtime_s": 0.422,
+      "runtime_s": 0.366,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1189,7 +1189,7 @@
       "recognised": [
         "80c6ca87-e589-5c93-a4b7-48be12f53c0c"
       ],
-      "runtime_s": 0.641,
+      "runtime_s": 0.534,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1202,7 +1202,7 @@
       "recognised": [
         "83989f1c-8e82-5480-b2b3-e79da4259290"
       ],
-      "runtime_s": 0.681,
+      "runtime_s": 0.555,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1215,7 +1215,7 @@
       "recognised": [
         "85a585d3-dcd9-5282-929c-8fbb8b89470b"
       ],
-      "runtime_s": 0.547,
+      "runtime_s": 0.559,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1228,7 +1228,7 @@
       "recognised": [
         "87abaa4c-d461-59f3-98a4-97a7fcbadd00"
       ],
-      "runtime_s": 0.564,
+      "runtime_s": 0.588,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1241,7 +1241,7 @@
       "recognised": [
         "87b8b93b-7118-5a62-aca5-2c849c4061eb"
       ],
-      "runtime_s": 0.433,
+      "runtime_s": 0.619,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1254,7 +1254,7 @@
       "recognised": [
         "88763199-e109-5253-ac65-2e032826bc80"
       ],
-      "runtime_s": 0.511,
+      "runtime_s": 0.494,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1267,7 +1267,7 @@
       "recognised": [
         "89079973-0e0c-51e0-998e-38af4980fc0a"
       ],
-      "runtime_s": 0.764,
+      "runtime_s": 0.553,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1280,7 +1280,7 @@
       "recognised": [
         "89ba71fa-c8c6-55f3-a1df-138cbd5a4319"
       ],
-      "runtime_s": 0.614,
+      "runtime_s": 0.945,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1293,7 +1293,7 @@
       "recognised": [
         "8a890ec3-652b-5af9-9cd8-6b80acc1aa61"
       ],
-      "runtime_s": 0.684,
+      "runtime_s": 0.803,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1306,7 +1306,7 @@
       "recognised": [
         "8bc2c5f7-e279-58af-b77a-6e27fccb59d2"
       ],
-      "runtime_s": 0.542,
+      "runtime_s": 0.51,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1319,7 +1319,7 @@
       "recognised": [
         "8c73e1cc-0311-5cde-b8aa-11e375492dd7"
       ],
-      "runtime_s": 0.707,
+      "runtime_s": 0.662,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1332,7 +1332,7 @@
       "recognised": [
         "8cf30ca9-3b4d-5216-b811-1e47dc394e43"
       ],
-      "runtime_s": 0.59,
+      "runtime_s": 0.498,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1345,7 +1345,7 @@
       "recognised": [
         "8d976321-04c3-5b2e-a5de-c2d9dc73e71f"
       ],
-      "runtime_s": 0.844,
+      "runtime_s": 0.507,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1358,7 +1358,7 @@
       "recognised": [
         "58091241-8079-5d76-8ebf-8cfc5c782021"
       ],
-      "runtime_s": 0.617,
+      "runtime_s": 0.729,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1371,7 +1371,7 @@
       "recognised": [
         "8e910181-bb43-5354-97fa-368fc42fbc2d"
       ],
-      "runtime_s": 0.484,
+      "runtime_s": 0.476,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1384,7 +1384,7 @@
       "recognised": [
         "8f2a267a-2fa7-5f76-8975-2b17dba8bf00"
       ],
-      "runtime_s": 0.532,
+      "runtime_s": 0.5,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1397,7 +1397,7 @@
       "recognised": [
         "8f707e07-b6b3-5f54-85be-cc1e5c58f5f4"
       ],
-      "runtime_s": 0.637,
+      "runtime_s": 0.5,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1410,7 +1410,7 @@
       "recognised": [
         "92209989-aca4-5241-a0e2-b13f399ce871"
       ],
-      "runtime_s": 0.604,
+      "runtime_s": 0.67,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1423,7 +1423,7 @@
       "recognised": [
         "929cbad6-8311-5139-96ef-affa194e3be8"
       ],
-      "runtime_s": 0.543,
+      "runtime_s": 0.466,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1436,7 +1436,7 @@
       "recognised": [
         "93c0f594-ddb5-5074-aa9f-d503f371e222"
       ],
-      "runtime_s": 0.482,
+      "runtime_s": 0.555,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1449,7 +1449,7 @@
       "recognised": [
         "fa15d8b3-b284-5fc4-992a-c23e677bc4f9"
       ],
-      "runtime_s": 0.54,
+      "runtime_s": 0.544,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1462,7 +1462,7 @@
       "recognised": [
         "978dc2b1-19ef-559f-9180-9db0e789b0ca"
       ],
-      "runtime_s": 0.839,
+      "runtime_s": 0.569,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1475,7 +1475,7 @@
       "recognised": [
         "98097c72-23ee-5d17-9d1d-8b5520473234"
       ],
-      "runtime_s": 0.561,
+      "runtime_s": 0.565,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1488,7 +1488,7 @@
       "recognised": [
         "98e5cf02-40f5-59a3-a17a-164b5c7ef4df"
       ],
-      "runtime_s": 0.572,
+      "runtime_s": 0.53,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1501,7 +1501,7 @@
       "recognised": [
         "99687962-d5e1-552a-9a5c-61fe8c39bfea"
       ],
-      "runtime_s": 0.511,
+      "runtime_s": 0.552,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1514,7 +1514,7 @@
       "recognised": [
         "9a32aa43-2408-5d32-a1a9-8aadc89bc1dc"
       ],
-      "runtime_s": 0.455,
+      "runtime_s": 0.583,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1527,7 +1527,7 @@
       "recognised": [
         "9b09aa6d-2bf8-5f6e-ab4c-f4a69e733adf"
       ],
-      "runtime_s": 0.504,
+      "runtime_s": 0.76,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1540,7 +1540,7 @@
       "recognised": [
         "9eae30fc-2d1b-58c0-adc2-3052e91795b5"
       ],
-      "runtime_s": 0.57,
+      "runtime_s": 0.937,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1553,7 +1553,7 @@
       "recognised": [
         "9f47fd7a-c051-5f02-a730-8d729739263c"
       ],
-      "runtime_s": 0.602,
+      "runtime_s": 0.486,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1566,7 +1566,7 @@
       "recognised": [
         "a3abaeb6-f1c8-5551-99ec-76b665e249cd"
       ],
-      "runtime_s": 0.768,
+      "runtime_s": 0.481,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1579,7 +1579,7 @@
       "recognised": [
         "a57fd155-198c-5e9c-8fc0-3ffec03809c8"
       ],
-      "runtime_s": 0.418,
+      "runtime_s": 0.563,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1592,7 +1592,7 @@
       "recognised": [
         "a587b7b9-abea-5c98-a499-8957ce40ecad"
       ],
-      "runtime_s": 0.472,
+      "runtime_s": 0.452,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1605,7 +1605,7 @@
       "recognised": [
         "a5ed1289-b561-58c8-a6c2-085bf8541988"
       ],
-      "runtime_s": 0.637,
+      "runtime_s": 0.717,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1618,7 +1618,7 @@
       "recognised": [
         "a8b5f870-8abd-5029-9e90-0897ff8a80e0"
       ],
-      "runtime_s": 0.699,
+      "runtime_s": 0.581,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1631,7 +1631,7 @@
       "recognised": [
         "6118f100-8e21-533f-ac88-d8d557e2e2e9"
       ],
-      "runtime_s": 0.538,
+      "runtime_s": 0.685,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1644,7 +1644,7 @@
       "recognised": [
         "abd9b172-e755-5663-b95e-745673de9f74"
       ],
-      "runtime_s": 0.587,
+      "runtime_s": 0.709,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1657,7 +1657,7 @@
       "recognised": [
         "ac252653-ebaa-5f7f-83f0-860f1142d650"
       ],
-      "runtime_s": 0.557,
+      "runtime_s": 0.667,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1670,7 +1670,7 @@
       "recognised": [
         "ac5e1d17-8e22-53f4-af38-6a15a104bc9d"
       ],
-      "runtime_s": 0.469,
+      "runtime_s": 0.657,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1683,7 +1683,7 @@
       "recognised": [
         "b03f4111-007b-5c13-af38-05feef7d0289"
       ],
-      "runtime_s": 0.447,
+      "runtime_s": 0.532,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1696,7 +1696,7 @@
       "recognised": [
         "b2e76528-757d-5e27-a18e-f003ca961e79"
       ],
-      "runtime_s": 0.456,
+      "runtime_s": 0.595,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1709,7 +1709,7 @@
       "recognised": [
         "b82583d8-8e6b-5122-9d92-b47db52b59c0"
       ],
-      "runtime_s": 0.432,
+      "runtime_s": 0.54,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1722,7 +1722,7 @@
       "recognised": [
         "b845b1d7-5205-5424-9642-549635b88b39"
       ],
-      "runtime_s": 0.636,
+      "runtime_s": 0.829,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1735,7 +1735,7 @@
       "recognised": [
         "b86a6181-8016-5d46-9c9f-e75b1751110e"
       ],
-      "runtime_s": 0.504,
+      "runtime_s": 0.742,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1748,7 +1748,7 @@
       "recognised": [
         "b97a06ac-b779-52a2-90b4-ec72b73ed22b"
       ],
-      "runtime_s": 0.504,
+      "runtime_s": 0.905,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1761,7 +1761,7 @@
       "recognised": [
         "b9f6dde8-f31e-5724-b8f3-7ad2fe10e33e"
       ],
-      "runtime_s": 0.546,
+      "runtime_s": 0.768,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1774,7 +1774,7 @@
       "recognised": [
         "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
       ],
-      "runtime_s": 0.482,
+      "runtime_s": 0.517,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1787,7 +1787,7 @@
       "recognised": [
         "bd5fdd3b-f2c5-530f-a6c0-dc527369e384"
       ],
-      "runtime_s": 0.467,
+      "runtime_s": 0.406,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1800,7 +1800,7 @@
       "recognised": [
         "c05ce0bd-580e-5ab1-8fc4-dc56b243c94c"
       ],
-      "runtime_s": 0.644,
+      "runtime_s": 0.495,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1813,7 +1813,7 @@
       "recognised": [
         "c31d5b4c-c831-5921-a70a-2ef479f115c5"
       ],
-      "runtime_s": 0.56,
+      "runtime_s": 0.726,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1826,7 +1826,7 @@
       "recognised": [
         "c42518fc-ab78-5c5f-8473-40ae6cd74b9b"
       ],
-      "runtime_s": 0.597,
+      "runtime_s": 0.543,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1839,7 +1839,7 @@
       "recognised": [
         "c450689f-78df-5afb-a7f3-673a10da5b73"
       ],
-      "runtime_s": 0.556,
+      "runtime_s": 0.81,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1852,7 +1852,7 @@
       "recognised": [
         "c492a467-330b-5150-b578-618582d3fe41"
       ],
-      "runtime_s": 0.636,
+      "runtime_s": 0.733,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1865,7 +1865,7 @@
       "recognised": [
         "8ac41de4-ab58-52eb-8dbf-6d1ee421ce35"
       ],
-      "runtime_s": 0.504,
+      "runtime_s": 0.517,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1878,7 +1878,7 @@
       "recognised": [
         "c5d34f95-1670-5766-b824-c4d580d76cb0"
       ],
-      "runtime_s": 0.531,
+      "runtime_s": 0.579,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1891,7 +1891,7 @@
       "recognised": [
         "c5dc7ac8-7498-5ede-b5c9-fdf1fc70b029"
       ],
-      "runtime_s": 0.61,
+      "runtime_s": 0.707,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1904,7 +1904,7 @@
       "recognised": [
         "c6c52721-af48-5268-8c84-26d9e1bafbb5"
       ],
-      "runtime_s": 0.438,
+      "runtime_s": 0.526,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1917,7 +1917,7 @@
       "recognised": [
         "c75a09e5-5995-5150-85f5-8f943a205b95"
       ],
-      "runtime_s": 0.612,
+      "runtime_s": 0.706,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1930,7 +1930,7 @@
       "recognised": [
         "c80dbd6a-f50b-59b2-a957-14e88fc29aa1"
       ],
-      "runtime_s": 0.598,
+      "runtime_s": 0.634,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1943,7 +1943,7 @@
       "recognised": [
         "ca0cebf3-3c25-5804-b071-0e0c1fcef320"
       ],
-      "runtime_s": 0.602,
+      "runtime_s": 0.585,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1956,7 +1956,7 @@
       "recognised": [
         "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
       ],
-      "runtime_s": 0.647,
+      "runtime_s": 0.526,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1969,7 +1969,7 @@
       "recognised": [
         "cb07a160-3b21-5bed-a758-bb41007ed2ff"
       ],
-      "runtime_s": 0.549,
+      "runtime_s": 0.768,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1982,7 +1982,7 @@
       "recognised": [
         "cbd992a3-becd-5764-9c22-c47ae1f32ec0"
       ],
-      "runtime_s": 0.571,
+      "runtime_s": 0.702,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -1995,7 +1995,7 @@
       "recognised": [
         "cbf55beb-c275-5bb7-9c23-ee6fdf557e8c"
       ],
-      "runtime_s": 0.538,
+      "runtime_s": 0.53,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2008,7 +2008,7 @@
       "recognised": [
         "cc847c64-5a3a-5105-9df4-3fa8cff9db58"
       ],
-      "runtime_s": 0.624,
+      "runtime_s": 0.594,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2021,7 +2021,7 @@
       "recognised": [
         "cca7bade-fdbf-535a-a2b8-11e3266b962b"
       ],
-      "runtime_s": 0.458,
+      "runtime_s": 0.417,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2034,7 +2034,7 @@
       "recognised": [
         "cd9aa095-f999-5a2c-91e5-4acd94d45416"
       ],
-      "runtime_s": 0.567,
+      "runtime_s": 0.402,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2047,7 +2047,7 @@
       "recognised": [
         "cdb02719-a9de-5f4c-be59-0bd8787fcd9f"
       ],
-      "runtime_s": 0.457,
+      "runtime_s": 0.458,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2060,7 +2060,7 @@
       "recognised": [
         "ce2dfafe-0cde-54bd-b7b7-284a313a3e2a"
       ],
-      "runtime_s": 0.485,
+      "runtime_s": 0.547,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2073,7 +2073,7 @@
       "recognised": [
         "ce481a04-adcd-54bc-b231-0c4e8f021fe3"
       ],
-      "runtime_s": 0.486,
+      "runtime_s": 0.659,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2086,7 +2086,7 @@
       "recognised": [
         "d273b78c-1188-5547-8fbc-a83f8d47a9c9"
       ],
-      "runtime_s": 0.478,
+      "runtime_s": 0.594,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2099,7 +2099,7 @@
       "recognised": [
         "d2e35f3a-b4d4-500b-8eac-8e331703542a"
       ],
-      "runtime_s": 0.524,
+      "runtime_s": 0.675,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2112,7 +2112,7 @@
       "recognised": [
         "52f97e1c-7515-54f3-8743-514eca0db0e6"
       ],
-      "runtime_s": 0.673,
+      "runtime_s": 0.675,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2125,7 +2125,7 @@
       "recognised": [
         "499d476a-cff8-5235-969d-7f36f4612530"
       ],
-      "runtime_s": 0.557,
+      "runtime_s": 0.518,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2138,7 +2138,7 @@
       "recognised": [
         "d3a75fe2-c639-50d7-968a-c2dd97e50640"
       ],
-      "runtime_s": 0.584,
+      "runtime_s": 0.45,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2151,7 +2151,7 @@
       "recognised": [
         "d47fc463-2114-5c1a-a92c-45fbfca77760"
       ],
-      "runtime_s": 0.467,
+      "runtime_s": 0.455,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2164,7 +2164,7 @@
       "recognised": [
         "d4c8b239-71b4-5f9e-9da0-ee8529f943cd"
       ],
-      "runtime_s": 0.497,
+      "runtime_s": 0.501,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2177,7 +2177,7 @@
       "recognised": [
         "d5ff4cfb-3d38-5261-abd1-42ac1530e157"
       ],
-      "runtime_s": 0.73,
+      "runtime_s": 0.823,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2190,7 +2190,7 @@
       "recognised": [
         "f494d280-f3c1-5acf-a3e0-07d6a3eebdf3"
       ],
-      "runtime_s": 0.551,
+      "runtime_s": 0.893,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2203,7 +2203,7 @@
       "recognised": [
         "d75c9e2e-3be5-5ae2-ae4e-2d11a5fec543"
       ],
-      "runtime_s": 0.588,
+      "runtime_s": 0.849,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2216,7 +2216,7 @@
       "recognised": [
         "d7e765d4-34b2-57fd-85f6-2f19a543f4ac"
       ],
-      "runtime_s": 0.662,
+      "runtime_s": 0.681,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2229,7 +2229,7 @@
       "recognised": [
         "d85ca0b2-54e2-5a3a-bb78-4b6ae306f914"
       ],
-      "runtime_s": 0.572,
+      "runtime_s": 0.593,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2242,7 +2242,7 @@
       "recognised": [
         "d8f9f7a0-99d4-5ba3-bebb-ab1487c4e664"
       ],
-      "runtime_s": 0.478,
+      "runtime_s": 0.725,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2255,7 +2255,7 @@
       "recognised": [
         "d91f6808-812d-5dd6-b96e-edececbe5985"
       ],
-      "runtime_s": 0.542,
+      "runtime_s": 0.641,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2268,7 +2268,7 @@
       "recognised": [
         "da7b6277-6281-5be8-b55f-036b380b9cea"
       ],
-      "runtime_s": 0.51,
+      "runtime_s": 0.519,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2281,7 +2281,7 @@
       "recognised": [
         "da812f7a-5e1f-57d6-8884-22002508a926"
       ],
-      "runtime_s": 0.553,
+      "runtime_s": 0.571,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2294,7 +2294,7 @@
       "recognised": [
         "ddabaad6-ee3c-58f3-9e03-2a712a1c0a36"
       ],
-      "runtime_s": 0.501,
+      "runtime_s": 0.541,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2307,7 +2307,7 @@
       "recognised": [
         "0449c1a1-d75c-54f6-985a-fd512539f128"
       ],
-      "runtime_s": 0.507,
+      "runtime_s": 0.675,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2320,7 +2320,7 @@
       "recognised": [
         "df708cfb-2c50-53e1-aa99-67e1257016b7"
       ],
-      "runtime_s": 0.45,
+      "runtime_s": 0.465,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2333,7 +2333,7 @@
       "recognised": [
         "e2bf8ab7-42a6-512f-945f-0a33d2a3ef94"
       ],
-      "runtime_s": 0.486,
+      "runtime_s": 0.627,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2346,7 +2346,7 @@
       "recognised": [
         "e382d955-cfe0-5c9c-9b14-61cef061cdd3"
       ],
-      "runtime_s": 0.613,
+      "runtime_s": 0.571,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2359,7 +2359,7 @@
       "recognised": [
         "e3aeb4ee-5957-5105-84a8-374ecca2210b"
       ],
-      "runtime_s": 0.498,
+      "runtime_s": 0.553,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2372,7 +2372,7 @@
       "recognised": [
         "e489e427-87e8-5cde-94a8-47b0404a04a2"
       ],
-      "runtime_s": 0.465,
+      "runtime_s": 0.574,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2385,7 +2385,7 @@
       "recognised": [
         "e51c3a28-5719-5f1f-856a-ccdadf9411e5"
       ],
-      "runtime_s": 0.55,
+      "runtime_s": 0.594,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2398,7 +2398,7 @@
       "recognised": [
         "e63d7d93-9b27-5d7f-8743-a852299595a5"
       ],
-      "runtime_s": 0.533,
+      "runtime_s": 0.455,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2411,7 +2411,7 @@
       "recognised": [
         "e91f682c-9a33-5a13-9226-df0c6338a272"
       ],
-      "runtime_s": 0.474,
+      "runtime_s": 0.525,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2424,7 +2424,7 @@
       "recognised": [
         "ea839ef5-2602-5fcc-bb8e-b886b256561a"
       ],
-      "runtime_s": 0.579,
+      "runtime_s": 0.761,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2437,7 +2437,7 @@
       "recognised": [
         "efbad82c-56f8-5629-a664-141023fc6ae3"
       ],
-      "runtime_s": 0.618,
+      "runtime_s": 0.586,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2450,7 +2450,7 @@
       "recognised": [
         "f029d08d-44bb-5107-95a9-d6d53512f513"
       ],
-      "runtime_s": 0.593,
+      "runtime_s": 0.686,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2463,7 +2463,7 @@
       "recognised": [
         "f08556f6-181b-54a3-a70e-eea1b1b1806b"
       ],
-      "runtime_s": 0.486,
+      "runtime_s": 0.613,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2476,7 +2476,7 @@
       "recognised": [
         "f132a5cb-b9cc-5c02-9d01-55890124ceec"
       ],
-      "runtime_s": 0.435,
+      "runtime_s": 0.568,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2489,7 +2489,7 @@
       "recognised": [
         "f1df6271-d786-572c-b6ee-318e5a8b04a0"
       ],
-      "runtime_s": 0.641,
+      "runtime_s": 0.706,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2502,7 +2502,7 @@
       "recognised": [
         "f281badd-5ce0-594f-addb-3c3c57f1f7de"
       ],
-      "runtime_s": 0.712,
+      "runtime_s": 0.671,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2515,7 +2515,7 @@
       "recognised": [
         "f4d6ccf8-b53d-59f7-85c5-4c53277e9457"
       ],
-      "runtime_s": 0.657,
+      "runtime_s": 0.568,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2528,7 +2528,7 @@
       "recognised": [
         "f5404ea9-21e9-5b58-abe3-11de6f13c482"
       ],
-      "runtime_s": 0.495,
+      "runtime_s": 0.544,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2541,7 +2541,7 @@
       "recognised": [
         "f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d"
       ],
-      "runtime_s": 0.501,
+      "runtime_s": 0.544,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2554,7 +2554,7 @@
       "recognised": [
         "f58a735a-468b-5df0-ac01-12a275872de4"
       ],
-      "runtime_s": 0.451,
+      "runtime_s": 0.73,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2567,7 +2567,7 @@
       "recognised": [
         "f8c8e98a-f2a8-5c2b-ae4a-eccbe41de874"
       ],
-      "runtime_s": 0.575,
+      "runtime_s": 0.649,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2580,7 +2580,7 @@
       "recognised": [
         "5056e3dc-3bf3-5d3e-beea-cd55ffc986df"
       ],
-      "runtime_s": 0.759,
+      "runtime_s": 0.886,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2593,7 +2593,7 @@
       "recognised": [
         "fc0f3291-22a4-58e5-b03e-b971c5403c53"
       ],
-      "runtime_s": 0.614,
+      "runtime_s": 0.527,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2606,7 +2606,7 @@
       "recognised": [
         "fe1fe8c7-a986-5d62-8553-aafe64f8d2cd"
       ],
-      "runtime_s": 0.632,
+      "runtime_s": 0.748,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2619,7 +2619,7 @@
       "recognised": [
         "ffa78954-1122-5221-af63-31b9c5bc5d91"
       ],
-      "runtime_s": 0.409,
+      "runtime_s": 0.515,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2635,7 +2635,7 @@
         "412bb17e-58bf-5e6f-80a8-8926151ab9f4",
         "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
       ],
-      "runtime_s": 1.189,
+      "runtime_s": 1.452,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2649,7 +2649,7 @@
         "bb947042-cd1d-5fbf-875c-9404dc33d8c1",
         "412bb17e-58bf-5e6f-80a8-8926151ab9f4"
       ],
-      "runtime_s": 0.839,
+      "runtime_s": 0.74,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2662,7 +2662,7 @@
       "recognised": [
         "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
       ],
-      "runtime_s": 0.592,
+      "runtime_s": 0.778,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2675,7 +2675,7 @@
       "recognised": [
         "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
       ],
-      "runtime_s": 0.499,
+      "runtime_s": 0.625,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2688,7 +2688,7 @@
       "recognised": [
         "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
       ],
-      "runtime_s": 0.513,
+      "runtime_s": 0.729,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2701,7 +2701,7 @@
       "recognised": [
         "7a8bbb63-420b-5c84-be26-79a871ee1415"
       ],
-      "runtime_s": 0.624,
+      "runtime_s": 0.483,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2714,7 +2714,7 @@
       "recognised": [
         "48448b61-5f31-53a2-9bbe-66293104501b"
       ],
-      "runtime_s": 0.599,
+      "runtime_s": 0.43,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2727,7 +2727,7 @@
       "recognised": [
         "aa807c21-41ed-5cd3-8e86-8e62184ca2e2"
       ],
-      "runtime_s": 0.569,
+      "runtime_s": 0.594,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2740,7 +2740,7 @@
       "recognised": [
         "0a00eb60-c3a1-5e43-9d87-0ce618a7f599"
       ],
-      "runtime_s": 0.395,
+      "runtime_s": 0.259,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2753,7 +2753,7 @@
       "recognised": [
         "24488650-34e7-576c-8533-4735246dba55"
       ],
-      "runtime_s": 0.469,
+      "runtime_s": 0.341,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2766,7 +2766,7 @@
       "recognised": [
         "0a0ecc26-2faf-5f5b-8121-de983a204c26"
       ],
-      "runtime_s": 0.372,
+      "runtime_s": 0.305,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2779,7 +2779,7 @@
       "recognised": [
         "0a0f53ed-2640-5848-936d-50de61cb5c9f"
       ],
-      "runtime_s": 0.383,
+      "runtime_s": 0.3,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2792,7 +2792,7 @@
       "recognised": [
         "48448b61-5f31-53a2-9bbe-66293104501b"
       ],
-      "runtime_s": 0.262,
+      "runtime_s": 0.399,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2805,7 +2805,7 @@
       "recognised": [
         "7a8bbb63-420b-5c84-be26-79a871ee1415"
       ],
-      "runtime_s": 0.331,
+      "runtime_s": 0.284,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2818,7 +2818,7 @@
       "recognised": [
         "aa807c21-41ed-5cd3-8e86-8e62184ca2e2"
       ],
-      "runtime_s": 0.386,
+      "runtime_s": 0.469,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2831,7 +2831,7 @@
       "recognised": [
         "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
       ],
-      "runtime_s": 0.424,
+      "runtime_s": 0.38,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2844,7 +2844,7 @@
       "recognised": [
         "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
       ],
-      "runtime_s": 0.266,
+      "runtime_s": 0.316,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2864,7 +2864,7 @@
         "aa807c21-41ed-5cd3-8e86-8e62184ca2e2",
         "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
       ],
-      "runtime_s": 3.146,
+      "runtime_s": 3.124,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2885,7 +2885,7 @@
         "3d0256fd-0186-57dc-8827-8175eeb21af0",
         "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
       ],
-      "runtime_s": 3.298,
+      "runtime_s": 3.543,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2898,7 +2898,7 @@
       "recognised": [
         "01013cab-be73-532f-b6bf-0f24d0c3792f"
       ],
-      "runtime_s": 0.359,
+      "runtime_s": 0.35,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2911,7 +2911,7 @@
       "recognised": [
         "0a2f85cd-f66d-5330-a9d5-314554f871a1"
       ],
-      "runtime_s": 0.45,
+      "runtime_s": 0.363,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2924,7 +2924,7 @@
       "recognised": [
         "0c941678-45c6-5aab-a863-136c1e0b7a7f"
       ],
-      "runtime_s": 0.333,
+      "runtime_s": 0.48,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2937,7 +2937,7 @@
       "recognised": [
         "12b77048-ebad-51b2-99e8-c7dcaccf7a67"
       ],
-      "runtime_s": 0.322,
+      "runtime_s": 0.333,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2950,7 +2950,7 @@
       "recognised": [
         "15683485-77f7-5c6f-b94d-93dab47a662b"
       ],
-      "runtime_s": 0.424,
+      "runtime_s": 0.487,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2963,7 +2963,7 @@
       "recognised": [
         "19827ebf-3b49-5021-ac7f-f6c125a3bdd6"
       ],
-      "runtime_s": 0.425,
+      "runtime_s": 0.443,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2976,7 +2976,7 @@
       "recognised": [
         "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
       ],
-      "runtime_s": 0.366,
+      "runtime_s": 0.397,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -2989,7 +2989,7 @@
       "recognised": [
         "1d54b6cc-3d3b-5be2-966b-21c75e788bf1"
       ],
-      "runtime_s": 0.392,
+      "runtime_s": 0.402,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3002,7 +3002,7 @@
       "recognised": [
         "3261737f-2698-5f05-b714-6d1dffcf20cd"
       ],
-      "runtime_s": 0.373,
+      "runtime_s": 0.451,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3015,7 +3015,7 @@
       "recognised": [
         "327751c7-6d08-5ee0-a9dc-f02ad1398eca"
       ],
-      "runtime_s": 0.482,
+      "runtime_s": 0.396,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3028,7 +3028,7 @@
       "recognised": [
         "342a9886-3eec-51ee-bf23-fdc7069d98a1"
       ],
-      "runtime_s": 0.324,
+      "runtime_s": 0.417,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3041,7 +3041,7 @@
       "recognised": [
         "40bc1031-6cc8-5e10-9ff3-12f8a7b70c78"
       ],
-      "runtime_s": 0.643,
+      "runtime_s": 0.598,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3054,7 +3054,7 @@
       "recognised": [
         "46bd1799-9a0a-5fd1-93d6-708a585dc71b"
       ],
-      "runtime_s": 0.387,
+      "runtime_s": 0.36,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3067,7 +3067,7 @@
       "recognised": [
         "47b367b0-ffea-514a-8ccc-7474cb2c23df"
       ],
-      "runtime_s": 0.34,
+      "runtime_s": 0.413,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3080,7 +3080,7 @@
       "recognised": [
         "4f7caf33-25ba-5280-b86e-a730d86010f4"
       ],
-      "runtime_s": 0.459,
+      "runtime_s": 0.423,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3093,7 +3093,7 @@
       "recognised": [
         "58ba82cb-f820-5bc3-b18b-11a85dcb2a44"
       ],
-      "runtime_s": 1.052,
+      "runtime_s": 0.936,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3106,7 +3106,7 @@
       "recognised": [
         "61fa7145-af2b-59a2-92dd-48d19be60152"
       ],
-      "runtime_s": 0.525,
+      "runtime_s": 0.438,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3119,7 +3119,7 @@
       "recognised": [
         "64359c4f-a984-5135-9d52-7c591ac684e3"
       ],
-      "runtime_s": 0.379,
+      "runtime_s": 0.42,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3132,7 +3132,7 @@
       "recognised": [
         "7246a4e8-0537-5016-b07a-433c59c2c285"
       ],
-      "runtime_s": 0.29,
+      "runtime_s": 0.36,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3145,7 +3145,7 @@
       "recognised": [
         "74b27345-3ebb-53c3-9587-c86f2c74b154"
       ],
-      "runtime_s": 0.435,
+      "runtime_s": 0.555,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3158,7 +3158,7 @@
       "recognised": [
         "89ba71fa-c8c6-55f3-a1df-138cbd5a4319"
       ],
-      "runtime_s": 0.354,
+      "runtime_s": 0.401,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3171,7 +3171,7 @@
       "recognised": [
         "8fe1d06a-2e8d-5352-8459-58ed34475b1a"
       ],
-      "runtime_s": 0.513,
+      "runtime_s": 0.444,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3184,7 +3184,7 @@
       "recognised": [
         "a8b5f870-8abd-5029-9e90-0897ff8a80e0"
       ],
-      "runtime_s": 0.522,
+      "runtime_s": 0.322,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3197,7 +3197,7 @@
       "recognised": [
         "ac252653-ebaa-5f7f-83f0-860f1142d650"
       ],
-      "runtime_s": 0.361,
+      "runtime_s": 0.305,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3210,7 +3210,7 @@
       "recognised": [
         "b845b1d7-5205-5424-9642-549635b88b39"
       ],
-      "runtime_s": 0.485,
+      "runtime_s": 0.459,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3223,7 +3223,7 @@
       "recognised": [
         "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
       ],
-      "runtime_s": 0.376,
+      "runtime_s": 0.424,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3236,7 +3236,7 @@
       "recognised": [
         "bd5fdd3b-f2c5-530f-a6c0-dc527369e384"
       ],
-      "runtime_s": 0.349,
+      "runtime_s": 0.316,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3249,7 +3249,7 @@
       "recognised": [
         "c5d34f95-1670-5766-b824-c4d580d76cb0"
       ],
-      "runtime_s": 0.394,
+      "runtime_s": 0.374,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3262,7 +3262,7 @@
       "recognised": [
         "c6c52721-af48-5268-8c84-26d9e1bafbb5"
       ],
-      "runtime_s": 0.547,
+      "runtime_s": 0.306,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3275,7 +3275,7 @@
       "recognised": [
         "cd9aa095-f999-5a2c-91e5-4acd94d45416"
       ],
-      "runtime_s": 0.339,
+      "runtime_s": 0.472,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3288,7 +3288,7 @@
       "recognised": [
         "cdb02719-a9de-5f4c-be59-0bd8787fcd9f"
       ],
-      "runtime_s": 0.37,
+      "runtime_s": 0.34,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3301,7 +3301,7 @@
       "recognised": [
         "d3a75fe2-c639-50d7-968a-c2dd97e50640"
       ],
-      "runtime_s": 0.352,
+      "runtime_s": 0.339,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3314,7 +3314,7 @@
       "recognised": [
         "f132a5cb-b9cc-5c02-9d01-55890124ceec"
       ],
-      "runtime_s": 0.402,
+      "runtime_s": 0.392,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3327,7 +3327,7 @@
       "recognised": [
         "f5404ea9-21e9-5b58-abe3-11de6f13c482"
       ],
-      "runtime_s": 0.308,
+      "runtime_s": 0.314,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3340,7 +3340,7 @@
       "recognised": [
         "f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d"
       ],
-      "runtime_s": 0.44,
+      "runtime_s": 0.385,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3353,7 +3353,7 @@
       "recognised": [
         "fc0f3291-22a4-58e5-b03e-b971c5403c53"
       ],
-      "runtime_s": 0.367,
+      "runtime_s": 0.337,
       "ocr_fallbacks": 0,
       "error": null
     },
@@ -3364,7 +3364,7 @@
         "same_card_name": true
       },
       "recognised": [],
-      "runtime_s": 0.798,
+      "runtime_s": 0.8,
       "ocr_fallbacks": 0,
       "error": null
     }
