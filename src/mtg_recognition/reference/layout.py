@@ -1,8 +1,4 @@
-"""Reference data: everything built from one MTGJSON release and used to recognise
-cards (the MobileCache database, the reference images and the pHash index; see
-GLOSSARY.md).
-
-`ReferenceData` owns the on-disk layout and the sync state file, so no other
+"""`ReferenceData` owns the on-disk layout and the sync state file, so no other
 module builds these paths itself.
 """
 
@@ -10,21 +6,11 @@ import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
-from sqlalchemy import Engine
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, select
 
-from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.reference.catalog import CatalogPrinting
+from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
-
-
-def open_read_only(db_path: Path) -> Engine:
-    """Engine on the SQLite database at `db_path`, opened read-only: it never
-    writes and never creates a missing file. (`mode=ro` is only honoured in a
-    SQLite URI, hence the `file:` URI and `uri=true`.)
-    """
-    return create_engine(
-        f"sqlite:///{db_path.resolve().as_uri()}?mode=ro&nolock=1&uri=true"
-    )
 
 
 @dataclass(frozen=True)
@@ -34,7 +20,7 @@ class SyncState:
     checked on disk (`ReferenceData.missing_images`), never recorded here.
     """
 
-    mobilecache_version: str | None = None
+    catalog_version: str | None = None
     phash_version: str | None = None
 
 
@@ -49,9 +35,9 @@ class ReferenceData:
         return cls(settings.DATA_DIR / "reference")
 
     @property
-    def db_path(self) -> Path:
-        """The MobileCache SQLite database."""
-        return self.root / "MobileCache.sqlite"
+    def catalog_path(self) -> Path:
+        """The catalog SQLite file."""
+        return self.root / "catalog.sqlite"
 
     @property
     def phash_files(self) -> tuple[Path, Path]:
@@ -69,7 +55,7 @@ class ReferenceData:
 
     @property
     def allprintings_path(self) -> Path:
-        """The MTGJSON AllPrintings database the MobileCache is built from (kept
+        """The MTGJSON AllPrintings database the catalog is built from (kept
         for exploration, not git-tracked).
         """
         return self.root / "mtgjson" / "AllPrintings.sqlite"
@@ -91,7 +77,7 @@ class ReferenceData:
         return self.root / ".mtg-sync-state.json"
 
     def missing_images(self) -> list[tuple[str, str]]:
-        """`(uuid, url)` of the printings in the database that have an image URL
+        """`(uuid, url)` of the printings in the catalog that have an image URL
         but no image file.
         """
         return [
@@ -101,7 +87,7 @@ class ReferenceData:
         ]
 
     def present_images(self) -> list[tuple[str, str | None]]:
-        """`(uuid, url)` of the printings in the database that have an image
+        """`(uuid, url)` of the printings in the catalog that have an image
         file.
         """
         return [
@@ -112,7 +98,7 @@ class ReferenceData:
 
     def stray_images(self) -> list[Path]:
         """The image files in `images_dir` that are not a printing in the
-        database.
+        catalog.
         """
         uuids = {uuid for uuid, _ in self._printing_urls()}
         return sorted(
@@ -120,10 +106,10 @@ class ReferenceData:
         )
 
     def _printing_urls(self) -> list[tuple[str, str | None]]:
-        """`(uuid, url)` of every printing in the database."""
-        engine = open_read_only(self.db_path)
+        """`(uuid, url)` of every printing in the catalog."""
+        engine = open_read_only(self.catalog_path)
         try:
-            statement = select(MobileCache.uuid, MobileCache.url)
+            statement = select(CatalogPrinting.uuid, CatalogPrinting.url)
             with Session(engine) as session:
                 return list(session.exec(statement).all())
         finally:

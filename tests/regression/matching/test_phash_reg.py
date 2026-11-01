@@ -13,7 +13,7 @@ from mtg_recognition.engine.matching.phash import (
     load_phash_index,
     shortlist,
 )
-from mtg_recognition.reference import ReferenceData
+from mtg_recognition.reference.layout import ReferenceData
 
 FIXTURE_DIR = Path("tests/regression/matching/fixtures")
 # The Pipeline's default k_phash_candidates: the printing must survive into OCR.

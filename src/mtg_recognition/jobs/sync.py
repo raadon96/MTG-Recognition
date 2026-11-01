@@ -1,9 +1,9 @@
-"""Reference data jobs: `mtg status`, `mtg update` and `mtg build-index`.
+"""Reference data jobs, run by `mtg status`, `mtg update` and `mtg build-index`.
 
-The MobileCache database and the pHash index are built from one MTGJSON release
+The catalog and the pHash index are built from one MTGJSON release
 and committed; the reference images are a local cache, downloaded only to build
 the index. Every HTTP request goes through the `httpx.Client` passed to the step
-functions, which the Click commands build.
+functions, which the commands in `cli.reference` build.
 """
 
 import io
@@ -18,20 +18,20 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
-import click
 import httpx
 from PIL import Image
 from rich.console import Console
-from rich.panel import Panel
 from sqlalchemy import func
 from sqlmodel import Session, SQLModel, col, create_engine, select
 from tqdm import tqdm
 
 from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS, build_phash_index
-from mtg_recognition.reference import ReferenceData, SyncState, open_read_only
+from mtg_recognition.reference.catalog import CatalogPrinting
+from mtg_recognition.reference.layout import ReferenceData, SyncState
+from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
 
-from .schemas import CardIdentifiers, Cards, Meta, MobileCache, Sets
+from .schemas import CardIdentifiers, Cards, Meta, Sets
 
 SCRYFALL_HEADERS = {
     "User-Agent": "mtg-recognition/1.0 (contact: adnen.boumessouer@gmail.com)",
@@ -72,7 +72,7 @@ def _replacing(path: Path) -> Generator[Path]:
 
 
 # ---------------------------------------------------------------------------
-# MobileCache database
+# Catalog
 # ---------------------------------------------------------------------------
 
 
@@ -92,13 +92,13 @@ def extract_year(releaseDate: str) -> str | None:
     return releaseDate.split("-")[0]
 
 
-def build_database(allprintings_path: Path, db_path: Path) -> int:
-    """(Re)build the MobileCache database at `db_path` from AllPrintings, streaming
+def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
+    """(Re)build the catalog at `catalog_path` from AllPrintings, streaming
     the rows; an interrupted build leaves the old one in place. Returns the number
     of printings.
     """
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    with _replacing(db_path) as part_path:
+    catalog_path.parent.mkdir(parents=True, exist_ok=True)
+    with _replacing(catalog_path) as part_path:
         source_engine = open_read_only(allprintings_path)
         dest_engine = create_engine(f"sqlite:///{part_path}")
         try:
@@ -106,7 +106,7 @@ def build_database(allprintings_path: Path, db_path: Path) -> int:
             # declare it on the class.
             SQLModel.metadata.create_all(
                 dest_engine,
-                tables=[MobileCache.__table__],  # ty: ignore[unresolved-attribute]
+                tables=[CatalogPrinting.__table__],  # ty: ignore[unresolved-attribute]
             )
             with (
                 Session(source_engine) as source_session,
@@ -142,7 +142,7 @@ def build_database(allprintings_path: Path, db_path: Path) -> int:
 
                 for row in tqdm(results_stream, desc="Processing Cards", unit=" card"):
                     batch.append(
-                        MobileCache(
+                        CatalogPrinting(
                             uuid=row.uuid,
                             name=row.name,
                             manaCost=row.manaCost,
@@ -180,9 +180,9 @@ def build_database(allprintings_path: Path, db_path: Path) -> int:
 
 
 def _count_printings(reference: ReferenceData, with_url: bool) -> int:
-    """Number of printings in the database with (or without) an image URL."""
-    url = col(MobileCache.url)
-    engine = open_read_only(reference.db_path)
+    """Number of printings in the catalog with (or without) an image URL."""
+    url = col(CatalogPrinting.url)
+    engine = open_read_only(reference.catalog_path)
     try:
         statement = select(func.count()).where(
             url.is_not(None) if with_url else url.is_(None)
@@ -286,11 +286,11 @@ class DownloadReport:
     downloaded: int
     failed: tuple[ImageFailure, ...]
     missing_url: int  # printings with no image URL, so nothing to download
-    removed: int  # images deleted because they are not a printing in the database
+    removed: int  # images deleted because they are not a printing in the catalog
 
 
 def download_images(reference: ReferenceData, client: httpx.Client) -> DownloadReport:
-    """Delete the images that are not a printing in the database, then download
+    """Delete the images that are not a printing in the catalog, then download
     the missing ones. Failures don't stop the download; they are reported.
     """
     stray = reference.stray_images()
@@ -366,7 +366,7 @@ def _decode_error(content: bytes) -> str | None:
 
 
 def hash_images(reference: ReferenceData, workers: int) -> tuple[ImageFailure, ...]:
-    """Rebuild the pHash index from the printings in the database that have an
+    """Rebuild the pHash index from the printings in the catalog that have an
     image on disk. Images that fail to hash are deleted, so the next build
     downloads them again, and reported.
     """
@@ -412,17 +412,17 @@ class IndexResult:
 @dataclass(frozen=True)
 class UpdateResult:
     latest_version: str
-    database_version: str | None
-    database_rebuilt: bool
+    catalog_version: str | None
+    catalog_rebuilt: bool
     allprintings_downloaded: bool
     index: IndexResult
 
 
 @dataclass(frozen=True)
 class Status:
-    database_version: str | None
+    catalog_version: str | None
     phash_version: str | None
-    index_matches: bool  # the index is on disk and built from the database's release
+    index_matches: bool  # the index is on disk and built from the catalog's release
     allprintings_version: str | None  # None when AllPrintings is absent
     images_present: int
     images_missing: int
@@ -432,7 +432,7 @@ class Status:
     def next_command(self) -> str | None:
         """The command that brings the reference data up to date, if any."""
         if self.latest_version is not None and (
-            self.latest_version != self.database_version
+            self.latest_version != self.catalog_version
         ):
             return "mtg update"
         if not self.index_matches:
@@ -443,7 +443,7 @@ class Status:
 def _index_matches(reference: ReferenceData, state: SyncState) -> bool:
     return (
         state.phash_version is not None
-        and state.phash_version == state.mobilecache_version
+        and state.phash_version == state.catalog_version
         and all(path.exists() for path in reference.phash_files)
     )
 
@@ -454,9 +454,9 @@ def build_index(
     force: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> IndexResult:
-    """Bring the reference images in line with the database (delete the strays,
-    download the missing), then rebuild the pHash index from the database's
-    printings with an image on disk and record it as built from the database's
+    """Bring the reference images in line with the catalog (delete the strays,
+    download the missing), then rebuild the pHash index from the catalog's
+    printings with an image on disk and record it as built from the catalog's
     release. Without `force`, does nothing when the index already is. Image
     failures are written to `reference.log_file`.
     """
@@ -479,7 +479,7 @@ def build_index(
     finally:
         _write_image_log(reference, failed)
 
-    state = replace(state, phash_version=state.mobilecache_version)
+    state = replace(state, phash_version=state.catalog_version)
     reference.save_state(state)
     return IndexResult(state.phash_version, downloads, unhashable)
 
@@ -490,34 +490,34 @@ def update(
     force: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> UpdateResult:
-    """Bring the reference data to the latest MTGJSON release: rebuild the database
+    """Bring the reference data to the latest MTGJSON release: rebuild the catalog
     when its release differs (or `force`), then the index when it no longer
-    matches the database. State is saved after each step, so a re-run after an
+    matches the catalog. State is saved after each step, so a re-run after an
     interruption resumes.
     """
     latest = fetch_latest_version(client)
     state = reference.load_state()
     rebuilt = downloaded = False
 
-    if force or state.mobilecache_version != latest or not reference.db_path.exists():
-        console.print("\n[bold]--- MobileCache ---[/bold]")
-        state = replace(state, mobilecache_version=None)
+    if force or state.catalog_version != latest or not reference.catalog_path.exists():
+        console.print("\n[bold]--- Catalog ---[/bold]")
+        state = replace(state, catalog_version=None)
         reference.save_state(state)
 
         downloaded = ensure_allprintings(reference, client, latest)
-        console.print("Building Local Database...")
-        build_database(reference.allprintings_path, reference.db_path)
+        console.print("Building the catalog...")
+        build_catalog(reference.allprintings_path, reference.catalog_path)
 
         # The release actually built, which may lag behind Meta.json
-        state = replace(state, mobilecache_version=allprintings_version(reference))
+        state = replace(state, catalog_version=allprintings_version(reference))
         reference.save_state(state)
         rebuilt = True
 
     index = build_index(reference, client, force=force, workers=workers)
     return UpdateResult(
         latest_version=latest,
-        database_version=state.mobilecache_version,
-        database_rebuilt=rebuilt,
+        catalog_version=state.catalog_version,
+        catalog_rebuilt=rebuilt,
         allprintings_downloaded=downloaded,
         index=index,
     )
@@ -534,7 +534,7 @@ def status(reference: ReferenceData, client: httpx.Client) -> Status:
         latest = None
     missing = len(reference.missing_images())
     return Status(
-        database_version=state.mobilecache_version,
+        catalog_version=state.catalog_version,
         phash_version=state.phash_version,
         index_matches=_index_matches(reference, state),
         allprintings_version=allprintings_version(reference),
@@ -542,122 +542,3 @@ def status(reference: ReferenceData, client: httpx.Client) -> Status:
         images_missing=missing,
         latest_version=latest,
     )
-
-
-# ---------------------------------------------------------------------------
-# Click commands
-# ---------------------------------------------------------------------------
-
-
-@contextmanager
-def _exit_on_error() -> Generator[None]:
-    try:
-        yield
-    except Exception as exc:
-        click.echo(f"Error: {type(exc).__name__}: {exc}", err=True)
-        raise SystemExit(1) from exc
-
-
-_force_option = click.option(
-    "--force",
-    is_flag=True,
-    default=False,
-    help="Rebuild even when the versions already match.",
-)
-_workers_option = click.option(
-    "--workers",
-    type=click.IntRange(min=1),
-    default=DEFAULT_NUM_WORKERS,
-    show_default=True,
-    help="Processes hashing images (1 hashes in-process).",
-)
-
-
-@click.command(name="status")
-def status_command() -> None:
-    """Show the reference data versions, the images on disk and the latest MTGJSON
-    release, then the command to run, if any.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), make_client() as client:
-        report = status(reference, client)
-
-    lines, next_step = status_summary(report)
-    console.print(Panel("\n".join(lines), title="Reference data", expand=False))
-    console.print(next_step)
-
-
-@click.command(name="update")
-@_force_option
-@_workers_option
-def update_command(force: bool, workers: int) -> None:
-    """Update the database to the latest MTGJSON release, then rebuild the pHash
-    index if it no longer matches the database.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), make_client() as client:
-        result = update(reference, client, force=force, workers=workers)
-
-    lines = update_summary(reference, result)
-    console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
-
-
-@click.command(name="build-index")
-@_force_option
-@_workers_option
-def build_index_command(force: bool, workers: int) -> None:
-    """Delete the reference images that are not a printing, download the missing
-    ones, then rebuild the pHash index from the database's printings with an
-    image on disk.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), make_client() as client:
-        result = build_index(reference, client, force=force, workers=workers)
-
-    lines = index_summary(reference, result)
-    console.print(Panel("\n".join(lines), title="Build-index Summary", expand=False))
-
-
-def status_summary(report: Status) -> tuple[list[str], str]:
-    """The lines of the panel, and the line after it naming the command to run."""
-    match = "matches" if report.index_matches else "does not match"
-    lines = [
-        f"MobileCache: {report.database_version}",
-        f"pHash index: {report.phash_version} ({match} the database)",
-        f"AllPrintings: {report.allprintings_version or 'absent'}",
-        f"Reference images: {report.images_present} present, "
-        f"{report.images_missing} missing",
-        f"Latest MTGJSON release: {report.latest_version or 'unknown'}",
-    ]
-    if report.next_command is None:
-        return lines, "Up to date: nothing to run."
-    return lines, f"Run: {report.next_command}"
-
-
-def update_summary(reference: ReferenceData, result: UpdateResult) -> list[str]:
-    database = "rebuilt" if result.database_rebuilt else "up to date"
-    lines = [f"MobileCache: {database} ({result.database_version})"]
-    if result.database_rebuilt:
-        source = "downloaded" if result.allprintings_downloaded else "reused"
-        lines.append(f"AllPrintings: {source} ({result.database_version})")
-    return lines + index_summary(reference, result.index)
-
-
-def index_summary(reference: ReferenceData, index: IndexResult) -> list[str]:
-    if index.downloads is None:
-        return [f"pHash index: up to date ({index.phash_version})"]
-    report = index.downloads
-    lines = [
-        f"Reference images: {report.downloaded} downloaded, "
-        f"{len(report.failed)} failed, {report.missing_url} without URL",
-        f"Removed images (no printing): {report.removed}",
-        f"pHash index: rebuilt ({index.phash_version})",
-    ]
-    if index.unhashable:
-        lines.append(
-            f"Unreadable images deleted: {len(index.unhashable)}; "
-            "run `mtg build-index` again"
-        )
-    if report.failed or index.unhashable:
-        lines.append(f"Image failures written to {reference.log_file}")
-    return lines

@@ -39,6 +39,15 @@ uv run dvc pull
 
 The pull fills `data/benchmark/` with the 7 image categories, and `data/scratch/` with query images that fail recognition, kept for debugging (`error/`, `failure_cases/`, `uncommon_layout/`). To fetch only the benchmark, run `uv run dvc pull data/benchmark.dvc`. The key is read-only: `dvc push` with it fails with "Insufficient permissions for the specified parent".
 
+### Run the benchmark
+
+```bash
+uv run mtg benchmark run               # recognise every labelled image, compare with the baseline
+uv run mtg benchmark update-baseline   # adopt the latest results as the baseline
+```
+
+`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR.
+
 ## Adding New Benchmark Images
 
 Only the maintainer can push to the dataset folder. To contribute images, open an issue or PR describing them and share them with the maintainer, who adds them as follows.
@@ -55,7 +64,7 @@ The first push opens Google's consent screen in the browser: pick the dataset ac
 
 ### 1. Drop the new images under `data/benchmark/` or `data/scratch/`
 
-Place new images in the appropriate category folder (e.g. `data/benchmark/1_photos_single_card/`). Query images that fail recognition and aren't part of the benchmark go in a `data/scratch/` folder instead. Don't add an image that is byte-identical to one already in either dataset. Filenames are typically the card UUID — see existing files for examples.
+Place new images in the appropriate category folder (e.g. `data/benchmark/1_photos_single_card/`). Query images that fail recognition and aren't part of the benchmark go in a `data/scratch/` folder instead. Don't add an image that is byte-identical to one already in either dataset. Filenames are typically the card UUID — see existing files for examples. Label each new image in `data/benchmark/manifest.json` with the UUIDs of the cards in it (`[]` for none): `mtg benchmark run` refuses to run on an unlabelled image.
 
 ### 2. Re-track and push
 

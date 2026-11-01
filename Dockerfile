@@ -79,8 +79,8 @@ COPY README.md ./
 COPY src ./src
 # Copy project metadata + source
 
-COPY data/reference/MobileCache.sqlite ./data/reference/MobileCache.sqlite
-# Copy DB artifacts
+COPY data/reference/catalog.sqlite ./data/reference/catalog.sqlite
+# Copy the catalog
 
 COPY data/reference/index/phash/hashes.npy ./data/reference/index/phash/hashes.npy
 COPY data/reference/index/phash/index_to_uuid.json ./data/reference/index/phash/index_to_uuid.json

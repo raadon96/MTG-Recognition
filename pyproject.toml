@@ -1,6 +1,6 @@
 [project]
 name = "mtg-recognition"
-version = "0.2.1"
+version = "0.3.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -101,6 +101,21 @@ markers = [
 
 [tool.importlinter]
 root_package = "mtg_recognition"
+include_external_packages = true
+
+# A layer may import the layers below it, never one above; `|` siblings can't
+# import each other. `jobs` imports `engine.matching.phash` on purpose: index and
+# query hashes must come from the same code.
+[[tool.importlinter.contracts]]
+name = "Layers"
+type = "layers"
+layers = [
+    "mtg_recognition.cli",
+    "mtg_recognition.app | mtg_recognition.jobs | mtg_recognition.benchmark",
+    "mtg_recognition.engine",
+    "mtg_recognition.reference",
+    "mtg_recognition.settings",
+]
 
 [[tool.importlinter.contracts]]
 name = "Engine stages are independent"
@@ -110,6 +125,17 @@ modules = [
     "mtg_recognition.engine.ocr",
     "mtg_recognition.engine.segmentation",
 ]
+
+# The engine, jobs, the benchmark and the app are plain functions any client can
+# call; Click stays in `cli`.
+[[tool.importlinter.contracts]]
+name = "Only the CLI imports Click"
+type = "forbidden"
+source_modules = [
+    "mtg_recognition.app", "mtg_recognition.jobs", "mtg_recognition.benchmark",
+    "mtg_recognition.engine", "mtg_recognition.reference", "mtg_recognition.settings",
+]
+forbidden_modules = ["click"]
 
 [tool.ruff]
 line-length = 88

@@ -44,7 +44,7 @@ def load_pipeline():
 
 
 def _score_color(score: float) -> str:
-    """Badge colour for a 0–100 match score."""
+    """Badge colour for a 0–100 score."""
     if score >= 50:
         return "#6BA76B"
     if score >= 25:
@@ -67,7 +67,7 @@ def create_thumbnail_grid(results, results_key="upload_results"):
             best = result.best
             if result.status == UploadStatus.SUCCESS and best is not None:
                 best_printing = best.printing
-                # Display best match image from reference database
+                # Display the best printing's reference image
                 img_url = best_printing.image_url
                 st.image(
                     img_url
@@ -89,7 +89,9 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                     unsafe_allow_html=True,
                 )
 
-                st.caption(f"{best_printing.set_code} #{best_printing.number}")
+                st.caption(
+                    f"{best_printing.set_code} #{best_printing.collector_number}"
+                )
 
                 # Filename (truncated)
                 filename = result.uploaded_filename
@@ -107,7 +109,7 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                     st.session_state.selected_results_key = results_key
                     st.rerun()
 
-            elif result.status == UploadStatus.NO_MATCH:
+            elif result.status == UploadStatus.NOT_RECOGNIZED:
                 st.caption("❌ No Match")
 
                 # Filename (truncated)
@@ -194,20 +196,20 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     # Main layout: 3 columns for images + 1 column for metadata
     col1, col2, col3, col4 = st.columns([1.2, 1.2, 1.2, 1])
 
-    # Column 1: Original Image
+    # Column 1: query image
     with col1:
         st.caption("**Original Image**")
-        st.image(result.original_image)
+        st.image(result.query_image)
 
-    # Column 2: Warped Image
+    # Column 2: card image
     with col2:
         st.caption("**Warped Image**")
-        if result.warped_image_jpeg is not None:
-            st.image(result.warped_image_jpeg)
+        if result.card_image_jpeg is not None:
+            st.image(result.card_image_jpeg)
         else:
             st.info("Warped image not available")
 
-    # Column 3: Best Match Image
+    # Column 3: the best printing's reference image
     with col3:
         st.caption("**Best Match**")
         img_url = best_printing.image_url
@@ -234,14 +236,14 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         st.caption(f"**Set:** {best_printing.set_code}")
         st.caption(
             f"**Collector Number:** "
-            f"{best_printing.number}/{best_printing.base_set_size}"
+            f"{best_printing.collector_number}/{best_printing.base_set_size}"
         )
         st.caption(f"**Artist:** {best_printing.artist or 'Unknown'}")
 
         if best_printing.image_url:
             st.markdown(f"[Scryfall]({best_printing.image_url})")
 
-    # Debug expanders: annotated crop, raw OCR output, reading vs. best match
+    # Debug expanders: annotated crop, raw OCR output, reading vs. best printing
     if debug and reading_debug is not None:
         if reading_debug.annotated_image is not None:
             with st.expander(
@@ -275,14 +277,14 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             )
             st.dataframe(df_prop, width="stretch")
 
-    # Show top matches below
+    # Show the ranking below
     st.markdown("---")
     st.subheader(f"Top {top_k} Matches")
 
     if ranked:
-        match_cols = st.columns(top_k)
+        ranking_cols = st.columns(top_k)
         for col_idx, entry in enumerate(ranked[:top_k]):
-            with match_cols[col_idx]:
+            with ranking_cols[col_idx]:
                 img_url = entry.printing.image_url
                 st.image(
                     img_url
@@ -292,7 +294,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
                 st.caption(f"**{entry.printing.name}**")
                 st.caption(f"Score: {entry.score:.2f}")
 
-    # Debug: score matrix below "Next Top Matches"
+    # Debug: score matrix below the ranking
     if debug and ranked and ranked[0].breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
             import pandas as pd

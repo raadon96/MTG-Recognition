@@ -14,30 +14,30 @@ CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
 
 # Canonical minimum output size for a perspective-corrected card (width × height),
 # consistent with Scryfall "medium" card size and the precomputed pHash index.
-WARPED_MIN_SIZE: tuple[int, int] = (488, 680)
+CARD_IMAGE_MIN_SIZE: tuple[int, int] = (488, 680)
 
-# Maximum output size for a warped card. Natural warp resolution is clamped to
+# Maximum output size for a card image. Natural warp resolution is clamped to
 # this ceiling so that close-up phone photos don't produce unbounded images.
-# 2× WARPED_MIN_SIZE keeps per-card memory and temp-file sizes predictable.
-WARPED_MAX_SIZE: tuple[int, int] = (976, 1360)
+# 2× CARD_IMAGE_MIN_SIZE keeps per-card memory and temp-file sizes predictable.
+CARD_IMAGE_MAX_SIZE: tuple[int, int] = (976, 1360)
 
 
 @dataclass
-class CardSegment:
-    """A single card extracted and perspective-corrected from a source image."""
+class SegmentedCard:
+    """One card found by segmentation: its card image."""
 
-    warped_image: np.ndarray  # BGR, resized to target_size
+    card_image: np.ndarray  # BGR, resized to target_size
 
 
 @dataclass
-class ImageSegmentationResult:
-    """Segmentation results for one input image. May contain multiple cards."""
+class SegmentationResult:
+    """Segmentation result for one query image. May contain multiple cards."""
 
-    segments: list[CardSegment] = field(default_factory=list)
+    cards: list[SegmentedCard] = field(default_factory=list)
 
     @property
     def success(self) -> bool:
-        return bool(self.segments)
+        return bool(self.cards)
 
 
 def corners_from_binary_mask(mask: np.ndarray, erode: bool = True) -> np.ndarray | None:
@@ -102,22 +102,22 @@ def warp_card(
 
     If target_size is None (default), the output resolution is the natural size
     derived from the corner distances (as computed by perspective_transform),
-    clamped between WARPED_MIN_SIZE (minimum) and WARPED_MAX_SIZE (maximum).
+    clamped between CARD_IMAGE_MIN_SIZE (minimum) and CARD_IMAGE_MAX_SIZE (maximum).
     Pass an explicit target_size to force a specific output resolution.
     """
-    warped = perspective_transform(img, corners)
-    h, w = warped.shape[:2]
+    card_image = perspective_transform(img, corners)
+    h, w = card_image.shape[:2]
     if w > h:
-        warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
+        card_image = cv2.rotate(card_image, cv2.ROTATE_90_CLOCKWISE)
         h, w = w, h
 
     if target_size is None:
-        out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+        out_w, out_h = clamp_size((w, h), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
         if (out_w, out_h) == (w, h):
-            return warped
-        return cv2.resize(warped, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+            return card_image
+        return cv2.resize(card_image, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
 
-    return cv2.resize(warped, target_size, interpolation=cv2.INTER_LANCZOS4)
+    return cv2.resize(card_image, target_size, interpolation=cv2.INTER_LANCZOS4)
 
 
 def valid_aspect_ratio(corners: np.ndarray, tolerance: float = 0.2) -> bool:
