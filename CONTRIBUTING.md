@@ -51,6 +51,12 @@ uv run mtg benchmark status --failures # also list the images that fail exact pr
 
 `run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` lists each failing image with its label and the recognised printings; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
 
+### The benchmark in CI
+
+The `engine` workflow (`.github/workflows/engine.yml`) runs `pytest -m slow` and `mtg benchmark run` on every PR, except PRs that only change Markdown files, `docs/` or `.claude/`. It pulls `data/benchmark.dvc` with the `dataset-reader` key in the `GDRIVE_CREDENTIALS_DATA` secret, and uploads `output/benchmark/latest.json` as the `benchmark-latest` artifact. It caches the dataset and the files the libraries download on first use; the comments in `engine.yml` say what each cache is keyed on. A PR can restore only its own caches and those of its base branch, so after the dataset or `uv.lock` changes, run the workflow by hand on `dev` (Actions → engine → Run workflow), and on `main` after a release. A docs-only PR reports no `engine` check at all, so don't make it a required check.
+
+A GitHub runner and a laptop must give the same results. At the same commit, runners on three CPU models (AMD EPYC 7763, 9V74 and 9V45) and a laptop gave the same results on all 257 benchmark images, apart from runtimes (#146). So record baselines locally with `mtg benchmark update-baseline` and commit them, as above. If the engine job fails on a baseline that passes locally, results depend on the machine again: that is a bug. Open an issue, and don't commit either result as the baseline until it is fixed. #146 found the last such bug: tied pHash similarities came back in an order that depended on the CPU.
+
 ## Adding New Benchmark Images
 
 Only the maintainer can push to the dataset folder. To contribute images, open an issue or PR describing them and share them with the maintainer, who adds them as follows.
