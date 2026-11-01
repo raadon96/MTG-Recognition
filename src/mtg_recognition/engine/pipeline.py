@@ -69,7 +69,7 @@ class Pipeline:
 
         reference = ReferenceData.default()
         self.phash_index = load_phash_index(reference)
-        self.catalog = SqliteCardCatalog(reference.db_path)
+        self.catalog = SqliteCardCatalog(reference.catalog_path)
         self.segmentor = YoloCardSegmentor()
         self.reader = PaddleCardReader()
 

@@ -108,13 +108,13 @@ source .venv/bin/activate
 ```bash
 mtg status
 ```
-The card database and pHash index are committed to git, so recognition works right after cloning. `mtg status` shows their versions, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
+The catalog and pHash index are committed to git, so recognition works right after cloning. `mtg status` shows their versions, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
 
-**Maintainers only — update the card database to a new MTGJSON release:**
+**Maintainers only — update the catalog to a new MTGJSON release:**
 ```bash
 mtg update
 ```
-This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the card database, then runs `mtg build-index`.
+This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the catalog (`data/reference/catalog.sqlite`), then runs `mtg build-index`.
 
 **Rebuild the pHash index:**
 ```bash

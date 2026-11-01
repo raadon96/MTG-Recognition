@@ -8,11 +8,11 @@ from mtg_recognition.catalog import SqliteCardCatalog
 
 @pytest.mark.unit
 class TestSqliteCardCatalog:
-    def test_missing_database_is_not_created(self, tmp_path) -> None:
-        db_path = tmp_path / "MobileCache.sqlite"
-        catalog = SqliteCardCatalog(db_path)
+    def test_missing_catalog_is_not_created(self, tmp_path) -> None:
+        catalog_path = tmp_path / "catalog.sqlite"
+        catalog = SqliteCardCatalog(catalog_path)
 
         with pytest.raises(OperationalError):
             catalog.lookup(["some-uuid"])
 
-        assert not db_path.exists()
+        assert not catalog_path.exists()

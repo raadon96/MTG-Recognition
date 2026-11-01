@@ -1,7 +1,7 @@
 """Card catalog: resolves printing UUIDs to Printing records.
 
-The engine only ever sees `Printing`s; reading them out of the SQLite
-MobileCache is the catalog's concern.
+The engine only ever sees `Printing`s; reading them out of the SQLite file is
+the catalog's concern.
 """
 
 from collections.abc import Sequence
@@ -11,7 +11,7 @@ from pathlib import Path
 from sqlalchemy import Engine
 from sqlmodel import Session, col, select
 
-from mtg_recognition.jobs.schemas import MobileCache
+from mtg_recognition.jobs.schemas import CatalogPrinting
 from mtg_recognition.reference import open_read_only
 
 
@@ -34,18 +34,20 @@ class Printing:
 
 
 class SqliteCardCatalog:
-    """Catalog backed by the read-only MobileCache SQLite database at `db_path`,
-    opened the first time it is used.
+    """Catalog read from the SQLite file at `catalog_path`, opened read-only the
+    first time it is used.
     """
 
-    def __init__(self, db_path: Path):
-        self._db_path = db_path
+    def __init__(self, catalog_path: Path):
+        self._catalog_path = catalog_path
         self._engine: Engine | None = None
 
     def lookup(self, uuids: Sequence[str]) -> dict[str, Printing]:
         if self._engine is None:
-            self._engine = open_read_only(self._db_path)
-        statement = select(MobileCache).where(col(MobileCache.uuid).in_(list(uuids)))
+            self._engine = open_read_only(self._catalog_path)
+        statement = select(CatalogPrinting).where(
+            col(CatalogPrinting.uuid).in_(list(uuids))
+        )
         with Session(self._engine) as session:
             rows = session.exec(statement).all()
         return {
