@@ -60,6 +60,10 @@ _Avoid_: identification, detection, prediction
 The stage that finds each card in a query image and turns it into a card image.
 _Avoid_: instance segmentation (one technique within it), detection, extraction
 
+**Scan bypass**:
+The shortcut segmentation takes when a query image is already a card image: a scan cropped to the card's edges. Segmentation only turns it upright and resizes it, so it always counts as exactly one card.
+_Avoid_: bypass (alone), scan without background, path 1
+
 **Matching**:
 The stage that turns a card image into a ranking: candidates are shortlisted by similarity, then each is scored against the card's reading.
 _Avoid_: match (as a noun)
