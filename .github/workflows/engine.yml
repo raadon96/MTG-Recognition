@@ -1,8 +1,8 @@
 name: engine
 
-# Runs the slow tests and the benchmark, so accuracy and segmentation
-# regressions fail before merge. Skipped on changes that can't affect them: a
-# denylist, because an allowlist would go stale silently as code moves.
+# Runs the slow tests and the benchmark, so recognition regressions fail before
+# merge. Skipped on changes that can't affect them: a denylist, because an
+# allowlist would go stale silently as code moves.
 on:
   pull_request:
     paths-ignore:
@@ -10,14 +10,15 @@ on:
       - "docs/**"
       - ".claude/**"
       - "GLOSSARY.md"
-  # A run on dev saves caches that every PR can restore; a PR's own caches are
-  # visible only to that PR.
+  # A PR's own caches are visible only to that PR. A run on dev saves caches
+  # every feature PR can restore; a run on main, caches for release PRs.
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# Same settings as the checks workflow.
+# Same settings as the checks workflow: a new PR commit cancels the run on the
+# previous one; manual runs are never cancelled.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -36,9 +37,13 @@ jobs:
 
       - run: uv sync --locked --dev
 
+      # Caches are restored and saved in separate steps: actions/cache saves only
+      # when the whole job passes, so a failing run would download again on every
+      # rerun.
+
       # The benchmark images change only with their DVC pointer file.
       - id: dataset
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: data/benchmark
           key: benchmark-${{ hashFiles('data/benchmark.dvc') }}
@@ -51,10 +56,17 @@ jobs:
         env:
           GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
 
+      - if: steps.dataset.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: data/benchmark
+          key: ${{ steps.dataset.outputs.cache-primary-key }}
+
       # Files the libraries download on first use: ultralytics' text encoder for
       # the YOLOE classes, into the working directory, and PaddleX's font. They
       # change only with the library versions. The rembg model is committed.
-      - uses: actions/cache@v6
+      - id: model-downloads
+        uses: actions/cache/restore@v6
         with:
           path: |
             mobileclip_blt.ts
@@ -72,3 +84,12 @@ jobs:
         with:
           name: benchmark-latest
           path: output/benchmark/latest.json
+
+      # After the tests and the benchmark, which are what download the files.
+      - if: ${{ !cancelled() && steps.model-downloads.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            mobileclip_blt.ts
+            ~/.paddlex/fonts
+          key: ${{ steps.model-downloads.outputs.cache-primary-key }}
