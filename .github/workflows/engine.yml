@@ -10,8 +10,8 @@ on:
       - "docs/**"
       - ".claude/**"
       - "GLOSSARY.md"
-  # A PR's own caches are visible only to that PR. A run on dev saves caches
-  # every feature PR can restore; a run on main, caches for release PRs.
+  # A PR's own caches are visible only to that PR. A run on main, the default
+  # branch, saves caches every branch and PR can restore.
   workflow_dispatch:
 
 permissions:
