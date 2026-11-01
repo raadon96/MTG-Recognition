@@ -16,6 +16,7 @@ from mtg_recognition.benchmark.results import (
     MANIFEST_NAME,
     Comparison,
     ImageOutcome,
+    ManifestProblems,
     Results,
     compare,
     read_results,
@@ -45,13 +46,19 @@ def run() -> None:
     # check the manifest before loading any model
     manifest_path = DATASET_ROOT / MANIFEST_NAME
     if not manifest_path.exists():
-        click.echo(f"No manifest at {manifest_path}; run `uv run dvc pull`", err=True)
+        click.echo(
+            f"No manifest at {manifest_path}: run from the repo root, after "
+            "`uv run dvc pull data/benchmark.dvc`",
+            err=True,
+        )
         raise SystemExit(1)
     manifest: dict[str, list[str]] = json.loads(manifest_path.read_text())
     reference = ReferenceData.default()
     labelled_uuids = sorted({uuid for label in manifest.values() for uuid in label})
-    catalog = SqliteCardCatalog(reference.catalog_path).lookup(labelled_uuids)
-    problems = validate_manifest(DATASET_ROOT, manifest, catalog)
+    labelled_printings = SqliteCardCatalog(reference.catalog_path).lookup(
+        labelled_uuids
+    )
+    problems = validate_manifest(DATASET_ROOT, manifest, labelled_printings)
     for heading, items in [
         ("Images without a label", problems.unlabelled_images),
         ("Labels for missing files", problems.missing_images),
@@ -59,7 +66,7 @@ def run() -> None:
     ]:
         if items:
             click.echo(f"{heading}:\n" + "\n".join(f"  {i}" for i in items), err=True)
-    if problems.unlabelled_images or problems.missing_images or problems.unknown_uuids:
+    if problems != ManifestProblems():
         click.echo(f"The manifest doesn't match the dataset: {manifest_path}", err=True)
         raise SystemExit(1)
 
@@ -75,7 +82,7 @@ def run() -> None:
             card.ranked[0].printing if card.ranked else None
             for card in recognition.cards
         ]
-        score = score_image([catalog[uuid] for uuid in label], best)
+        score = score_image([labelled_printings[uuid] for uuid in label], best)
         images[image] = ImageOutcome(
             score=score,
             recognised=[p.uuid if p is not None else None for p in best],
@@ -100,7 +107,7 @@ def run() -> None:
         raise SystemExit(1)
     baseline = read_results(BASELINE_PATH)
     comparison = compare(results, baseline)
-    click.echo("\n".join(comparison_report(results, baseline, comparison)))
+    click.echo("\n".join(_comparison_report(results, baseline, comparison)))
     if comparison.differs:
         raise SystemExit(1)
 
@@ -136,7 +143,7 @@ def _commit() -> str:
     return f"{head}-dirty" if status else head
 
 
-def comparison_report(
+def _comparison_report(
     results: Results, baseline: Results, comparison: Comparison
 ) -> list[str]:
     """Old vs new: the commits, the flips per image, the totals and the verdict."""
@@ -156,16 +163,21 @@ def comparison_report(
     if comparison.flips or comparison.added_images or comparison.removed_images:
         lines.append("")
 
-    # totals
-    old, new = baseline.totals, results.totals
-    lines.append(f"{'':<16}{'baseline':>10}{'now':>10}")
-    for metric in ("exact_printing", "card_count", "same_card_name"):
-        lines.append(
-            f"{metric:<16}{getattr(old, metric):>6}/{old.images:<3}"
-            f"{getattr(new, metric):>6}/{new.images:<3}"
-        )
-    lines.append(f"{'ocr_fallbacks':<16}{old.ocr_fallbacks:>10}{new.ocr_fallbacks:>10}")
-    lines.append(f"{'runtime_s':<16}{old.runtime_s:>10.1f}{new.runtime_s:>10.1f}")
+    # totals: now, the ones that changed, then runtime, which always does
+    now = results.totals
+    lines.append(
+        f"Now: exact printing {now.exact_printing}/{now.images}, "
+        f"card count {now.card_count}/{now.images}, "
+        f"same card name {now.same_card_name}/{now.images}, "
+        f"OCR fallbacks {now.ocr_fallbacks}"
+    )
+    for metric, (old, new) in comparison.changed_totals.items():
+        lines.append(f"{metric}: {old} -> {new}")
+    if not comparison.changed_totals:
+        lines.append("Totals unchanged.")
+    lines.append(
+        f"runtime_s: {baseline.totals.runtime_s:.1f} -> {results.totals.runtime_s:.1f}"
+    )
     lines.append("")
 
     if comparison.differs:

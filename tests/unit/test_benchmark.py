@@ -62,8 +62,9 @@ class TestValidateManifest:
 
         assert problems.unknown_uuids == [BOLT]
 
-    def test_the_manifest_itself_needs_no_label(self, dataset) -> None:
+    def test_the_manifest_and_hidden_files_need_no_label(self, dataset) -> None:
         (dataset / "manifest.json").write_text("{}")
+        (dataset / "photos" / ".DS_Store").write_bytes(b"")
 
         problems = validate_manifest(dataset, {"photos/bolt.jpg": [BOLT]}, {})
 
@@ -84,6 +85,13 @@ class TestScoreImage:
         label = [printing(BOLT), printing(GIANT, "Realm-Cloaked Giant // Cast Off")]
 
         assert score_image(label, [label[0]]) == ImageScore(
+            exact_printing=False, card_count=False, same_card_name=False
+        )
+
+    def test_an_extra_card_fails_the_count_and_the_printing(self) -> None:
+        score = score_image([printing(BOLT)], [printing(BOLT), printing(BOLT)])
+
+        assert score == ImageScore(
             exact_printing=False, card_count=False, same_card_name=False
         )
 

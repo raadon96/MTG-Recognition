@@ -48,21 +48,24 @@ class ManifestProblems:
 def validate_manifest(
     dataset_root: Path,
     manifest: Mapping[str, list[str]],
-    catalog: Mapping[str, Printing],
+    labelled_printings: Mapping[str, Printing],
 ) -> ManifestProblems:
     """Check the manifest against the files under `dataset_root` and against
-    `catalog`, the printings the catalog holds for the labelled UUIDs.
+    `labelled_printings`, what the catalog holds for the labelled UUIDs.
     """
     images = {
         path.relative_to(dataset_root).as_posix()
         for path in dataset_root.rglob("*")
-        if path.is_file() and path.name != MANIFEST_NAME
+        # hidden files (.DS_Store and the like) are not query images
+        if path.is_file()
+        and path.name != MANIFEST_NAME
+        and not path.name.startswith(".")
     }
     labelled_uuids = {uuid for label in manifest.values() for uuid in label}
     return ManifestProblems(
         unlabelled_images=sorted(images - manifest.keys()),
         missing_images=sorted(manifest.keys() - images),
-        unknown_uuids=sorted(labelled_uuids - catalog.keys()),
+        unknown_uuids=sorted(labelled_uuids - labelled_printings.keys()),
     )
 
 
