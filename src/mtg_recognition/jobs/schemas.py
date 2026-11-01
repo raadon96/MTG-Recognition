@@ -156,11 +156,14 @@ class Meta(SQLModel, table=True):
     date: datetime | None = Field(default=None)
 
 
-class MobileCache(
+class CatalogPrinting(
     SQLModel,
     table=True,
 ):
     # https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/table_config.html
+    """One printing in the catalog."""
+
+    __tablename__ = "catalog"
     __table_args__ = {
         "extend_existing": True,
     }

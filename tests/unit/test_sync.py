@@ -51,9 +51,9 @@ def indexed_uuids(reference: ReferenceData) -> set[str]:
     return set(load_phash_index(reference).uuids)
 
 
-def database_uuids(reference: ReferenceData) -> set[str]:
-    with sqlite3.connect(reference.db_path) as connection:
-        return {row[0] for row in connection.execute("SELECT uuid FROM mobilecache")}
+def catalog_uuids(reference: ReferenceData) -> set[str]:
+    with sqlite3.connect(reference.catalog_path) as connection:
+        return {row[0] for row in connection.execute("SELECT uuid FROM catalog")}
 
 
 def corrupt_zip() -> bytes:
@@ -72,8 +72,8 @@ class TestUpdate:
         with network.client() as client:
             result = update(reference, client, workers=1)
 
-        assert result.database_rebuilt
-        assert database_uuids(reference) == {
+        assert result.catalog_rebuilt
+        assert catalog_uuids(reference) == {
             "uuid-bolt",
             "uuid-delver",
             "uuid-aberration",
@@ -98,12 +98,12 @@ class TestUpdate:
 
             result = update(reference, client, workers=1)
 
-        assert not result.database_rebuilt
+        assert not result.catalog_rebuilt
         assert not result.index.built
         assert network.requests == [META_URL]
 
     def test_stale_allprintings_is_downloaded_again(self, reference, network) -> None:
-        """An AllPrintings left from an older release is replaced, and the database
+        """An AllPrintings left from an older release is replaced, and the catalog
         is labelled with the release in AllPrintings' `meta` table, not Meta.json's.
         """
         reference.allprintings_path.parent.mkdir(parents=True)
@@ -115,7 +115,7 @@ class TestUpdate:
 
         assert network.zip_requests() == 1
         assert result.allprintings_downloaded
-        assert "uuid-ponder" in database_uuids(reference)
+        assert "uuid-ponder" in catalog_uuids(reference)
         assert reference.load_state() == SyncState("5.3.0+20260516", "5.3.0+20260516")
 
     def test_current_allprintings_is_reused(self, reference, network) -> None:
@@ -127,7 +127,7 @@ class TestUpdate:
 
         assert network.zip_requests() == 0
         assert not result.allprintings_downloaded
-        assert reference.load_state().mobilecache_version == V1
+        assert reference.load_state().catalog_version == V1
 
     def test_image_404_is_reported_and_the_index_still_built(
         self, reference, network
@@ -152,7 +152,7 @@ class TestUpdate:
         assert reference.load_state() == SyncState(V1, V1)
 
     def test_interrupted_update_resumes(self, reference, network) -> None:
-        """When the index build fails after the database was rebuilt, the next run
+        """When the index build fails after the catalog was rebuilt, the next run
         builds only the index.
         """
         served_images = dict(network.images)
@@ -166,7 +166,7 @@ class TestUpdate:
         with network.client() as client:
             result = update(reference, client, workers=1)
 
-        assert not result.database_rebuilt
+        assert not result.catalog_rebuilt
         assert network.zip_requests() == 1
         assert indexed_uuids(reference) == {
             "uuid-bolt",
@@ -196,7 +196,7 @@ class TestUpdate:
             update(reference, client, workers=1)
             result = update(reference, client, force=True, workers=1)
 
-        assert result.database_rebuilt
+        assert result.catalog_rebuilt
         assert result.index.built
         assert network.zip_requests() == 1
 
@@ -206,7 +206,7 @@ class TestBuildIndex:
     def test_after_a_pull_downloads_only_the_new_printings_images(
         self, tmp_path, reference, network
     ) -> None:
-        """A pull brings the database a maintainer built from a newer release and
+        """A pull brings the catalog a maintainer built from a newer release and
         its state; the images of the older release are on disk.
         """
         with network.client() as client:
@@ -216,11 +216,9 @@ class TestBuildIndex:
         with network.client() as client:
             update(maintainer, client, workers=1)
 
-        shutil.copyfile(maintainer.db_path, reference.db_path)
+        shutil.copyfile(maintainer.catalog_path, reference.catalog_path)
         state_file = reference.root / ".mtg-sync-state.json"
-        state_file.write_text(
-            json.dumps({"mobilecache_version": V2, "phash_version": V1})
-        )
+        state_file.write_text(json.dumps({"catalog_version": V2, "phash_version": V1}))
         network.requests.clear()
 
         with network.client() as client:
@@ -231,7 +229,7 @@ class TestBuildIndex:
         assert result.downloads.downloaded == 1
         assert "uuid-ponder" in indexed_uuids(reference)
         assert json.loads(state_file.read_text()) == {
-            "mobilecache_version": V2,
+            "catalog_version": V2,
             "phash_version": V2,
         }
 
@@ -247,7 +245,7 @@ class TestBuildIndex:
         assert result.downloads is not None
         assert result.downloads.removed == 1
         assert not stray.exists()
-        assert indexed_uuids(reference) == database_uuids(reference)
+        assert indexed_uuids(reference) == catalog_uuids(reference)
 
     def test_download_that_does_not_decode_is_a_failure(
         self, reference, network
@@ -295,7 +293,7 @@ class TestBuildIndex:
         assert result.downloads is not None
         assert result.downloads.downloaded == 1
         assert result.unhashable == ()
-        assert indexed_uuids(reference) == database_uuids(reference)
+        assert indexed_uuids(reference) == catalog_uuids(reference)
         assert not reference.log_file.exists()
 
     def test_does_nothing_when_the_index_matches(self, reference, network) -> None:
@@ -323,7 +321,7 @@ class TestStatus:
             report = status(reference, client)
 
         assert report.latest_version is None
-        assert report.database_version == V1
+        assert report.catalog_version == V1
         assert report.index_matches
         assert report.allprintings_version == V1
         assert (report.images_present, report.images_missing) == (2, 1)
@@ -386,12 +384,12 @@ class TestIndexSummary:
 
 @pytest.mark.unit
 class TestUpdateSummary:
-    def test_rebuilt_database_names_the_allprintings_source(self, reference) -> None:
+    def test_rebuilt_catalog_names_the_allprintings_source(self, reference) -> None:
         downloads = DownloadReport(downloaded=3, failed=(), missing_url=0, removed=0)
         result = UpdateResult(
             latest_version=V1,
-            database_version=V1,
-            database_rebuilt=True,
+            catalog_version=V1,
+            catalog_rebuilt=True,
             allprintings_downloaded=True,
             index=IndexResult(V1, downloads),
         )
@@ -399,18 +397,18 @@ class TestUpdateSummary:
         lines = update_summary(reference, result)
 
         assert lines == [
-            f"MobileCache: rebuilt ({V1})",
+            f"Catalog: rebuilt ({V1})",
             f"AllPrintings: downloaded ({V1})",
             "Reference images: 3 downloaded, 0 failed, 0 without URL",
             "Removed images (no printing): 0",
             f"pHash index: rebuilt ({V1})",
         ]
 
-    def test_database_up_to_date_leaves_out_allprintings(self, reference) -> None:
+    def test_catalog_up_to_date_leaves_out_allprintings(self, reference) -> None:
         result = UpdateResult(
             latest_version=V1,
-            database_version=V1,
-            database_rebuilt=False,
+            catalog_version=V1,
+            catalog_rebuilt=False,
             allprintings_downloaded=False,
             index=IndexResult(V1, downloads=None),
         )
@@ -418,7 +416,7 @@ class TestUpdateSummary:
         lines = update_summary(reference, result)
 
         assert lines == [
-            f"MobileCache: up to date ({V1})",
+            f"Catalog: up to date ({V1})",
             f"pHash index: up to date ({V1})",
         ]
 
@@ -427,7 +425,7 @@ class TestUpdateSummary:
 class TestStatusSummary:
     def test_offline_summary_prints_the_latest_release_as_unknown(self) -> None:
         report = Status(
-            database_version=V1,
+            catalog_version=V1,
             phash_version=V1,
             index_matches=True,
             allprintings_version=V1,
@@ -439,8 +437,8 @@ class TestStatusSummary:
         lines, next_step = status_summary(report)
 
         assert lines == [
-            f"MobileCache: {V1}",
-            f"pHash index: {V1} (matches the database)",
+            f"Catalog: {V1}",
+            f"pHash index: {V1} (matches the catalog)",
             f"AllPrintings: {V1}",
             "Reference images: 2 present, 1 missing",
             "Latest MTGJSON release: unknown",
@@ -449,7 +447,7 @@ class TestStatusSummary:
 
     def test_missing_allprintings_and_stale_index_are_shown(self) -> None:
         report = Status(
-            database_version=V2,
+            catalog_version=V2,
             phash_version=V1,
             index_matches=False,
             allprintings_version=None,
@@ -461,13 +459,13 @@ class TestStatusSummary:
         lines, _ = status_summary(report)
 
         assert lines[1:3] == [
-            f"pHash index: {V1} (does not match the database)",
+            f"pHash index: {V1} (does not match the catalog)",
             "AllPrintings: absent",
         ]
 
     def test_new_release_names_the_command_to_run(self) -> None:
         report = Status(
-            database_version=V1,
+            catalog_version=V1,
             phash_version=V1,
             index_matches=True,
             allprintings_version=V1,

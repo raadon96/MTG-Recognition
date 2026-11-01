@@ -1,6 +1,6 @@
 ## Project
 
-MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against a ~1M-card SQLite database. Served as a Streamlit web app via Docker.
+MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against the catalog, a SQLite file of every printing. Served as a Streamlit web app via Docker.
 
 ## Structure
 
