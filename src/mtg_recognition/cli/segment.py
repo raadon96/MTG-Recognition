@@ -1,4 +1,4 @@
-"""`mtg segment`: write each card found in the input images as a card image.
+"""`mtg segment`: write each card found in the query images as a card image.
 
 Usage examples:
     uv run mtg segment -i data/benchmark/1_photos_single_card \
@@ -24,14 +24,14 @@ from mtg_recognition.settings import settings
     "input_path",
     type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path),
     required=True,
-    help="Path to a single image file or a directory of image files.",
+    help="Path to a single query image or a directory of query images.",
 )
 @click.option(
     "-o",
     "--output-dir",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     required=True,
-    help="Directory where segmented card images are written.",
+    help="Directory where card images are written.",
 )
 @click.option(
     "-m",
@@ -61,20 +61,18 @@ def segment(input_path: Path, output_dir: Path, mode: str) -> None:
         try:
             img = prepare_image(img_path)
         except ValueError:
-            click.echo(f"  unreadable image, skipped: {img_path.name}", err=True)
+            click.echo(f"  unreadable query image, skipped: {img_path.name}", err=True)
             continue
         result = segmentor.segment(img)
         if not result.success:
             click.echo(f"  no card detected: {img_path.name}", err=True)
             continue
-        for idx, card_segment in enumerate(result.segments):
-            stem = (
-                img_path.stem if len(result.segments) == 1 else f"{img_path.stem}_{idx}"
-            )
-            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card_segment.warped_image)
+        for idx, card in enumerate(result.cards):
+            stem = img_path.stem if len(result.cards) == 1 else f"{img_path.stem}_{idx}"
+            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card.card_image)
             saved += 1
 
-    click.echo(f"Saved {saved} segment(s) to {output_dir}")
+    click.echo(f"Saved {saved} card image(s) to {output_dir}")
 
 
 def query_image_paths(input_path: Path) -> list[Path]:
@@ -93,9 +91,9 @@ def _build_segmentor(mode: str):
     # the models load only for the mode asked for
     mode = mode.lower()
     if mode == "rembg":
-        from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
+        from mtg_recognition.engine.segmentation.rembg import RembgSegmentor
 
-        return RembgCardSegmentor()
-    from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+        return RembgSegmentor()
+    from mtg_recognition.engine.segmentation.yolo import YoloSegmentor
 
-    return YoloCardSegmentor(fallback_enabled=mode == "auto")
+    return YoloSegmentor(fallback_enabled=mode == "auto")

@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-# Adaptive upscaling constants for the information below the text box.
+# Adaptive upscaling constants for the collector information crop.
 # PP-OCRv5_mobile_rec native input height is 48 px; text below ~32 px degrades.
 # RATIO_TEXT_TO_CROP: approximate fraction of the crop height occupied by text lines.
 TARGET_TEXT_HEIGHT: int = 48
@@ -11,10 +11,11 @@ MAX_UPSCALE: float = 4.0
 
 
 def upscale_for_ocr(img: np.ndarray) -> np.ndarray:
-    """Adaptively upscale a card ROI crop so its text reaches TARGET_TEXT_HEIGHT px.
+    """Adaptively upscale an OCR crop so its text reaches TARGET_TEXT_HEIGHT px.
 
-    The scale factor is clamped to [MIN_UPSCALE, MAX_UPSCALE]. Meant for the info
-    ROI (small text); the name ROI's text is already large enough.
+    The scale factor is clamped to [MIN_UPSCALE, MAX_UPSCALE]. Meant for the
+    collector information crop (small text); the name crop's text is already large
+    enough.
 
     Args:
         img: BGR image (numpy array)

@@ -11,7 +11,7 @@ BOLT_M10 = Printing(
     uuid="bolt-m10",
     name="Lightning Bolt",
     set_code="M10",
-    number="146",
+    collector_number="146",
     base_set_size="249",
     artist="Christopher Moeller",
     set_release_year="2009",
@@ -20,7 +20,7 @@ BOLT_M11 = Printing(
     uuid="bolt-m11",
     name="Lightning Bolt",
     set_code="M11",
-    number="149",
+    collector_number="149",
     base_set_size="249",
     artist="Christopher Moeller",
     set_release_year="2010",
@@ -29,7 +29,7 @@ SHOCK = Printing(
     uuid="shock-m19",
     name="Shock",
     set_code="M19",
-    number="156",
+    collector_number="156",
     base_set_size="280",
     artist="Jason Rainville",
     set_release_year="2018",
@@ -38,7 +38,7 @@ GRIZZLY = Printing(
     uuid="grizzly-m10",
     name="Grizzly Bears",
     set_code="M10",
-    number="186",
+    collector_number="186",
     base_set_size="249",
     artist="D. J. Cleland-Hura",
     set_release_year="2009",
@@ -53,11 +53,11 @@ def test_name_alone_ranks_matching_card_above_other_cards():
     assert ranked[0].printing == BOLT_M10
 
 
-def test_set_code_and_number_pick_the_right_printing_among_reprints():
+def test_set_code_and_collector_number_pick_the_right_printing_among_reprints():
     reading = Reading(
         name="Lightning Bolt",
-        set_code_candidates=["M11"],
-        number="149",
+        possible_set_codes=["M11"],
+        collector_number="149",
         base_set_size="249",
     )
 
@@ -67,7 +67,7 @@ def test_set_code_and_number_pick_the_right_printing_among_reprints():
 
 
 def test_power_and_toughness_count_towards_the_score():
-    reading = Reading(set_code_candidates=["M10"], power="2", toughness="2")
+    reading = Reading(possible_set_codes=["M10"], power="2", toughness="2")
 
     ranked = rank(reading, [BOLT_M10, GRIZZLY], k=2)
 
@@ -75,7 +75,9 @@ def test_power_and_toughness_count_towards_the_score():
 
 
 def test_returns_the_k_best_printings_with_descending_scores():
-    reading = Reading(name="Lightning Bolt", set_code_candidates=["M10"], number="146")
+    reading = Reading(
+        name="Lightning Bolt", possible_set_codes=["M10"], collector_number="146"
+    )
 
     ranked = rank(reading, [SHOCK, BOLT_M11, GRIZZLY, BOLT_M10], k=2)
 
@@ -85,12 +87,16 @@ def test_returns_the_k_best_printings_with_descending_scores():
     assert 0 < scores[0] <= 100
 
 
-def _number_score(read: str, printed: str) -> float:
+def _collector_number_score(read: str, printed: str) -> float:
     printing = Printing(
-        uuid="p", name="Card", set_code="TST", number=printed, base_set_size="100"
+        uuid="p",
+        name="Card",
+        set_code="TST",
+        collector_number=printed,
+        base_set_size="100",
     )
-    [ranked] = rank(Reading(number=read), [printing], k=1)
-    return next(s.score for s in ranked.breakdown if s.field == "number")
+    [ranked] = rank(Reading(collector_number=read), [printing], k=1)
+    return next(s.score for s in ranked.breakdown if s.field == "collector_number")
 
 
 @pytest.mark.parametrize(
@@ -98,11 +104,11 @@ def _number_score(read: str, printed: str) -> float:
     [("0146", "146"), ("146", "0146"), ("0", "0"), ("0000", "0"), ("T001", "T001")],
 )
 def test_collector_numbers_match_regardless_of_leading_zeros(read, printed):
-    assert _number_score(read, printed) == 100.0
+    assert _collector_number_score(read, printed) == 100.0
 
 
 def test_leading_zeros_are_not_stripped_to_nothing():
-    assert _number_score("0", "") == 0.0
+    assert _collector_number_score("0", "") == 0.0
 
 
 def test_tied_printings_keep_their_candidate_order():
@@ -133,11 +139,11 @@ def test_returns_every_candidate_when_k_exceeds_them():
 def test_breakdown_holds_read_value_printing_value_and_score_of_every_field():
     reading = Reading(
         name="LIGHTNING BOLT",
-        set_code_candidates=["M1O", "M10"],
-        number="0146",
+        possible_set_codes=["M1O", "M10"],
+        collector_number="0146",
         base_set_size="249",
         artist="Christopher Moeller",
-        set_release_year="2009",
+        copyright_year="2009",
     )
 
     [ranked] = rank(reading, [BOLT_M10], k=1)
@@ -145,10 +151,10 @@ def test_breakdown_holds_read_value_printing_value_and_score_of_every_field():
     assert ranked.breakdown == [
         FieldScore("name", "LIGHTNING BOLT", "Lightning Bolt", 100.0),
         FieldScore("set_code", ["M1O", "M10"], "M10", 100.0),
-        FieldScore("number", "0146", "146", 100.0),
+        FieldScore("collector_number", "0146", "146", 100.0),
         FieldScore("base_set_size", "249", "249", 100.0),
         FieldScore("artist", "Christopher Moeller", "Christopher Moeller", 100.0),
-        FieldScore("set_release_year", "2009", "2009", 100.0),
+        FieldScore("copyright_year", "2009", "2009", 100.0),
         FieldScore("power", None, None, 0.0),
         FieldScore("toughness", None, None, 0.0),
     ]

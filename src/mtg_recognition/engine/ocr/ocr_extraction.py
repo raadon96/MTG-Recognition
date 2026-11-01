@@ -43,13 +43,13 @@ _ARTIST_BLOCKLIST = frozenset(
     }
 )
 
-# Words that are 2-5 uppercase letters and could pass the setcode regex but are
+# Words that are 2-5 uppercase letters and could pass the set code regex but are
 # clearly not MTG set codes (copyright boilerplate, common English words, etc.).
-_SETCODE_BLOCKLIST = frozenset(
+_SET_CODE_BLOCKLIST = frozenset(
     {"ILLUS", "COAST", "INC", "LLC", "TM", "BY", "THE", "OF", "AND", "ALL", "ARE"}
 )
 
-# Collector number extraction — Stage 1 (full cardNumber/baseSetSize)
+# Collector number extraction — Stage 1 (collector number/base set size)
 # Suffix: lowercase letters, ★ (star/foil), † (dagger), ✦ (diamond) — variant/promo
 # markers
 _COLL_SUFFIX = r"[a-z★†✦]?"
@@ -64,7 +64,7 @@ _S1_NB_PREFIX = re.compile(
 )
 _S1_NB_STD = re.compile(rf"(\d{{1,4}}{_COLL_SUFFIX}/\d{{2,4}}{_COLL_SUFFIX})")
 
-# Collector number extraction — Stage 2 (standalone cardNumber, no /baseSetSize)
+# Collector number extraction — Stage 2 (collector number alone, no base set size)
 _S2_PATTERN = re.compile(r"\b(\d{1,4})\b")
 # Handles OCR noise where a single uppercase letter is glued to the digits
 # (e.g. "L0398" from a basic-land "L 398" marker, or "L398")
@@ -88,20 +88,20 @@ def filter_flavor_text_zone(
     """Discard tokens that appear in the flavor-text bleedthrough zone.
 
     Modern cards with flavor text have their last line(s) partially overlap the
-    region below the text box. Those tokens appear near its TOP. Actual collector
-    line tokens (set code, collector number, artist, copyright) sit in the BOTTOM
-    portion. P/T — the one useful token that can appear higher up — always sits
+    collector information crop. Those tokens appear near its TOP. Actual collector
+    information tokens (set code, collector number, artist, copyright) sit in its
+    BOTTOM portion. P/T — the one useful token that can appear higher up — always sits
     in the far-RIGHT column of the card, so tokens with a large x2 are preserved.
 
-    Rule: discard token i if  y1 < y_thresh_frac * roi_height
-                         AND  x2 < x_right_frac  * roi_width
+    Rule: discard token i if  y1 < y_thresh_frac * crop_height
+                         AND  x2 < x_right_frac  * crop_width
 
     Args:
-        texts:         OCR text tokens from below the text box.
+        texts:         OCR text tokens from the collector information crop.
         boxes:         Bounding boxes [[x1, y1, x2, y2], ...] parallel to texts.
         scores:        OCR confidence scores parallel to texts.
-        y_thresh_frac: Upper-zone threshold as fraction of ROI height (default 0.35).
-        x_right_frac:  Right-column threshold as fraction of ROI width  (default 0.80).
+        y_thresh_frac: Upper-zone threshold as fraction of crop height (default 0.35).
+        x_right_frac:  Right-column threshold as fraction of crop width  (default 0.80).
 
     Returns:
         Filtered (texts, boxes, scores) with flavor-zone tokens removed.
@@ -111,13 +111,13 @@ def filter_flavor_text_zone(
     if not texts or not boxes or len(texts) != len(boxes):
         return texts, boxes, scores
 
-    roi_height = max(box[3] for box in boxes)
-    roi_width = max(box[2] for box in boxes)
-    if roi_height == 0 or roi_width == 0:
+    crop_height = max(box[3] for box in boxes)
+    crop_width = max(box[2] for box in boxes)
+    if crop_height == 0 or crop_width == 0:
         return texts, boxes, scores
 
-    y_thresh = y_thresh_frac * roi_height
-    x_right = x_right_frac * roi_width
+    y_thresh = y_thresh_frac * crop_height
+    x_right = x_right_frac * crop_width
 
     kept = [
         (t, b, s)
@@ -137,22 +137,23 @@ def filter_flavor_text_zone(
     return list(texts_f), list(boxes_f), list(scores_f)
 
 
-def extract_setcode_candidates(texts: list[str]) -> list[str]:
-    """Extract set code candidates from raw PaddleOCR tokens below the text box.
+def extract_possible_set_codes(texts: list[str]) -> list[str]:
+    """Extract the possible set codes from raw PaddleOCR tokens of the collector
+    information.
 
     Searches for language-code artifacts (e.g. "WAR·EN", "ECC ★EN", "ECL · EN")
     and returns the prefix as the set code. When no artifact is found, falls back
-    to uppercase-only tokens (2-5 chars) that are not in _SETCODE_BLOCKLIST.
-    Returns [] when no candidates survive — feeding rapidfuzz with irrelevant
+    to uppercase-only tokens (2-5 chars) that are not in _SET_CODE_BLOCKLIST.
+    Returns [] when none survive — feeding rapidfuzz with irrelevant
     tokens (artist names, years, copyright words) would only add noise.
 
     Args:
-        texts: Raw OCR text tokens from below the text box.
+        texts: Raw OCR text tokens from the collector information crop.
 
     Returns:
-        List of set code candidates (may be empty).
+        List of possible set codes (may be empty).
     """
-    candidates: list[str] = []
+    set_codes: list[str] = []
     seen: set[str] = set()
 
     def _try(text: str) -> None:
@@ -162,7 +163,7 @@ def extract_setcode_candidates(texts: list[str]) -> list[str]:
             # Validate: set codes are 2-6 uppercase alphanumeric characters
             if code and re.fullmatch(r"[A-Z0-9]{2,6}", code) and code not in seen:
                 seen.add(code)
-                candidates.append(code)
+                set_codes.append(code)
 
     # Pass 1: per-token
     for text in texts:
@@ -171,25 +172,25 @@ def extract_setcode_candidates(texts: list[str]) -> list[str]:
     # Pass 2: two-token concat — only when pass 1 found nothing.
     # Handles e.g. ["TDM", "·DE"] split across tokens. Skipped when pass 1
     # already succeeded to avoid false positives like "U"+"DMR·JP" → "UDMR".
-    if not candidates:
+    if not set_codes:
         for i in range(len(texts) - 1):
             _try(texts[i] + texts[i + 1])
 
-    if candidates:
-        return candidates
+    if set_codes:
+        return set_codes
 
     # Fallback — uppercase-only tokens (2-5 chars) that aren't known non-set-code words.
     # Old cards don't print a language artifact, so we look for tokens whose shape
     # matches a set code.  Noisy tokens (artist names, years, digits, mixed-case words)
     # are implicitly excluded by the fullmatch; copyright boilerplate that happens to
-    # be all-uppercase (e.g. "COAST", "INC") is excluded via _SETCODE_BLOCKLIST.
-    # When nothing survives we return [] — an empty candidates list is cleaner than
+    # be all-uppercase (e.g. "COAST", "INC") is excluded via _SET_CODE_BLOCKLIST.
+    # When nothing survives we return [] — an empty list is cleaner than
     # feeding rapidfuzz with irrelevant strings that would all score ~0 anyway.
     tokens = [t.strip() for text in texts for t in text.split() if t.strip()]
     return [
         t
         for t in tokens
-        if re.fullmatch(r"[A-Z]{2,5}", t) and t not in _SETCODE_BLOCKLIST
+        if re.fullmatch(r"[A-Z]{2,5}", t) and t not in _SET_CODE_BLOCKLIST
     ]
 
 
@@ -221,10 +222,10 @@ def extract_power_toughness(
     return None, None
 
 
-def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
+def _extract_standalone_collector_number(rec_texts: list[str]) -> str | None:
     """
-    Stage 2: extract a standalone card number when no cardNumber/baseSetSize pattern
-    was found.
+    Stage 2: extract a standalone collector number when no
+    <collector number>/<base set size> pattern was possible_collector_numbers.
 
     Accepts:
     - 2-digit values (with or without a leading zero)
@@ -235,15 +236,15 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
     - 4-digit values in the MTG copyright year range [1993, current_year+1]
     - Any digit sub-match from a token that contains a slash (/ \\ |): those are
       P/T or Stage-1 fragments (e.g. "10" from "10/4" would otherwise be mistaken
-      for a standalone card number on creature cards with power ≥ 10).
+      for a standalone collector number on creature cards with power ≥ 10).
 
     Ranking (best first):
-    1. Leading-zero tokens (strong signal for old-set card numbers)
+    1. Leading-zero tokens (strong signal for old-set collector numbers)
     2. Earlier position in reading order (closer to set code, farther from copyright)
     3. Longer digit count
     """
     year_max = datetime.date.today().year + 1
-    candidates: list[tuple[str, int]] = []
+    possible_collector_numbers: list[tuple[str, int]] = []
 
     def _accept(num_str: str) -> bool:
         n = len(num_str)
@@ -260,7 +261,7 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
         for m in _S2_PATTERN.finditer(text):
             num_str = m.group(1)
             if _accept(num_str):
-                candidates.append((num_str, idx))
+                possible_collector_numbers.append((num_str, idx))
 
     # Secondary pass: single uppercase letter prefix glued to digits
     # (e.g. "L0398" / "L398" from a basic-land "L 398" marker read by OCR)
@@ -270,54 +271,54 @@ def _extract_standalone_card_number(rec_texts: list[str]) -> str | None:
         for m in _S2_LEADING_LETTER_PATTERN.finditer(text):
             num_str = m.group(1)
             if _accept(num_str):
-                candidates.append((num_str, idx))
+                possible_collector_numbers.append((num_str, idx))
 
-    if not candidates:
+    if not possible_collector_numbers:
         return None
 
     best, _ = min(
-        candidates,
+        possible_collector_numbers,
         key=lambda item: (0 if item[0].startswith("0") else 1, item[1], -len(item[0])),
     )
     return best
 
 
-def _extract_number_field(rec_texts: list[str]) -> str | None:
+def _extract_collector_number_field(rec_texts: list[str]) -> str | None:
     """
-    Extract the raw printed number field from OCR tokens.
+    Extract the raw printed collector number field from OCR tokens.
 
     Returns the field exactly as printed on the card — either
-    "<cardNumber>/<baseSetSize>" (e.g. "011/264", "100a/302", "T001/T030")
-    or a bare "<cardNumber>" for sets that omit the set size (e.g. "0214").
+    "<collector number>/<base set size>" (e.g. "011/264", "100a/302", "T001/T030")
+    or a bare "<collector number>" for sets that omit the set size (e.g. "0214").
 
     Two-stage extraction:
 
-    Stage 1 — full <cardNumber>/<baseSetSize>:
+    Stage 1 — full <collector number>/<base set size>:
     - Standard: 1-4 digits / 2-4 digits
     - Optional lowercase/star suffix on either side (a-z, ★, †, ✦)
     - Symmetric T/C prefix on both sides (T=token, C=commander)
     Uses longest-match strategy to prefer collector numbers over P/T values.
 
-    Stage 2 — standalone <cardNumber>:
-    Activated only when Stage 1 finds nothing. See _extract_standalone_card_number.
+    Stage 2 — standalone <collector number>:
+    Activated only when Stage 1 finds nothing. See _extract_standalone_collector_number.
 
     Args:
         rec_texts: List of OCR-recognized text strings
 
     Returns:
-        Raw number field string or None
+        Raw collector number field string or None
     """
-    candidates: list[str] = []
+    collector_number_fields: list[str] = []
 
     def _search(text: str, boundary: bool) -> None:
         prefix_re = _S1_BOUNDARY_PREFIX if boundary else _S1_NB_PREFIX
         std_re = _S1_BOUNDARY_STD if boundary else _S1_NB_STD
         m = prefix_re.search(text)
         if m:
-            candidates.append(m.group(1))
+            collector_number_fields.append(m.group(1))
         m = std_re.search(text)
         if m:
-            candidates.append(m.group(1))
+            collector_number_fields.append(m.group(1))
 
     # Pass 1: per-token with word boundaries
     for text in rec_texts:
@@ -344,30 +345,30 @@ def _extract_number_field(rec_texts: list[str]) -> str | None:
         if text:
             _search(_normalize_slash_variants(text), boundary=False)
 
-    if candidates:
-        return max(candidates, key=len)
+    if collector_number_fields:
+        return max(collector_number_fields, key=len)
 
-    return _extract_standalone_card_number(rec_texts)
+    return _extract_standalone_collector_number(rec_texts)
 
 
-def extract_number_and_base_set_size(
+def extract_collector_number_and_base_set_size(
     rec_texts: list[str],
 ) -> tuple[str | None, str | None]:
     """
-    Extract card number and base set size from OCR texts, as printed (leading
+    Extract collector number and base set size from OCR texts, as printed (leading
     zeros included).
 
-    Returns (number, base_set_size). When only a standalone card number is found
-    (Stage 2, no /baseSetSize), base_set_size is None.
+    Returns (collector_number, base_set_size). When only a standalone collector
+    number is found (Stage 2, no base set size), base_set_size is None.
     """
-    number_field = _extract_number_field(rec_texts)
-    if number_field is None:
+    collector_number_field = _extract_collector_number_field(rec_texts)
+    if collector_number_field is None:
         return None, None
-    if "/" not in number_field:
-        # Stage 2 result: standalone card number, no set size printed on card
-        return number_field, None
-    number, base_set_size = number_field.split("/")
-    return number, base_set_size
+    if "/" not in collector_number_field:
+        # Stage 2 result: standalone collector number, no base set size printed on card
+        return collector_number_field, None
+    collector_number, base_set_size = collector_number_field.split("/")
+    return collector_number, base_set_size
 
 
 def extract_card_name(texts: list[str]) -> str | None:
@@ -387,7 +388,7 @@ def extract_card_name(texts: list[str]) -> str | None:
 
 
 def extract_artist_name(texts: list[str]) -> str | None:
-    """Extract the artist name from OCR tokens below the text box.
+    """Extract the artist name from OCR tokens of the collector information.
 
     Keeps only tokens that look like name parts (letters, spaces, hyphens,
     apostrophes, periods) and discards tokens containing digits, copyright
@@ -395,7 +396,7 @@ def extract_artist_name(texts: list[str]) -> str | None:
     a single string suitable for fuzzy matching against candidate artist names.
 
     Args:
-        texts: Raw OCR text tokens from below the text box.
+        texts: Raw OCR text tokens from the collector information crop.
 
     Returns:
         Joined artist name string, or None if no name-like tokens survive.
@@ -409,9 +410,9 @@ def extract_artist_name(texts: list[str]) -> str | None:
     return " ".join(kept) if kept else None
 
 
-def extract_set_release_year(rect_texts: list[str]) -> str | None:
+def extract_copyright_year(rect_texts: list[str]) -> str | None:
     """
-    Extract release date year from OCR results of Magic: The Gathering card images.
+    Extract the copyright year from OCR tokens of the collector information.
 
     Rules:
     1. Single four-digit year → return that year
@@ -444,7 +445,7 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
         "inc",
     ]
 
-    candidates = []
+    years = []
 
     for text in rect_texts:
         logger.debug(f"  Original text: '{text}'")
@@ -482,7 +483,7 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
                         f"Found year range: {start_year}-{end_year}, "
                         f"using end year: {year}"
                     )
-                    candidates.append(
+                    years.append(
                         (year, has_copyright_context, 2)
                     )  # Priority 2 for ranges
 
@@ -500,22 +501,22 @@ def extract_set_release_year(rect_texts: list[str]) -> str | None:
                     f"Found single year: {year}, "
                     f"copyright context: {has_copyright_context}"
                 )
-                candidates.append(
+                years.append(
                     (year, has_copyright_context, 1)
                 )  # Priority 1 for single years
 
-    if not candidates:
+    if not years:
         logger.debug("  No valid years found")
         return None
 
-    # Sort candidates by:
+    # Sort years by:
     # 1. Priority type (ranges=2 before singles=1)
     # 2. Copyright context (True before False)
     # 3. Year value (later years as tie-breaker)
-    candidates.sort(key=lambda x: (x[2], x[1], x[0]), reverse=True)
+    years.sort(key=lambda x: (x[2], x[1], x[0]), reverse=True)
 
-    result = candidates[0][0]
-    logger.debug(f"  Selected year: {result} from {len(candidates)} candidates")
+    result = years[0][0]
+    logger.debug(f"  Selected year: {result} from {len(years)} years")
     logger.info(f"Extracted copyright year: {result}")
 
     return str(result)

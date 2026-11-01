@@ -7,23 +7,23 @@ from click.testing import CliRunner
 from mtg_recognition.cli import cli
 from mtg_recognition.cli import segment as segment_cli
 from mtg_recognition.engine.segmentation.seg_utils import (
-    CardSegment,
-    ImageSegmentationResult,
+    SegmentationResult,
+    SegmentedCard,
 )
 from tests.unit.engine.builders import card_image
 
 
 class FakeSegmentor:
-    """Finds the given warped images in every input image."""
+    """Finds the given card images in every query image."""
 
-    def __init__(self, warped_images: list[np.ndarray]):
-        self.warped_images = warped_images
+    def __init__(self, card_images: list[np.ndarray]):
+        self.card_images = card_images
         self.inputs: list[np.ndarray] = []
 
-    def segment(self, img: np.ndarray) -> ImageSegmentationResult:
-        self.inputs.append(img)
-        return ImageSegmentationResult(
-            segments=[CardSegment(warped_image=w) for w in self.warped_images]
+    def segment(self, query_image: np.ndarray) -> SegmentationResult:
+        self.inputs.append(query_image)
+        return SegmentationResult(
+            cards=[SegmentedCard(card_image=c) for c in self.card_images]
         )
 
 
@@ -43,7 +43,7 @@ def test_an_unreadable_file_is_skipped_with_a_message(monkeypatch, tmp_path):
     result = _run(monkeypatch, FakeSegmentor([card_image(3)]), images, tmp_path / "out")
 
     assert result.exit_code == 0, result.output
-    assert "unreadable image, skipped: broken.jpg" in result.output
+    assert "unreadable query image, skipped: broken.jpg" in result.output
     assert [p.name for p in (tmp_path / "out").iterdir()] == ["card.jpg"]
 
 

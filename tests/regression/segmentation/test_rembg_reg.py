@@ -1,5 +1,5 @@
 """
-Regression tests for RembgCardSegmentor.
+Regression tests for RembgSegmentor.
 
 Requires:
   - rembg model (silueta, downloaded automatically on first run)
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from mtg_recognition.engine.image import prepare_image
-from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
+from mtg_recognition.engine.segmentation.rembg import RembgSegmentor
 from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 
 FIXTURE_DIR = Path("tests/regression/segmentation/fixtures")
@@ -41,9 +41,9 @@ MIN_AREA_FRACTION = 0.01
 
 
 @pytest.fixture(scope="module")
-def segmentor() -> RembgCardSegmentor:
-    """Module-scoped RembgCardSegmentor; model is loaded once per test module."""
-    return RembgCardSegmentor()
+def segmentor() -> RembgSegmentor:
+    """Module-scoped RembgSegmentor; model is loaded once per test module."""
+    return RembgSegmentor()
 
 
 @pytest.fixture(scope="module")
@@ -211,10 +211,9 @@ class TestBenchmarkSuccessRate:
         failures = []
         for path in image_paths:
             result = segmentor.segment(prepare_image(path))
-            if not result.success or len(result.segments) != 1:
+            if not result.success or len(result.cards) != 1:
                 failures.append(
-                    f"{path.name}: success={result.success}, "
-                    f"segments={len(result.segments)}"
+                    f"{path.name}: success={result.success}, cards={len(result.cards)}"
                 )
 
         assert not failures, "Benchmark regressions:\n" + "\n".join(failures)
@@ -226,8 +225,8 @@ class TestBenchmarkSuccessRate:
 
 
 @pytest.mark.slow
-class TestMultiCardSegmentation:
-    """Multi-card images with gaps must yield one segment per card."""
+class TestMultipleCardsSegmentation:
+    """Multi-card images with gaps must yield one card image per card."""
 
     def test_two_cards_detected(self, segmentor):
         img_path = PHOTOS_MULTI_CARD_DIR / "images" / "two_cards_with_gap.jpg"
@@ -235,8 +234,8 @@ class TestMultiCardSegmentation:
         assert img is not None
         result = segmentor.segment(img)
         assert result.success
-        assert len(result.segments) == 2, (
-            f"{img_path.stem}: expected 2 segments, got {len(result.segments)}"
+        assert len(result.cards) == 2, (
+            f"{img_path.stem}: expected 2 cards, got {len(result.cards)}"
         )
 
     def test_four_cards_detected(self, segmentor):
@@ -245,8 +244,8 @@ class TestMultiCardSegmentation:
         assert img is not None
         result = segmentor.segment(img)
         assert result.success
-        assert len(result.segments) == 4, (
-            f"{img_path.stem}: expected 4 segments, got {len(result.segments)}"
+        assert len(result.cards) == 4, (
+            f"{img_path.stem}: expected 4 cards, got {len(result.cards)}"
         )
 
 
@@ -262,8 +261,8 @@ class TestEdgeCases:
         img = cv2.imread(str(PHOTOS_SINGLE_CARD_DIR / "images" / "card_and_pen.jpg"))
         assert img is not None
         result = segmentor.segment(img)
-        assert len(result.segments) == 1, (
-            f"Expected exactly 1 segment (card only), got {len(result.segments)}"
+        assert len(result.cards) == 1, (
+            f"Expected exactly 1 card, got {len(result.cards)}"
         )
 
     @pytest.mark.xfail(
@@ -276,4 +275,4 @@ class TestEdgeCases:
         )
         assert img is not None
         result = segmentor.segment(img)
-        assert len(result.segments) == 4
+        assert len(result.cards) == 4

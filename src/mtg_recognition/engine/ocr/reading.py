@@ -1,5 +1,5 @@
-"""Reading a card: what PaddleOCR finds printed on a warped card image (see Reading
-in GLOSSARY.md).
+"""Reading a card: what PaddleOCR finds printed on a card image (see Reading in
+GLOSSARY.md).
 
 The reading reports what the card shows; comparing it with printings is scoring's
 job (`engine/ocr/scoring.py`).
@@ -16,27 +16,21 @@ from mtg_recognition.engine.ocr import ocr_extraction
 from mtg_recognition.engine.ocr.enhance import upscale_for_ocr
 from mtg_recognition.settings import settings
 
-# Regions as fractions of image dimensions (H x W)
+# OCR regions as fractions of the card image's height and width:
+# (top, bottom, left, right)
 # Name: horizontal text area at top of card
-NAME_TOP = 0.04
-NAME_BOTTOM = 0.11
-NAME_LEFT = 0.06
-NAME_RIGHT = 0.9
+NAME_ROI = (0.04, 0.11, 0.06, 0.9)
+# Collector information (CR 213): set code, collector number, illustration credit,
+# copyright year; P/T sits at its right edge.
+COLLECTOR_INFORMATION_ROI = (0.88, 1.0, 0.05, 0.95)
 
-# Information below the text box (CR 213): set code, collector number,
-# illustration credit, copyright year; P/T sits at its right edge.
-BELOW_TEXT_BOX_TOP = 0.88
-BELOW_TEXT_BOX_BOTTOM = 1.0
-BELOW_TEXT_BOX_LEFT = 0.05
-BELOW_TEXT_BOX_RIGHT = 0.95
-
-# for flavor text bleedthrough filtering below the text box; the y threshold is kept
-# small so artist names near the top of the region aren't discarded
+# for flavor text bleedthrough filtering in the collector information crop; the y
+# threshold is kept small so artist names near the top of the crop aren't discarded
 Y_TRESH_FRAC = 0.08
 X_RIGHT_FRAC = 0.90
 
 # PaddleOCR's text detection model requires both dimensions >= 32 px;
-# upscale any region that falls below this threshold before inference.
+# upscale any crop that falls below this threshold before inference.
 _MIN_DIM = 32
 
 
@@ -46,10 +40,10 @@ class ReadingDebug:
     only when the reader is called with debug=True.
     """
 
-    # Annotated crop of the information below the text box from PaddleOCR
+    # Annotated collector information crop from PaddleOCR
     # (side-by-side: original + text labels). None if PaddleOCR doesn't provide it.
     annotated_image: Image.Image | None
-    # Raw OCR tokens below the text box (flavor-text filtered), with their
+    # Raw OCR tokens of the collector information (flavor-text filtered), with their
     # confidences and boxes.
     texts: list[str]
     scores: list[float]
@@ -64,18 +58,18 @@ class Reading:
 
     name: str | None = None
     # Every token that may be the set code: OCR can't tell which one it is.
-    set_code_candidates: list[str] = field(default_factory=list)
-    number: str | None = None
+    possible_set_codes: list[str] = field(default_factory=list)
+    collector_number: str | None = None
     base_set_size: str | None = None
     artist: str | None = None
-    set_release_year: str | None = None
+    copyright_year: str | None = None
     power: str | None = None
     toughness: str | None = None
     debug: ReadingDebug | None = None
 
 
 class PaddleCardReader:
-    """Reads a warped card image with PaddleOCR."""
+    """Reads a card image with PaddleOCR."""
 
     def __init__(self):
         self._paddleocr = PaddleOCR(
@@ -100,37 +94,31 @@ class PaddleCardReader:
         )
 
     def read(self, card_image: np.ndarray, *, debug: bool = False) -> Reading:
-        """Read the name and the information below the text box off a card image.
+        """Read the name and the collector information off a card image.
 
         Args:
-            card_image: Warped card image (BGR format from OpenCV).
-            debug: When True, the reading carries a ReadingDebug.
+            card_image: Card image (BGR format from OpenCV).
+            debug: When True, the reading holds a ReadingDebug.
 
         Raises:
             RuntimeError: If PaddleOCR fails.
         """
-        h, w, _ = card_image.shape
+        name_crop = _crop(card_image, NAME_ROI)
+        collector_information_crop = upscale_for_ocr(
+            _crop(card_image, COLLECTOR_INFORMATION_ROI)
+        )
 
-        name_img = card_image[
-            int(h * NAME_TOP) : int(h * NAME_BOTTOM),
-            int(w * NAME_LEFT) : int(w * NAME_RIGHT),
-        ]
-        below_text_box_img = card_image[
-            int(h * BELOW_TEXT_BOX_TOP) : int(h * BELOW_TEXT_BOX_BOTTOM),
-            int(w * BELOW_TEXT_BOX_LEFT) : int(w * BELOW_TEXT_BOX_RIGHT),
-        ]
-
-        below_text_box_img = upscale_for_ocr(below_text_box_img)
-
-        # Perform OCR on both regions in a single batched predict call.
+        # Perform OCR on both crops in a single batched predict call.
         # Paddle's text-detection model requires both dimensions >= 32 px; upscale
-        # any region that falls below this threshold before inference.
+        # any crop that falls below this threshold before inference.
 
-        name_img = _ensure_min_dim(name_img, _MIN_DIM)
-        below_text_box_img = _ensure_min_dim(below_text_box_img, _MIN_DIM)
+        name_crop = _ensure_min_dim(name_crop, _MIN_DIM)
+        collector_information_crop = _ensure_min_dim(
+            collector_information_crop, _MIN_DIM
+        )
 
         raw_results = self._paddleocr.predict(
-            [name_img, below_text_box_img], text_det_thresh=0.05
+            [name_crop, collector_information_crop], text_det_thresh=0.05
         )
         texts_name: list[str] = raw_results[0]["rec_texts"]
         texts: list[str] = raw_results[1]["rec_texts"]
@@ -138,7 +126,7 @@ class PaddleCardReader:
         scores: list[float] = raw_results[1]["rec_scores"]
 
         # Remove tokens in the flavor-text bleedthrough zone before extraction.
-        # Tokens near the TOP of the region and not in the far-right column
+        # Tokens near the TOP of the crop and not in the far-right column
         # (where P/T lives) are flavor text that bled into it.
         texts, boxes, scores = ocr_extraction.filter_flavor_text_zone(
             texts,
@@ -148,16 +136,18 @@ class PaddleCardReader:
             x_right_frac=X_RIGHT_FRAC,
         )
 
-        number, base_set_size = ocr_extraction.extract_number_and_base_set_size(texts)
+        collector_number, base_set_size = (
+            ocr_extraction.extract_collector_number_and_base_set_size(texts)
+        )
         power, toughness = ocr_extraction.extract_power_toughness(texts)
 
         return Reading(
             name=ocr_extraction.extract_card_name(texts_name),
-            set_code_candidates=ocr_extraction.extract_setcode_candidates(texts),
-            number=number,
+            possible_set_codes=ocr_extraction.extract_possible_set_codes(texts),
+            collector_number=collector_number,
             base_set_size=base_set_size,
             artist=ocr_extraction.extract_artist_name(texts),
-            set_release_year=ocr_extraction.extract_set_release_year(texts),
+            copyright_year=ocr_extraction.extract_copyright_year(texts),
             power=power,
             toughness=toughness,
             debug=(
@@ -173,8 +163,17 @@ class PaddleCardReader:
         )
 
 
+def _crop(card_image: np.ndarray, roi: tuple[float, float, float, float]) -> np.ndarray:
+    """The pixels of card_image inside roi, given as (top, bottom, left, right)
+    fractions of its height and width.
+    """
+    top, bottom, left, right = roi
+    h, w = card_image.shape[:2]
+    return card_image[int(h * top) : int(h * bottom), int(w * left) : int(w * right)]
+
+
 def _annotated_image(raw_results) -> Image.Image | None:
-    """PaddleOCR's annotated crop of the information below the text box, if any."""
+    """PaddleOCR's annotated collector information crop, if any."""
     try:
         return raw_results[1].img["ocr_res_img"]
     except Exception as e:

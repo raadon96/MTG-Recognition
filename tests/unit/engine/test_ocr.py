@@ -2,17 +2,17 @@ import pytest
 
 from mtg_recognition.engine.ocr.ocr_extraction import (
     extract_card_name,
-    extract_number_and_base_set_size,
+    extract_collector_number_and_base_set_size,
+    extract_copyright_year,
+    extract_possible_set_codes,
     extract_power_toughness,
-    extract_set_release_year,
-    extract_setcode_candidates,
     filter_flavor_text_zone,
 )
 
 
-class TestExtractSetCodeByArtifact:
-    def test_extract_setcode_empty_list(self):
-        assert extract_setcode_candidates([]) == []
+class TestExtractPossibleSetCodesByArtifact:
+    def test_no_tokens_give_no_possible_set_codes(self):
+        assert extract_possible_set_codes([]) == []
 
     @pytest.mark.parametrize(
         "texts,expected",
@@ -33,7 +33,7 @@ class TestExtractSetCodeByArtifact:
             # Spaces around separator
             (["L0273", "TM & C 2026 Wizards", "ECL · EN IORGE IACINTO"], ["ECL"]),
             (["L0398", "TM & C 2023 Wizards", "LCI· EN ADAM PAOUETTE"], ["LCI"]),
-            # Multi-token split: setcode and lang artifact in adjacent tokens
+            # Multi-token split: set code and lang artifact in adjacent tokens
             (["3/3", "C0061", "MARINA ORTEGA", "TDM", "·DE"], ["TDM"]),
             (["3/3", "C 0061", "TDM·DE MARINA ORTEGA", "TM&2025 Wizards"], ["TDM"]),
             # Non-EN language codes
@@ -48,15 +48,17 @@ class TestExtractSetCodeByArtifact:
             ),
         ],
     )
-    def test_extract_setcode_various_artifacts(self, texts, expected):
-        assert extract_setcode_candidates(texts) == expected
+    def test_the_code_before_a_language_artifact_is_a_possible_set_code(
+        self, texts, expected
+    ):
+        assert extract_possible_set_codes(texts) == expected
 
 
-class TestExtractSetCodeFallback:
-    """Tests for extract_setcode_candidates fallback (no language artifact).
+class TestExtractPossibleSetCodesFallback:
+    """Tests for extract_possible_set_codes fallback (no language artifact).
 
     When no artifact pattern matches, the function falls back to returning
-    uppercase-only 2-5 char tokens that are not in _SETCODE_BLOCKLIST.
+    uppercase-only 2-5 char tokens that are not in _SET_CODE_BLOCKLIST.
     Fallback 2 (all tokens 3-8 chars) has been removed — noisy tokens such as
     artist names, years, and copyright words are never returned.
     """
@@ -64,48 +66,48 @@ class TestExtractSetCodeFallback:
     def test_uppercase_token_returned(self):
         """A real-looking set code token is returned by the fallback."""
         # "MNC" is 3 uppercase chars; no artifact present
-        assert extract_setcode_candidates(["MNC", "2025", "Wizants", "394"]) == ["MNC"]
+        assert extract_possible_set_codes(["MNC", "2025", "Wizants", "394"]) == ["MNC"]
 
     def test_mixed_case_tokens_excluded(self):
         """Tokens with any lowercase letter do not match [A-Z]{2,5}."""
         # Old card: only lowercase/mixed tokens remain after spatial filter
-        result = extract_setcode_candidates(
+        result = extract_possible_set_codes(
             ["Illus.", "Jeff", "Miracola", "01997", "Wizards", "of", "the", "Coast,"]
         )
         assert result == []
 
     def test_digit_only_and_year_tokens_excluded(self):
         """Numeric tokens are excluded by the uppercase regex."""
-        result = extract_setcode_candidates(["394", "2025", "01997"])
+        result = extract_possible_set_codes(["394", "2025", "01997"])
         assert result == []
 
     def test_blocklist_words_excluded(self):
         """Copyright boilerplate that is all-uppercase is filtered by
-        _SETCODE_BLOCKLIST.
+        _SET_CODE_BLOCKLIST.
         """
         # "COAST", "INC", "TM" all match [A-Z]{2,5} but are in the blocklist
-        result = extract_setcode_candidates(["COAST", "INC", "TM", "LLC"])
+        result = extract_possible_set_codes(["COAST", "INC", "TM", "LLC"])
         assert result == []
 
-    def test_blocklist_does_not_suppress_real_setcode(self):
+    def test_blocklist_does_not_suppress_real_set_code(self):
         """A valid set code that happens to share letters with blocklist words is
         returned.
         """
         # "ARN" (Arabian Nights) is not in the blocklist
-        assert extract_setcode_candidates(["ARN", "338", "©1993"]) == ["ARN"]
+        assert extract_possible_set_codes(["ARN", "338", "©1993"]) == ["ARN"]
 
     def test_multiple_uppercase_tokens_all_returned(self):
         """Multiple uppercase candidates are all returned."""
-        result = extract_setcode_candidates(["ARN", "ICE", "1993"])
+        result = extract_possible_set_codes(["ARN", "ICE", "1993"])
         assert result == ["ARN", "ICE"]
 
     def test_token_too_long_excluded(self):
         """Tokens longer than 5 chars don't match [A-Z]{2,5}."""
-        assert extract_setcode_candidates(["WIZARDS", "RESERVED"]) == []
+        assert extract_possible_set_codes(["WIZARDS", "RESERVED"]) == []
 
     def test_token_one_char_excluded(self):
         """Single-char tokens don't match [A-Z]{2,5} (min 2)."""
-        assert extract_setcode_candidates(["A", "B", "1"]) == []
+        assert extract_possible_set_codes(["A", "B", "1"]) == []
 
     def test_artifact_takes_priority_over_fallback(self):
         """Artifact pass takes priority — fallback is never reached when artifact
@@ -113,7 +115,7 @@ class TestExtractSetCodeFallback:
         """
         # "WAR" from artifact takes priority; uppercase fallback token "ABC" is not
         # returned
-        result = extract_setcode_candidates(["011/264", "WAR-EN", "ABC"])
+        result = extract_possible_set_codes(["011/264", "WAR-EN", "ABC"])
         assert result == ["WAR"]
 
     @pytest.mark.parametrize(
@@ -153,7 +155,7 @@ class TestExtractSetCodeFallback:
         ],
     )
     def test_real_world_old_cards(self, texts, expected):
-        assert extract_setcode_candidates(texts) == expected
+        assert extract_possible_set_codes(texts) == expected
 
 
 class TestExtractCardName:
@@ -170,83 +172,109 @@ class TestExtractCardName:
         assert extract_card_name(texts) == expected
 
 
-class TestExtractNumberAndBaseSetSize:
-    """Tests for extract_number_and_base_set_size.
+class TestExtractCollectorNumberAndBaseSetSize:
+    """Tests for extract_collector_number_and_base_set_size.
 
     Returns (collector_number, base_set_size) as printed on the card, leading zeros
     included (scoring compares numbers without them). base_set_size is None for
-    old sets that print only a standalone card number with no /baseSetSize.
+    old sets that print only a standalone collector number with no base set size.
     """
 
     # Core functionality
     def test_simple(self):
-        assert extract_number_and_base_set_size(["011/264", "WAR-EN"]) == ("011", "264")
+        assert extract_collector_number_and_base_set_size(["011/264", "WAR-EN"]) == (
+            "011",
+            "264",
+        )
 
     def test_empty_list(self):
-        assert extract_number_and_base_set_size([]) == (None, None)
+        assert extract_collector_number_and_base_set_size([]) == (None, None)
 
-    def test_no_match(self):
-        assert extract_number_and_base_set_size(["WAR-EN", "SOMETEXT"]) == (None, None)
+    def test_no_collector_number_gives_none(self):
+        assert extract_collector_number_and_base_set_size(["WAR-EN", "SOMETEXT"]) == (
+            None,
+            None,
+        )
 
     def test_leading_zeros_kept(self):
-        assert extract_number_and_base_set_size(["099/280", "A"]) == ("099", "280")
+        assert extract_collector_number_and_base_set_size(["099/280", "A"]) == (
+            "099",
+            "280",
+        )
 
     # Longest-match strategy: prefer collector number over P/T
     def test_prefers_longer_over_power_toughness(self):
-        assert extract_number_and_base_set_size(["1/2", "112/280", "M20.EN"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["1/2", "112/280", "M20.EN"]
+        ) == (
             "112",
             "280",
         )
 
     def test_multiple_candidates_returns_longest(self):
-        assert extract_number_and_base_set_size(["2/2", "99/99", "112/280"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["2/2", "99/99", "112/280"]
+        ) == (
             "112",
             "280",
         )
 
     def test_only_power_toughness_available(self):
-        """Single-digit P/T values are not mistaken for a card number"""
-        assert extract_number_and_base_set_size(["1/2", "SOMETEXT"]) == (None, None)
+        """Single-digit P/T values are not mistaken for a collector number"""
+        assert extract_collector_number_and_base_set_size(["1/2", "SOMETEXT"]) == (
+            None,
+            None,
+        )
 
     # Embedded / substring cases
     def test_embedded_with_trailing_letter(self):
         """Trailing uppercase letter (OCR noise) is not included in the number"""
-        assert extract_number_and_base_set_size(["055/280C", "M2O-EN"]) == (
+        assert extract_collector_number_and_base_set_size(["055/280C", "M2O-EN"]) == (
             "055",
             "280",
         )
 
     def test_embedded_in_longer_string(self):
-        assert extract_number_and_base_set_size(["C330/361EN", "TEXT"]) == (
+        assert extract_collector_number_and_base_set_size(["C330/361EN", "TEXT"]) == (
             "330",
             "361",
         )
 
     # Split-token cases
     def test_split_three_tokens(self):
-        assert extract_number_and_base_set_size(["011", "/", "264", "WAR-EN"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["011", "/", "264", "WAR-EN"]
+        ) == (
             "011",
             "264",
         )
 
     def test_split_two_tokens(self):
-        assert extract_number_and_base_set_size(["011/", "264", "WAR-EN"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["011/", "264", "WAR-EN"]
+        ) == (
             "011",
             "264",
         )
 
     def test_split_preferred_over_power_toughness(self):
-        assert extract_number_and_base_set_size(["1/2", "011/", "264"]) == (
+        assert extract_collector_number_and_base_set_size(["1/2", "011/", "264"]) == (
             "011",
             "264",
         )
 
     # OCR normalisation
     def test_backslash_normalised_to_slash(self):
-        assert extract_number_and_base_set_size(["011\\264", "TEXT"]) == ("011", "264")
+        assert extract_collector_number_and_base_set_size(["011\\264", "TEXT"]) == (
+            "011",
+            "264",
+        )
 
     def test_spaces_around_slash_normalised(self):
-        assert extract_number_and_base_set_size(["011 / 264", "TEXT"]) == ("011", "264")
+        assert extract_collector_number_and_base_set_size(["011 / 264", "TEXT"]) == (
+            "011",
+            "264",
+        )
 
     # Real-world OCR examples
     @pytest.mark.parametrize(
@@ -265,65 +293,76 @@ class TestExtractNumberAndBaseSetSize:
         ],
     )
     def test_real_world_examples(self, rec_texts, expected):
-        assert extract_number_and_base_set_size(rec_texts) == expected
+        assert extract_collector_number_and_base_set_size(rec_texts) == expected
 
 
-class TestExtractNumberAndBaseSetSizeSuffix:
+class TestExtractCollectorNumberAndBaseSetSizeSuffix:
     """Stage 1 extensions: letter/star suffixes and T/C token prefixes."""
 
     def test_letter_suffix(self):
         """Lowercase letter suffix is preserved (DFC / variant marker)"""
-        assert extract_number_and_base_set_size(["100a/302", "NEO-EN"]) == (
+        assert extract_collector_number_and_base_set_size(["100a/302", "NEO-EN"]) == (
             "100a",
             "302",
         )
 
     def test_star_suffix(self):
         """Star suffix is preserved (foil / special treatment)"""
-        assert extract_number_and_base_set_size(["67★/350", "TEXT"]) == ("67★", "350")
+        assert extract_collector_number_and_base_set_size(["67★/350", "TEXT"]) == (
+            "67★",
+            "350",
+        )
 
     def test_token_prefix_both_sides(self):
         """T prefix on both sides of slash is preserved (token card numbering)"""
-        assert extract_number_and_base_set_size(["T001/T030", "CMR-EN"]) == (
+        assert extract_collector_number_and_base_set_size(["T001/T030", "CMR-EN"]) == (
             "T001",
             "T030",
         )
 
     def test_single_letter_before_digits_not_captured(self):
         """Uppercase OCR set-code bleed before digits is not captured as a prefix"""
-        assert extract_number_and_base_set_size(["C330/361EN", "TEXT"]) == (
+        assert extract_collector_number_and_base_set_size(["C330/361EN", "TEXT"]) == (
             "330",
             "361",
         )
 
 
-class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
-    """Stage 2: standalone card number for sets that omit /baseSetSize."""
+class TestExtractCollectorNumberAndBaseSetSizeStandaloneCollectorNumber:
+    """Stage 2: standalone collector number for sets that omit the base set size."""
 
     def test_leading_zero_standalone(self):
-        """CE/IE style 4-digit card number with leading zero"""
-        assert extract_number_and_base_set_size(["CE", "0214", "Artist", "©1993"]) == (
+        """CE/IE style 4-digit collector number with leading zero"""
+        assert extract_collector_number_and_base_set_size(
+            ["CE", "0214", "Artist", "©1993"]
+        ) == (
             "0214",
             None,
         )
 
     def test_three_digit_standalone(self):
-        """3-digit standalone card number"""
-        assert extract_number_and_base_set_size(["ARN", "338", "Artist", "©1993"]) == (
+        """3-digit standalone collector number"""
+        assert extract_collector_number_and_base_set_size(
+            ["ARN", "338", "Artist", "©1993"]
+        ) == (
             "338",
             None,
         )
 
-    def test_year_not_mistaken_for_card_number(self):
+    def test_year_not_mistaken_for_collector_number(self):
         """4-digit copyright year is rejected"""
-        assert extract_number_and_base_set_size(["FBB", "Artist", "©1994"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["FBB", "Artist", "©1994"]
+        ) == (
             None,
             None,
         )
 
     def test_single_digit_rejected(self):
         """Single digit is too ambiguous (P/T bleed etc.)"""
-        assert extract_number_and_base_set_size(["MIR", "5", "Artist", "©2020"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["MIR", "5", "Artist", "©2020"]
+        ) == (
             None,
             None,
         )
@@ -332,11 +371,14 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         """2-digit value without leading zero is now accepted (old sets like The
         Dark)
         """
-        assert extract_number_and_base_set_size(["ARN", "38", "Artist"]) == ("38", None)
+        assert extract_collector_number_and_base_set_size(["ARN", "38", "Artist"]) == (
+            "38",
+            None,
+        )
 
     def test_two_digit_without_leading_zero_real_world(self):
         """Burnished Hart retro-frame: collector number 71, P/T 2/2"""
-        assert extract_number_and_base_set_size(
+        assert extract_collector_number_and_base_set_size(
             [
                 "2/2",
                 "Han",
@@ -351,13 +393,14 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
             ]
         ) == ("71", None)
 
-    def test_pt_in_slash_token_not_mistaken_for_card_number(self):
-        """Power >= 10 in a slash token must not beat the real standalone card number.
+    def test_pt_in_slash_token_not_mistaken_for_collector_number(self):
+        """Power >= 10 in a slash token must not beat the real standalone collector
+        number.
 
         Without the slash guard, '10' from '10/4' would appear at an earlier
         reading-order index than '71' and win the ranking.
         """
-        assert extract_number_and_base_set_size(
+        assert extract_collector_number_and_base_set_size(
             ["10/4", "Artist", "Name", "71", "©1994"]
         ) == (
             "71",
@@ -365,16 +408,18 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         )
 
     def test_two_digit_pt_in_slash_token_not_mistaken(self):
-        """P/T token '12/8' — neither '12' nor '8' should be treated as card number."""
-        assert extract_number_and_base_set_size(
+        """P/T token '12/8' — neither '12' nor '8' is the collector number."""
+        assert extract_collector_number_and_base_set_size(
             ["12/8", "Artist", "Name", "©1994"]
         ) == (None, None)
 
     def test_stage1_takes_priority(self):
-        """Full cardNumber/baseSetSize result is returned when both stages could
+        """Full collector number/base set size result is returned when both stages could
         match
         """
-        assert extract_number_and_base_set_size(["214", "011/264", "WAR-EN"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["214", "011/264", "WAR-EN"]
+        ) == (
             "011",
             "264",
         )
@@ -383,7 +428,7 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
         """Single uppercase letter prefix with OCR zero artifact
         (e.g. 'L0398' from 'L 398')
         """
-        assert extract_number_and_base_set_size(
+        assert extract_collector_number_and_base_set_size(
             ["LCI", "L0398", "Artist", "©2023"]
         ) == (
             "0398",
@@ -392,14 +437,18 @@ class TestExtractNumberAndBaseSetSizeStandaloneCardNumber:
 
     def test_leading_letter_no_artifact(self):
         """Single uppercase letter prefix without OCR artifact (e.g. 'L398')"""
-        assert extract_number_and_base_set_size(["LCI", "L398", "Artist"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["LCI", "L398", "Artist"]
+        ) == (
             "398",
             None,
         )
 
     def test_leading_letter_year_still_rejected(self):
         """Digit part of a prefixed token is still rejected if it looks like a year"""
-        assert extract_number_and_base_set_size(["LCI", "L2023", "Artist"]) == (
+        assert extract_collector_number_and_base_set_size(
+            ["LCI", "L2023", "Artist"]
+        ) == (
             None,
             None,
         )
@@ -409,7 +458,7 @@ class TestExtractPowerToughness:
     def test_empty(self):
         assert extract_power_toughness([]) == (None, None)
 
-    def test_no_match(self):
+    def test_no_power_toughness_gives_none(self):
         assert extract_power_toughness(["TEXT", "ONLY"]) == (None, None)
 
     # Digit / digit (existing behaviour — must not regress)
@@ -446,7 +495,7 @@ class TestExtractPowerToughness:
     def test_star_star_backslash(self):
         assert extract_power_toughness(["*\\*"]) == ("*", "*")
 
-    # Real-world info-ROI context
+    # Real-world collector information context
     @pytest.mark.parametrize(
         "rec_texts,expected",
         [
@@ -466,61 +515,61 @@ class TestExtractCopyrightYear:
     # Basic functionality
     def test_no_year_present(self):
         """Returns None when no copyright year exists"""
-        assert extract_set_release_year(["Illus. © Dan Frazier"]) is None
-        assert extract_set_release_year([]) is None
+        assert extract_copyright_year(["Illus. © Dan Frazier"]) is None
+        assert extract_copyright_year([]) is None
 
     def test_single_year(self):
         """Extracts single copyright year"""
-        assert extract_set_release_year(["©1995 Wizards of the Coast"]) == "1995"
-        assert extract_set_release_year(["TM &2020 Wizards"]) == "2020"
+        assert extract_copyright_year(["©1995 Wizards of the Coast"]) == "1995"
+        assert extract_copyright_year(["TM &2020 Wizards"]) == "2020"
 
     def test_year_range_returns_end_year(self):
         """Returns second year from hyphenated range"""
-        assert extract_set_release_year(["©1993-1999 Wizards of the Coast"]) == "1999"
-        assert extract_set_release_year(["TM & 1993-2009 Wizards LLC"]) == "2009"
+        assert extract_copyright_year(["©1993-1999 Wizards of the Coast"]) == "1999"
+        assert extract_copyright_year(["TM & 1993-2009 Wizards LLC"]) == "2009"
 
     # OCR normalization
     def test_letter_o_as_zero_prefix(self):
         """Handles 'O' before year (common OCR error)"""
-        assert extract_set_release_year(["&O2020 Wizards"]) == "2020"
-        assert extract_set_release_year(["O1995 Wizards"]) == "1995"
-        assert extract_set_release_year(["TM&O2009 Coast"]) == "2009"
+        assert extract_copyright_year(["&O2020 Wizards"]) == "2020"
+        assert extract_copyright_year(["O1995 Wizards"]) == "1995"
+        assert extract_copyright_year(["TM&O2009 Coast"]) == "2009"
 
     def test_letter_o_as_zero_within_year(self):
         """Handles 'O' within year digits"""
-        assert extract_set_release_year(["TM &2O20 Wizards"]) == "2020"
-        assert extract_set_release_year(["©2O1O Wizards"]) == "2010"
-        assert extract_set_release_year(["TM & 1993-20O9 Wizards LLC"]) == "2009"
+        assert extract_copyright_year(["TM &2O20 Wizards"]) == "2020"
+        assert extract_copyright_year(["©2O1O Wizards"]) == "2010"
+        assert extract_copyright_year(["TM & 1993-20O9 Wizards LLC"]) == "2009"
 
     def test_compact_text_no_spaces(self):
         """Handles merged text without spaces"""
-        assert extract_set_release_year(["TM&1993-2009WizardsoftheCoast"]) == "2009"
-        assert extract_set_release_year(["©1995WizardsoftheCoast"]) == "1995"
+        assert extract_copyright_year(["TM&1993-2009WizardsoftheCoast"]) == "2009"
+        assert extract_copyright_year(["©1995WizardsoftheCoast"]) == "1995"
 
     # Priority and selection logic
     def test_range_priority_over_single_year(self):
         """Prefers end year from range when both range and singles exist"""
-        assert extract_set_release_year(["©1993-1999 Wizards"]) == "1999"  # Not 1993
+        assert extract_copyright_year(["©1993-1999 Wizards"]) == "1999"  # Not 1993
 
     def test_copyright_context_preferred(self):
         """Prefers years near copyright keywords"""
-        assert extract_set_release_year(["Random 1994 text", "©1995 Wizards"]) == "1995"
+        assert extract_copyright_year(["Random 1994 text", "©1995 Wizards"]) == "1995"
 
     # Edge cases and validation
     def test_ignores_invalid_years(self):
         """Rejects years outside 1993-2030 range"""
-        assert extract_set_release_year(["Copyright 1990 Invalid"]) is None
-        assert extract_set_release_year(["Copyright 2050 Future"]) is None
-        assert extract_set_release_year(["©1992 Before MTG"]) is None
+        assert extract_copyright_year(["Copyright 1990 Invalid"]) is None
+        assert extract_copyright_year(["Copyright 2050 Future"]) is None
+        assert extract_copyright_year(["©1992 Before MTG"]) is None
 
     def test_ignores_card_stats(self):
         """Doesn't confuse power/toughness with years"""
-        assert extract_set_release_year(["1/1", "3/3", "Illus. Artist"]) is None
-        assert extract_set_release_year(["*/5", "2/2"]) is None
+        assert extract_copyright_year(["1/1", "3/3", "Illus. Artist"]) is None
+        assert extract_copyright_year(["*/5", "2/2"]) is None
 
     def test_ignores_partial_numbers(self):
         """Doesn't extract years from longer numbers"""
-        assert extract_set_release_year(["112020", "502009"]) is None
+        assert extract_copyright_year(["112020", "502009"]) is None
 
     # Real-world examples (representative samples from each batch)
     @pytest.mark.parametrize(
@@ -547,15 +596,15 @@ class TestExtractCopyrightYear:
     )
     def test_real_world_examples(self, rect_texts, expected):
         """Representative real-world OCR outputs from each batch"""
-        assert extract_set_release_year(rect_texts) == expected
+        assert extract_copyright_year(rect_texts) == expected
 
 
 class TestFilterFlavorTextZone:
     """Tests for filter_flavor_text_zone.
 
-    Box format: [x1, y1, x2, y2].  roi_height = max(y2), roi_width = max(x2).
+    Box format: [x1, y1, x2, y2].  crop_height = max(y2), crop_width = max(x2).
     Default thresholds: y_thresh_frac=0.35, x_right_frac=0.80.
-    A token is discarded when: y1 < 0.35*roi_height  AND  x2 < 0.80*roi_width.
+    A token is discarded when: y1 < 0.35*crop_height  AND  x2 < 0.80*crop_width.
     """
 
     def test_empty_inputs(self):
@@ -575,7 +624,7 @@ class TestFilterFlavorTextZone:
 
     def test_no_tokens_in_flavor_zone(self):
         """All tokens sit below the y threshold → nothing filtered."""
-        # roi_height = 300, y_thresh = 0.35*300 = 105
+        # crop_height = 300, y_thresh = 0.35*300 = 105
         # Both tokens have y1 = 150 > 105 → both kept
         texts = ["048/271", "ONE·EN"]
         boxes = [(0, 150, 200, 220), (0, 200, 200, 260)]
@@ -587,7 +636,7 @@ class TestFilterFlavorTextZone:
 
     def test_flavor_token_in_top_left_discarded(self):
         """Token in top-left (small y1, small x2) is flavor text → discarded."""
-        # roi_height = 300 → y_thresh = 105; roi_width = 200 → x_right = 160
+        # crop_height = 300 → y_thresh = 105; crop_width = 200 → x_right = 160
         # "trials" box: y1=20 < 105 AND x2=100 < 160 → DISCARDED
         # "048/271" box: y1=150 > 105 → KEPT
         texts = ["trials", "048/271"]
@@ -600,7 +649,7 @@ class TestFilterFlavorTextZone:
 
     def test_pt_in_top_right_kept(self):
         """P/T token sits near the top but in the far-right column → kept."""
-        # roi_height = 300 → y_thresh = 105; roi_width = 1700 → x_right = 1360
+        # crop_height = 300 → y_thresh = 105; crop_width = 1700 → x_right = 1360
         # P/T "3/4" box: y1=60 < 105 BUT x2=1660 > 1360 → KEPT (right column)
         # Flavor "pretend" box: y1=5 < 105 AND x2=400 < 1360 → DISCARDED
         texts = ["pretend", "3/4", "132/269"]
@@ -617,7 +666,7 @@ class TestFilterFlavorTextZone:
 
     def test_safety_guard_keeps_all_when_all_would_be_discarded(self):
         """If every token is in the flavor zone, return originals unchanged."""
-        # roi_height = 100 → y_thresh = 35; roi_width = 200 → x_right = 160
+        # crop_height = 100 → y_thresh = 35; crop_width = 200 → x_right = 160
         # Both tokens: y1 < 35 AND x2 < 160 → would all be discarded
         texts = ["foo", "bar"]
         boxes = [(0, 5, 100, 30), (10, 10, 120, 28)]
@@ -633,7 +682,7 @@ class TestFilterFlavorTextZone:
         raw_texts:  ["perform", "trials", "the", "scientists.", "on",
                      "2/1", "048/271", "ONE*EN", "BUY CHRISTIAN",
                      "2023Wizards of he Coas", "AMA"]
-        roi_height ≈ 300, roi_width ≈ 1728
+        crop_height ≈ 300, crop_width ≈ 1728
         y_thresh ≈ 105, x_right ≈ 1382
         """
         texts = [

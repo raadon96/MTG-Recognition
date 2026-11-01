@@ -15,8 +15,8 @@ import pytest
 from mtg_recognition.engine import pipeline as pipeline_module
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.engine.segmentation.seg_utils import (
-    CardSegment,
-    ImageSegmentationResult,
+    SegmentationResult,
+    SegmentedCard,
 )
 from tests.unit.engine.builders import card_image, printing, reading_of
 
@@ -30,11 +30,11 @@ def test_invalid_k_parameters_raise(k_phash, k_final):
 # --- Pipeline.recognize over fake models ---
 
 
-class OneCardSegmentor:
-    """Finds one card: the whole image."""
+class WholeImageSegmentor:
+    """Finds one card: the whole query image."""
 
-    def segment(self, img):
-        return ImageSegmentationResult(segments=[CardSegment(warped_image=img)])
+    def segment(self, query_image):
+        return SegmentationResult(cards=[SegmentedCard(card_image=query_image)])
 
 
 class FailingReader:
@@ -50,7 +50,7 @@ class P0Reader:
 
 
 def _pipeline(monkeypatch, reader) -> Pipeline:
-    monkeypatch.setattr(pipeline_module, "YoloCardSegmentor", OneCardSegmentor)
+    monkeypatch.setattr(pipeline_module, "YoloSegmentor", WholeImageSegmentor)
     monkeypatch.setattr(pipeline_module, "PaddleCardReader", reader)
     return Pipeline(k_final_results=3)
 
@@ -61,17 +61,17 @@ def test_an_ocr_failure_is_recorded_and_scores_every_candidate_0(monkeypatch):
     result = pipeline.recognize(card_image())
 
     assert result.error is None
-    [segment] = result.segments
-    assert segment.ocr_error == "RuntimeError: paddle exploded"
-    assert segment.reading is None
-    assert len(segment.ranked) == 3
-    assert all(r.score == 0.0 for r in segment.ranked)
+    [card] = result.cards
+    assert card.ocr_error == "RuntimeError: paddle exploded"
+    assert card.reading is None
+    assert len(card.ranked) == 3
+    assert all(r.score == 0.0 for r in card.ranked)
 
 
 def test_a_successful_reading_is_no_ocr_fallback(monkeypatch):
     pipeline = _pipeline(monkeypatch, P0Reader)
 
-    [segment] = pipeline.recognize(card_image()).segments
+    [card] = pipeline.recognize(card_image()).cards
 
-    assert segment.ocr_error is None
-    assert segment.reading == reading_of(printing("p0"))
+    assert card.ocr_error is None
+    assert card.reading == reading_of(printing("p0"))

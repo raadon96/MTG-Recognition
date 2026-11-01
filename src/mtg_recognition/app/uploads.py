@@ -1,4 +1,4 @@
-"""Results of recognizing uploaded card images, and their export, for the Streamlit
+"""Results of recognizing uploaded query images, and their export, for the Streamlit
 app.
 """
 
@@ -15,13 +15,13 @@ from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
 
-# Quality of the warped card's display copy; recognition never sees it.
+# Quality of the card image's display copy; recognition never sees it.
 _DISPLAY_JPEG_QUALITY = 90
 
 
 @dataclass(frozen=True)
 class Upload:
-    """One uploaded image file: its name and its encoded bytes, as uploaded."""
+    """One uploaded query image file: its name and its encoded bytes, as uploaded."""
 
     name: str
     data: bytes
@@ -29,27 +29,27 @@ class Upload:
 
 class UploadStatus(StrEnum):
     SUCCESS = "success"
-    NO_MATCH = "no_match"
+    NOT_RECOGNIZED = "not_recognized"
     ERROR = "error"
 
 
 @dataclass
 class UploadResult:
-    """Result for one card found in an uploaded image, or for an image with no card or
-    an error.
+    """Result for one card found in an uploaded query image, or for a query image with
+    no card or an error.
     """
 
     uploaded_filename: str
-    original_image: bytes  # the upload itself, as uploaded
+    query_image: bytes  # as uploaded
     status: UploadStatus
     ranked: list[RankedPrinting] = field(default_factory=list)  # best first
     error_message: str | None = None
-    warped_image_jpeg: bytes | None = None  # the warped card, for display only
+    card_image_jpeg: bytes | None = None  # for display only
     reading_debug: ReadingDebug | None = None
 
     @property
     def best(self) -> RankedPrinting | None:
-        """The top-ranked entry, or None if there is no match."""
+        """The best printing's entry, or None when the ranking is empty."""
         return self.ranked[0] if self.ranked else None
 
 
@@ -59,7 +59,7 @@ _BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[RankedPrinting], object]]]
     ("uuid", "UUID", lambda b: b.printing.uuid),
     ("score", "Score", lambda b: b.score),
     ("set_code", "Set Code", lambda b: b.printing.set_code),
-    ("card_number", "Card Number", lambda b: b.printing.number),
+    ("collector_number", "Collector Number", lambda b: b.printing.collector_number),
     ("base_set_size", "Base Set Size", lambda b: b.printing.base_set_size),
     ("artist", "Artist", lambda b: b.printing.artist),
     ("scryfall_url", "Scryfall URL", lambda b: b.printing.image_url),
@@ -67,7 +67,7 @@ _BEST_PRINTING_FIELDS: list[tuple[str, str, Callable[[RankedPrinting], object]]]
 
 
 def _best_printing_fields(result: UploadResult, as_columns: bool) -> dict[str, object]:
-    """The exported fields of the result's best printing (all None without a match).
+    """The exported fields of the result's best printing (all None without one).
 
     Keyed by JSON key or column name.
     """
@@ -82,7 +82,7 @@ def upload_results(
     upload: Upload, recognition: RecognitionResult
 ) -> list[UploadResult]:
     """The results of recognizing one upload: one per card found, or a single one for
-    an image with no card or an error.
+    a query image with no card or an error.
     """
     name, data = upload.name, upload.data
 
@@ -92,21 +92,19 @@ def upload_results(
                 name, data, UploadStatus.ERROR, error_message=recognition.error
             )
         ]
-    if not recognition.segments:
-        return [UploadResult(name, data, UploadStatus.NO_MATCH)]
+    if not recognition.cards:
+        return [UploadResult(name, data, UploadStatus.NOT_RECOGNIZED)]
 
     return [
         UploadResult(
             name,
             data,
-            UploadStatus.SUCCESS if segment.ranked else UploadStatus.NO_MATCH,
-            ranked=segment.ranked,
-            warped_image_jpeg=_encode_jpeg(segment.warped_image),
-            reading_debug=(
-                segment.reading.debug if segment.reading is not None else None
-            ),
+            UploadStatus.SUCCESS if card.ranked else UploadStatus.NOT_RECOGNIZED,
+            ranked=card.ranked,
+            card_image_jpeg=_encode_jpeg(card.card_image),
+            reading_debug=(card.reading.debug if card.reading is not None else None),
         )
-        for segment in recognition.segments
+        for card in recognition.cards
     ]
 
 
@@ -147,5 +145,5 @@ def _encode_jpeg(img: np.ndarray) -> bytes:
         ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, _DISPLAY_JPEG_QUALITY]
     )
     if not ok:
-        raise ValueError("Failed to encode the warped card as JPEG")
+        raise ValueError("Failed to encode the card image as JPEG")
     return buffer.tobytes()

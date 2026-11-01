@@ -7,16 +7,16 @@ from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.ranking import RankedPrinting
-from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
+from mtg_recognition.engine.segmentation.yolo import YoloSegmentor
 from mtg_recognition.reference.catalog import SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
 
 
 @dataclass(frozen=True)
-class SegmentResult:
-    """Recognition result for one card found in the image."""
+class CardResult:
+    """Recognition result for one card found in the query image."""
 
-    warped_image: np.ndarray
+    card_image: np.ndarray
     ranked: list[RankedPrinting]  # best first
     # None when no candidate was left to compare it with, or OCR failed
     reading: Reading | None
@@ -26,16 +26,16 @@ class SegmentResult:
 
 @dataclass(frozen=True)
 class RecognitionResult:
-    """Recognition result for one input image."""
+    """Recognition result for one query image."""
 
-    segments: list[SegmentResult]  # empty = no card found
+    cards: list[CardResult]  # empty = no card found
     error: str | None
 
 
 class Pipeline:
-    """The engine's recognition module: image in, a ranking per card out.
+    """The engine's recognition module: query image in, a ranking per card out.
 
-    Segments the image, finds pHash candidates, resolves them to printings
+    Segments the query image, finds pHash candidates, resolves them to printings
     through the SQLite catalog, reads each card and ranks the candidates by
     scoring the reading against them.
 
@@ -62,30 +62,33 @@ class Pipeline:
         reference = ReferenceData.default()
         self.phash_index = load_phash_index(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
-        self.segmentor = YoloCardSegmentor()
+        self.segmentor = YoloSegmentor()
         self.reader = PaddleCardReader()
 
-    def recognize(self, image: ImageSource, debug: bool = False) -> RecognitionResult:
-        """Recognize every card in an image.
+    def recognize(
+        self, query_image: ImageSource, debug: bool = False
+    ) -> RecognitionResult:
+        """Recognize every card in a query image.
 
-        The image is prepared with prepare_image. Failures, an unreadable image
-        included, are returned in RecognitionResult.error rather than raised.
+        The query image is prepared with prepare_image. Failures, an unreadable
+        query image included, are returned in RecognitionResult.error rather than
+        raised.
 
         Args:
-            image: A path, encoded bytes, a file-like upload, a PIL image or an
+            query_image: A path, encoded bytes, a file-like upload, a PIL image or an
                 already-decoded BGR array.
-            debug: When True, each reading carries the reader's debug artefacts.
+            debug: When True, each reading holds the reader's debug artefacts.
         """
         try:
-            # prepare and segment the image
-            segmentation = self.segmentor.segment(prepare_image(image))
-            segments: list[SegmentResult] = []
-            for card in segmentation.segments:
-                warped = card.warped_image
+            # prepare and segment the query image
+            segmentation = self.segmentor.segment(prepare_image(query_image))
+            card_results: list[CardResult] = []
+            for card in segmentation.cards:
+                card_image = card.card_image
 
                 # shortlist pHash candidates
                 uuids, _ = shortlist(
-                    self.phash_index, warped, k=self.k_phash_candidates
+                    self.phash_index, card_image, k=self.k_phash_candidates
                 )
 
                 # resolve them through the catalog, keeping pHash order and
@@ -95,7 +98,7 @@ class Pipeline:
 
                 # no candidate left: empty ranking, no reading
                 if not candidates:
-                    segments.append(SegmentResult(warped, ranked=[], reading=None))
+                    card_results.append(CardResult(card_image, ranked=[], reading=None))
                     continue
 
                 # read the card; when OCR fails, the empty reading scores every
@@ -104,7 +107,7 @@ class Pipeline:
                 reading: Reading | None = None
                 ocr_error: str | None = None
                 try:
-                    reading = self.reader.read(warped, debug=debug)
+                    reading = self.reader.read(card_image, debug=debug)
                 except RuntimeError as e:
                     ocr_error = f"{type(e).__name__}: {e}"
 
@@ -114,11 +117,11 @@ class Pipeline:
                     candidates,
                     k=self.k_final_results,
                 )
-                segments.append(
-                    SegmentResult(
-                        warped, ranked=ranked, reading=reading, ocr_error=ocr_error
+                card_results.append(
+                    CardResult(
+                        card_image, ranked=ranked, reading=reading, ocr_error=ocr_error
                     )
                 )
         except Exception as e:
-            return RecognitionResult(segments=[], error=f"{type(e).__name__}: {e}")
-        return RecognitionResult(segments=segments, error=None)
+            return RecognitionResult(cards=[], error=f"{type(e).__name__}: {e}")
+        return RecognitionResult(cards=card_results, error=None)
