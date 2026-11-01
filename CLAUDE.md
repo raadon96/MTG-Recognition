@@ -15,6 +15,7 @@ src/mtg_recognition/
 │   └── ranking.py       ranked candidates and their field scores
 ├── app/           Streamlit UI over the engine
 ├── jobs/          builds the reference data from MTGJSON releases, as plain functions returning results
+├── benchmark/     validates the manifest, scores each query image against its label, compares results with the baseline
 ├── reference/     the reference data, read by the engine and written by jobs
 │   ├── layout.py        on-disk layout and sync state
 │   ├── catalog.py       the catalog table schema, and reads printings out of the catalog
@@ -23,7 +24,8 @@ src/mtg_recognition/
 └── cli/           the `mtg` group and its commands; the only package that imports Click
     ├── recognize.py     `mtg recognize`
     ├── segment.py       `mtg segment`
-    └── reference.py     `mtg status`, `mtg update`, `mtg build-index`
+    ├── reference.py     `mtg status`, `mtg update`, `mtg build-index`
+    └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`
 data/reference/    the reference data
 models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
 tests/             unit and regression tests
@@ -143,9 +145,11 @@ uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
-uv run mtg --help                    # recognize, segment, status, update, build-index
+uv run mtg --help                    # recognize, segment, status, update, build-index, benchmark
+uv run mtg benchmark run             # recognise the labelled images; non-zero on any change from the baseline
+uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto data/benchmark-baseline.json
 ```
 
 Test images are DVC-tracked on Google Drive; setup and adding images: `CONTRIBUTING.md`.
 
-`data/reference/` (catalog, sync state, pHash index) is committed; change it only through `mtg update` and `mtg build-index`.
+`data/reference/` (catalog, sync state, pHash index) is committed; change it only through `mtg update` and `mtg build-index`. `data/benchmark-baseline.json` is committed; change it only through `mtg benchmark update-baseline`.

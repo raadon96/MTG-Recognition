@@ -1,0 +1,3372 @@
+{
+  "commit": "aec4589924d62b76d00233e0c76d90957fa135ee",
+  "mtgjson_version": "5.3.0+20261019",
+  "totals": {
+    "images": 257,
+    "exact_printing": 243,
+    "card_count": 256,
+    "same_card_name": 245,
+    "ocr_fallbacks": 0,
+    "runtime_s": 130.508
+  },
+  "images": {
+    "1_photos_single_card/00f6a8fe-62d8-5996-9ad6-e4e0577a3ab7.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "00f6a8fe-62d8-5996-9ad6-e4e0577a3ab7"
+      ],
+      "runtime_s": 0.954,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/01013cab-be73-532f-b6bf-0f24d0c3792f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "01013cab-be73-532f-b6bf-0f24d0c3792f"
+      ],
+      "runtime_s": 0.45,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/01a72980-f328-577f-a23f-205fc6e10e8b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "01a72980-f328-577f-a23f-205fc6e10e8b"
+      ],
+      "runtime_s": 0.441,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0636f33e-e5c4-5840-9d56-17290e39615e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0636f33e-e5c4-5840-9d56-17290e39615e"
+      ],
+      "runtime_s": 0.526,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0731017a-2eef-5795-afa6-69ef12b416b3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0731017a-2eef-5795-afa6-69ef12b416b3"
+      ],
+      "runtime_s": 0.406,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0891d4f8-d695-5ae0-9ad1-46016c4fc947.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0891d4f8-d695-5ae0-9ad1-46016c4fc947"
+      ],
+      "runtime_s": 0.451,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/08f8bb29-6091-50d2-afab-6b80087ce067.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "08f8bb29-6091-50d2-afab-6b80087ce067"
+      ],
+      "runtime_s": 0.415,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/095deb11-a6c2-5dbd-9765-1bbadeb2896a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "095deb11-a6c2-5dbd-9765-1bbadeb2896a"
+      ],
+      "runtime_s": 0.547,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/09ebac3a-adde-538f-8474-b7aee7e969ae.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "09ebac3a-adde-538f-8474-b7aee7e969ae"
+      ],
+      "runtime_s": 0.434,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0a2f85cd-f66d-5330-a9d5-314554f871a1"
+      ],
+      "runtime_s": 0.402,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0b382265-73df-5d46-b2b1-b802d97075f4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0b382265-73df-5d46-b2b1-b802d97075f4"
+      ],
+      "runtime_s": 0.64,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0c50a4ef-a68f-56aa-a637-3038d3b3dd79.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0c50a4ef-a68f-56aa-a637-3038d3b3dd79"
+      ],
+      "runtime_s": 0.535,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/0c941678-45c6-5aab-a863-136c1e0b7a7f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0c941678-45c6-5aab-a863-136c1e0b7a7f"
+      ],
+      "runtime_s": 0.463,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/118a45de-465b-56e3-a460-4b2670b367ef.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "118a45de-465b-56e3-a460-4b2670b367ef"
+      ],
+      "runtime_s": 0.529,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/12b77048-ebad-51b2-99e8-c7dcaccf7a67.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "12b77048-ebad-51b2-99e8-c7dcaccf7a67"
+      ],
+      "runtime_s": 0.498,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/13c0f7f1-743a-52f0-a4a1-f10d57fb0524.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "13c0f7f1-743a-52f0-a4a1-f10d57fb0524"
+      ],
+      "runtime_s": 0.607,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/15683485-77f7-5c6f-b94d-93dab47a662b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "15683485-77f7-5c6f-b94d-93dab47a662b"
+      ],
+      "runtime_s": 0.499,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/156dd28e-3c5f-5cae-b113-a89c4b07a4db.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5c0ec142-09fe-550a-8f7d-0d977000724d"
+      ],
+      "runtime_s": 0.429,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/18460453-2820-55af-9cc3-15b29903f999.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "18460453-2820-55af-9cc3-15b29903f999"
+      ],
+      "runtime_s": 0.517,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/186f22ef-b3a2-5304-9f41-d5b9729834cb.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "186f22ef-b3a2-5304-9f41-d5b9729834cb"
+      ],
+      "runtime_s": 0.508,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/19827ebf-3b49-5021-ac7f-f6c125a3bdd6.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "19827ebf-3b49-5021-ac7f-f6c125a3bdd6"
+      ],
+      "runtime_s": 0.429,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1abeffd9-3c8d-58ca-b9df-76b25fec0ed2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
+      ],
+      "runtime_s": 0.459,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1b414b20-21c1-53e9-86c4-98944dd9d36d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1b414b20-21c1-53e9-86c4-98944dd9d36d"
+      ],
+      "runtime_s": 0.494,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1d54b6cc-3d3b-5be2-966b-21c75e788bf1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1d54b6cc-3d3b-5be2-966b-21c75e788bf1"
+      ],
+      "runtime_s": 0.439,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1f02ee50-90a0-52d6-8809-7dfb091568fe.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1f02ee50-90a0-52d6-8809-7dfb091568fe"
+      ],
+      "runtime_s": 0.529,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1f36d944-7a4b-5fdf-8c17-63e550a58c0a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1f36d944-7a4b-5fdf-8c17-63e550a58c0a"
+      ],
+      "runtime_s": 0.523,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/1f92d38a-5dc2-5ff0-8318-56ca814157ac.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1f92d38a-5dc2-5ff0-8318-56ca814157ac"
+      ],
+      "runtime_s": 0.475,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2173ed89-4787-5e42-a879-6edf99761a0d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2173ed89-4787-5e42-a879-6edf99761a0d"
+      ],
+      "runtime_s": 0.445,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/224fc334-346e-5777-b2c9-03a96813616d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "224fc334-346e-5777-b2c9-03a96813616d"
+      ],
+      "runtime_s": 0.648,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/225ff3ef-7b44-5df0-a69e-27e2f0166a5a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "225ff3ef-7b44-5df0-a69e-27e2f0166a5a"
+      ],
+      "runtime_s": 0.399,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/23c2e576-b4c2-5946-bbc7-c7a1ef45c1b2.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "82f200ea-32fa-57cc-8df1-5112443a3236"
+      ],
+      "runtime_s": 0.487,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/24c7a4f6-7955-52da-865b-22224297b3b8.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "24c7a4f6-7955-52da-865b-22224297b3b8"
+      ],
+      "runtime_s": 0.529,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/252a6a8d-6c67-54c6-9a5e-3fddc553e63e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "252a6a8d-6c67-54c6-9a5e-3fddc553e63e"
+      ],
+      "runtime_s": 0.662,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/25b3bd7a-aa42-56c8-9a53-3cc093e9c818.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "25b3bd7a-aa42-56c8-9a53-3cc093e9c818"
+      ],
+      "runtime_s": 0.468,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2782664f-5eca-5358-ae37-cce8fa1cfcca.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2782664f-5eca-5358-ae37-cce8fa1cfcca"
+      ],
+      "runtime_s": 0.458,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/27da5926-3e3d-5d06-b642-cb5a32d7491c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "27da5926-3e3d-5d06-b642-cb5a32d7491c"
+      ],
+      "runtime_s": 0.537,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2b64717e-6f69-5426-82ad-a97d16289321.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2b64717e-6f69-5426-82ad-a97d16289321"
+      ],
+      "runtime_s": 0.512,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2cc4f8a8-3866-5907-bcff-9d7bb6b61e7d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2cc4f8a8-3866-5907-bcff-9d7bb6b61e7d"
+      ],
+      "runtime_s": 0.46,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2e2b8656-c379-5efa-b798-3d71eb82e924.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2e2b8656-c379-5efa-b798-3d71eb82e924"
+      ],
+      "runtime_s": 0.516,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2e6cca3c-78ca-55c3-a76e-9025d20a04bb.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2e6cca3c-78ca-55c3-a76e-9025d20a04bb"
+      ],
+      "runtime_s": 0.627,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/2fa84bf9-74e5-5302-899d-db6c2150c70f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "2fa84bf9-74e5-5302-899d-db6c2150c70f"
+      ],
+      "runtime_s": 0.401,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/31694a90-2e78-55dc-ac15-01f8bdbd35fc.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "31694a90-2e78-55dc-ac15-01f8bdbd35fc"
+      ],
+      "runtime_s": 0.441,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/3171448a-6b1e-5d72-a2e3-1d8d7913198d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "3171448a-6b1e-5d72-a2e3-1d8d7913198d"
+      ],
+      "runtime_s": 0.596,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/3261737f-2698-5f05-b714-6d1dffcf20cd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "3261737f-2698-5f05-b714-6d1dffcf20cd"
+      ],
+      "runtime_s": 0.453,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/327751c7-6d08-5ee0-a9dc-f02ad1398eca.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "327751c7-6d08-5ee0-a9dc-f02ad1398eca"
+      ],
+      "runtime_s": 0.449,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/32bfae5c-a2f8-5e7a-adfc-f51d6af69966.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "32bfae5c-a2f8-5e7a-adfc-f51d6af69966"
+      ],
+      "runtime_s": 0.578,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/342a9886-3eec-51ee-bf23-fdc7069d98a1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "342a9886-3eec-51ee-bf23-fdc7069d98a1"
+      ],
+      "runtime_s": 0.447,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/3b78d1a8-b704-5e05-bb3e-93fe34472f45.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "a924b6af-95bf-58de-8749-b9b65c1ef0ea"
+      ],
+      "runtime_s": 0.466,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/3eb78409-5a2e-5ce0-b91d-7e52883ff5cf.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "3eb78409-5a2e-5ce0-b91d-7e52883ff5cf"
+      ],
+      "runtime_s": 0.427,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "40bc1031-6cc8-5e10-9ff3-12f8a7b70c78"
+      ],
+      "runtime_s": 0.514,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/412bb17e-58bf-5e6f-80a8-8926151ab9f4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "412bb17e-58bf-5e6f-80a8-8926151ab9f4"
+      ],
+      "runtime_s": 0.39,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/434ab927-1bda-565a-bb69-bbdb27ca9d5a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "434ab927-1bda-565a-bb69-bbdb27ca9d5a"
+      ],
+      "runtime_s": 0.446,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/43c61b32-95c0-5e67-80da-a36c28219d6d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "43c61b32-95c0-5e67-80da-a36c28219d6d"
+      ],
+      "runtime_s": 0.498,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/44f527ec-4f8b-565a-b846-cb56f31fe52e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "44f527ec-4f8b-565a-b846-cb56f31fe52e"
+      ],
+      "runtime_s": 0.46,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/46bd1799-9a0a-5fd1-93d6-708a585dc71b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "46bd1799-9a0a-5fd1-93d6-708a585dc71b"
+      ],
+      "runtime_s": 0.48,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/477e0ae4-6441-5bf4-8ef8-bc5a6fb60751.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "477e0ae4-6441-5bf4-8ef8-bc5a6fb60751"
+      ],
+      "runtime_s": 0.527,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/47b367b0-ffea-514a-8ccc-7474cb2c23df.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "47b367b0-ffea-514a-8ccc-7474cb2c23df"
+      ],
+      "runtime_s": 0.716,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/4b4c1e76-e3e2-5ecc-b50b-54b24cd4091e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "4b4c1e76-e3e2-5ecc-b50b-54b24cd4091e"
+      ],
+      "runtime_s": 0.457,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/4ecf57d2-2328-5485-957d-fe61ef8255ca.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "4ecf57d2-2328-5485-957d-fe61ef8255ca"
+      ],
+      "runtime_s": 0.485,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/4f7caf33-25ba-5280-b86e-a730d86010f4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "4f7caf33-25ba-5280-b86e-a730d86010f4"
+      ],
+      "runtime_s": 0.46,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/56133d99-6df5-55c2-bdd8-dc6e83b5b3fd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "56133d99-6df5-55c2-bdd8-dc6e83b5b3fd"
+      ],
+      "runtime_s": 0.509,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/573d9cfa-c531-56de-a0f1-bafcac074eef.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "573d9cfa-c531-56de-a0f1-bafcac074eef"
+      ],
+      "runtime_s": 0.743,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/586dfcb7-ce0b-5857-a7ee-c47a9005b1c7.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "586dfcb7-ce0b-5857-a7ee-c47a9005b1c7"
+      ],
+      "runtime_s": 0.442,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/58ba82cb-f820-5bc3-b18b-11a85dcb2a44.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "58ba82cb-f820-5bc3-b18b-11a85dcb2a44"
+      ],
+      "runtime_s": 0.604,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/5914c6df-b12d-57e6-857b-ad6f8bcc3f3a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5914c6df-b12d-57e6-857b-ad6f8bcc3f3a"
+      ],
+      "runtime_s": 0.448,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/5b48d071-e765-512c-b989-3fd3aa2e5a63.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5b48d071-e765-512c-b989-3fd3aa2e5a63"
+      ],
+      "runtime_s": 0.484,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/5ced0151-b7e1-5ed7-8509-765b1fede911.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5ced0151-b7e1-5ed7-8509-765b1fede911"
+      ],
+      "runtime_s": 0.623,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/6162336c-2a08-5b38-9b83-a59d158b9e33.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "6162336c-2a08-5b38-9b83-a59d158b9e33"
+      ],
+      "runtime_s": 0.443,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/617a1e98-5b17-5e79-96c3-1275b79d3690.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "617a1e98-5b17-5e79-96c3-1275b79d3690"
+      ],
+      "runtime_s": 0.469,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/61fa7145-af2b-59a2-92dd-48d19be60152.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "61fa7145-af2b-59a2-92dd-48d19be60152"
+      ],
+      "runtime_s": 0.618,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/64359c4f-a984-5135-9d52-7c591ac684e3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "64359c4f-a984-5135-9d52-7c591ac684e3"
+      ],
+      "runtime_s": 0.467,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/64c55d37-47bc-51d9-816e-3574aa4c01ea.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "64c55d37-47bc-51d9-816e-3574aa4c01ea"
+      ],
+      "runtime_s": 0.469,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/64e959fa-ca41-5549-bf30-45d27fdd642c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "64e959fa-ca41-5549-bf30-45d27fdd642c"
+      ],
+      "runtime_s": 0.68,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/66d20282-5804-54f0-a579-ffc6351a6fe2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "66d20282-5804-54f0-a579-ffc6351a6fe2"
+      ],
+      "runtime_s": 0.727,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/66f7bf77-082f-584d-bf7b-c0ddba4d94b2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "66f7bf77-082f-584d-bf7b-c0ddba4d94b2"
+      ],
+      "runtime_s": 0.489,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/67df542e-fb46-5268-a7ae-c73ec7bc357a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "67df542e-fb46-5268-a7ae-c73ec7bc357a"
+      ],
+      "runtime_s": 0.543,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/696ed9e8-c0ee-5ace-832d-68b01466842d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "696ed9e8-c0ee-5ace-832d-68b01466842d"
+      ],
+      "runtime_s": 0.546,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/6f1afcdb-2efb-5ee2-a4a3-91b4c70e451c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "6f1afcdb-2efb-5ee2-a4a3-91b4c70e451c"
+      ],
+      "runtime_s": 0.453,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/710cd074-c5c1-507c-8fd9-8cab17108edd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "710cd074-c5c1-507c-8fd9-8cab17108edd"
+      ],
+      "runtime_s": 0.399,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/714b9b3c-2d29-559d-8060-e872a04282cc.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "714b9b3c-2d29-559d-8060-e872a04282cc"
+      ],
+      "runtime_s": 0.451,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7246a4e8-0537-5016-b07a-433c59c2c285.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7246a4e8-0537-5016-b07a-433c59c2c285"
+      ],
+      "runtime_s": 0.469,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/74b27345-3ebb-53c3-9587-c86f2c74b154.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "74b27345-3ebb-53c3-9587-c86f2c74b154"
+      ],
+      "runtime_s": 0.511,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/74d61fc1-bd4f-5c3d-816e-cf3d673b05d1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "74d61fc1-bd4f-5c3d-816e-cf3d673b05d1"
+      ],
+      "runtime_s": 0.414,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/77fd7ff8-4330-543c-9276-cf9208ccdbb2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "77fd7ff8-4330-543c-9276-cf9208ccdbb2"
+      ],
+      "runtime_s": 0.535,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/78fc0983-5f67-5af5-a342-eb8f4d131408.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "78fc0983-5f67-5af5-a342-eb8f4d131408"
+      ],
+      "runtime_s": 0.61,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7a62762f-5c46-5fff-8c01-eade42eaa0e7.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7a62762f-5c46-5fff-8c01-eade42eaa0e7"
+      ],
+      "runtime_s": 0.463,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7c1edbcd-96fd-50ea-bf02-ca79be2b9512.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7c1edbcd-96fd-50ea-bf02-ca79be2b9512"
+      ],
+      "runtime_s": 0.565,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7d35d671-86ad-5f1e-8b9f-3e899ff50c2c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7d35d671-86ad-5f1e-8b9f-3e899ff50c2c"
+      ],
+      "runtime_s": 0.461,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7dc01727-9e47-5ce9-85fe-eb61ee65decf.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7dc01727-9e47-5ce9-85fe-eb61ee65decf"
+      ],
+      "runtime_s": 0.492,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/7f573fd2-8251-5ad7-8ea2-f6cd8957b275.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7f573fd2-8251-5ad7-8ea2-f6cd8957b275"
+      ],
+      "runtime_s": 0.491,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/80c6ca87-e589-5c93-a4b7-48be12f53c0c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "80c6ca87-e589-5c93-a4b7-48be12f53c0c"
+      ],
+      "runtime_s": 0.485,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/83989f1c-8e82-5480-b2b3-e79da4259290.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "83989f1c-8e82-5480-b2b3-e79da4259290"
+      ],
+      "runtime_s": 0.575,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/85a585d3-dcd9-5282-929c-8fbb8b89470b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "85a585d3-dcd9-5282-929c-8fbb8b89470b"
+      ],
+      "runtime_s": 0.383,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/87abaa4c-d461-59f3-98a4-97a7fcbadd00.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "87abaa4c-d461-59f3-98a4-97a7fcbadd00"
+      ],
+      "runtime_s": 0.437,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/87b8b93b-7118-5a62-aca5-2c849c4061eb.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "87b8b93b-7118-5a62-aca5-2c849c4061eb"
+      ],
+      "runtime_s": 0.488,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/88763199-e109-5253-ac65-2e032826bc80.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "88763199-e109-5253-ac65-2e032826bc80"
+      ],
+      "runtime_s": 0.463,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/89079973-0e0c-51e0-998e-38af4980fc0a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "89079973-0e0c-51e0-998e-38af4980fc0a"
+      ],
+      "runtime_s": 0.465,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/89ba71fa-c8c6-55f3-a1df-138cbd5a4319.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "89ba71fa-c8c6-55f3-a1df-138cbd5a4319"
+      ],
+      "runtime_s": 0.505,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8a890ec3-652b-5af9-9cd8-6b80acc1aa61.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8a890ec3-652b-5af9-9cd8-6b80acc1aa61"
+      ],
+      "runtime_s": 0.757,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8bc2c5f7-e279-58af-b77a-6e27fccb59d2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8bc2c5f7-e279-58af-b77a-6e27fccb59d2"
+      ],
+      "runtime_s": 0.453,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8c73e1cc-0311-5cde-b8aa-11e375492dd7.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8c73e1cc-0311-5cde-b8aa-11e375492dd7"
+      ],
+      "runtime_s": 0.74,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8cf30ca9-3b4d-5216-b811-1e47dc394e43.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8cf30ca9-3b4d-5216-b811-1e47dc394e43"
+      ],
+      "runtime_s": 0.432,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8d976321-04c3-5b2e-a5de-c2d9dc73e71f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8d976321-04c3-5b2e-a5de-c2d9dc73e71f"
+      ],
+      "runtime_s": 0.519,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8dbff4d6-2ee7-5235-a11e-bcb6f9185bf8.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "58091241-8079-5d76-8ebf-8cfc5c782021"
+      ],
+      "runtime_s": 0.702,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8e910181-bb43-5354-97fa-368fc42fbc2d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8e910181-bb43-5354-97fa-368fc42fbc2d"
+      ],
+      "runtime_s": 0.528,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8f2a267a-2fa7-5f76-8975-2b17dba8bf00.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8f2a267a-2fa7-5f76-8975-2b17dba8bf00"
+      ],
+      "runtime_s": 0.478,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/8f707e07-b6b3-5f54-85be-cc1e5c58f5f4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8f707e07-b6b3-5f54-85be-cc1e5c58f5f4"
+      ],
+      "runtime_s": 0.465,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/92209989-aca4-5241-a0e2-b13f399ce871.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "92209989-aca4-5241-a0e2-b13f399ce871"
+      ],
+      "runtime_s": 0.594,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/929cbad6-8311-5139-96ef-affa194e3be8.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "929cbad6-8311-5139-96ef-affa194e3be8"
+      ],
+      "runtime_s": 0.591,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/93c0f594-ddb5-5074-aa9f-d503f371e222.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "93c0f594-ddb5-5074-aa9f-d503f371e222"
+      ],
+      "runtime_s": 0.437,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/96851213-73a5-51ae-8b93-a5171056bba5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "96851213-73a5-51ae-8b93-a5171056bba5"
+      ],
+      "runtime_s": 0.475,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/978dc2b1-19ef-559f-9180-9db0e789b0ca.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "978dc2b1-19ef-559f-9180-9db0e789b0ca"
+      ],
+      "runtime_s": 0.496,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/98097c72-23ee-5d17-9d1d-8b5520473234.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "98097c72-23ee-5d17-9d1d-8b5520473234"
+      ],
+      "runtime_s": 0.731,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/98e5cf02-40f5-59a3-a17a-164b5c7ef4df.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "98e5cf02-40f5-59a3-a17a-164b5c7ef4df"
+      ],
+      "runtime_s": 0.503,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/99687962-d5e1-552a-9a5c-61fe8c39bfea.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "99687962-d5e1-552a-9a5c-61fe8c39bfea"
+      ],
+      "runtime_s": 0.488,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/9a32aa43-2408-5d32-a1a9-8aadc89bc1dc.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "9a32aa43-2408-5d32-a1a9-8aadc89bc1dc"
+      ],
+      "runtime_s": 0.458,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/9b09aa6d-2bf8-5f6e-ab4c-f4a69e733adf.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "9b09aa6d-2bf8-5f6e-ab4c-f4a69e733adf"
+      ],
+      "runtime_s": 0.5,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/9eae30fc-2d1b-58c0-adc2-3052e91795b5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "9eae30fc-2d1b-58c0-adc2-3052e91795b5"
+      ],
+      "runtime_s": 0.532,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/9f47fd7a-c051-5f02-a730-8d729739263c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "9f47fd7a-c051-5f02-a730-8d729739263c"
+      ],
+      "runtime_s": 0.475,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/a3abaeb6-f1c8-5551-99ec-76b665e249cd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a3abaeb6-f1c8-5551-99ec-76b665e249cd"
+      ],
+      "runtime_s": 0.575,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/a57fd155-198c-5e9c-8fc0-3ffec03809c8.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a57fd155-198c-5e9c-8fc0-3ffec03809c8"
+      ],
+      "runtime_s": 0.481,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/a587b7b9-abea-5c98-a499-8957ce40ecad.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a587b7b9-abea-5c98-a499-8957ce40ecad"
+      ],
+      "runtime_s": 0.457,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/a5ed1289-b561-58c8-a6c2-085bf8541988.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a5ed1289-b561-58c8-a6c2-085bf8541988"
+      ],
+      "runtime_s": 0.51,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/a8b5f870-8abd-5029-9e90-0897ff8a80e0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a8b5f870-8abd-5029-9e90-0897ff8a80e0"
+      ],
+      "runtime_s": 0.535,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ab62f9e1-436f-5e5a-a1f1-7cbca1e8cf53.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "6118f100-8e21-533f-ac88-d8d557e2e2e9"
+      ],
+      "runtime_s": 0.626,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/abd9b172-e755-5663-b95e-745673de9f74.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "abd9b172-e755-5663-b95e-745673de9f74"
+      ],
+      "runtime_s": 0.536,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ac252653-ebaa-5f7f-83f0-860f1142d650.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ac252653-ebaa-5f7f-83f0-860f1142d650"
+      ],
+      "runtime_s": 0.545,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ac5e1d17-8e22-53f4-af38-6a15a104bc9d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ac5e1d17-8e22-53f4-af38-6a15a104bc9d"
+      ],
+      "runtime_s": 0.452,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b03f4111-007b-5c13-af38-05feef7d0289.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b03f4111-007b-5c13-af38-05feef7d0289"
+      ],
+      "runtime_s": 0.441,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b2e76528-757d-5e27-a18e-f003ca961e79.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b2e76528-757d-5e27-a18e-f003ca961e79"
+      ],
+      "runtime_s": 0.702,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b82583d8-8e6b-5122-9d92-b47db52b59c0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b82583d8-8e6b-5122-9d92-b47db52b59c0"
+      ],
+      "runtime_s": 0.478,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b845b1d7-5205-5424-9642-549635b88b39.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b845b1d7-5205-5424-9642-549635b88b39"
+      ],
+      "runtime_s": 0.607,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b86a6181-8016-5d46-9c9f-e75b1751110e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b86a6181-8016-5d46-9c9f-e75b1751110e"
+      ],
+      "runtime_s": 0.506,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b97a06ac-b779-52a2-90b4-ec72b73ed22b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b97a06ac-b779-52a2-90b4-ec72b73ed22b"
+      ],
+      "runtime_s": 0.512,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/b9f6dde8-f31e-5724-b8f3-7ad2fe10e33e.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b9f6dde8-f31e-5724-b8f3-7ad2fe10e33e"
+      ],
+      "runtime_s": 0.522,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/bb947042-cd1d-5fbf-875c-9404dc33d8c1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
+      ],
+      "runtime_s": 0.44,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/bd5fdd3b-f2c5-530f-a6c0-dc527369e384.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bd5fdd3b-f2c5-530f-a6c0-dc527369e384"
+      ],
+      "runtime_s": 0.394,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c05ce0bd-580e-5ab1-8fc4-dc56b243c94c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c05ce0bd-580e-5ab1-8fc4-dc56b243c94c"
+      ],
+      "runtime_s": 0.485,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c31d5b4c-c831-5921-a70a-2ef479f115c5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c31d5b4c-c831-5921-a70a-2ef479f115c5"
+      ],
+      "runtime_s": 0.527,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c42518fc-ab78-5c5f-8473-40ae6cd74b9b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c42518fc-ab78-5c5f-8473-40ae6cd74b9b"
+      ],
+      "runtime_s": 0.454,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c450689f-78df-5afb-a7f3-673a10da5b73.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c450689f-78df-5afb-a7f3-673a10da5b73"
+      ],
+      "runtime_s": 0.565,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c492a467-330b-5150-b578-618582d3fe41.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c492a467-330b-5150-b578-618582d3fe41"
+      ],
+      "runtime_s": 0.61,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c4db37a8-7c3b-5c9a-ae16-6ee607d2b98d.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "8ac41de4-ab58-52eb-8dbf-6d1ee421ce35"
+      ],
+      "runtime_s": 0.542,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c5d34f95-1670-5766-b824-c4d580d76cb0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c5d34f95-1670-5766-b824-c4d580d76cb0"
+      ],
+      "runtime_s": 0.539,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c5dc7ac8-7498-5ede-b5c9-fdf1fc70b029.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c5dc7ac8-7498-5ede-b5c9-fdf1fc70b029"
+      ],
+      "runtime_s": 0.544,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c6c52721-af48-5268-8c84-26d9e1bafbb5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c6c52721-af48-5268-8c84-26d9e1bafbb5"
+      ],
+      "runtime_s": 0.437,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c75a09e5-5995-5150-85f5-8f943a205b95.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c75a09e5-5995-5150-85f5-8f943a205b95"
+      ],
+      "runtime_s": 0.628,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/c80dbd6a-f50b-59b2-a957-14e88fc29aa1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c80dbd6a-f50b-59b2-a957-14e88fc29aa1"
+      ],
+      "runtime_s": 0.43,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ca0cebf3-3c25-5804-b071-0e0c1fcef320.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ca0cebf3-3c25-5804-b071-0e0c1fcef320"
+      ],
+      "runtime_s": 0.569,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/card_and_pen.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
+      ],
+      "runtime_s": 0.486,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cb07a160-3b21-5bed-a758-bb41007ed2ff.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cb07a160-3b21-5bed-a758-bb41007ed2ff"
+      ],
+      "runtime_s": 0.637,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cbd992a3-becd-5764-9c22-c47ae1f32ec0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cbd992a3-becd-5764-9c22-c47ae1f32ec0"
+      ],
+      "runtime_s": 0.665,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cbf55beb-c275-5bb7-9c23-ee6fdf557e8c.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cbf55beb-c275-5bb7-9c23-ee6fdf557e8c"
+      ],
+      "runtime_s": 0.457,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cc847c64-5a3a-5105-9df4-3fa8cff9db58.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cc847c64-5a3a-5105-9df4-3fa8cff9db58"
+      ],
+      "runtime_s": 0.423,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cca7bade-fdbf-535a-a2b8-11e3266b962b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cca7bade-fdbf-535a-a2b8-11e3266b962b"
+      ],
+      "runtime_s": 0.415,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cd9aa095-f999-5a2c-91e5-4acd94d45416"
+      ],
+      "runtime_s": 0.358,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/cdb02719-a9de-5f4c-be59-0bd8787fcd9f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cdb02719-a9de-5f4c-be59-0bd8787fcd9f"
+      ],
+      "runtime_s": 0.401,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ce2dfafe-0cde-54bd-b7b7-284a313a3e2a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ce2dfafe-0cde-54bd-b7b7-284a313a3e2a"
+      ],
+      "runtime_s": 0.517,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ce481a04-adcd-54bc-b231-0c4e8f021fe3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ce481a04-adcd-54bc-b231-0c4e8f021fe3"
+      ],
+      "runtime_s": 0.443,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d273b78c-1188-5547-8fbc-a83f8d47a9c9.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d273b78c-1188-5547-8fbc-a83f8d47a9c9"
+      ],
+      "runtime_s": 0.455,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d2e35f3a-b4d4-500b-8eac-8e331703542a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d2e35f3a-b4d4-500b-8eac-8e331703542a"
+      ],
+      "runtime_s": 0.607,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d2f3f21f-b460-58e3-a826-a629dc094759.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "52f97e1c-7515-54f3-8743-514eca0db0e6"
+      ],
+      "runtime_s": 0.533,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d3451c0f-1066-5f54-acbd-b1a3c39234f0.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "ada046ce-8d9c-5a3c-9f0e-dadc66151421"
+      ],
+      "runtime_s": 0.571,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d3a75fe2-c639-50d7-968a-c2dd97e50640.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d3a75fe2-c639-50d7-968a-c2dd97e50640"
+      ],
+      "runtime_s": 0.449,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d47fc463-2114-5c1a-a92c-45fbfca77760.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d47fc463-2114-5c1a-a92c-45fbfca77760"
+      ],
+      "runtime_s": 0.493,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d4c8b239-71b4-5f9e-9da0-ee8529f943cd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d4c8b239-71b4-5f9e-9da0-ee8529f943cd"
+      ],
+      "runtime_s": 0.434,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d5ff4cfb-3d38-5261-abd1-42ac1530e157.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d5ff4cfb-3d38-5261-abd1-42ac1530e157"
+      ],
+      "runtime_s": 0.536,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d63e8a74-82d0-58e2-acfa-9f447c8608d4.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "77f6f67b-4216-506c-bbbf-3f61974929bb"
+      ],
+      "runtime_s": 0.645,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d75c9e2e-3be5-5ae2-ae4e-2d11a5fec543.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d75c9e2e-3be5-5ae2-ae4e-2d11a5fec543"
+      ],
+      "runtime_s": 0.514,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d7e765d4-34b2-57fd-85f6-2f19a543f4ac.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d7e765d4-34b2-57fd-85f6-2f19a543f4ac"
+      ],
+      "runtime_s": 0.423,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d85ca0b2-54e2-5a3a-bb78-4b6ae306f914.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d85ca0b2-54e2-5a3a-bb78-4b6ae306f914"
+      ],
+      "runtime_s": 0.633,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d8f9f7a0-99d4-5ba3-bebb-ab1487c4e664.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d8f9f7a0-99d4-5ba3-bebb-ab1487c4e664"
+      ],
+      "runtime_s": 0.574,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/d91f6808-812d-5dd6-b96e-edececbe5985.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d91f6808-812d-5dd6-b96e-edececbe5985"
+      ],
+      "runtime_s": 0.584,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/da7b6277-6281-5be8-b55f-036b380b9cea.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "da7b6277-6281-5be8-b55f-036b380b9cea"
+      ],
+      "runtime_s": 0.424,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/da812f7a-5e1f-57d6-8884-22002508a926.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "da812f7a-5e1f-57d6-8884-22002508a926"
+      ],
+      "runtime_s": 0.547,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ddabaad6-ee3c-58f3-9e03-2a712a1c0a36.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ddabaad6-ee3c-58f3-9e03-2a712a1c0a36"
+      ],
+      "runtime_s": 0.462,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/de33b83e-0133-5e2b-a1f3-58909c87ab31.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "0449c1a1-d75c-54f6-985a-fd512539f128"
+      ],
+      "runtime_s": 0.659,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/df708cfb-2c50-53e1-aa99-67e1257016b7.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "df708cfb-2c50-53e1-aa99-67e1257016b7"
+      ],
+      "runtime_s": 0.477,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e2bf8ab7-42a6-512f-945f-0a33d2a3ef94.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e2bf8ab7-42a6-512f-945f-0a33d2a3ef94"
+      ],
+      "runtime_s": 0.495,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e382d955-cfe0-5c9c-9b14-61cef061cdd3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e382d955-cfe0-5c9c-9b14-61cef061cdd3"
+      ],
+      "runtime_s": 0.588,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e3aeb4ee-5957-5105-84a8-374ecca2210b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e3aeb4ee-5957-5105-84a8-374ecca2210b"
+      ],
+      "runtime_s": 0.451,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e489e427-87e8-5cde-94a8-47b0404a04a2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e489e427-87e8-5cde-94a8-47b0404a04a2"
+      ],
+      "runtime_s": 0.45,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e51c3a28-5719-5f1f-856a-ccdadf9411e5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e51c3a28-5719-5f1f-856a-ccdadf9411e5"
+      ],
+      "runtime_s": 0.454,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e63d7d93-9b27-5d7f-8743-a852299595a5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e63d7d93-9b27-5d7f-8743-a852299595a5"
+      ],
+      "runtime_s": 0.438,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/e91f682c-9a33-5a13-9226-df0c6338a272.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "e91f682c-9a33-5a13-9226-df0c6338a272"
+      ],
+      "runtime_s": 0.426,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ea839ef5-2602-5fcc-bb8e-b886b256561a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ea839ef5-2602-5fcc-bb8e-b886b256561a"
+      ],
+      "runtime_s": 0.504,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/efbad82c-56f8-5629-a664-141023fc6ae3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "efbad82c-56f8-5629-a664-141023fc6ae3"
+      ],
+      "runtime_s": 0.483,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f029d08d-44bb-5107-95a9-d6d53512f513.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f029d08d-44bb-5107-95a9-d6d53512f513"
+      ],
+      "runtime_s": 0.545,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f08556f6-181b-54a3-a70e-eea1b1b1806b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f08556f6-181b-54a3-a70e-eea1b1b1806b"
+      ],
+      "runtime_s": 0.52,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f132a5cb-b9cc-5c02-9d01-55890124ceec.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f132a5cb-b9cc-5c02-9d01-55890124ceec"
+      ],
+      "runtime_s": 0.456,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f1df6271-d786-572c-b6ee-318e5a8b04a0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f1df6271-d786-572c-b6ee-318e5a8b04a0"
+      ],
+      "runtime_s": 0.408,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f281badd-5ce0-594f-addb-3c3c57f1f7de.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f281badd-5ce0-594f-addb-3c3c57f1f7de"
+      ],
+      "runtime_s": 0.513,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f4d6ccf8-b53d-59f7-85c5-4c53277e9457.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f4d6ccf8-b53d-59f7-85c5-4c53277e9457"
+      ],
+      "runtime_s": 0.557,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f5404ea9-21e9-5b58-abe3-11de6f13c482.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f5404ea9-21e9-5b58-abe3-11de6f13c482"
+      ],
+      "runtime_s": 0.48,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d"
+      ],
+      "runtime_s": 0.438,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f58a735a-468b-5df0-ac01-12a275872de4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f58a735a-468b-5df0-ac01-12a275872de4"
+      ],
+      "runtime_s": 0.414,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/f8c8e98a-f2a8-5c2b-ae4a-eccbe41de874.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f8c8e98a-f2a8-5c2b-ae4a-eccbe41de874"
+      ],
+      "runtime_s": 0.528,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/fa15d8b3-b284-5fc4-992a-c23e677bc4f9.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "5056e3dc-3bf3-5d3e-beea-cd55ffc986df"
+      ],
+      "runtime_s": 0.67,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/fc0f3291-22a4-58e5-b03e-b971c5403c53.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "fc0f3291-22a4-58e5-b03e-b971c5403c53"
+      ],
+      "runtime_s": 0.486,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/fe1fe8c7-a986-5d62-8553-aafe64f8d2cd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "fe1fe8c7-a986-5d62-8553-aafe64f8d2cd"
+      ],
+      "runtime_s": 0.52,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "1_photos_single_card/ffa78954-1122-5221-af63-31b9c5bc5d91.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ffa78954-1122-5221-af63-31b9c5bc5d91"
+      ],
+      "runtime_s": 0.52,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "2_photos_multiple_cards/four_cards_with_gap.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bb947042-cd1d-5fbf-875c-9404dc33d8c1",
+        "cd9aa095-f999-5a2c-91e5-4acd94d45416",
+        "412bb17e-58bf-5e6f-80a8-8926151ab9f4",
+        "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
+      ],
+      "runtime_s": 1.254,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "2_photos_multiple_cards/two_cards_with_gap.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bb947042-cd1d-5fbf-875c-9404dc33d8c1",
+        "412bb17e-58bf-5e6f-80a8-8926151ab9f4"
+      ],
+      "runtime_s": 0.649,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
+      ],
+      "runtime_s": 0.661,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/1_cropped.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
+      ],
+      "runtime_s": 0.525,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
+      ],
+      "runtime_s": 0.542,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7a8bbb63-420b-5c84-be26-79a871ee1415"
+      ],
+      "runtime_s": 0.452,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "48448b61-5f31-53a2-9bbe-66293104501b"
+      ],
+      "runtime_s": 0.37,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "3_scans_single_card_with_bg/5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "aa807c21-41ed-5cd3-8e86-8e62184ca2e2"
+      ],
+      "runtime_s": 0.434,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/0a00eb60-c3a1-5e43-9d87-0ce618a7f599.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0a00eb60-c3a1-5e43-9d87-0ce618a7f599"
+      ],
+      "runtime_s": 0.349,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/0a0ebcb7-3477-5bcf-97e0-f8fee61369aa.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "24488650-34e7-576c-8533-4735246dba55"
+      ],
+      "runtime_s": 0.323,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/0a0ecc26-2faf-5f5b-8121-de983a204c26.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0a0ecc26-2faf-5f5b-8121-de983a204c26"
+      ],
+      "runtime_s": 0.533,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/0a0f53ed-2640-5848-936d-50de61cb5c9f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0a0f53ed-2640-5848-936d-50de61cb5c9f"
+      ],
+      "runtime_s": 0.2,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/25032026.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "48448b61-5f31-53a2-9bbe-66293104501b"
+      ],
+      "runtime_s": 0.238,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/25032026_001.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7a8bbb63-420b-5c84-be26-79a871ee1415"
+      ],
+      "runtime_s": 0.344,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/25032026_002.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "aa807c21-41ed-5cd3-8e86-8e62184ca2e2"
+      ],
+      "runtime_s": 0.239,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/25032026_003.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
+      ],
+      "runtime_s": 0.23,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "4_scans_single_card_no_bg/25032026_004.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
+      ],
+      "runtime_s": 0.262,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "5_scans_multiple_cards/with_inner_gaps_with_border_gaps.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": false,
+        "same_card_name": false
+      },
+      "recognised": [
+        "ff3b25aa-8b4c-5b91-b0b1-0a8cfc16715a",
+        "812911df-e114-5069-b2b5-d0acbf0c47f2",
+        "a1e7ac5b-e514-594c-b8bf-bedf1bdb9ff5",
+        "5e5775f0-c4bc-541b-8180-9a88cb0e7586",
+        "128be3a1-6667-5baa-af15-0b718bd4e3d3",
+        "804b328e-ab7b-5bc8-a6af-a6937f42599d",
+        "aa807c21-41ed-5cd3-8e86-8e62184ca2e2",
+        "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3"
+      ],
+      "runtime_s": 3.062,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "5_scans_multiple_cards/with_inner_gaps_without_border_gaps.jpg": {
+      "score": {
+        "exact_printing": false,
+        "card_count": true,
+        "same_card_name": false
+      },
+      "recognised": [
+        "e2bf6898-22af-5d02-bbe7-8cd636f861ca",
+        "804b328e-ab7b-5bc8-a6af-a6937f42599d",
+        "812911df-e114-5069-b2b5-d0acbf0c47f2",
+        "c2b9df69-b417-555c-abe2-14437c933b53",
+        "0e39f1d1-2684-54ba-aa25-0a8035c4434e",
+        "aa807c21-41ed-5cd3-8e86-8e62184ca2e2",
+        "d0c0963b-1c1c-57bd-9dd1-1c3c44c56ff3",
+        "aa9601dd-0791-573b-bd04-b7e21d74cb0f",
+        "5e5775f0-c4bc-541b-8180-9a88cb0e7586"
+      ],
+      "runtime_s": 2.759,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/01013cab-be73-532f-b6bf-0f24d0c3792f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "01013cab-be73-532f-b6bf-0f24d0c3792f"
+      ],
+      "runtime_s": 0.328,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/0a2f85cd-f66d-5330-a9d5-314554f871a1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0a2f85cd-f66d-5330-a9d5-314554f871a1"
+      ],
+      "runtime_s": 0.393,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/0c941678-45c6-5aab-a863-136c1e0b7a7f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "0c941678-45c6-5aab-a863-136c1e0b7a7f"
+      ],
+      "runtime_s": 0.381,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/12b77048-ebad-51b2-99e8-c7dcaccf7a67.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "12b77048-ebad-51b2-99e8-c7dcaccf7a67"
+      ],
+      "runtime_s": 0.325,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/15683485-77f7-5c6f-b94d-93dab47a662b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "15683485-77f7-5c6f-b94d-93dab47a662b"
+      ],
+      "runtime_s": 0.404,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/19827ebf-3b49-5021-ac7f-f6c125a3bdd6.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "19827ebf-3b49-5021-ac7f-f6c125a3bdd6"
+      ],
+      "runtime_s": 0.486,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/1abeffd9-3c8d-58ca-b9df-76b25fec0ed2.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1abeffd9-3c8d-58ca-b9df-76b25fec0ed2"
+      ],
+      "runtime_s": 0.386,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/1d54b6cc-3d3b-5be2-966b-21c75e788bf1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "1d54b6cc-3d3b-5be2-966b-21c75e788bf1"
+      ],
+      "runtime_s": 0.286,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/3261737f-2698-5f05-b714-6d1dffcf20cd.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "3261737f-2698-5f05-b714-6d1dffcf20cd"
+      ],
+      "runtime_s": 0.371,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/327751c7-6d08-5ee0-a9dc-f02ad1398eca.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "327751c7-6d08-5ee0-a9dc-f02ad1398eca"
+      ],
+      "runtime_s": 0.383,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/342a9886-3eec-51ee-bf23-fdc7069d98a1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "342a9886-3eec-51ee-bf23-fdc7069d98a1"
+      ],
+      "runtime_s": 0.26,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/40bc1031-6cc8-5e10-9ff3-12f8a7b70c78.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "40bc1031-6cc8-5e10-9ff3-12f8a7b70c78"
+      ],
+      "runtime_s": 0.606,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/46bd1799-9a0a-5fd1-93d6-708a585dc71b.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "46bd1799-9a0a-5fd1-93d6-708a585dc71b"
+      ],
+      "runtime_s": 0.355,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/47b367b0-ffea-514a-8ccc-7474cb2c23df.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "47b367b0-ffea-514a-8ccc-7474cb2c23df"
+      ],
+      "runtime_s": 0.454,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/4f7caf33-25ba-5280-b86e-a730d86010f4.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "4f7caf33-25ba-5280-b86e-a730d86010f4"
+      ],
+      "runtime_s": 0.541,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/58ba82cb-f820-5bc3-b18b-11a85dcb2a44.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "58ba82cb-f820-5bc3-b18b-11a85dcb2a44"
+      ],
+      "runtime_s": 0.956,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/61fa7145-af2b-59a2-92dd-48d19be60152.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "61fa7145-af2b-59a2-92dd-48d19be60152"
+      ],
+      "runtime_s": 0.449,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/64359c4f-a984-5135-9d52-7c591ac684e3.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "64359c4f-a984-5135-9d52-7c591ac684e3"
+      ],
+      "runtime_s": 0.404,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/7246a4e8-0537-5016-b07a-433c59c2c285.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "7246a4e8-0537-5016-b07a-433c59c2c285"
+      ],
+      "runtime_s": 0.248,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/74b27345-3ebb-53c3-9587-c86f2c74b154.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "74b27345-3ebb-53c3-9587-c86f2c74b154"
+      ],
+      "runtime_s": 0.473,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/89ba71fa-c8c6-55f3-a1df-138cbd5a4319.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "89ba71fa-c8c6-55f3-a1df-138cbd5a4319"
+      ],
+      "runtime_s": 0.299,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/8fe1d06a-2e8d-5352-8459-58ed34475b1a.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "8fe1d06a-2e8d-5352-8459-58ed34475b1a"
+      ],
+      "runtime_s": 0.387,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/a8b5f870-8abd-5029-9e90-0897ff8a80e0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "a8b5f870-8abd-5029-9e90-0897ff8a80e0"
+      ],
+      "runtime_s": 0.477,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/ac252653-ebaa-5f7f-83f0-860f1142d650.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "ac252653-ebaa-5f7f-83f0-860f1142d650"
+      ],
+      "runtime_s": 0.244,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/b845b1d7-5205-5424-9642-549635b88b39.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "b845b1d7-5205-5424-9642-549635b88b39"
+      ],
+      "runtime_s": 0.281,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/bb947042-cd1d-5fbf-875c-9404dc33d8c1.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bb947042-cd1d-5fbf-875c-9404dc33d8c1"
+      ],
+      "runtime_s": 0.359,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/bd5fdd3b-f2c5-530f-a6c0-dc527369e384.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "bd5fdd3b-f2c5-530f-a6c0-dc527369e384"
+      ],
+      "runtime_s": 0.292,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/c5d34f95-1670-5766-b824-c4d580d76cb0.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c5d34f95-1670-5766-b824-c4d580d76cb0"
+      ],
+      "runtime_s": 0.319,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/c6c52721-af48-5268-8c84-26d9e1bafbb5.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "c6c52721-af48-5268-8c84-26d9e1bafbb5"
+      ],
+      "runtime_s": 0.25,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/cd9aa095-f999-5a2c-91e5-4acd94d45416.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cd9aa095-f999-5a2c-91e5-4acd94d45416"
+      ],
+      "runtime_s": 0.365,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/cdb02719-a9de-5f4c-be59-0bd8787fcd9f.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "cdb02719-a9de-5f4c-be59-0bd8787fcd9f"
+      ],
+      "runtime_s": 0.341,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/d3a75fe2-c639-50d7-968a-c2dd97e50640.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "d3a75fe2-c639-50d7-968a-c2dd97e50640"
+      ],
+      "runtime_s": 0.366,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/f132a5cb-b9cc-5c02-9d01-55890124ceec.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f132a5cb-b9cc-5c02-9d01-55890124ceec"
+      ],
+      "runtime_s": 0.363,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/f5404ea9-21e9-5b58-abe3-11de6f13c482.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f5404ea9-21e9-5b58-abe3-11de6f13c482"
+      ],
+      "runtime_s": 0.325,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "f543c0a9-c3bf-5daa-9ab6-7d4fb5f47f8d"
+      ],
+      "runtime_s": 0.357,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "6_photos_single_card_textured_bg/fc0f3291-22a4-58e5-b03e-b971c5403c53.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [
+        "fc0f3291-22a4-58e5-b03e-b971c5403c53"
+      ],
+      "runtime_s": 0.303,
+      "ocr_fallbacks": 0,
+      "error": null
+    },
+    "7_photos_no_cards/no_cards.jpg": {
+      "score": {
+        "exact_printing": true,
+        "card_count": true,
+        "same_card_name": true
+      },
+      "recognised": [],
+      "runtime_s": 0.639,
+      "ocr_fallbacks": 0,
+      "error": null
+    }
+  }
+}

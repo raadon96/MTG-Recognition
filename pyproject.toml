@@ -105,14 +105,13 @@ include_external_packages = true
 
 # A layer may import the layers below it, never one above; `|` siblings can't
 # import each other. `jobs` imports `engine.matching.phash` on purpose: index and
-# query hashes must come from the same code. The benchmark package doesn't exist
-# yet, so its layer is optional (in parentheses).
+# query hashes must come from the same code.
 [[tool.importlinter.contracts]]
 name = "Layers"
 type = "layers"
 layers = [
     "mtg_recognition.cli",
-    "mtg_recognition.app | mtg_recognition.jobs | (mtg_recognition.benchmark)",
+    "mtg_recognition.app | mtg_recognition.jobs | mtg_recognition.benchmark",
     "mtg_recognition.engine",
     "mtg_recognition.reference",
     "mtg_recognition.settings",
@@ -127,14 +126,13 @@ modules = [
     "mtg_recognition.engine.segmentation",
 ]
 
-# The engine, jobs and the app are plain functions any client can call; Click
-# stays in `cli`. A forbidden contract fails on a missing source module, so add
-# "mtg_recognition.benchmark" here once that package exists.
+# The engine, jobs, the benchmark and the app are plain functions any client can
+# call; Click stays in `cli`.
 [[tool.importlinter.contracts]]
 name = "Only the CLI imports Click"
 type = "forbidden"
 source_modules = [
-    "mtg_recognition.app", "mtg_recognition.jobs",
+    "mtg_recognition.app", "mtg_recognition.jobs", "mtg_recognition.benchmark",
     "mtg_recognition.engine", "mtg_recognition.reference", "mtg_recognition.settings",
 ]
 forbidden_modules = ["click"]

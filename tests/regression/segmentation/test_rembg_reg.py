@@ -6,7 +6,6 @@ Requires:
   - Fixture images, birefnet masks and golden corners in
     tests/regression/segmentation/fixtures/. They are frozen goldens; the script
     that generated them, generate_fixtures.py, is in git history.
-  - Benchmark images in data/benchmark/6_photos_single_card_textured_bg/
 
 Run:
     uv run pytest tests/regression/segmentation/ -v -m slow -k rembg
@@ -19,7 +18,6 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.image import prepare_image
 from mtg_recognition.engine.segmentation.rembg import RembgSegmentor
 from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
 
@@ -28,8 +26,6 @@ FIXTURE_DIR = Path("tests/regression/segmentation/fixtures")
 FAILURE_CASES_DIR = FIXTURE_DIR / "0_failure_cases"
 PHOTOS_SINGLE_CARD_DIR = FIXTURE_DIR / "1_photos_single_card"
 PHOTOS_MULTI_CARD_DIR = FIXTURE_DIR / "2_photos_multiple_cards"
-
-TEXTURED_BG_DIR = Path("data/benchmark/6_photos_single_card_textured_bg")
 
 CORNER_TOLERANCE_PX = 5
 MIN_AREA_FRACTION = 0.01
@@ -190,33 +186,6 @@ class TestMultiCardCorners:
                 f"{stem} blob {i}: corners drifted more than "
                 f"{CORNER_TOLERANCE_PX}px from golden"
             )
-
-
-# ---------------------------------------------------------------------------
-# Regression tests — benchmark dataset
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.slow
-class TestBenchmarkSuccessRate:
-    """All benchmark images must segment to exactly one card.
-
-    Guards end-to-end pipeline regressions (mask → corners → warp).
-    """
-
-    def test_all_benchmark_images_succeed(self, segmentor):
-        image_paths = sorted(TEXTURED_BG_DIR.glob("*.jpg"))
-        assert image_paths, f"No benchmark images found in {TEXTURED_BG_DIR}"
-
-        failures = []
-        for path in image_paths:
-            result = segmentor.segment(prepare_image(path))
-            if not result.success or len(result.cards) != 1:
-                failures.append(
-                    f"{path.name}: success={result.success}, cards={len(result.cards)}"
-                )
-
-        assert not failures, "Benchmark regressions:\n" + "\n".join(failures)
 
 
 # ---------------------------------------------------------------------------
