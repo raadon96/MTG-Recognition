@@ -384,6 +384,12 @@ def main():
         st.session_state.uploader_key = 0
 
     # Upload
+    # ADR 0004: the app encourages a plain, bright background but doesn't require one
+    st.sidebar.caption(
+        "📷 For best results, photograph cards in good light on a bright plain "
+        "surface, such as a white desk, and avoid glare and reflections, "
+        "especially on foils. Scans work as they are."
+    )
     uploaded_files = st.sidebar.file_uploader(
         label="Upload multiple card images",
         type=["jpg", "jpeg", "png", "bmp"],
