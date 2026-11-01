@@ -188,3 +188,18 @@ def test_written_results_read_back_unchanged(tmp_path) -> None:
     write_results(written, path)
 
     assert read_results(path) == written
+
+
+@pytest.mark.unit
+def test_totals_are_worked_out_from_the_entries_not_the_stored_totals(
+    tmp_path,
+) -> None:
+    written = results(a=outcome(True), b=outcome(False, count=False))
+    written.totals.exact_printing = 2
+    written.totals.card_count = 0
+    path = tmp_path / "latest.json"
+    write_results(written, path)
+
+    totals = read_results(path).totals
+
+    assert (totals.exact_printing, totals.card_count) == (1, 1)

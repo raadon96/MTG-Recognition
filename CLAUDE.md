@@ -25,7 +25,7 @@ src/mtg_recognition/
     ├── recognize.py     `mtg recognize`
     ├── segment.py       `mtg segment`
     ├── reference.py     `mtg status`, `mtg update`, `mtg build-index`
-    └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`
+    └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`, `mtg benchmark status`
 data/reference/    the reference data
 models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
 tests/             unit and regression tests
@@ -148,6 +148,7 @@ uv run lint-imports                  # contracts: the layers, the engine stages 
 uv run mtg --help                    # recognize, segment, status, update, build-index, benchmark
 uv run mtg benchmark run             # recognise the labelled images; non-zero on any change from the baseline
 uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto data/benchmark-baseline.json
+uv run mtg benchmark status          # summarise the baseline (--latest: the latest results; --failures: list failing images)
 ```
 
 Test images are DVC-tracked on Google Drive; setup and adding images: `CONTRIBUTING.md`.
