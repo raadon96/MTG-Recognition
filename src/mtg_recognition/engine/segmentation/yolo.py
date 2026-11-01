@@ -23,13 +23,13 @@ import numpy as np
 from mtg_recognition.settings import settings
 
 from .box import detect_cards_cv
-from .rembg import RembgCardSegmentor
+from .rembg import RembgSegmentor
 from .seg_utils import (
     CARD_ASPECT_RATIO,
-    WARPED_MAX_SIZE,
-    WARPED_MIN_SIZE,
-    CardSegment,
-    ImageSegmentationResult,
+    CARD_IMAGE_MAX_SIZE,
+    CARD_IMAGE_MIN_SIZE,
+    SegmentationResult,
+    SegmentedCard,
     clamp_size,
     corners_from_binary_mask,
     valid_aspect_ratio,
@@ -80,7 +80,7 @@ _GAMMA_BRIGHT = 0.95
 _GAMMA_NORMAL = 1.05
 
 
-class YoloCardSegmentor:
+class YoloSegmentor:
     """
     Segments MTG cards using YOLO instance segmentation as the primary method.
 
@@ -98,7 +98,7 @@ class YoloCardSegmentor:
     Args:
         model_path: Path to yoloe-11s-seg.pt (PyTorch, not ONNX).
         classes: Open-vocabulary class names for yoloe set_classes.
-        target_size: Output (width, height) of each warped card image.
+        target_size: Output (width, height) of each card image.
         aspect_ratio_tolerance: Tolerance for YOLO mask aspect-ratio validation.
         fallback_enabled: If False, skip CV and rembg fallback when YOLO finds
                           nothing (useful for --mode yolo CLI option).
@@ -125,53 +125,53 @@ class YoloCardSegmentor:
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
         self.fallback_enabled = fallback_enabled
 
-        self._rembg_segmentor: RembgCardSegmentor | None = None  # lazy
+        self._rembg_segmentor: RembgSegmentor | None = None  # lazy
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def segment(self, img: np.ndarray) -> ImageSegmentationResult:
+    def segment(self, query_image: np.ndarray) -> SegmentationResult:
         """
-        Segment all cards from a single image.
+        Segment all cards from a query image.
 
         Images are segmented one at a time: YOLO batch inference changes results
         for mixed-size batches (see docs/adr/0002-recognise-one-image-at-a-time.md).
 
         Args:
-            img: BGR input image.
+            query_image: BGR query image.
 
         Returns:
-            ImageSegmentationResult with one CardSegment per detected card.
-            segments is empty if no cards were found.
+            SegmentationResult with one SegmentedCard per card found.
+            cards is empty if no cards were found.
         """
         # -- Path 1: bypass for scan-without-background images --------------
-        if is_scan_without_bg(img):
-            return ImageSegmentationResult(segments=[bypass_warp(img)])
+        if is_scan_without_bg(query_image):
+            return SegmentationResult(cards=[bypass_warp(query_image)])
 
         # -- Path 2: YOLO ----------------------------------------------------
-        proc_img = enhance_contrast(img)
+        proc_img = enhance_contrast(query_image)
         yolo_result = self._model.predict(proc_img, **_DEFAULT_PREDICT_KWARGS)[0]
-        segments = self._process_yolo_result(img, yolo_result)
+        cards = self._process_yolo_result(query_image, yolo_result)
 
         # -- Path 3: fallback (CV → rembg) for 0-detection images -----------
-        if not segments and self.fallback_enabled:
-            segments = self._fallback_segment(img, proc_img)
+        if not cards and self.fallback_enabled:
+            cards = self._fallback_segment(query_image, proc_img)
 
-        return ImageSegmentationResult(segments=segments)
+        return SegmentationResult(cards=cards)
 
     # ------------------------------------------------------------------
     # Path 2 — YOLO mask → corners → warp
     # ------------------------------------------------------------------
 
     def _process_yolo_result(
-        self, img: np.ndarray, result: Results
-    ) -> list[CardSegment]:
+        self, query_image: np.ndarray, result: Results
+    ) -> list[SegmentedCard]:
         if result.masks is None or len(result.masks.xy) == 0:
             return []
 
-        segments: list[CardSegment] = []
-        h, w = img.shape[:2]
+        cards: list[SegmentedCard] = []
+        h, w = query_image.shape[:2]
 
         for polygon in result.masks.xy:
             if len(polygon) < 4:
@@ -187,42 +187,42 @@ class YoloCardSegmentor:
             if not valid_aspect_ratio(corners, self.aspect_ratio_tolerance):
                 continue
 
-            segments.append(CardSegment(warped_image=warp_card(img, corners)))
+            cards.append(SegmentedCard(card_image=warp_card(query_image, corners)))
 
-        return segments
+        return cards
 
     # ------------------------------------------------------------------
     # Path 3 — Fallback: CV box segmentor, then rembg
     # ------------------------------------------------------------------
 
     def _fallback_segment(
-        self, img: np.ndarray, proc_img: np.ndarray
-    ) -> list[CardSegment]:
+        self, query_image: np.ndarray, proc_img: np.ndarray
+    ) -> list[SegmentedCard]:
         # Sub-path A: classical CV (sub-millisecond, good for uniform backgrounds)
-        segments = detect_cards_cv(
+        cards = detect_cards_cv(
             proc_img,
             aspect_ratio_tolerance=self.aspect_ratio_tolerance,
-            warp_img=img,
+            warp_img=query_image,
         )
-        if segments:
-            return segments
+        if cards:
+            return cards
 
         # Sub-path B: rembg (works very well for photos with clear background,
         # but very slow to load and run, so only used as a last resort)
-        rembg_result = self._get_rembg_segmentor().segment(img)
-        return rembg_result.segments
+        rembg_result = self._get_rembg_segmentor().segment(query_image)
+        return rembg_result.cards
 
-    def _get_rembg_segmentor(self) -> RembgCardSegmentor:
+    def _get_rembg_segmentor(self) -> RembgSegmentor:
         if self._rembg_segmentor is None:
-            self._rembg_segmentor = RembgCardSegmentor(
+            self._rembg_segmentor = RembgSegmentor(
                 aspect_ratio_tolerance=self.aspect_ratio_tolerance,
             )
         return self._rembg_segmentor
 
 
-def is_scan_without_bg(img: np.ndarray) -> bool:
+def is_scan_without_bg(query_image: np.ndarray) -> bool:
     """Whether a query image is already a card image: card ratio, dark border."""
-    h, w = img.shape[:2]
+    h, w = query_image.shape[:2]
     ratio = min(w, h) / max(w, h)
     if not (_BYPASS_LO <= ratio <= _BYPASS_HI):
         return False
@@ -230,7 +230,7 @@ def is_scan_without_bg(img: np.ndarray) -> bool:
     # Scanner-bed images have a bright border; card-only scans do not.
     bh = max(1, int(h * _BYPASS_BORDER_PCT))
     bw = max(1, int(w * _BYPASS_BORDER_PCT))
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(query_image, cv2.COLOR_BGR2GRAY)
     border = np.concatenate(
         [
             gray[:bh, :].ravel(),
@@ -242,16 +242,16 @@ def is_scan_without_bg(img: np.ndarray) -> bool:
     return bool(np.mean(border) < _BYPASS_BORDER_MAX_MEAN)
 
 
-def bypass_warp(img: np.ndarray) -> CardSegment:
+def bypass_warp(query_image: np.ndarray) -> SegmentedCard:
     """The card image of a scan without background: upright, size clamped."""
-    out = img
+    out = query_image
     if out.shape[1] > out.shape[0]:
         out = cv2.rotate(out, cv2.ROTATE_90_CLOCKWISE)
     h, w = out.shape[:2]
-    out_w, out_h = clamp_size((w, h), WARPED_MIN_SIZE, WARPED_MAX_SIZE)
+    out_w, out_h = clamp_size((w, h), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
     if (out_w, out_h) != (w, h):
         out = cv2.resize(out, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
-    return CardSegment(warped_image=out)
+    return SegmentedCard(card_image=out)
 
 
 def enhance_contrast(img: np.ndarray) -> np.ndarray:

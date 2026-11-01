@@ -24,7 +24,7 @@ class Printing:
     uuid: str
     name: str
     set_code: str
-    number: str
+    collector_number: str
     base_set_size: str
     artist: str | None = None
     set_release_year: str | None = None
@@ -55,7 +55,7 @@ class SqliteCardCatalog:
                 uuid=row.uuid,
                 name=row.name,
                 set_code=row.setCode,
-                number=row.number,
+                collector_number=row.number,
                 base_set_size=row.baseSetSize,
                 artist=row.artist,
                 set_release_year=row.setReleaseYear,

@@ -59,10 +59,10 @@ def test_the_border_must_be_darker_than_100(grey, expected):
 
 
 def test_a_scan_within_the_size_limits_keeps_its_size():
-    segment = bypass_warp(np.zeros((880, 630, 3), dtype=np.uint8))
-    assert segment.warped_image.shape[:2] == (880, 630)
+    card = bypass_warp(np.zeros((880, 630, 3), dtype=np.uint8))
+    assert card.card_image.shape[:2] == (880, 630)
 
 
 def test_a_landscape_scan_is_turned_upright():
-    segment = bypass_warp(np.zeros((630, 880, 3), dtype=np.uint8))
-    assert segment.warped_image.shape[:2] == (880, 630)
+    card = bypass_warp(np.zeros((630, 880, 3), dtype=np.uint8))
+    assert card.card_image.shape[:2] == (880, 630)

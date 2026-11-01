@@ -7,24 +7,24 @@ import numpy as np
 from rembg import new_session, remove
 
 from .seg_utils import (
-    CardSegment,
-    ImageSegmentationResult,
+    SegmentationResult,
+    SegmentedCard,
     corners_from_binary_mask,
     valid_aspect_ratio,
     warp_card,
 )
 
 
-class RembgCardSegmentor:
+class RembgSegmentor:
     """
-    Segments Magic: The Gathering cards from images using background removal.
+    Segments Magic: The Gathering cards from query images using background removal.
 
     Pipeline per image:
         rembg mask → binary threshold → connected components →
         per-blob corner detection → aspect ratio validation →
         perspective transform
 
-    Handles multi-card images: each connected foreground blob is treated as a
+    Handles multi-card query images: each connected foreground blob is treated as a
     separate card candidate. Blobs are filtered by minimum area and aspect ratio.
     The rembg session is loaded once and reused across all calls.
     """
@@ -47,19 +47,19 @@ class RembgCardSegmentor:
         self.min_area_fraction = min_area_fraction
         self.aspect_ratio_tolerance = aspect_ratio_tolerance
 
-    def segment(self, img: np.ndarray) -> ImageSegmentationResult:
+    def segment(self, query_image: np.ndarray) -> SegmentationResult:
         """
-        Segment all cards from a single image.
+        Segment all cards from a query image.
 
         Args:
-            img: Input image in BGR format.
+            query_image: Query image in BGR format.
 
         Returns:
-            ImageSegmentationResult with one CardSegment per detected card.
-            segments is empty if no cards were found.
+            SegmentationResult with one SegmentedCard per card found.
+            cards is empty if no cards were found.
         """
         mask = remove(
-            img,
+            query_image,
             session=self._session,
             only_mask=True,
             post_process_mask=True,
@@ -67,12 +67,12 @@ class RembgCardSegmentor:
         )
         _, binary = cv2.threshold(np.array(mask), 127, 255, cv2.THRESH_BINARY)
 
-        min_area = self.min_area_fraction * img.shape[0] * img.shape[1]
+        min_area = self.min_area_fraction * query_image.shape[0] * query_image.shape[1]
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
             binary, connectivity=8
         )
 
-        segments = []
+        cards = []
         for label in range(1, num_labels):  # label 0 is background
             if stats[label, cv2.CC_STAT_AREA] < min_area:
                 continue
@@ -85,6 +85,6 @@ class RembgCardSegmentor:
             if not valid_aspect_ratio(corners, self.aspect_ratio_tolerance):
                 continue
 
-            segments.append(CardSegment(warped_image=warp_card(img, corners)))
+            cards.append(SegmentedCard(card_image=warp_card(query_image, corners)))
 
-        return ImageSegmentationResult(segments=segments)
+        return SegmentationResult(cards=cards)

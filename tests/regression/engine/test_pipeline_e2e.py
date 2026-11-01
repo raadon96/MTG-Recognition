@@ -24,26 +24,26 @@ def pipeline() -> Pipeline:
 
 
 @pytest.mark.slow
-def test_an_image_without_a_card_gives_no_segments_and_no_error(pipeline):
+def test_a_query_image_without_a_card_gives_no_cards_and_no_error(pipeline):
     result = pipeline.recognize(np.full((1000, 1000, 3), 128, dtype=np.uint8))
 
-    assert result.segments == []
+    assert result.cards == []
     assert result.error is None
 
 
 @pytest.mark.slow
-def test_a_card_sized_image_gives_one_segment_ranking_k_final_results(pipeline):
+def test_a_card_sized_image_gives_one_card_ranking_k_final_results(pipeline):
     result = pipeline.recognize(card_image())
 
     assert result.error is None
-    [segment] = result.segments
-    assert len(segment.ranked) == 3
+    [card] = result.cards
+    assert len(card.ranked) == 3
 
 
 @pytest.mark.slow
-def test_the_reading_carries_debug_artefacts_only_in_debug_mode(pipeline):
-    [plain] = pipeline.recognize(card_image(), debug=False).segments
-    [debugged] = pipeline.recognize(card_image(), debug=True).segments
+def test_the_reading_holds_debug_artefacts_only_in_debug_mode(pipeline):
+    [plain] = pipeline.recognize(card_image(), debug=False).cards
+    [debugged] = pipeline.recognize(card_image(), debug=True).cards
 
     assert plain.reading is not None
     assert plain.reading.debug is None
@@ -55,7 +55,7 @@ def test_the_reading_carries_debug_artefacts_only_in_debug_mode(pipeline):
 def test_unreadable_bytes_become_the_error(pipeline):
     result = pipeline.recognize(b"not an image")
 
-    assert result.segments == []
+    assert result.cards == []
     assert result.error is not None
     assert result.error.startswith("ValueError: ")
 
@@ -65,7 +65,7 @@ def test_encoded_image_bytes_are_recognized(pipeline):
     result = pipeline.recognize(card_png())
 
     assert result.error is None
-    assert len(result.segments) == 1
+    assert len(result.cards) == 1
 
 
 @pytest.mark.slow
@@ -78,5 +78,5 @@ def test_recognizes_the_printing_named_by_the_file(pipeline, uuid):
     result = pipeline.recognize(img_path)
 
     assert result.error is None
-    [segment] = result.segments
-    assert segment.ranked[0].printing.uuid == uuid
+    [card] = result.cards
+    assert card.ranked[0].printing.uuid == uuid

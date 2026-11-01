@@ -12,7 +12,7 @@ def printing(uuid: str) -> Printing:
         uuid=uuid,
         name=f"Card {uuid}",
         set_code="TST",
-        number="1",
+        collector_number="1",
         base_set_size="100",
         artist="Artist",
         set_release_year="2020",
@@ -25,11 +25,11 @@ def reading_of(p: Printing) -> Reading:
     """A reading that agrees with every field of the printing, so it scores 100."""
     return Reading(
         name=p.name,
-        set_code_candidates=[p.set_code],
-        number=p.number,
+        possible_set_codes=[p.set_code],
+        collector_number=p.collector_number,
         base_set_size=p.base_set_size,
         artist=p.artist,
-        set_release_year=p.set_release_year,
+        copyright_year=p.set_release_year,
         power=p.power,
         toughness=p.toughness,
     )

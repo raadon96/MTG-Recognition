@@ -19,9 +19,9 @@ def _as_is(value: str) -> str:
     return value
 
 
-def _without_leading_zeros(number: str) -> str:
+def _without_leading_zeros(value: str) -> str:
     """'0146' -> '146' and '0000' -> '0', but '0' stays '0'."""
-    return re.sub(r"^0+(?=\d)", "", number)
+    return re.sub(r"^0+(?=\d)", "", value)
 
 
 @dataclass(frozen=True)
@@ -38,16 +38,20 @@ class Field:
 
 FIELDS: list[Field] = [
     Field("name", 2.0, lambda r: r.name, lambda p: p.name, utils.default_process),
-    Field("set_code", 1.0, lambda r: r.set_code_candidates, lambda p: p.set_code),
+    Field("set_code", 1.0, lambda r: r.possible_set_codes, lambda p: p.set_code),
     Field(
-        "number", 1.0, lambda r: r.number, lambda p: p.number, _without_leading_zeros
+        "collector_number",
+        1.0,
+        lambda r: r.collector_number,
+        lambda p: p.collector_number,
+        _without_leading_zeros,
     ),
     Field("base_set_size", 1.0, lambda r: r.base_set_size, lambda p: p.base_set_size),
     Field("artist", 0.5, lambda r: r.artist, lambda p: p.artist, utils.default_process),
     Field(
-        "set_release_year",
+        "copyright_year",
         1.0,
-        lambda r: r.set_release_year,
+        lambda r: r.copyright_year,
         lambda p: p.set_release_year,
     ),
     Field("power", 1.0, lambda r: r.power, lambda p: p.power),
