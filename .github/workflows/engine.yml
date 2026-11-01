@@ -1,0 +1,74 @@
+name: engine
+
+# Runs the slow tests and the benchmark, so accuracy and segmentation
+# regressions fail before merge. Skipped on changes that can't affect them: a
+# denylist, because an allowlist would go stale silently as code moves.
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".claude/**"
+      - "GLOSSARY.md"
+  # A run on dev saves caches that every PR can restore; a PR's own caches are
+  # visible only to that PR.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Same settings as the checks workflow.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv sync --locked --dev
+
+      # The benchmark images change only with their DVC pointer file.
+      - id: dataset
+        uses: actions/cache@v6
+        with:
+          path: data/benchmark
+          key: benchmark-${{ hashFiles('data/benchmark.dvc') }}
+
+      # The dataset-reader service account key, read-only (ADR 0001).
+      - if: steps.dataset.outputs.cache-hit != 'true'
+        run: |
+          uv run dvc remote modify --local origin gdrive_use_service_account true
+          uv run dvc pull data/benchmark.dvc
+        env:
+          GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
+
+      # Files the libraries download on first use: ultralytics' text encoder for
+      # the YOLOE classes, into the working directory, and PaddleX's font. They
+      # change only with the library versions. The rembg model is committed.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            mobileclip_blt.ts
+            ~/.paddlex/fonts
+          key: model-downloads-${{ hashFiles('uv.lock') }}
+
+      - run: uv run pytest -m slow
+
+      # Runs even when a slow test fails, so one run reports both.
+      - if: ${{ !cancelled() }}
+        run: uv run mtg benchmark run
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-latest
+          path: output/benchmark/latest.json
