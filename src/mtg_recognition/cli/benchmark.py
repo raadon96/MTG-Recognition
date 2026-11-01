@@ -1,23 +1,27 @@
-"""`mtg benchmark run` and `mtg benchmark update-baseline`: measure recognition on
-the labelled query images and compare it with the baseline.
+"""`mtg benchmark run`, `mtg benchmark update-baseline` and `mtg benchmark
+status`: measure recognition on the labelled query images, compare it with the
+baseline, and summarise either results file.
 """
 
 import json
 import shutil
 import subprocess
 import time
+from collections.abc import Sequence
 
 import click
 
 from mtg_recognition.benchmark.results import (
     BASELINE_PATH,
     DATASET_ROOT,
+    GATED_METRICS,
     LATEST_PATH,
     MANIFEST_NAME,
     Comparison,
     ImageOutcome,
     ManifestProblems,
     Results,
+    Totals,
     compare,
     read_results,
     score_image,
@@ -26,7 +30,7 @@ from mtg_recognition.benchmark.results import (
     write_results,
 )
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.reference.catalog import SqliteCardCatalog
+from mtg_recognition.reference.catalog import Printing, SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
 
 
@@ -127,6 +131,123 @@ def update_baseline() -> None:
     click.echo(f"Baseline updated: {BASELINE_PATH}")
 
 
+@benchmark.command(name="status")
+@click.option(
+    "--latest", is_flag=True, help="Summarise the latest results, not the baseline."
+)
+@click.option(
+    "--failures",
+    is_flag=True,
+    help="List the query images that fail exact printing or card count.",
+)
+def status(latest: bool, failures: bool) -> None:
+    """Summarise the baseline or the latest results, without recognising anything
+    or writing to disk.
+    """
+    # read the results to summarise
+    if latest:
+        heading, path = "Latest results", LATEST_PATH
+        missing = f"No latest results at {LATEST_PATH}; run `uv run mtg benchmark run`"
+    else:
+        heading, path = "Baseline", BASELINE_PATH
+        missing = (
+            f"No baseline at {BASELINE_PATH}; run `uv run mtg benchmark run`, "
+            "then `uv run mtg benchmark update-baseline`"
+        )
+    if not path.exists():
+        click.echo(missing, err=True)
+        raise SystemExit(1)
+    results = read_results(path)
+    click.echo(f"{heading}: {path}")
+    click.echo(f"Commit: {results.commit}")
+    click.echo(f"MTGJSON: {results.mtgjson_version}")
+    click.echo(totals_line(results.totals))
+    click.echo(f"Runtime: {results.totals.runtime_s:.1f}s")
+
+    # the latest results against the baseline, when both exist
+    if LATEST_PATH.exists() and BASELINE_PATH.exists():
+        latest_results = results if latest else read_results(LATEST_PATH)
+        baseline = read_results(BASELINE_PATH) if latest else results
+        comparison = compare(latest_results, baseline)
+        differing = (
+            {f.image for f in comparison.flips if f.metric in GATED_METRICS}
+            | set(comparison.added_images)
+            | set(comparison.removed_images)
+        )
+        latest_at = f"latest results (at {latest_results.commit})"
+        if differing:
+            click.echo(
+                f"{latest_at} differ from the baseline in {len(differing)} query images"
+            )
+        else:
+            click.echo(f"{latest_at} match the baseline")
+
+    if failures:
+        click.echo("\n".join(_failure_lines(results)))
+
+
+def _failure_lines(results: Results) -> list[str]:
+    """Each query image failing exact printing or card count, with its label from
+    the manifest, the printings recognised in it and its recognition error.
+    """
+    failing = {
+        image: outcome
+        for image, outcome in results.images.items()
+        if not (outcome.score.exact_printing and outcome.score.card_count)
+    }
+    if not failing:
+        return ["Failures: none"]
+
+    # the label is in the manifest, not the results, so it is the current label,
+    # which may have changed since the run; without the dataset pulled, the
+    # failures are still worth listing
+    manifest_path = DATASET_ROOT / MANIFEST_NAME
+    manifest: dict[str, list[str]] = (
+        json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    )
+
+    # one catalog query for every printing shown
+    uuids = {uuid for image in failing for uuid in manifest.get(image, [])}
+    uuids |= {
+        uuid for outcome in failing.values() for uuid in outcome.recognised if uuid
+    }
+    printings = SqliteCardCatalog(ReferenceData.default().catalog_path).lookup(
+        sorted(uuids)
+    )
+
+    lines = ["Failures:"]
+    for image, outcome in failing.items():
+        label = manifest.get(image)
+        label_names = (
+            _printing_names(label, printings) if label is not None else "unknown"
+        )
+        recognised_names = _printing_names(outcome.recognised, printings)
+        lines += [
+            f"  {image}",
+            f"    label: {label_names}",
+            f"    recognised: {recognised_names}",
+        ]
+        if outcome.error is not None:
+            lines.append(f"    error: {outcome.error}")
+    return lines
+
+
+def _printing_names(uuids: Sequence[str | None], printings: dict[str, Printing]) -> str:
+    """`Lightning Bolt (M10), nothing`: the card name and set code of each UUID,
+    the bare UUID when the catalog lacks it, and `nothing` for a card without
+    candidates.
+    """
+    names = []
+    for uuid in uuids:
+        if uuid is None:
+            names.append("nothing")
+        elif uuid in printings:
+            names.append(f"{printings[uuid].name} ({printings[uuid].set_code})")
+        else:
+            names.append(uuid)
+    return ", ".join(names) if names else "nothing"
+
+
 def _commit() -> str:
     """The commit the results are made at, with `-dirty` when tracked files have
     uncommitted changes, which the results then reflect too.
@@ -165,12 +286,7 @@ def _comparison_report(
 
     # totals: now, the ones that changed, then runtime, which always does
     now = results.totals
-    lines.append(
-        f"Now: exact printing {now.exact_printing}/{now.images}, "
-        f"card count {now.card_count}/{now.images}, "
-        f"same card name {now.same_card_name}/{now.images}, "
-        f"OCR fallbacks {now.ocr_fallbacks}"
-    )
+    lines.append(f"Now: {totals_line(now)}")
     for metric, (old, new) in comparison.changed_totals.items():
         lines.append(f"{metric}: {old} -> {new}")
     if not comparison.changed_totals:
@@ -189,3 +305,15 @@ def _comparison_report(
     else:
         lines.append("Same as the baseline.")
     return lines
+
+
+def totals_line(totals: Totals) -> str:
+    """The pass count of each metric and the OCR fallbacks, as `run` and `status`
+    print them.
+    """
+    return (
+        f"exact printing {totals.exact_printing}/{totals.images}, "
+        f"card count {totals.card_count}/{totals.images}, "
+        f"same card name {totals.same_card_name}/{totals.images}, "
+        f"OCR fallbacks {totals.ocr_fallbacks}"
+    )

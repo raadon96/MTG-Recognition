@@ -44,9 +44,12 @@ The pull fills `data/benchmark/` with the 7 image categories, and `data/scratch/
 ```bash
 uv run mtg benchmark run               # recognise every labelled image, compare with the baseline
 uv run mtg benchmark update-baseline   # adopt the latest results as the baseline
+uv run mtg benchmark status            # summarise the baseline, without recognising anything
+uv run mtg benchmark status --latest   # summarise the latest results instead
+uv run mtg benchmark status --failures # also list the images that fail exact printing or card count
 ```
 
-`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR.
+`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` lists each failing image with its label and the recognised printings; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
 
 ## Adding New Benchmark Images
 

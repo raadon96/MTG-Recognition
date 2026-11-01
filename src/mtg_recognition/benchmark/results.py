@@ -204,6 +204,10 @@ def write_results(results: Results, path: Path) -> None:
 
 
 def read_results(path: Path) -> Results:
+    """The results written at `path`, with totals worked out from the per-image
+    entries: the stored totals are only there to show in a diff, and a hand edit
+    can leave them out of step with the entries.
+    """
     data = json.loads(path.read_text())
     images = {
         image: ImageOutcome(
@@ -215,9 +219,4 @@ def read_results(path: Path) -> Results:
         )
         for image, outcome in data["images"].items()
     }
-    return Results(
-        commit=data["commit"],
-        mtgjson_version=data["mtgjson_version"],
-        totals=Totals(**data["totals"]),
-        images=images,
-    )
+    return summarise(data["commit"], data["mtgjson_version"], images)
