@@ -1,6 +1,6 @@
 ## Project
 
-MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against the catalog, a SQLite file of every printing. Served as a Streamlit web app via Docker.
+MTG card recognition app: takes a photo of a Magic: The Gathering card, segments it, extracts text via OCR, and matches it against the catalog, a SQLite file of every printing. Served as a Streamlit web app via Docker, and run from the terminal through the `mtg` CLI.
 
 ## Structure
 
@@ -11,16 +11,19 @@ src/mtg_recognition/
 │   ├── segmentation/    turns each card in a query image into a card image
 │   ├── matching/        shortlists candidates by pHash similarity
 │   ├── ocr/             reads each card image and scores candidates against the reading
-│   ├── image.py         loads, resizes and lists images for the engine
+│   ├── image.py         loads and resizes images for the engine
 │   └── ranking.py       ranked candidates and their field scores
 ├── app/           Streamlit UI over the engine
-├── jobs/          builds the reference data from MTGJSON releases (`mtg update`, `mtg build-index`)
+├── jobs/          builds the reference data from MTGJSON releases, as plain functions returning results
 ├── reference/     the reference data, read by the engine and written by jobs
 │   ├── layout.py        on-disk layout and sync state
 │   ├── catalog.py       the catalog table schema, and reads printings out of the catalog
 │   └── sqlite.py        opens the SQLite files read-only
 ├── settings.py    configuration from the environment and `.env`
-└── cli.py         the `mtg` group; each command is defined in its domain package
+└── cli/           the `mtg` group and its commands; the only package that imports Click
+    ├── recognize.py     `mtg recognize`
+    ├── segment.py       `mtg segment`
+    └── reference.py     `mtg status`, `mtg update`, `mtg build-index`
 data/reference/    the reference data
 models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
 tests/             unit and regression tests
@@ -139,7 +142,7 @@ uv sync --dev                        # install dependencies (includes DVC)
 uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
-uv run lint-imports                  # engine.matching, engine.ocr and engine.segmentation must not import each other
+uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
 uv run mtg --help                    # recognize, segment, status, update, build-index
 ```
 

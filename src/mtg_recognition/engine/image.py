@@ -22,18 +22,6 @@ ImageSource = (
 )
 
 
-def get_image_files_in_directory(
-    directory: Path, extensions: list[str] | None = None
-) -> list[Path]:
-    """Find all image files in a directory, matching settings.IMG_EXT."""
-    if extensions is None:
-        extensions = settings.IMG_EXT
-    img_paths = []
-    for ext in extensions:
-        img_paths.extend(directory.glob(ext))
-    return sorted(img_paths)
-
-
 def resize_if_needed(img: np.ndarray, max_dimension: int) -> np.ndarray:
     """Downscale img so its longest edge does not exceed max_dimension.
 

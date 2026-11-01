@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 from click.testing import CliRunner
 
-from mtg_recognition.engine.segmentation import cli as segment_cli
+from mtg_recognition.cli import cli
+from mtg_recognition.cli import segment as segment_cli
 from mtg_recognition.engine.segmentation.seg_utils import (
     CardSegment,
     ImageSegmentationResult,
@@ -29,7 +30,7 @@ class FakeSegmentor:
 def _run(monkeypatch, segmentor, input_path, output_dir):
     monkeypatch.setattr(segment_cli, "_build_segmentor", lambda mode: segmentor)
     return CliRunner().invoke(
-        segment_cli.main, ["-i", str(input_path), "-o", str(output_dir)]
+        cli, ["segment", "-i", str(input_path), "-o", str(output_dir)]
     )
 
 
