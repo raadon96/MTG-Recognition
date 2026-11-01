@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from mtg_recognition.cli.segment import input_images
+from mtg_recognition.cli.segment import query_image_paths
 from mtg_recognition.engine.pipeline import Pipeline
 
 
@@ -60,7 +60,7 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
     uv run mtg recognize \\
         -i data/benchmark/1_photos_single_card -o output/results.json
     """
-    img_paths = input_images(input_path)
+    img_paths = query_image_paths(input_path)
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)
         raise SystemExit(1)

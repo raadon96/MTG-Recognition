@@ -1,11 +1,4 @@
-"""The `mtg` command group, and the only package that imports Click.
-
-mtg recognize   — full recognition pipeline            (cli/recognize.py)
-mtg segment     — card segmentation                    (cli/segment.py)
-mtg status      — reference data versions and images   (cli/reference.py)
-mtg update      — update to the latest MTGJSON release (cli/reference.py)
-mtg build-index — download images, rebuild pHash index (cli/reference.py)
-"""
+"""The `mtg` command group, and the only package that imports Click."""
 
 import click
 

@@ -16,15 +16,6 @@ from mtg_recognition.reference.layout import ReferenceData
 console = Console()
 
 
-@contextmanager
-def _exit_on_error() -> Generator[None]:
-    try:
-        yield
-    except Exception as exc:
-        click.echo(f"Error: {type(exc).__name__}: {exc}", err=True)
-        raise SystemExit(1) from exc
-
-
 _force_option = click.option(
     "--force",
     is_flag=True,
@@ -83,6 +74,15 @@ def build_index(force: bool, workers: int) -> None:
 
     lines = index_summary(reference, result)
     console.print(Panel("\n".join(lines), title="Build-index Summary", expand=False))
+
+
+@contextmanager
+def _exit_on_error() -> Generator[None]:
+    try:
+        yield
+    except Exception as exc:
+        click.echo(f"Error: {type(exc).__name__}: {exc}", err=True)
+        raise SystemExit(1) from exc
 
 
 def status_summary(report: sync.Status) -> tuple[list[str], str]:

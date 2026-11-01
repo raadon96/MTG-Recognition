@@ -49,7 +49,7 @@ from mtg_recognition.settings import settings
 def segment(input_path: Path, output_dir: Path, mode: str) -> None:
     segmentor = _build_segmentor(mode)
 
-    img_paths = input_images(input_path)
+    img_paths = query_image_paths(input_path)
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)
         raise SystemExit(1)
@@ -67,17 +67,17 @@ def segment(input_path: Path, output_dir: Path, mode: str) -> None:
         if not result.success:
             click.echo(f"  no card detected: {img_path.name}", err=True)
             continue
-        for idx, card in enumerate(result.segments):
+        for idx, card_segment in enumerate(result.segments):
             stem = (
                 img_path.stem if len(result.segments) == 1 else f"{img_path.stem}_{idx}"
             )
-            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card.warped_image)
+            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card_segment.warped_image)
             saved += 1
 
     click.echo(f"Saved {saved} segment(s) to {output_dir}")
 
 
-def input_images(input_path: Path) -> list[Path]:
+def query_image_paths(input_path: Path) -> list[Path]:
     """The file itself, or the images in the directory matching settings.IMG_EXT,
     sorted.
     """
