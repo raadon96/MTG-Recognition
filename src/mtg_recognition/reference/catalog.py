@@ -92,7 +92,9 @@ class CatalogPrinting(
     # number: str = Field(default=None) # Use with composite index
     # baseSetSize: str = Field(default=None) # Use with composite index
 
-    setReleaseYear: str | None = Field(None, index=False)  # Copyright year
+    # The year of the set's release date, set when the catalog is built. Scoring
+    # compares it with the copyright year in a card's reading.
+    setReleaseYear: str | None = Field(None, index=False)
     artist: str | None = Field(default=None)
     url: str | None = Field(default=None)
     manaCost: str | None = Field(default=None)

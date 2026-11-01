@@ -36,6 +36,8 @@ class Field:
     normalise: Callable[[str], str] = _as_is
 
 
+# The weights reflect how reliably PaddleOCR reads each field, judged by early
+# manual tests.
 FIELDS: list[Field] = [
     Field("name", 2.0, lambda r: r.name, lambda p: p.name, utils.default_process),
     Field("set_code", 1.0, lambda r: r.possible_set_codes, lambda p: p.set_code),
