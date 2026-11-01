@@ -127,6 +127,18 @@ modules = [
     "mtg_recognition.engine.segmentation",
 ]
 
+# The engine, jobs and the app are plain functions any client can call; Click
+# stays in `cli`. A forbidden contract fails on a missing source module, so add
+# "mtg_recognition.benchmark" here once that package exists.
+[[tool.importlinter.contracts]]
+name = "Only the CLI imports Click"
+type = "forbidden"
+source_modules = [
+    "mtg_recognition.app", "mtg_recognition.jobs",
+    "mtg_recognition.engine", "mtg_recognition.reference", "mtg_recognition.settings",
+]
+forbidden_modules = ["click"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"

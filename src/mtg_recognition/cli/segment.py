@@ -1,33 +1,11 @@
-"""
-CLI for card segmentation.
+"""`mtg segment`: write each card found in the input images as a card image.
 
 Usage examples:
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/benchmark/1_photos_single_card \
+    uv run mtg segment -i data/benchmark/1_photos_single_card \
         -o output/1.0_seg/1_photos_single_card --mode auto
 
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/benchmark/2_photos_multiple_cards \
-        -o output/1.0_seg/2_photos_multiple_cards --mode auto
-
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/benchmark/3_scans_single_card_with_bg \
-        -o output/1.0_seg/3_scans_single_card_with_bg --mode auto
-
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/benchmark/4_scans_single_card_no_bg \
-        -o output/1.0_seg/4_scans_single_card_no_bg --mode auto
-
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i data/benchmark/5_scans_multiple_cards \
-        -o output/1.0_seg/5_scans_multiple_cards --mode auto
-
-
-    uv run python -m mtg_recognition.engine.segmentation.cli \
-        -i photo.jpg -o output/1.0_seg --mode yolo
+    uv run mtg segment -i photo.jpg -o output/1.0_seg --mode yolo
 """
-
-from __future__ import annotations
 
 from pathlib import Path
 
@@ -35,10 +13,11 @@ import click
 import cv2
 from tqdm import tqdm
 
-from mtg_recognition.engine.image import get_image_files_in_directory, prepare_image
+from mtg_recognition.engine.image import prepare_image
+from mtg_recognition.settings import settings
 
 
-@click.command()
+@click.command(name="segment")
 @click.option(
     "-i",
     "--input",
@@ -67,15 +46,10 @@ from mtg_recognition.engine.image import get_image_files_in_directory, prepare_i
         "'rembg' — rembg background removal only."
     ),
 )
-def main(input_path: Path, output_dir: Path, mode: str) -> None:
+def segment(input_path: Path, output_dir: Path, mode: str) -> None:
     segmentor = _build_segmentor(mode)
 
-    img_paths = (
-        [input_path]
-        if input_path.is_file()
-        else get_image_files_in_directory(input_path)
-    )
-
+    img_paths = query_image_paths(input_path)
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)
         raise SystemExit(1)
@@ -93,31 +67,35 @@ def main(input_path: Path, output_dir: Path, mode: str) -> None:
         if not result.success:
             click.echo(f"  no card detected: {img_path.name}", err=True)
             continue
-        for idx, segment in enumerate(result.segments):
+        for idx, card_segment in enumerate(result.segments):
             stem = (
                 img_path.stem if len(result.segments) == 1 else f"{img_path.stem}_{idx}"
             )
-            cv2.imwrite(str(output_dir / f"{stem}.jpg"), segment.warped_image)
+            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card_segment.warped_image)
             saved += 1
 
     click.echo(f"Saved {saved} segment(s) to {output_dir}")
 
 
+def query_image_paths(input_path: Path) -> list[Path]:
+    """The file itself, or the images in the directory matching settings.IMG_EXT,
+    sorted.
+    """
+    if input_path.is_file():
+        return [input_path]
+    img_paths: list[Path] = []
+    for ext in settings.IMG_EXT:
+        img_paths.extend(input_path.glob(ext))
+    return sorted(img_paths)
+
+
 def _build_segmentor(mode: str):
+    # the models load only for the mode asked for
     mode = mode.lower()
     if mode == "rembg":
-        from .rembg import RembgCardSegmentor
+        from mtg_recognition.engine.segmentation.rembg import RembgCardSegmentor
 
         return RembgCardSegmentor()
-    elif mode == "yolo":
-        from .yolo import YoloCardSegmentor
+    from mtg_recognition.engine.segmentation.yolo import YoloCardSegmentor
 
-        return YoloCardSegmentor(fallback_enabled=False)
-    else:  # auto
-        from .yolo import YoloCardSegmentor
-
-        return YoloCardSegmentor(fallback_enabled=True)
-
-
-if __name__ == "__main__":
-    main()
+    return YoloCardSegmentor(fallback_enabled=mode == "auto")
