@@ -111,10 +111,14 @@ def shortlist(
     distances = np.bitwise_count(differing).sum(axis=1, dtype=np.int32)
     similarities = 1.0 - distances / bits.size
 
-    # top k, best first: argpartition then a stable sort of the k only
+    # top k, best first, ties in index order: distances are whole bits, so ties
+    # are common, and argpartition orders them differently on different CPUs
+    # (#146). A stable sort of the whole index takes ~3 ms per card, so find the
+    # k-th distance and stable-sort only the printings at least that close.
     k = min(k, len(index.uuids))
-    top = np.argpartition(-similarities, k - 1)[:k]
-    top = top[np.argsort(-similarities[top], kind="stable")]
+    kth = np.partition(distances, k - 1)[k - 1]
+    top = np.flatnonzero(distances <= kth)
+    top = top[np.argsort(distances[top], kind="stable")][:k]
     return [index.uuids[i] for i in top], similarities[top].tolist()
 
 
