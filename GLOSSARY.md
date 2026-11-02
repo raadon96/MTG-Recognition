@@ -7,7 +7,7 @@ Identifies Magic: The Gathering cards in photos and scans by matching them again
 ### Cards and printings
 
 **Printing**:
-One edition of a card in a specific set, with its own collector number, artist and image; identified by a UUID. Each face of a double-faced card is a separate printing. The result of recognition is always a printing, never just a card name.
+One edition of a card in a specific set, with its own collector number, artist and image; identified by a UUID. Each face of a double-faced card is a separate printing, named after its own face (e.g. "Luminous Phantom", not "Lunarch Veteran // Luminous Phantom"). The result of recognition is always a printing, never just a card name.
 _Avoid_: card (when the edition matters), row, match (for the thing matched)
 
 **Card**:

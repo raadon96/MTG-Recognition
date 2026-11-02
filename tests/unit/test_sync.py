@@ -17,6 +17,7 @@ from mtg_recognition.engine.matching.phash import load_phash_index
 from mtg_recognition.jobs.sync import (
     META_URL,
     allprintings_version,
+    build_catalog,
     build_index,
     generate_image_uri,
     status,
@@ -56,6 +57,67 @@ def corrupt_zip() -> bytes:
     with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr("AllPrintings.sqlite", b"x" * 100_000)
     return buffer.getvalue().replace(b"x" * 100_000, b"y" * 100_000)
+
+
+def catalog_names_and_urls(reference: ReferenceData) -> dict[str, tuple[str, str]]:
+    with sqlite3.connect(reference.catalog_path) as connection:
+        rows = connection.execute("SELECT uuid, name, url FROM catalog")
+        return {uuid: (name, url) for uuid, name, url in rows}
+
+
+@pytest.mark.unit
+class TestBuildCatalog:
+    def test_double_faced_printing_has_its_own_face_name_and_image(
+        self, reference
+    ) -> None:
+        reference.allprintings_path.parent.mkdir(parents=True)
+        build_allprintings(reference.allprintings_path, V1, PRINTINGS_V1)
+
+        build_catalog(reference.allprintings_path, reference.catalog_path)
+
+        delver_id = PRINTINGS_V1[1][2]
+        catalog = catalog_names_and_urls(reference)
+        assert catalog["uuid-delver"] == (
+            "Delver of Secrets",
+            generate_image_uri(delver_id, "front"),
+        )
+        assert catalog["uuid-aberration"] == (
+            "Insectile Aberration",
+            generate_image_uri(delver_id, "back"),
+        )
+
+    def test_card_with_both_halves_on_the_front_keeps_the_front_image(
+        self, reference
+    ) -> None:
+        """Adventure, split, flip and aftermath cards print both halves on the
+        front, so neither half has a back image of its own.
+        """
+        name = "Bonecrusher Giant // Stomp"
+        scryfall_id = "d4444444-0000-0000-0000-000000000000"
+        reference.allprintings_path.parent.mkdir(parents=True)
+        build_allprintings(
+            reference.allprintings_path,
+            V1,
+            [
+                (
+                    "uuid-giant",
+                    name,
+                    scryfall_id,
+                    "adventure",
+                    "a",
+                    "Bonecrusher Giant",
+                ),
+                ("uuid-stomp", name, scryfall_id, "adventure", "b", "Stomp"),
+            ],
+        )
+
+        build_catalog(reference.allprintings_path, reference.catalog_path)
+
+        front = generate_image_uri(scryfall_id, "front")
+        assert catalog_names_and_urls(reference) == {
+            "uuid-giant": (name, front),
+            "uuid-stomp": (name, front),
+        }
 
 
 @pytest.mark.unit

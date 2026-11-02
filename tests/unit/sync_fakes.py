@@ -18,19 +18,49 @@ from mtg_recognition.settings import settings
 V1 = "5.3.0+20260302"
 V2 = "5.3.0+20260517"
 
-# (uuid, name, scryfallId). The two Delver faces are a double-faced pair: two
-# printings sharing one Scryfall id, so one front image.
-PRINTINGS_V1 = [
-    ("uuid-bolt", "Lightning Bolt", "a1111111-0000-0000-0000-000000000000"),
-    ("uuid-delver", "Delver of Secrets", "b2222222-0000-0000-0000-000000000000"),
-    ("uuid-aberration", "Insectile Aberration", "b2222222-0000-0000-0000-000000000000"),
+# (uuid, name, scryfallId, layout, side, faceName). The two Delver faces are a
+# double-faced card: two printings sharing one Scryfall id, the front image for
+# side a and the back image for side b.
+FakePrinting = tuple[str, str, str, str, str | None, str | None]
+
+DELVER = "Delver of Secrets // Insectile Aberration"
+PRINTINGS_V1: list[FakePrinting] = [
+    (
+        "uuid-bolt",
+        "Lightning Bolt",
+        "a1111111-0000-0000-0000-000000000000",
+        "normal",
+        None,
+        None,
+    ),
+    (
+        "uuid-delver",
+        DELVER,
+        "b2222222-0000-0000-0000-000000000000",
+        "transform",
+        "a",
+        "Delver of Secrets",
+    ),
+    (
+        "uuid-aberration",
+        DELVER,
+        "b2222222-0000-0000-0000-000000000000",
+        "transform",
+        "b",
+        "Insectile Aberration",
+    ),
 ]
-PRINTING_V2 = ("uuid-ponder", "Ponder", "c3333333-0000-0000-0000-000000000000")
+PRINTING_V2: FakePrinting = (
+    "uuid-ponder",
+    "Ponder",
+    "c3333333-0000-0000-0000-000000000000",
+    "normal",
+    None,
+    None,
+)
 
 
-def build_allprintings(
-    path: Path, version: str, printings: list[tuple[str, str, str]]
-) -> None:
+def build_allprintings(path: Path, version: str, printings: list[FakePrinting]) -> None:
     """Write a tiny AllPrintings database: one set holding `printings`."""
     engine = create_engine(f"sqlite:///{path}")
     # SQLModel sets __table__ on table models at runtime but doesn't declare it
@@ -51,8 +81,20 @@ def build_allprintings(
                 code="ISD", name="Innistrad", baseSetSize=264, releaseDate="2011-09-30"
             )
         )
-        for number, (uuid, name, scryfall_id) in enumerate(printings, start=1):
-            session.add(Cards(uuid=uuid, name=name, setCode="ISD", number=str(number)))
+        for number, (uuid, name, scryfall_id, layout, side, face_name) in enumerate(
+            printings, start=1
+        ):
+            session.add(
+                Cards(
+                    uuid=uuid,
+                    name=name,
+                    setCode="ISD",
+                    number=str(number),
+                    layout=layout,
+                    side=side,
+                    faceName=face_name,
+                )
+            )
             session.add(CardIdentifiers(uuid=uuid, scryfallId=scryfall_id))
         session.commit()
     engine.dispose()
@@ -82,7 +124,7 @@ class FakeNetwork:
     def publish(
         self,
         version: str,
-        printings: list[tuple[str, str, str]],
+        printings: list[FakePrinting],
         meta_version: str | None = None,
     ) -> None:
         """Release `version` holding `printings`; the AllPrintings inside the ZIP
@@ -96,8 +138,9 @@ class FakeNetwork:
         with zipfile.ZipFile(buffer, "w") as archive:
             archive.write(db_path, "AllPrintings.sqlite")
         self.zip_bytes = buffer.getvalue()
-        for seed, (_, _, scryfall_id) in enumerate(printings):
-            self.images.setdefault(generate_image_uri(scryfall_id), jpeg(seed))
+        for seed, (_, _, scryfall_id, _, side, _) in enumerate(printings):
+            face = "back" if side == "b" else "front"
+            self.images.setdefault(generate_image_uri(scryfall_id, face), jpeg(seed))
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         url = str(request.url)
