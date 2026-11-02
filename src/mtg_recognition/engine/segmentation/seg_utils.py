@@ -13,7 +13,8 @@ from .geometry import find_corners_lines_intersect, perspective_transform
 CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
 
 # Canonical minimum output size for a perspective-corrected card (width × height),
-# consistent with Scryfall "medium" card size and the precomputed pHash index.
+# consistent with the Scryfall "normal" card size (488 × 680) and the precomputed
+# pHash index.
 CARD_IMAGE_MIN_SIZE: tuple[int, int] = (488, 680)
 
 # Maximum output size for a card image. Natural warp resolution is clamped to

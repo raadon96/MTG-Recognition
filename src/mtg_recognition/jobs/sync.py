@@ -44,6 +44,12 @@ IMAGE_DOWNLOAD_WORKERS = 25
 IMAGE_DOWNLOAD_ATTEMPTS = 3
 RETRY_DELAY_SECONDS = 1.0
 
+# Layouts with a physical back side, which Scryfall serves as the back image of
+# the shared scryfallId. Other multi-face layouts (split, adventure, flip,
+# aftermath) print both halves on the front, and a meld result has its own
+# scryfallId, so their printings keep the front image.
+DOUBLE_FACED_LAYOUTS = frozenset({"transform", "modal_dfc", "reversible_card"})
+
 console = Console()
 
 
@@ -112,7 +118,7 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
                 Session(source_engine) as source_session,
                 Session(dest_engine) as dest_session,
             ):
-                # sqlmodel's select overloads stop at 4 columns; this takes 13.
+                # sqlmodel's select overloads stop at 4 columns; this select takes more.
                 statement = (
                     select(  # ty: ignore[no-matching-overload]
                         CardIdentifiers.uuid,
@@ -128,6 +134,9 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
                         Cards.borderColor,
                         CardIdentifiers.scryfallId,
                         Sets.releaseDate,
+                        Cards.layout,
+                        Cards.side,
+                        Cards.faceName,
                     )
                     .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
                     .join(Sets, Cards.setCode == Sets.code)
@@ -141,17 +150,21 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
                 total_migrated = 0
 
                 for row in tqdm(results_stream, desc="Processing Cards", unit=" card"):
+                    # Each face of a double-faced card is a printing of its own,
+                    # with the face's own name and image (see GLOSSARY.md).
+                    double_faced = row.layout in DOUBLE_FACED_LAYOUTS
+                    face = "back" if double_faced and row.side == "b" else "front"
                     batch.append(
                         CatalogPrinting(
                             uuid=row.uuid,
-                            name=row.name,
+                            name=row.faceName if double_faced else row.name,
                             manaCost=row.manaCost,
                             type=row.type,
                             number=row.number,
                             baseSetSize=row.baseSetSize,
                             setCode=row.setCode,
                             url=(
-                                generate_image_uri(row.scryfallId)
+                                generate_image_uri(row.scryfallId, face)
                                 if row.scryfallId
                                 else None
                             ),

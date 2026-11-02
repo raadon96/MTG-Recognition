@@ -7,7 +7,7 @@ Identifies Magic: The Gathering cards in photos and scans by matching them again
 ### Cards and printings
 
 **Printing**:
-One edition of a card in a specific set, with its own collector number, artist and image; identified by a UUID. Each face of a double-faced card is a separate printing. The result of recognition is always a printing, never just a card name.
+One edition of a card in a specific set, with its own collector number, artist and image; identified by a UUID. Each face of a double-faced card is a separate printing, named after its own face (e.g. "Luminous Phantom", not "Lunarch Veteran // Luminous Phantom"). The result of recognition is always a printing, never just a card name.
 _Avoid_: card (when the edition matters), row, match (for the thing matched)
 
 **Card**:
@@ -59,6 +59,10 @@ _Avoid_: identification, detection, prediction
 **Segmentation**:
 The stage that finds each card in a query image and turns it into a card image.
 _Avoid_: instance segmentation (one technique within it), detection, extraction
+
+**Scan bypass**:
+The shortcut segmentation takes when a query image is already a card image: a scan cropped to the card's edges. Segmentation only turns it upright and resizes it, so it always counts as exactly one card.
+_Avoid_: bypass (alone), scan without background, path 1
 
 **Matching**:
 The stage that turns a card image into a ranking: candidates are shortlisted by similarity, then each is scored against the card's reading.
