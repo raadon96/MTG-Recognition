@@ -146,9 +146,9 @@ uv run dvc pull                      # test images; required before running test
 uv run pytest
 uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
 uv run mtg --help                    # recognize, segment, status, update, build-index, benchmark
+uv run mtg benchmark status          # summarise the baseline (--latest: the latest results; --failures: list failing images)
 uv run mtg benchmark run             # recognise the labelled images; non-zero on any change from the baseline
 uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto data/benchmark-baseline.json
-uv run mtg benchmark status          # summarise the baseline (--latest: the latest results; --failures: list failing images)
 ```
 
 Test images are DVC-tracked on Google Drive; setup and adding images: `CONTRIBUTING.md`.
