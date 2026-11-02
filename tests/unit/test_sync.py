@@ -23,6 +23,7 @@ from mtg_recognition.jobs.sync import (
     status,
     update,
 )
+from mtg_recognition.reference.catalog import SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData, SyncState
 
 from .sync_fakes import (
@@ -59,12 +60,6 @@ def corrupt_zip() -> bytes:
     return buffer.getvalue().replace(b"x" * 100_000, b"y" * 100_000)
 
 
-def catalog_names_and_urls(reference: ReferenceData) -> dict[str, tuple[str, str]]:
-    with sqlite3.connect(reference.catalog_path) as connection:
-        rows = connection.execute("SELECT uuid, name, url FROM catalog")
-        return {uuid: (name, url) for uuid, name, url in rows}
-
-
 @pytest.mark.unit
 class TestBuildCatalog:
     def test_double_faced_printing_has_its_own_face_name_and_image(
@@ -76,14 +71,16 @@ class TestBuildCatalog:
         build_catalog(reference.allprintings_path, reference.catalog_path)
 
         delver_id = PRINTINGS_V1[1][2]
-        catalog = catalog_names_and_urls(reference)
-        assert catalog["uuid-delver"] == (
-            "Delver of Secrets",
-            generate_image_uri(delver_id, "front"),
+        printings = SqliteCardCatalog(reference.catalog_path).lookup(
+            ["uuid-delver", "uuid-aberration"]
         )
-        assert catalog["uuid-aberration"] == (
-            "Insectile Aberration",
-            generate_image_uri(delver_id, "back"),
+        assert printings["uuid-delver"].name == "Delver of Secrets"
+        assert printings["uuid-delver"].image_url == generate_image_uri(
+            delver_id, "front"
+        )
+        assert printings["uuid-aberration"].name == "Insectile Aberration"
+        assert printings["uuid-aberration"].image_url == generate_image_uri(
+            delver_id, "back"
         )
 
     def test_card_with_both_halves_on_the_front_keeps_the_front_image(
@@ -113,11 +110,14 @@ class TestBuildCatalog:
 
         build_catalog(reference.allprintings_path, reference.catalog_path)
 
+        printings = SqliteCardCatalog(reference.catalog_path).lookup(
+            ["uuid-giant", "uuid-stomp"]
+        )
         front = generate_image_uri(scryfall_id, "front")
-        assert catalog_names_and_urls(reference) == {
-            "uuid-giant": (name, front),
-            "uuid-stomp": (name, front),
-        }
+        assert [(p.name, p.image_url) for p in printings.values()] == [
+            (name, front),
+            (name, front),
+        ]
 
 
 @pytest.mark.unit

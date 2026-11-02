@@ -12,7 +12,11 @@ from PIL import Image
 from sqlmodel import Session, SQLModel, create_engine
 
 from mtg_recognition.jobs.schemas import CardIdentifiers, Cards, Meta, Sets
-from mtg_recognition.jobs.sync import META_URL, generate_image_uri
+from mtg_recognition.jobs.sync import (
+    DOUBLE_FACED_LAYOUTS,
+    META_URL,
+    generate_image_uri,
+)
 from mtg_recognition.settings import settings
 
 V1 = "5.3.0+20260302"
@@ -138,8 +142,9 @@ class FakeNetwork:
         with zipfile.ZipFile(buffer, "w") as archive:
             archive.write(db_path, "AllPrintings.sqlite")
         self.zip_bytes = buffer.getvalue()
-        for seed, (_, _, scryfall_id, _, side, _) in enumerate(printings):
-            face = "back" if side == "b" else "front"
+        for seed, (_, _, scryfall_id, layout, side, _) in enumerate(printings):
+            double_faced = layout in DOUBLE_FACED_LAYOUTS
+            face = "back" if double_faced and side == "b" else "front"
             self.images.setdefault(generate_image_uri(scryfall_id, face), jpeg(seed))
 
     def handler(self, request: httpx.Request) -> httpx.Response:

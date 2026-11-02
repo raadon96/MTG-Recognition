@@ -118,7 +118,7 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
                 Session(source_engine) as source_session,
                 Session(dest_engine) as dest_session,
             ):
-                # sqlmodel's select overloads stop at 4 columns; this takes 16.
+                # sqlmodel's select overloads stop at 4 columns; this select takes more.
                 statement = (
                     select(  # ty: ignore[no-matching-overload]
                         CardIdentifiers.uuid,
