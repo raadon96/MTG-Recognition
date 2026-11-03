@@ -17,6 +17,7 @@ from mtg_recognition.jobs.sync import (
     META_URL,
     allprintings_version,
     build_catalog,
+    download_missing_images,
     generate_image_uri,
     status,
     update,
@@ -429,6 +430,90 @@ class TestUpdate:
         assert result.build is not None
         assert result.build.downloaded == 1
         assert uuids_with_a_phash(reference) == ALL_V1
+
+
+@pytest.mark.unit
+class TestDownloadMissingImages:
+    def test_downloads_only_the_missing_images(self, reference, network) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        reference.image_path("uuid-bolt").unlink()
+        network.requests.clear()
+
+        with network.client() as client:
+            report = download_missing_images(reference, client)
+
+        assert network.requests == [BOLT_URL]
+        assert (report.downloaded, report.failed) == (1, ())
+        assert reference.image_path("uuid-bolt").exists()
+
+    def test_leaves_the_catalog_unchanged(self, reference, network) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        reference.image_path("uuid-bolt").unlink()
+        catalog_bytes = reference.catalog_path.read_bytes()
+
+        with network.client() as client:
+            download_missing_images(reference, client)
+
+        assert reference.catalog_path.read_bytes() == catalog_bytes
+
+    def test_failures_go_to_its_own_log_and_leave_the_build_log(
+        self, reference, network
+    ) -> None:
+        del network.images[BOLT_URL]
+        with network.client() as client:
+            update(reference, client, workers=1)
+        build_log = reference.log_file.read_text()
+
+        with network.client() as client:
+            download_missing_images(reference, client)
+
+        assert "uuid-bolt" in reference.download_log_file.read_text()
+        assert reference.log_file.read_text() == build_log
+
+    def test_run_without_failures_removes_its_log_and_leaves_the_build_log(
+        self, reference, network
+    ) -> None:
+        del network.images[BOLT_URL]
+        with network.client() as client:
+            update(reference, client, workers=1)
+            download_missing_images(reference, client)
+        build_log = reference.log_file.read_text()
+
+        network.publish(V1, PRINTINGS_V1)  # Scryfall serves the image again
+        with network.client() as client:
+            download_missing_images(reference, client)
+
+        assert not reference.download_log_file.exists()
+        assert reference.log_file.read_text() == build_log
+
+    def test_second_run_downloads_nothing(self, reference, network) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        for path in reference.images_dir.glob("*.jpg"):
+            path.unlink()
+
+        with network.client() as client:
+            first = download_missing_images(reference, client)
+            network.requests.clear()
+            second = download_missing_images(reference, client)
+
+        assert first.downloaded == 3
+        assert network.requests == []
+        assert (second.downloaded, second.failed) == (0, ())
+
+    def test_failures_are_reported(self, reference, network) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        reference.image_path("uuid-bolt").unlink()
+        del network.images[BOLT_URL]
+
+        with network.client() as client:
+            report = download_missing_images(reference, client)
+
+        assert report.downloaded == 0
+        assert [f.uuid for f in report.failed] == ["uuid-bolt"]
 
 
 @pytest.mark.unit

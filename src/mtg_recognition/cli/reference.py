@@ -1,5 +1,5 @@
-"""`mtg status` and `mtg update`: run the reference data jobs and print their
-results.
+"""`mtg status`, `mtg update` and `mtg download-images`: run the reference data
+jobs and print their results.
 """
 
 from collections.abc import Generator
@@ -58,6 +58,20 @@ def update(force: bool, workers: int) -> None:
     console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
 
 
+@click.command(name="download-images")
+def download_images() -> None:
+    """Download the reference images missing from disk for the printings in the
+    committed catalog. Changes nothing else: the catalog, its pHashes and
+    AllPrintings stay as they are.
+    """
+    reference = ReferenceData.default()
+    with _exit_on_error(), sync.make_client() as client:
+        report = sync.download_missing_images(reference, client)
+
+    lines = download_images_summary(reference, report)
+    console.print(Panel("\n".join(lines), title="Download Summary", expand=False))
+
+
 @contextmanager
 def _exit_on_error() -> Generator[None]:
     try:
@@ -103,4 +117,15 @@ def update_summary(reference: ReferenceData, result: sync.UpdateResult) -> list[
         )
     if report.failed or report.unhashable:
         lines.append(f"Image failures written to {reference.log_file}")
+    return lines
+
+
+def download_images_summary(
+    reference: ReferenceData, report: sync.DownloadReport
+) -> list[str]:
+    lines = [
+        f"Reference images: {report.downloaded} downloaded, {len(report.failed)} failed"
+    ]
+    if report.failed:
+        lines.append(f"Image failures written to {reference.download_log_file}")
     return lines
