@@ -33,7 +33,7 @@ X_RIGHT_FRAC = 0.90
 
 # PP-OCRv5_mobile_rec's native input height is 48 px; text below ~32 px reads worse.
 # RATIO_TEXT_TO_CROP: about how much of the collector information crop's height a
-# text line takes up. The upscale factor is clamped to [MIN_UPSCALE, MAX_UPSCALE].
+# text line takes up.
 TARGET_TEXT_HEIGHT = 48
 RATIO_TEXT_TO_CROP = 0.15
 MIN_UPSCALE = 1.0
@@ -45,8 +45,8 @@ _MIN_DIM = 32
 
 @dataclass(frozen=True)
 class ReadingDebug:
-    """Reader artefacts for mismatch root-cause investigation, attached to a Reading
-    only when read_card is called with debug=True.
+    """OCR artefacts from read_card for mismatch root-cause investigation, attached
+    to a Reading only when read_card is called with debug=True.
     """
 
     # Annotated collector information crop from PaddleOCR
