@@ -152,6 +152,30 @@ class TestUpdate:
         assert reference.allprintings_path.exists()
         assert not reference.allprintings_zip_path.exists()
 
+    def test_printings_keep_their_order_whatever_the_allprintings_order(
+        self, tmp_path
+    ) -> None:
+        """Candidates with the same similarity keep the catalog's order (#146), so
+        that order must not change when a release stores the same printings in
+        another order. (The fake numbers printings in insertion order, so the
+        reversed file also has other collector numbers; UUIDs are unchanged.)
+        """
+        orders = []
+        for name, printings in [
+            ("stored", PRINTINGS_V1),
+            ("reversed", PRINTINGS_V1[::-1]),
+        ]:
+            reference = ReferenceData(tmp_path / name / "reference")
+            (tmp_path / name).mkdir()
+            network = FakeNetwork(tmp_path / name)
+            network.publish(V1, printings)
+
+            with network.client() as client:
+                update(reference, client, workers=1)
+
+            orders.append(load_phashes(reference).uuids)
+        assert orders == [["uuid-aberration", "uuid-bolt", "uuid-delver"]] * 2
+
     def test_second_update_with_the_same_release_does_nothing(
         self, reference, network
     ) -> None:
