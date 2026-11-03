@@ -11,6 +11,7 @@ from mtg_recognition.engine.matching.phash import (
     _phash_bits,
     compute_phashes,
     load_phash_index,
+    phash_index,
     shortlist,
 )
 from mtg_recognition.jobs.sync import generate_image_uri, update
@@ -32,12 +33,7 @@ def index_of(images: dict[str, Path]) -> PHashIndex:
     """The pHashes of `images`, in the order given, as the catalog would hold them."""
     phashes, failures = compute_phashes(images, workers=1)
     assert failures == {}
-    return PHashIndex(
-        hashes=np.frombuffer(b"".join(phashes[uuid] for uuid in images), np.uint8)
-        .reshape(len(images), -1)
-        .copy(),
-        uuids=list(images),
-    )
+    return phash_index([(uuid, phashes[uuid]) for uuid in images])
 
 
 @pytest.mark.unit

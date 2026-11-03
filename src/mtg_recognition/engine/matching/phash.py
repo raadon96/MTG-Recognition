@@ -34,6 +34,13 @@ def load_phash_index(reference: ReferenceData) -> PHashIndex:
             f"The catalog {reference.catalog_path} holds no pHash. "
             "Run `mtg update` first."
         )
+    return phash_index(rows)
+
+
+def phash_index(rows: list[tuple[str, bytes]]) -> PHashIndex:
+    """The `PHashIndex` of `(uuid, phash)` rows, each pHash packed 8 bits per byte
+    as the catalog stores it; the rows keep their order.
+    """
     hashes = np.frombuffer(b"".join(phash for _, phash in rows), dtype=np.uint8)
     return PHashIndex(
         hashes=hashes.reshape(len(rows), -1), uuids=[uuid for uuid, _ in rows]
