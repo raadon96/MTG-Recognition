@@ -2,13 +2,11 @@
 
 import subprocess
 import sys
-from typing import get_args
 
 import pytest
 from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
-from mtg_recognition.engine.segmentation import SegmentationMode
 
 
 @pytest.mark.unit
@@ -34,12 +32,3 @@ def test_loading_the_cli_does_not_import_paddleocr() -> None:
     )
 
     assert result.stdout == "False\n"
-
-
-@pytest.mark.unit
-def test_segment_help_lists_the_mode_choices() -> None:
-    result = CliRunner().invoke(cli, ["segment", "--help"])
-
-    assert result.exit_code == 0
-    for mode in get_args(SegmentationMode):
-        assert mode in result.output

@@ -230,10 +230,10 @@ def _print_failures(results: Results) -> None:
 
     # the label and recognised printings come in different orders, so each cell
     # lists its own, one per line, without pairing them
-    # fold rather than cut off with an ellipsis, so the image path stays whole and
-    # can be copied: on one line when the terminal is wide enough
+    # fold rather than cut off with an ellipsis, so the query image path stays
+    # whole and can be copied: on one line when the terminal is wide enough
     table = Table(show_lines=True)
-    table.add_column("image", overflow="fold")
+    table.add_column("query image", overflow="fold")
     table.add_column("label", overflow="fold")
     table.add_column("recognised", overflow="fold")
     with_error = any(outcome.error is not None for outcome in failing.values())

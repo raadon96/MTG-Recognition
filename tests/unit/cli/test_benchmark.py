@@ -181,7 +181,7 @@ class TestStatus:
 
         assert result.exit_code == 0, result.output
         assert _table_rows(result.output) == [
-            ["image", "label", "recognised", "error"],
+            ["query image", "label", "recognised", "error"],
             [
                 "b.jpg",
                 "Lightning Bolt (M10)",
@@ -205,7 +205,7 @@ class TestStatus:
 
         assert result.exit_code == 0, result.output
         assert _table_rows(result.output) == [
-            ["image", "label", "recognised"],
+            ["query image", "label", "recognised"],
             ["a.jpg", "Realm-Cloaked Giant // Cast Off (ZNR)", "Lightning Bolt (M10)"],
             ["", "", "Realm-Cloaked Giant // Cast Off (ZNR)"],
         ]
