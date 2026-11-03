@@ -1,5 +1,5 @@
 """
-Regression tests for RembgSegmentor.
+Regression tests for rembg segmentation: rembg_card_images and rembg_blob_corners.
 
 Requires:
   - rembg model (silueta, downloaded automatically on first run)
@@ -18,8 +18,10 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.rembg import RembgSegmentor
-from mtg_recognition.engine.segmentation.seg_utils import corners_from_binary_mask
+from mtg_recognition.engine.segmentation.segment import (
+    rembg_blob_corners,
+    rembg_card_images,
+)
 
 FIXTURE_DIR = Path("tests/regression/segmentation/fixtures")
 
@@ -34,12 +36,6 @@ MIN_AREA_FRACTION = 0.01
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="module")
-def segmentor() -> RembgSegmentor:
-    """Module-scoped RembgSegmentor; model is loaded once per test module."""
-    return RembgSegmentor()
 
 
 @pytest.fixture(scope="module")
@@ -121,7 +117,7 @@ class TestSingleCardCorners:
 
     Using the reference mask (not the rembg mask) as input makes the test
     fully deterministic — no model involved. Guards against changes to
-    corners_from_binary_mask or the geometry fallbacks.
+    rembg_blob_corners or the geometry fallbacks.
     Tolerance: ±5 px per corner.
     """
 
@@ -135,7 +131,7 @@ class TestSingleCardCorners:
         )
         assert ref_mask is not None
 
-        corners = corners_from_binary_mask(ref_mask, erode=True)
+        corners = rembg_blob_corners(ref_mask)
         assert corners is not None, f"{stem}: no corners found in reference mask"
 
         detected = corners.reshape(4, 2).tolist()
@@ -177,7 +173,7 @@ class TestMultiCardCorners:
         for i, (blob_mask, golden_corners) in enumerate(
             zip(ref_blobs, golden_blobs, strict=False)
         ):
-            corners = corners_from_binary_mask(blob_mask, erode=True)
+            corners = rembg_blob_corners(blob_mask)
             assert corners is not None, (
                 f"{stem} blob {i}: no corners found in reference mask"
             )
@@ -197,24 +193,22 @@ class TestMultiCardCorners:
 class TestMultipleCardsSegmentation:
     """Multi-card images with gaps must yield one card image per card."""
 
-    def test_two_cards_detected(self, segmentor):
+    def test_two_cards_detected(self):
         img_path = PHOTOS_MULTI_CARD_DIR / "images" / "two_cards_with_gap.jpg"
         img = cv2.imread(str(img_path))
         assert img is not None
-        result = segmentor.segment(img)
-        assert result.success
-        assert len(result.cards) == 2, (
-            f"{img_path.stem}: expected 2 cards, got {len(result.cards)}"
+        card_images = rembg_card_images(img)
+        assert len(card_images) == 2, (
+            f"{img_path.stem}: expected 2 cards, got {len(card_images)}"
         )
 
-    def test_four_cards_detected(self, segmentor):
+    def test_four_cards_detected(self):
         img_path = PHOTOS_MULTI_CARD_DIR / "images" / "four_cards_with_gap.jpg"
         img = cv2.imread(str(img_path))
         assert img is not None
-        result = segmentor.segment(img)
-        assert result.success
-        assert len(result.cards) == 4, (
-            f"{img_path.stem}: expected 4 cards, got {len(result.cards)}"
+        card_images = rembg_card_images(img)
+        assert len(card_images) == 4, (
+            f"{img_path.stem}: expected 4 cards, got {len(card_images)}"
         )
 
 
@@ -225,23 +219,21 @@ class TestMultipleCardsSegmentation:
 
 @pytest.mark.slow
 class TestEdgeCases:
-    def test_card_and_pen_detects_single_card(self, segmentor):
+    def test_card_and_pen_detects_single_card(self):
         """Pen blob must be rejected by valid_aspect_ratio (tolerance=0.2)."""
         img = cv2.imread(str(PHOTOS_SINGLE_CARD_DIR / "images" / "card_and_pen.jpg"))
         assert img is not None
-        result = segmentor.segment(img)
-        assert len(result.cards) == 1, (
-            f"Expected exactly 1 card, got {len(result.cards)}"
-        )
+        card_images = rembg_card_images(img)
+        assert len(card_images) == 1, f"Expected exactly 1 card, got {len(card_images)}"
 
     @pytest.mark.xfail(
         reason="Four tightly packed cards produce a single merged blob; "
         "instance separation is not supported for zero-gap layouts"
     )
-    def test_four_cards_without_gap(self, segmentor):
+    def test_four_cards_without_gap(self):
         img = cv2.imread(
             str(FAILURE_CASES_DIR / "images" / "four_cards_without_gap.jpg")
         )
         assert img is not None
-        result = segmentor.segment(img)
-        assert len(result.cards) == 4
+        card_images = rembg_card_images(img)
+        assert len(card_images) == 4

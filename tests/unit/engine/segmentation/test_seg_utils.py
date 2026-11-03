@@ -14,6 +14,7 @@ from mtg_recognition.engine.segmentation.seg_utils import (
     valid_aspect_ratio,
     warp_card,
 )
+from mtg_recognition.engine.segmentation.segment import rembg_blob_corners
 
 
 def _make_rect_mask(rect_h: int = 400, rect_w: int = 280) -> np.ndarray:
@@ -31,18 +32,18 @@ def _make_corners(*points) -> np.ndarray:
 class TestCornersFromBinaryMask:
     def test_rectangle_returns_four_corners(self):
         mask = _make_rect_mask()
-        corners = corners_from_binary_mask(mask, erode=False)
+        corners = corners_from_binary_mask(mask)
         assert corners is not None
         assert corners.shape == (4, 1, 2)
 
     def test_blank_mask_returns_none(self):
         mask = np.zeros((400, 300), dtype=np.uint8)
-        assert corners_from_binary_mask(mask, erode=False) is None
+        assert corners_from_binary_mask(mask) is None
 
     def test_erode_still_finds_corners(self):
         # Net erosion should shrink the mask but still leave a detectable rectangle
         mask = _make_rect_mask(rect_h=200, rect_w=140)
-        corners = corners_from_binary_mask(mask, erode=True)
+        corners = rembg_blob_corners(mask)
         assert corners is not None
         assert corners.shape == (4, 1, 2)
 
@@ -142,9 +143,3 @@ class TestWarpCard:
         result = warp_card(_blank_img(840, 600), corners)
         h, w = result.shape[:2]
         assert h >= w
-
-    def test_explicit_target_size_forces_exact_output(self):
-        # Explicit target_size bypasses clamping entirely
-        corners = _rect_corners(600, 840)
-        result = warp_card(_blank_img(600, 840), corners, target_size=(488, 680))
-        assert result.shape[:2] == (680, 488)

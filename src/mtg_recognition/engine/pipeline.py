@@ -7,7 +7,7 @@ from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
 from mtg_recognition.engine.ranking import RankedPrinting
-from mtg_recognition.engine.segmentation.yolo import YoloSegmentor
+from mtg_recognition.engine.segmentation import segment
 from mtg_recognition.reference.catalog import SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
 
@@ -62,7 +62,6 @@ class Pipeline:
         reference = ReferenceData.default()
         self.phash_index = load_phash_index(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
-        self.segmentor = YoloSegmentor()
         self.reader = PaddleCardReader()
 
     def recognize(
@@ -81,11 +80,9 @@ class Pipeline:
         """
         try:
             # prepare and segment the query image
-            segmentation = self.segmentor.segment(prepare_image(query_image))
+            card_images = segment(prepare_image(query_image))
             card_results: list[CardResult] = []
-            for card in segmentation.cards:
-                card_image = card.card_image
-
+            for card_image in card_images:
                 # shortlist pHash candidates
                 uuids, _ = shortlist(
                     self.phash_index, card_image, k=self.k_phash_candidates
