@@ -483,15 +483,8 @@ def build(
                 if url is not None and uuid not in reused
             }
 
-            # reference images: delete those of no printing, download those to hash
+            # reference images: download those to hash
             console.print("\n[bold]--- Reference images ---[/bold]")
-            stray = [
-                path
-                for path in reference.images_dir.glob("*.jpg")
-                if path.stem not in urls
-            ]
-            for path in stray:
-                path.unlink()
             to_download = {
                 uuid: url
                 for uuid, url in to_hash.items()
@@ -519,6 +512,14 @@ def build(
             _write_phashes(part_path, reused | phashes)
     finally:
         _write_image_log(reference, [*failed, *unhashable])
+
+    # delete the images of no printing only now: until the new catalog replaced
+    # the old one, the old one could still need them
+    stray = [
+        path for path in reference.images_dir.glob("*.jpg") if path.stem not in urls
+    ]
+    for path in stray:
+        path.unlink()
 
     return BuildReport(
         version=built_version,

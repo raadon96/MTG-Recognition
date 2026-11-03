@@ -333,6 +333,25 @@ class TestUpdate:
         assert indexed_uuids(reference) == ALL_V1
         assert not reference.log_file.exists()
 
+    def test_failed_build_keeps_the_images_of_the_previous_catalog(
+        self, reference, network
+    ) -> None:
+        """Bolt is gone from the new release, but the previous catalog, which
+        the failed build keeps, still holds it.
+        """
+        with network.client() as client:
+            update(reference, client, workers=1)
+        strip_to_a_catalog_without_version(reference)  # nothing to reuse
+        network.publish(V2, PRINTINGS_V1[1:])
+        network.images.clear()  # every image 404s: no printing gets a pHash
+        for uuid in ("uuid-delver", "uuid-aberration"):
+            reference.image_path(uuid).unlink()
+
+        with network.client() as client, pytest.raises(ValueError):
+            update(reference, client, workers=1)
+
+        assert reference.image_path("uuid-bolt").exists()
+
     def test_failed_extraction_keeps_the_old_allprintings(
         self, reference, network
     ) -> None:
