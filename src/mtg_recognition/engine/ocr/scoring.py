@@ -15,10 +15,6 @@ from mtg_recognition.engine.ranking import FieldScore, RankedPrinting
 from mtg_recognition.reference.catalog import Printing
 
 
-def _as_is(value: str) -> str:
-    return value
-
-
 def _without_leading_zeros(value: str) -> str:
     """'0146' -> '146' and '0000' -> '0', but '0' stays '0'."""
     return re.sub(r"^0+(?=\d)", "", value)
@@ -32,8 +28,8 @@ class Field:
     weight: float
     read: Callable[[Reading], str | list[str] | None]
     printed: Callable[[Printing], str | None]
-    # Applied to both sides before comparing them.
-    normalise: Callable[[str], str] = _as_is
+    # Applied to both sides before comparing them, when set.
+    normalise: Callable[[str], str] | None = None
 
 
 # The weights reflect how reliably PaddleOCR reads each field, judged by early
@@ -61,6 +57,32 @@ FIELDS: list[Field] = [
 ]
 
 
+def rank(
+    reading: Reading, candidates: Sequence[Printing], k: int
+) -> list[RankedPrinting]:
+    """The k candidates that best agree with the reading, best first.
+
+    Each score is the weighted average of the field scores (0-100). Tied candidates
+    keep their order in `candidates`.
+    """
+    weights = sum(f.weight for f in FIELDS)
+    scored: list[RankedPrinting] = []
+    for printing in candidates:
+        # score each field, then take their weighted average
+        breakdown = [
+            FieldScore(
+                field=f.name,
+                read=(read := f.read(reading)),
+                printed=(printed := f.printed(printing)),
+                score=_field_score(f, read, printed),
+            )
+            for f in FIELDS
+        ]
+        total = sum(f.weight * s.score for f, s in zip(FIELDS, breakdown, strict=True))
+        scored.append(RankedPrinting(printing, total / weights, breakdown))
+    return sorted(scored, key=lambda r: -r.score)[:k]
+
+
 def _field_score(
     field: Field, read: str | list[str] | None, printed: str | None
 ) -> float:
@@ -70,32 +92,7 @@ def _field_score(
     queries = read if isinstance(read, list) else [] if read is None else [read]
     if printed is None or not queries:
         return 0.0
-    choice = field.normalise(printed)
-    return max(fuzz.ratio(field.normalise(q), choice) for q in queries)
-
-
-def _score(reading: Reading, printing: Printing) -> RankedPrinting:
-    breakdown = [
-        FieldScore(
-            field=f.name,
-            read=(read := f.read(reading)),
-            printed=(printed := f.printed(printing)),
-            score=_field_score(f, read, printed),
-        )
-        for f in FIELDS
-    ]
-    total = sum(f.weight * s.score for f, s in zip(FIELDS, breakdown, strict=True))
-    weights = sum(f.weight for f in FIELDS)
-    return RankedPrinting(printing, total / weights, breakdown)
-
-
-def rank(
-    reading: Reading, candidates: Sequence[Printing], k: int
-) -> list[RankedPrinting]:
-    """The k candidates that best agree with the reading, best first.
-
-    Each score is the weighted average of the field scores (0-100). Tied candidates
-    keep their order in `candidates`.
-    """
-    scored = [_score(reading, p) for p in candidates]
-    return sorted(scored, key=lambda r: -r.score)[:k]
+    if field.normalise is not None:
+        printed = field.normalise(printed)
+        queries = [field.normalise(q) for q in queries]
+    return max(fuzz.ratio(q, printed) for q in queries)
