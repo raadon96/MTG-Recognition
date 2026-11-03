@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 
 # Canonical minimum output size for a perspective-corrected card (width × height),
-# consistent with the Scryfall "normal" card size (488 × 680) and the precomputed
-# pHash index.
+# consistent with the Scryfall "normal" card size (488 × 680) and the reference
+# images the pHashes in the catalog are computed from.
 CARD_IMAGE_MIN_SIZE: tuple[int, int] = (488, 680)
 
 # Maximum output size for a card image. Natural warp resolution is clamped to

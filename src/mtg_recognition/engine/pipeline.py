@@ -45,9 +45,7 @@ class Pipeline:
         k_final_results: Number of printings ranked per card.
 
     Raises:
-        ValueError: If the k parameters are invalid, or the pHash index files hold
-            different numbers of hashes and UUIDs.
-        FileNotFoundError: If a pHash index file is missing.
+        ValueError: If the k parameters are invalid, or the catalog holds no pHash.
     """
 
     def __init__(self, k_phash_candidates: int = 20, k_final_results: int = 1):

@@ -108,19 +108,13 @@ source .venv/bin/activate
 ```bash
 mtg status
 ```
-The catalog and pHash index are committed to git, so recognition works right after cloning. `mtg status` shows their versions, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
+The catalog (`data/reference/catalog.sqlite`), which holds each printing's pHash, is committed to git, so recognition works right after cloning. `mtg status` shows the MTGJSON release it was built from, how many printings have no pHash, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
 
-**Maintainers only — update the catalog to a new MTGJSON release:**
+**Maintainers only — build the reference data from a new MTGJSON release:**
 ```bash
 mtg update
 ```
-This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the catalog (`data/reference/catalog.sqlite`), then runs `mtg build-index`.
-
-**Rebuild the pHash index:**
-```bash
-mtg build-index
-```
-This downloads the reference card images missing from `data/reference/images/` (~109k images, ~11 GB, a local cache used only to build the index), then rebuilds the index. Add `--force` to either command to rebuild even when the versions match.
+This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the catalog, downloads the reference card images it needs that are missing from `data/reference/images/` (~116k images, ~11 GB, a local cache used only to compute the pHashes), then computes the pHashes. Printings already in the previous catalog keep their pHash, so only new printings are downloaded and hashed. It does nothing when the catalog already is the latest release; `--force` rebuilds anyway, downloading every image again and recomputing every pHash.
 
 #### 6. Run Streamlit app
 

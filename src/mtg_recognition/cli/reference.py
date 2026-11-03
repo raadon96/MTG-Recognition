@@ -1,5 +1,5 @@
-"""`mtg status`, `mtg update` and `mtg build-index`: run the reference data jobs
-and print their results.
+"""`mtg status` and `mtg update`: run the reference data jobs and print their
+results.
 """
 
 from collections.abc import Generator
@@ -16,25 +16,10 @@ from mtg_recognition.reference.layout import ReferenceData
 console = Console()
 
 
-_force_option = click.option(
-    "--force",
-    is_flag=True,
-    default=False,
-    help="Rebuild even when the versions already match.",
-)
-_workers_option = click.option(
-    "--workers",
-    type=click.IntRange(min=1),
-    default=DEFAULT_NUM_WORKERS,
-    show_default=True,
-    help="Processes hashing images (1 hashes in-process).",
-)
-
-
 @click.command(name="status")
 def status() -> None:
-    """Show the reference data versions, the images on disk and the latest MTGJSON
-    release, then the command to run, if any.
+    """Show the catalog's MTGJSON release, the printings without a pHash, the
+    images on disk and the latest MTGJSON release, then the command to run, if any.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -46,11 +31,24 @@ def status() -> None:
 
 
 @click.command(name="update")
-@_force_option
-@_workers_option
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Rebuild even when the catalog already is the latest release, downloading "
+    "every image again and recomputing every pHash.",
+)
+@click.option(
+    "--workers",
+    type=click.IntRange(min=1),
+    default=DEFAULT_NUM_WORKERS,
+    show_default=True,
+    help="Processes hashing images (1 hashes in-process).",
+)
 def update(force: bool, workers: int) -> None:
-    """Update the catalog to the latest MTGJSON release, then rebuild the pHash
-    index if it no longer matches the catalog.
+    """Build the reference data from the latest MTGJSON release: the catalog,
+    then the missing reference images, then the pHashes of the printings that
+    don't have one yet. Does nothing when the catalog already is that release.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -58,22 +56,6 @@ def update(force: bool, workers: int) -> None:
 
     lines = update_summary(reference, result)
     console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
-
-
-@click.command(name="build-index")
-@_force_option
-@_workers_option
-def build_index(force: bool, workers: int) -> None:
-    """Delete the reference images that are not a printing, download the missing
-    ones, then rebuild the pHash index from the catalog's printings with an
-    image on disk.
-    """
-    reference = ReferenceData.default()
-    with _exit_on_error(), sync.make_client() as client:
-        result = sync.build_index(reference, client, force=force, workers=workers)
-
-    lines = index_summary(reference, result)
-    console.print(Panel("\n".join(lines), title="Build-index Summary", expand=False))
 
 
 @contextmanager
@@ -87,10 +69,9 @@ def _exit_on_error() -> Generator[None]:
 
 def status_summary(report: sync.Status) -> tuple[list[str], str]:
     """The lines of the panel, and the line after it naming the command to run."""
-    match = "matches" if report.index_matches else "does not match"
     lines = [
-        f"Catalog: {report.catalog_version}",
-        f"pHash index: {report.phash_version} ({match} the catalog)",
+        f"Catalog: {report.catalog_version or 'not built by `mtg update`'}",
+        f"Printings without a pHash: {report.without_phash}",
         f"AllPrintings: {report.allprintings_version or 'absent'}",
         f"Reference images: {report.images_present} present, "
         f"{report.images_missing} missing",
@@ -102,29 +83,24 @@ def status_summary(report: sync.Status) -> tuple[list[str], str]:
 
 
 def update_summary(reference: ReferenceData, result: sync.UpdateResult) -> list[str]:
-    catalog = "rebuilt" if result.catalog_rebuilt else "up to date"
-    lines = [f"Catalog: {catalog} ({result.catalog_version})"]
-    if result.catalog_rebuilt:
-        source = "downloaded" if result.allprintings_downloaded else "reused"
-        lines.append(f"AllPrintings: {source} ({result.catalog_version})")
-    return lines + index_summary(reference, result.index)
-
-
-def index_summary(reference: ReferenceData, index: sync.IndexResult) -> list[str]:
-    if index.downloads is None:
-        return [f"pHash index: up to date ({index.phash_version})"]
-    report = index.downloads
+    report = result.build
+    if report is None:
+        return [f"Catalog: up to date ({result.catalog_version})"]
+    source = "downloaded" if report.allprintings_downloaded else "reused"
     lines = [
+        f"Catalog: rebuilt ({report.version})",
+        f"AllPrintings: {source} ({report.version})",
         f"Reference images: {report.downloaded} downloaded, "
-        f"{len(report.failed)} failed, {report.missing_url} without URL",
+        f"{len(report.failed)} failed",
         f"Removed images (no printing): {report.removed}",
-        f"pHash index: rebuilt ({index.phash_version})",
+        f"pHashes: {report.reused} reused, {report.hashed} computed, "
+        f"{report.without_phash} printings without one",
     ]
-    if index.unhashable:
+    if report.unhashable:
         lines.append(
-            f"Unreadable images deleted: {len(index.unhashable)}; "
-            "run `mtg build-index` again"
+            f"Unreadable images deleted: {len(report.unhashable)}; "
+            "the next build downloads them again"
         )
-    if report.failed or index.unhashable:
+    if report.failed or report.unhashable:
         lines.append(f"Image failures written to {reference.log_file}")
     return lines

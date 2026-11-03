@@ -1,6 +1,6 @@
 """pHash shortlisting on card images named by the UUID of their printing,
 committed as fixtures so pHash is tested without segmentation (requires the
-pHash index).
+pHashes in the catalog).
 """
 
 from pathlib import Path

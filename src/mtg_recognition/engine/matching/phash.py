@@ -1,4 +1,3 @@
-import json
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
@@ -9,6 +8,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+from mtg_recognition.reference.catalog import read_phashes
 from mtg_recognition.reference.layout import ReferenceData
 
 HASH_SIZE = 16  # 16x16 = 256-bit hash
@@ -22,53 +22,40 @@ class PHashIndex:
 
 
 def load_phash_index(reference: ReferenceData) -> PHashIndex:
-    """Read the pHash index of `reference`.
+    """Read every pHash in the catalog of `reference`. A printing without a pHash
+    is left out, so it is never a candidate.
 
     Raises:
-        FileNotFoundError: If either index file is missing
-        ValueError: If the number of hashes differs from the number of UUIDs
+        ValueError: If the catalog holds no pHash
     """
-    index_path, mapping_path = reference.phash_files
-    for path in (index_path, mapping_path):
-        if not path.exists():
-            raise FileNotFoundError(
-                f"pHash index file {path} not found. Run `mtg build-index` first."
-            )
-
-    hashes = np.load(index_path)
-    uuids = json.loads(mapping_path.read_text())
-    if hashes.shape[0] != len(uuids):
+    rows = read_phashes(reference.catalog_path)
+    if not rows:
         raise ValueError(
-            f"pHash index holds {hashes.shape[0]} hashes but {len(uuids)} UUIDs. "
-            "Run `mtg build-index` to rebuild it."
+            f"The catalog {reference.catalog_path} holds no pHash. "
+            "Run `mtg update` first."
         )
-    # the file stores one byte per bit; pack 8 per byte for `shortlist`
-    return PHashIndex(hashes=np.packbits(hashes, axis=1), uuids=uuids)
+    hashes = np.frombuffer(b"".join(phash for _, phash in rows), dtype=np.uint8)
+    return PHashIndex(
+        hashes=hashes.reshape(len(rows), -1), uuids=[uuid for uuid, _ in rows]
+    )
 
 
-def build_phash_index(
-    images: Mapping[str, Path],
-    reference: ReferenceData,
-    workers: int = DEFAULT_NUM_WORKERS,
-) -> dict[str, str]:
-    """Hash `images` (printing UUID -> image file) and write the pHash index of
-    `reference`, replacing any earlier one.
+def compute_phashes(
+    images: Mapping[str, Path], workers: int = DEFAULT_NUM_WORKERS
+) -> tuple[dict[str, bytes], dict[str, str]]:
+    """Hash `images` (printing UUID -> image file).
 
     Args:
-        images: The image of each printing to index
-        reference: Reference data the index files are written to
+        images: The reference image of each printing to hash
         workers: Number of parallel processes; 1 hashes in this process, without
             a process pool
 
     Returns:
-        The error of each image that couldn't be hashed, by UUID; those
-        printings are left out of the index
-
-    Raises:
-        ValueError: If no image could be hashed
+        `(phashes, failures)`: the pHash of each printing, packed 8 bits per byte
+        as the catalog stores it, and the error of each image that couldn't be
+        hashed, by UUID
     """
-    hashes: list[np.ndarray] = []
-    uuids: list[str] = []
+    phashes: dict[str, bytes] = {}
     failures: dict[str, str] = {}
     for uuid, bits, error in tqdm(
         _compute_hashes(list(images.items()), workers),
@@ -78,17 +65,8 @@ def build_phash_index(
         if error is not None:
             failures[uuid] = error
         else:
-            uuids.append(uuid)
-            hashes.append(bits)
-
-    if not hashes:
-        raise ValueError("No hashes were extracted.")
-
-    index_path, mapping_path = reference.phash_files
-    index_path.parent.mkdir(parents=True, exist_ok=True)
-    np.save(index_path, np.array(hashes, dtype=np.uint8))
-    mapping_path.write_text(json.dumps(uuids))
-    return failures
+            phashes[uuid] = np.packbits(bits).tobytes()
+    return phashes, failures
 
 
 def shortlist(
@@ -97,7 +75,7 @@ def shortlist(
     """The `k` printings of `index` whose fingerprint is closest to `image`'s.
 
     Args:
-        index: The pHash index to search
+        index: The pHashes to search
         image: The card, as a BGR array
         k: Number of printings to return; clamped to the index size
 

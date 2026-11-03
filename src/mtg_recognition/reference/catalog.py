@@ -1,15 +1,17 @@
-"""Card catalog: resolves printing UUIDs to Printing records.
+"""Card catalog: resolves printing UUIDs to Printing records, and holds each
+printing's pHash and the MTGJSON release it was built from (ADR 0006).
 
-The engine only ever sees `Printing`s; reading them out of the SQLite file is
-the catalog's concern. The catalog table schema lives here too, so `jobs`
-writes the catalog with the same schema this module reads it with.
+The engine only ever sees `Printing`s and pHashes; reading them out of the
+SQLite file is the catalog's concern. The catalog's table schemas live here too,
+so `jobs` writes the catalog with the same schemas this module reads it with.
 """
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import Engine
+from sqlalchemy import Engine, MetaData, text
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Field, Session, SQLModel, col, select
 
 from mtg_recognition.reference.sqlite import open_read_only
@@ -67,6 +69,66 @@ class SqliteCardCatalog:
         }
 
 
+def catalog_version(catalog_path: Path) -> str | None:
+    """The MTGJSON release the catalog at `catalog_path` was built from, or `None`
+    when it was never built by `mtg update`: the file is missing, or has no
+    `meta` table (catalogs from before ADR 0006).
+    """
+    if not catalog_path.exists():
+        return None
+    engine = open_read_only(catalog_path)
+    try:
+        with Session(engine) as session:
+            return session.exec(select(col(CatalogMeta.version))).first()
+    except OperationalError:  # no meta table
+        return None
+    finally:
+        engine.dispose()
+
+
+def read_phashes(catalog_path: Path) -> list[tuple[str, bytes]]:
+    """`(uuid, phash)` of every printing in the catalog that has a pHash, in the
+    order the printings were written, so the order is the same on every machine.
+    """
+    engine = open_read_only(catalog_path)
+    try:
+        statement = (
+            select(CatalogPrinting.uuid, CatalogPrinting.phash)
+            .where(col(CatalogPrinting.phash).is_not(None))
+            .order_by(text("rowid"))
+        )
+        with Session(engine) as session:
+            return [(uuid, phash) for uuid, phash in session.exec(statement).all()]
+    finally:
+        engine.dispose()
+
+
+def read_image_urls(catalog_path: Path) -> dict[str, str | None]:
+    """The image URL of every printing in the catalog, by UUID; `None` when the
+    printing has none.
+    """
+    engine = open_read_only(catalog_path)
+    try:
+        statement = select(CatalogPrinting.uuid, CatalogPrinting.url)
+        with Session(engine) as session:
+            return dict(session.exec(statement).all())
+    finally:
+        engine.dispose()
+
+
+class CatalogMeta(SQLModel, table=True):
+    """The MTGJSON release the catalog was built from, copied from AllPrintings'
+    `meta` table; one row.
+    """
+
+    # AllPrintings' own `meta` table (`jobs.schemas.Meta`) is registered in
+    # SQLModel's shared metadata under the same name, so this one gets its own
+    metadata = MetaData()
+    __tablename__ = "meta"
+    version: str = Field(primary_key=True)
+    date: str | None = Field(default=None)
+
+
 class CatalogPrinting(
     SQLModel,
     table=True,
@@ -103,6 +165,10 @@ class CatalogPrinting(
     power: str | None = Field(default=None)
     toughness: str | None = Field(default=None)
     borderColor: str | None = Field(default=None)
+    # The 256-bit pHash of the reference image, packed 8 bits per byte (32
+    # bytes); None when the printing has no image URL, or its image failed to
+    # download or hash.
+    phash: bytes | None = Field(default=None)
     # text: str | None = Field(default=None)
     # flavorText: str | None = Field(default=None)
     # scryfallId: str
