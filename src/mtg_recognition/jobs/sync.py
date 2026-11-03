@@ -1,9 +1,10 @@
-"""Reference data jobs, run by `mtg status`, `mtg update` and `mtg build-index`.
+"""Reference data jobs, run by `mtg status` and `mtg update`.
 
-The catalog and the pHash index are built from one MTGJSON release
-and committed; the reference images are a local cache, downloaded only to build
-the index. Every HTTP request goes through the `httpx.Client` passed to the step
-functions, which the commands in `cli.reference` build.
+The catalog, which holds each printing's pHash and the MTGJSON release it was
+built from (ADR 0006), is committed; the reference images are a local cache,
+downloaded only to compute the pHashes. Every HTTP request goes through the
+`httpx.Client` passed to the step functions, which the commands in
+`cli.reference` build.
 """
 
 import io
@@ -14,20 +15,27 @@ import zipfile
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 import httpx
 from PIL import Image
 from rich.console import Console
-from sqlalchemy import func
+from sqlalchemy import bindparam
 from sqlmodel import Session, SQLModel, col, create_engine, select
 from tqdm import tqdm
 
-from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS, build_phash_index
-from mtg_recognition.reference.catalog import CatalogPrinting
-from mtg_recognition.reference.layout import ReferenceData, SyncState
+from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS, compute_phashes
+from mtg_recognition.reference.catalog import (
+    CatalogMeta,
+    CatalogPrinting,
+    catalog_version,
+    count_phashes,
+    read_image_urls,
+    read_phashes,
+)
+from mtg_recognition.reference.layout import ReferenceData
 from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
 
@@ -98,112 +106,106 @@ def extract_year(releaseDate: str) -> str | None:
     return releaseDate.split("-")[0]
 
 
-def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
-    """(Re)build the catalog at `catalog_path` from AllPrintings, streaming
-    the rows; an interrupted build leaves the old one in place. Returns the number
-    of printings.
+def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
+    """Write the catalog at `catalog_path`, a new file, from AllPrintings,
+    streaming the rows; every printing is written without a pHash. The `meta`
+    table gets AllPrintings' release, which is returned.
     """
     catalog_path.parent.mkdir(parents=True, exist_ok=True)
-    with _replacing(catalog_path) as part_path:
-        source_engine = open_read_only(allprintings_path)
-        dest_engine = create_engine(f"sqlite:///{part_path}")
-        try:
-            # SQLModel sets __table__ on table models at runtime but doesn't
-            # declare it on the class.
-            SQLModel.metadata.create_all(
-                dest_engine,
-                tables=[CatalogPrinting.__table__],  # ty: ignore[unresolved-attribute]
+    source_engine = open_read_only(allprintings_path)
+    dest_engine = create_engine(f"sqlite:///{catalog_path}")
+    try:
+        # SQLModel sets __table__ on table models at runtime but doesn't
+        # declare it on the class.
+        SQLModel.metadata.create_all(
+            dest_engine,
+            tables=[
+                CatalogPrinting.__table__,  # ty: ignore[unresolved-attribute]
+                CatalogMeta.__table__,  # ty: ignore[unresolved-attribute]
+            ],
+        )
+        with (
+            Session(source_engine) as source_session,
+            Session(dest_engine) as dest_session,
+        ):
+            # AllPrintings stores the date as text ("2026-11-02"), which the
+            # schema's datetime column doesn't parse, so read it as text
+            version, date = (
+                source_session.connection()
+                .exec_driver_sql("SELECT version, date FROM meta")
+                .one()
             )
-            with (
-                Session(source_engine) as source_session,
-                Session(dest_engine) as dest_session,
-            ):
-                # sqlmodel's select overloads stop at 4 columns; this select takes more.
-                statement = (
-                    select(  # ty: ignore[no-matching-overload]
-                        CardIdentifiers.uuid,
-                        Cards.name,
-                        Cards.manaCost,
-                        Cards.type,
-                        Cards.number,
-                        Sets.baseSetSize,
-                        Cards.setCode,
-                        Cards.artist,
-                        Cards.power,
-                        Cards.toughness,
-                        Cards.borderColor,
-                        CardIdentifiers.scryfallId,
-                        Sets.releaseDate,
-                        Cards.layout,
-                        Cards.side,
-                        Cards.faceName,
+            dest_session.add(CatalogMeta(version=version, date=date))
+
+            # sqlmodel's select overloads stop at 4 columns; this select takes more.
+            statement = (
+                select(  # ty: ignore[no-matching-overload]
+                    CardIdentifiers.uuid,
+                    Cards.name,
+                    Cards.manaCost,
+                    Cards.type,
+                    Cards.number,
+                    Sets.baseSetSize,
+                    Cards.setCode,
+                    Cards.artist,
+                    Cards.power,
+                    Cards.toughness,
+                    Cards.borderColor,
+                    CardIdentifiers.scryfallId,
+                    Sets.releaseDate,
+                    Cards.layout,
+                    Cards.side,
+                    Cards.faceName,
+                )
+                .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
+                .join(Sets, Cards.setCode == Sets.code)
+            )
+
+            # Stream results (fetch only 1000 rows at a time, crucial for memory)
+            results_stream = source_session.exec(statement).yield_per(1000)
+
+            batch = []
+            batch_size = 5000
+
+            for row in tqdm(results_stream, desc="Processing Cards", unit=" card"):
+                # Each face of a double-faced card is a printing of its own,
+                # with the face's own name and image (see GLOSSARY.md).
+                double_faced = row.layout in DOUBLE_FACED_LAYOUTS
+                face = "back" if double_faced and row.side == "b" else "front"
+                batch.append(
+                    CatalogPrinting(
+                        uuid=row.uuid,
+                        name=row.faceName if double_faced else row.name,
+                        manaCost=row.manaCost,
+                        type=row.type,
+                        number=row.number,
+                        baseSetSize=row.baseSetSize,
+                        setCode=row.setCode,
+                        url=(
+                            generate_image_uri(row.scryfallId, face)
+                            if row.scryfallId
+                            else None
+                        ),
+                        artist=row.artist,
+                        power=row.power,
+                        toughness=row.toughness,
+                        borderColor=row.borderColor,
+                        setReleaseYear=extract_year(row.releaseDate),
                     )
-                    .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
-                    .join(Sets, Cards.setCode == Sets.code)
                 )
 
-                # Stream results (fetch only 1000 rows at a time, crucial for memory)
-                results_stream = source_session.exec(statement).yield_per(1000)
-
-                batch = []
-                batch_size = 5000
-                total_migrated = 0
-
-                for row in tqdm(results_stream, desc="Processing Cards", unit=" card"):
-                    # Each face of a double-faced card is a printing of its own,
-                    # with the face's own name and image (see GLOSSARY.md).
-                    double_faced = row.layout in DOUBLE_FACED_LAYOUTS
-                    face = "back" if double_faced and row.side == "b" else "front"
-                    batch.append(
-                        CatalogPrinting(
-                            uuid=row.uuid,
-                            name=row.faceName if double_faced else row.name,
-                            manaCost=row.manaCost,
-                            type=row.type,
-                            number=row.number,
-                            baseSetSize=row.baseSetSize,
-                            setCode=row.setCode,
-                            url=(
-                                generate_image_uri(row.scryfallId, face)
-                                if row.scryfallId
-                                else None
-                            ),
-                            artist=row.artist,
-                            power=row.power,
-                            toughness=row.toughness,
-                            borderColor=row.borderColor,
-                            setReleaseYear=extract_year(row.releaseDate),
-                        )
-                    )
-
-                    if len(batch) >= batch_size:
-                        dest_session.add_all(batch)
-                        dest_session.commit()
-                        total_migrated += len(batch)
-                        batch = []
-
-                if batch:
+                if len(batch) >= batch_size:
                     dest_session.add_all(batch)
                     dest_session.commit()
-                    total_migrated += len(batch)
-        finally:
-            source_engine.dispose()
-            dest_engine.dispose()
-    return total_migrated
+                    batch = []
 
-
-def _count_printings(reference: ReferenceData, with_url: bool) -> int:
-    """Number of printings in the catalog with (or without) an image URL."""
-    url = col(CatalogPrinting.url)
-    engine = open_read_only(reference.catalog_path)
-    try:
-        statement = select(func.count()).where(
-            url.is_not(None) if with_url else url.is_(None)
-        )
-        with Session(engine) as session:
-            return session.exec(statement).one()
+            if batch:
+                dest_session.add_all(batch)
+                dest_session.commit()
     finally:
-        engine.dispose()
+        source_engine.dispose()
+        dest_engine.dispose()
+    return version
 
 
 # ---------------------------------------------------------------------------
@@ -292,35 +294,22 @@ class ImageFailure:
     error: str
 
 
-@dataclass(frozen=True)
-class DownloadReport:
-    """Outcome of downloading the missing reference images."""
-
-    downloaded: int
-    failed: tuple[ImageFailure, ...]
-    missing_url: int  # printings with no image URL, so nothing to download
-    removed: int  # images deleted because they are not a printing in the catalog
-
-
-def download_images(reference: ReferenceData, client: httpx.Client) -> DownloadReport:
-    """Delete the images that are not a printing in the catalog, then download
-    the missing ones. Failures don't stop the download; they are reported.
+def download_images(
+    reference: ReferenceData, client: httpx.Client, urls: dict[str, str]
+) -> tuple[ImageFailure, ...]:
+    """Download the reference image of each printing in `urls` (UUID -> image
+    URL), replacing any file already on disk. Failures don't stop the download;
+    they are returned.
     """
-    stray = reference.stray_images()
-    for path in stray:
-        path.unlink()
-
-    missing = reference.missing_images()
     reference.images_dir.mkdir(parents=True, exist_ok=True)
     failed: list[ImageFailure] = []
-
     with ThreadPoolExecutor(max_workers=IMAGE_DOWNLOAD_WORKERS) as pool:
         futures = {
             pool.submit(_download_image, client, url, reference.image_path(uuid)): (
                 uuid,
                 url,
             )
-            for uuid, url in missing
+            for uuid, url in urls.items()
         }
         for future in tqdm(
             as_completed(futures),
@@ -332,13 +321,7 @@ def download_images(reference: ReferenceData, client: httpx.Client) -> DownloadR
             if error is not None:
                 uuid, url = futures[future]
                 failed.append(ImageFailure(uuid, url, "download", error))
-
-    return DownloadReport(
-        downloaded=len(missing) - len(failed),
-        failed=tuple(failed),
-        missing_url=_count_printings(reference, with_url=False),
-        removed=len(stray),
-    )
+    return tuple(failed)
 
 
 def _download_image(client: httpx.Client, url: str, path: Path) -> str | None:
@@ -378,22 +361,6 @@ def _decode_error(content: bytes) -> str | None:
     return None
 
 
-def hash_images(reference: ReferenceData, workers: int) -> tuple[ImageFailure, ...]:
-    """Rebuild the pHash index from the printings in the catalog that have an
-    image on disk. Images that fail to hash are deleted, so the next build
-    downloads them again, and reported.
-    """
-    urls = dict(reference.present_images())
-    errors = build_phash_index(
-        {uuid: reference.image_path(uuid) for uuid in urls}, reference, workers=workers
-    )
-    for uuid in errors:
-        reference.image_path(uuid).unlink(missing_ok=True)
-    return tuple(
-        ImageFailure(uuid, urls[uuid], "hash", error) for uuid, error in errors.items()
-    )
-
-
 def _write_image_log(reference: ReferenceData, failed: list[ImageFailure]) -> None:
     """Write the image failures of this build to `reference.log_file`, or remove
     the log of an earlier one when there are none.
@@ -412,89 +379,45 @@ def _write_image_log(reference: ReferenceData, failed: list[ImageFailure]) -> No
 
 
 @dataclass(frozen=True)
-class IndexResult:
-    phash_version: str | None
-    downloads: DownloadReport | None  # None when the index was already up to date
-    unhashable: tuple[ImageFailure, ...] = ()  # deleted, downloaded again next build
+class BuildReport:
+    """Outcome of building the reference data from one MTGJSON release."""
 
-    @property
-    def built(self) -> bool:
-        return self.downloads is not None
+    version: str  # the release in AllPrintings, which may lag behind Meta.json
+    allprintings_downloaded: bool
+    removed: int  # images deleted because they are not a printing in the catalog
+    downloaded: int
+    failed: tuple[ImageFailure, ...]  # downloads that failed
+    reused: int  # pHashes kept from the previous catalog
+    hashed: int  # pHashes computed
+    unhashable: tuple[ImageFailure, ...]  # deleted, downloaded at the next build
+    without_phash: int  # printings never a candidate: no image URL, or a failure
 
 
 @dataclass(frozen=True)
 class UpdateResult:
     latest_version: str
     catalog_version: str | None
-    catalog_rebuilt: bool
-    allprintings_downloaded: bool
-    index: IndexResult
+    build: BuildReport | None  # None when the catalog already was the latest release
 
 
 @dataclass(frozen=True)
 class Status:
-    catalog_version: str | None
-    phash_version: str | None
-    index_matches: bool  # the index is on disk and built from the catalog's release
+    catalog_version: str | None  # None when `mtg update` never built the catalog
+    without_phash: int
     allprintings_version: str | None  # None when AllPrintings is absent
     images_present: int
-    images_missing: int
+    images_missing: int  # printings with an image URL but no image on disk
     latest_version: str | None  # None when MTGJSON can't be reached
 
     @property
     def next_command(self) -> str | None:
         """The command that brings the reference data up to date, if any."""
-        if self.latest_version is not None and (
-            self.latest_version != self.catalog_version
+        if self.catalog_version is None or (
+            self.latest_version is not None
+            and self.latest_version != self.catalog_version
         ):
             return "mtg update"
-        if not self.index_matches:
-            return "mtg build-index"
         return None
-
-
-def _index_matches(reference: ReferenceData, state: SyncState) -> bool:
-    return (
-        state.phash_version is not None
-        and state.phash_version == state.catalog_version
-        and all(path.exists() for path in reference.phash_files)
-    )
-
-
-def build_index(
-    reference: ReferenceData,
-    client: httpx.Client,
-    force: bool = False,
-    workers: int = DEFAULT_NUM_WORKERS,
-) -> IndexResult:
-    """Bring the reference images in line with the catalog (delete the strays,
-    download the missing), then rebuild the pHash index from the catalog's
-    printings with an image on disk and record it as built from the catalog's
-    release. Without `force`, does nothing when the index already is. Image
-    failures are written to `reference.log_file`.
-    """
-    state = reference.load_state()
-    if not force and _index_matches(reference, state):
-        return IndexResult(state.phash_version, downloads=None)
-
-    state = replace(state, phash_version=None)
-    reference.save_state(state)
-
-    failed: list[ImageFailure] = []
-    try:
-        console.print("\n[bold]--- Reference images ---[/bold]")
-        downloads = download_images(reference, client)
-        failed += downloads.failed
-
-        console.print("\n[bold]--- pHash index ---[/bold]")
-        unhashable = hash_images(reference, workers)
-        failed += unhashable
-    finally:
-        _write_image_log(reference, failed)
-
-    state = replace(state, phash_version=state.catalog_version)
-    reference.save_state(state)
-    return IndexResult(state.phash_version, downloads, unhashable)
 
 
 def update(
@@ -503,55 +426,154 @@ def update(
     force: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> UpdateResult:
-    """Bring the reference data to the latest MTGJSON release: rebuild the catalog
-    when its release differs (or `force`), then the index when it no longer
-    matches the catalog. State is saved after each step, so a re-run after an
-    interruption resumes.
+    """Build the reference data from the latest MTGJSON release (see `build`),
+    unless the catalog already was built from it. `force` builds anyway.
     """
     latest = fetch_latest_version(client)
-    state = reference.load_state()
-    rebuilt = downloaded = False
+    built = catalog_version(reference.catalog_path)
+    if not force and built == latest:
+        return UpdateResult(latest, built, build=None)
 
-    if force or state.catalog_version != latest or not reference.catalog_path.exists():
-        console.print("\n[bold]--- Catalog ---[/bold]")
-        state = replace(state, catalog_version=None)
-        reference.save_state(state)
+    report = build(reference, client, latest, force=force, workers=workers)
+    return UpdateResult(latest, report.version, report)
 
-        downloaded = ensure_allprintings(reference, client, latest)
-        console.print("Building the catalog...")
-        build_catalog(reference.allprintings_path, reference.catalog_path)
 
-        # The release actually built, which may lag behind Meta.json
-        state = replace(state, catalog_version=allprintings_version(reference))
-        reference.save_state(state)
-        rebuilt = True
+def build(
+    reference: ReferenceData,
+    client: httpx.Client,
+    version: str,
+    force: bool = False,
+    workers: int = DEFAULT_NUM_WORKERS,
+) -> BuildReport:
+    """Build the reference data from the MTGJSON release `version`: AllPrintings,
+    then the catalog, then the missing reference images, then the pHashes.
 
-    index = build_index(reference, client, force=force, workers=workers)
-    return UpdateResult(
-        latest_version=latest,
-        catalog_version=state.catalog_version,
-        catalog_rebuilt=rebuilt,
-        allprintings_downloaded=downloaded,
-        index=index,
+    The pHash of every printing already in the previous catalog is reused; only
+    the other printings' images are downloaded (when not on disk) and hashed. A
+    catalog without a version was never fully built, so nothing is reused from
+    it. `force` downloads every image again and recomputes every pHash. The new
+    catalog replaces the old one only once complete. Image failures are written
+    to `reference.log_file`.
+
+    Raises:
+        ValueError: If no printing has a pHash; the previous catalog is kept
+    """
+    console.print("\n[bold]--- Catalog ---[/bold]")
+    allprintings_downloaded = ensure_allprintings(reference, client, version)
+    previous: dict[str, bytes] = {}
+    if not force and catalog_version(reference.catalog_path) is not None:
+        previous = dict(read_phashes(reference.catalog_path))
+
+    failed: tuple[ImageFailure, ...] = ()
+    unhashable: tuple[ImageFailure, ...] = ()
+    try:
+        with _replacing(reference.catalog_path) as part_path:
+            console.print("Building the catalog...")
+            built_version = build_catalog(reference.allprintings_path, part_path)
+            urls = read_image_urls(part_path)
+            # a printing that lost its image URL loses its pHash with it
+            reused = {
+                uuid: previous[uuid]
+                for uuid, url in urls.items()
+                if url is not None and uuid in previous
+            }
+            to_hash = {
+                uuid: url
+                for uuid, url in urls.items()
+                if url is not None and uuid not in reused
+            }
+
+            # reference images: download those to hash
+            console.print("\n[bold]--- Reference images ---[/bold]")
+            to_download = {
+                uuid: url
+                for uuid, url in to_hash.items()
+                if force or not reference.image_path(uuid).exists()
+            }
+            failed = download_images(reference, client, to_download)
+
+            # pHashes; an image that fails to hash is deleted, so the next build
+            # downloads it again
+            console.print("\n[bold]--- pHashes ---[/bold]")
+            on_disk = {
+                uuid: reference.image_path(uuid)
+                for uuid in to_hash
+                if reference.image_path(uuid).exists()
+            }
+            phashes, errors = compute_phashes(on_disk, workers)
+            for uuid in errors:
+                reference.image_path(uuid).unlink()
+            unhashable = tuple(
+                ImageFailure(uuid, urls[uuid], "hash", error)
+                for uuid, error in errors.items()
+            )
+            if not reused and not phashes:
+                raise ValueError("No printing has a pHash; the catalog is unchanged.")
+            _write_phashes(part_path, reused | phashes)
+    finally:
+        _write_image_log(reference, [*failed, *unhashable])
+
+    # delete the images of no printing only now: until the new catalog replaced
+    # the old one, the old one could still need them
+    stray = [
+        path for path in reference.images_dir.glob("*.jpg") if path.stem not in urls
+    ]
+    for path in stray:
+        path.unlink()
+
+    return BuildReport(
+        version=built_version,
+        allprintings_downloaded=allprintings_downloaded,
+        removed=len(stray),
+        downloaded=len(to_download) - len(failed),
+        failed=failed,
+        reused=len(reused),
+        hashed=len(phashes),
+        unhashable=unhashable,
+        without_phash=len(urls) - len(reused) - len(phashes),
     )
+
+
+def _write_phashes(catalog_path: Path, phashes: dict[str, bytes]) -> None:
+    """Set the pHash of each printing in `phashes` (UUID -> packed pHash)."""
+    engine = create_engine(f"sqlite:///{catalog_path}")
+    try:
+        # SQLModel sets __table__ on table models at runtime but doesn't
+        # declare it on the class.
+        table = CatalogPrinting.__table__  # ty: ignore[unresolved-attribute]
+        statement = (
+            table.update()
+            .where(table.c.uuid == bindparam("printing"))
+            .values(phash=bindparam("phash"))
+        )
+        with engine.begin() as connection:
+            connection.execute(
+                statement,
+                [{"printing": uuid, "phash": phash} for uuid, phash in phashes.items()],
+            )
+    finally:
+        engine.dispose()
 
 
 def status(reference: ReferenceData, client: httpx.Client) -> Status:
     """Read-only report on the reference data; the latest release is `None` when
     MTGJSON can't be reached.
     """
-    state = reference.load_state()
     try:
         latest = fetch_latest_version(client)
     except (httpx.HTTPError, ValueError, KeyError):  # offline or a malformed reply
         latest = None
-    missing = len(reference.missing_images())
+    version = catalog_version(reference.catalog_path)
+    urls = read_image_urls(reference.catalog_path)
+    with_url = [uuid for uuid, url in urls.items() if url is not None]
+    present = sum(reference.image_path(uuid).exists() for uuid in with_url)
+    # a catalog from before ADR 0006 has no phash column
+    phashes = count_phashes(reference.catalog_path) if version is not None else 0
     return Status(
-        catalog_version=state.catalog_version,
-        phash_version=state.phash_version,
-        index_matches=_index_matches(reference, state),
+        catalog_version=version,
+        without_phash=len(urls) - phashes,
         allprintings_version=allprintings_version(reference),
-        images_present=_count_printings(reference, with_url=True) - missing,
-        images_missing=missing,
+        images_present=present,
+        images_missing=len(with_url) - present,
         latest_version=latest,
     )

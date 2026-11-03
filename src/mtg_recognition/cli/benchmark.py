@@ -32,7 +32,11 @@ from mtg_recognition.benchmark.results import (
     validate_manifest,
     write_results,
 )
-from mtg_recognition.reference.catalog import Printing, SqliteCardCatalog
+from mtg_recognition.reference.catalog import (
+    Printing,
+    SqliteCardCatalog,
+    catalog_version,
+)
 from mtg_recognition.reference.layout import ReferenceData
 
 
@@ -106,7 +110,7 @@ def run() -> None:
         click.echo(f"[{idx}/{len(manifest)}] {mark} {image}  {runtime_s:.1f}s")
 
     results = summarise(
-        _commit(), reference.load_state().catalog_version, run_at, images
+        _commit(), catalog_version(reference.catalog_path), run_at, images
     )
     write_results(results, LATEST_PATH)
     click.echo(f"\nResults written to {LATEST_PATH}")

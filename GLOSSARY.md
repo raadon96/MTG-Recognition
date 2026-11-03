@@ -95,16 +95,16 @@ _Avoid_: score, confidence
 ### Reference data
 
 **Reference data**:
-Everything built from one MTGJSON release and used to recognise cards: the catalog and the pHash index (both committed), and the reference images the index is built from (a local cache, never versioned).
+Everything built from one MTGJSON release and used to recognise cards: the catalog (committed) and the reference images the pHashes are computed from (a local cache, never versioned).
 _Avoid_: assets
 
 **Catalog**:
-The details of every printing (name, set, collector number, artist, and so on), looked up by the printing's UUID. Part of the reference data.
+The details of every printing (name, set, collector number, artist, pHash, and so on), looked up by the printing's UUID. Part of the reference data.
 _Avoid_: MobileCache, cache, database
 
-**pHash index**:
-The perceptual hash of every printing's reference image, searched by similarity to shortlist candidates. Part of the reference data.
-_Avoid_: index (alone), hash database, catalogue
+**pHash**:
+The perceptual hash of a printing's reference image, one of the printing's details in the catalog. Matching compares a card image's pHash with every printing's to shortlist candidates by similarity. A printing without a pHash is never a candidate.
+_Avoid_: pHash index, index (alone), hash database, fingerprint
 
 ### Benchmark
 

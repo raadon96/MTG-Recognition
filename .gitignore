@@ -15,7 +15,6 @@ data/reference_test
 data/reference/tmp
 data/reference/mtgjson/
 data/reference/image_errors.log
-# data/reference/.mtg-sync-state.json
 data/examples/
 # test models
 models/*/test/
@@ -271,4 +270,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-data/reference_test/.mtg-sync-state.json

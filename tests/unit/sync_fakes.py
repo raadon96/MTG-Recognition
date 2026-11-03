@@ -24,8 +24,9 @@ V2 = "5.3.0+20260517"
 
 # (uuid, name, scryfallId, layout, side, faceName). The two Delver faces are a
 # double-faced card: two printings sharing one Scryfall id, the front image for
-# side a and the back image for side b.
-FakePrinting = tuple[str, str, str, str, str | None, str | None]
+# side a and the back image for side b. A printing without a Scryfall id has no
+# image URL.
+FakePrinting = tuple[str, str, str | None, str, str | None, str | None]
 
 DELVER = "Delver of Secrets // Insectile Aberration"
 PRINTINGS_V1: list[FakePrinting] = [
@@ -143,6 +144,8 @@ class FakeNetwork:
             archive.write(db_path, "AllPrintings.sqlite")
         self.zip_bytes = buffer.getvalue()
         for seed, (_, _, scryfall_id, layout, side, _) in enumerate(printings):
+            if scryfall_id is None:
+                continue
             double_faced = layout in DOUBLE_FACED_LAYOUTS
             face = "back" if double_faced and side == "b" else "front"
             self.images.setdefault(generate_image_uri(scryfall_id, face), jpeg(seed))
