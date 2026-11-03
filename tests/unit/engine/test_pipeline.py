@@ -3,7 +3,7 @@ reference data. The `mtg recognize` command is tested in tests/unit/cli.
 
 Recognition with the real models is covered end to end in tests/regression/engine.
 
-The recognition tests replace the YOLO and PaddleOCR classes in the pipeline module,
+The recognition tests replace `segment` and the PaddleOCR class in the pipeline module,
 which CODING_STANDARDS.md forbids (no patching a module's internals): loading the
 real models takes seconds, and the behaviour under test is how `recognize` handles a
 reader error, which a plain-data function can't show. Whether to allow this is
@@ -14,10 +14,6 @@ import pytest
 
 from mtg_recognition.engine import pipeline as pipeline_module
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.engine.segmentation.seg_utils import (
-    SegmentationResult,
-    SegmentedCard,
-)
 from tests.unit.engine.builders import card_image, printing, reading_of
 
 
@@ -30,11 +26,9 @@ def test_invalid_k_parameters_raise(k_phash, k_final):
 # --- Pipeline.recognize over fake models ---
 
 
-class WholeImageSegmentor:
+def segment_whole_image(query_image):
     """Finds one card: the whole query image."""
-
-    def segment(self, query_image):
-        return SegmentationResult(cards=[SegmentedCard(card_image=query_image)])
+    return [query_image]
 
 
 class FailingReader:
@@ -50,7 +44,7 @@ class P0Reader:
 
 
 def _pipeline(monkeypatch, reader) -> Pipeline:
-    monkeypatch.setattr(pipeline_module, "YoloSegmentor", WholeImageSegmentor)
+    monkeypatch.setattr(pipeline_module, "segment", segment_whole_image)
     monkeypatch.setattr(pipeline_module, "PaddleCardReader", reader)
     return Pipeline(k_final_results=3)
 

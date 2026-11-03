@@ -8,12 +8,15 @@ Usage examples:
 """
 
 from pathlib import Path
+from typing import get_args
 
 import click
 import cv2
 from tqdm import tqdm
 
 from mtg_recognition.engine.image import prepare_image
+from mtg_recognition.engine.segmentation import SegmentationMode
+from mtg_recognition.engine.segmentation import segment as segment_query_image
 from mtg_recognition.settings import settings
 
 
@@ -36,7 +39,7 @@ from mtg_recognition.settings import settings
 @click.option(
     "-m",
     "--mode",
-    type=click.Choice(["auto", "yolo", "rembg"], case_sensitive=False),
+    type=click.Choice(get_args(SegmentationMode), case_sensitive=False),
     default="auto",
     show_default=True,
     help=(
@@ -46,9 +49,7 @@ from mtg_recognition.settings import settings
         "'rembg' — rembg background removal only."
     ),
 )
-def segment(input_path: Path, output_dir: Path, mode: str) -> None:
-    segmentor = _build_segmentor(mode)
-
+def segment(input_path: Path, output_dir: Path, mode: SegmentationMode) -> None:
     img_paths = query_image_paths(input_path)
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)
@@ -63,13 +64,13 @@ def segment(input_path: Path, output_dir: Path, mode: str) -> None:
         except ValueError:
             click.echo(f"  unreadable query image, skipped: {img_path.name}", err=True)
             continue
-        result = segmentor.segment(img)
-        if not result.success:
+        card_images = segment_query_image(img, mode=mode)
+        if not card_images:
             click.echo(f"  no card detected: {img_path.name}", err=True)
             continue
-        for idx, card in enumerate(result.cards):
-            stem = img_path.stem if len(result.cards) == 1 else f"{img_path.stem}_{idx}"
-            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card.card_image)
+        for idx, card_image in enumerate(card_images):
+            stem = img_path.stem if len(card_images) == 1 else f"{img_path.stem}_{idx}"
+            cv2.imwrite(str(output_dir / f"{stem}.jpg"), card_image)
             saved += 1
 
     click.echo(f"Saved {saved} card image(s) to {output_dir}")
@@ -85,15 +86,3 @@ def query_image_paths(input_path: Path) -> list[Path]:
     for ext in settings.IMG_EXT:
         img_paths.extend(input_path.glob(ext))
     return sorted(img_paths)
-
-
-def _build_segmentor(mode: str):
-    # the models load only for the mode asked for
-    mode = mode.lower()
-    if mode == "rembg":
-        from mtg_recognition.engine.segmentation.rembg import RembgSegmentor
-
-        return RembgSegmentor()
-    from mtg_recognition.engine.segmentation.yolo import YoloSegmentor
-
-    return YoloSegmentor(fallback_enabled=mode == "auto")

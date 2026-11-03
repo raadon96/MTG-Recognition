@@ -1,10 +1,3 @@
-from .rembg import RembgSegmentor
-from .seg_utils import SegmentationResult, SegmentedCard
-from .yolo import YoloSegmentor
+from .segment import SegmentationMode, segment
 
-__all__ = [
-    "RembgSegmentor",
-    "YoloSegmentor",
-    "SegmentationResult",
-    "SegmentedCard",
-]
+__all__ = ["SegmentationMode", "segment"]
