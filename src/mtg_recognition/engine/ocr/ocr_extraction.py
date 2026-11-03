@@ -125,10 +125,6 @@ def filter_flavor_text_zone(
         if not (b[1] < y_thresh and b[2] < x_right)
     ]
 
-    # kept = [
-    #     (t, b, s) for t, b, s in zip(texts, boxes, scores) if not (b[1] < y_thresh)
-    # ]
-
     # Safety guard: never discard everything (e.g. unusual card layouts)
     if not kept:
         return texts, boxes, scores
@@ -222,6 +218,70 @@ def extract_power_toughness(
     return None, None
 
 
+def extract_collector_number_and_base_set_size(
+    rec_texts: list[str],
+) -> tuple[str | None, str | None]:
+    """
+    Extract collector number and base set size from OCR texts, as printed (leading
+    zeros included). Returns (collector_number, base_set_size).
+
+    Two-stage extraction:
+
+    Stage 1 — full <collector number>/<base set size> (e.g. "011/264", "100a/302",
+    "T001/T030"):
+    - Standard: 1-4 digits / 2-4 digits
+    - Optional lowercase/star suffix on either side (a-z, ★, †, ✦)
+    - Symmetric T/C prefix on both sides (T=token, C=commander)
+    Takes the longest match, to prefer collector numbers over P/T values.
+
+    Stage 2 — standalone <collector number>, for sets that omit the base set size
+    (e.g. "0214"); base_set_size is then None. Activated only when Stage 1 finds
+    nothing. See _extract_standalone_collector_number.
+    """
+    collector_number_fields: list[str] = []
+
+    def _search(text: str, boundary: bool) -> None:
+        prefix_re = _S1_BOUNDARY_PREFIX if boundary else _S1_NB_PREFIX
+        std_re = _S1_BOUNDARY_STD if boundary else _S1_NB_STD
+        m = prefix_re.search(text)
+        if m:
+            collector_number_fields.append(m.group(1))
+        m = std_re.search(text)
+        if m:
+            collector_number_fields.append(m.group(1))
+
+    # Pass 1: per-token with word boundaries
+    for text in rec_texts:
+        if text:
+            _search(_normalize_slash_variants(text), boundary=True)
+
+    # Pass 2: two-token concatenation (handles split across tokens)
+    for i in range(len(rec_texts) - 1):
+        _search(
+            _normalize_slash_variants(rec_texts[i] + rec_texts[i + 1]), boundary=True
+        )
+
+    # Pass 3: three-token concatenation (handles e.g. ["011", "/", "264"])
+    for i in range(len(rec_texts) - 2):
+        _search(
+            _normalize_slash_variants(
+                rec_texts[i] + rec_texts[i + 1] + rec_texts[i + 2]
+            ),
+            boundary=True,
+        )
+
+    # Pass 4: per-token without word boundaries (handles embedded, e.g. "C330/361EN")
+    for text in rec_texts:
+        if text:
+            _search(_normalize_slash_variants(text), boundary=False)
+
+    if not collector_number_fields:
+        return _extract_standalone_collector_number(rec_texts), None
+
+    collector_number, base_set_size = max(collector_number_fields, key=len).split("/")
+    return collector_number, base_set_size
+
+
 def _extract_standalone_collector_number(rec_texts: list[str]) -> str | None:
     """
     Stage 2: extract a standalone collector number when no
@@ -283,98 +343,7 @@ def _extract_standalone_collector_number(rec_texts: list[str]) -> str | None:
     return best
 
 
-def _extract_collector_number_field(rec_texts: list[str]) -> str | None:
-    """
-    Extract the raw printed collector number field from OCR tokens.
-
-    Returns the field exactly as printed on the card — either
-    "<collector number>/<base set size>" (e.g. "011/264", "100a/302", "T001/T030")
-    or a bare "<collector number>" for sets that omit the set size (e.g. "0214").
-
-    Two-stage extraction:
-
-    Stage 1 — full <collector number>/<base set size>:
-    - Standard: 1-4 digits / 2-4 digits
-    - Optional lowercase/star suffix on either side (a-z, ★, †, ✦)
-    - Symmetric T/C prefix on both sides (T=token, C=commander)
-    Uses longest-match strategy to prefer collector numbers over P/T values.
-
-    Stage 2 — standalone <collector number>:
-    Activated only when Stage 1 finds nothing. See _extract_standalone_collector_number.
-
-    Args:
-        rec_texts: List of OCR-recognized text strings
-
-    Returns:
-        Raw collector number field string or None
-    """
-    collector_number_fields: list[str] = []
-
-    def _search(text: str, boundary: bool) -> None:
-        prefix_re = _S1_BOUNDARY_PREFIX if boundary else _S1_NB_PREFIX
-        std_re = _S1_BOUNDARY_STD if boundary else _S1_NB_STD
-        m = prefix_re.search(text)
-        if m:
-            collector_number_fields.append(m.group(1))
-        m = std_re.search(text)
-        if m:
-            collector_number_fields.append(m.group(1))
-
-    # Pass 1: per-token with word boundaries
-    for text in rec_texts:
-        if text:
-            _search(_normalize_slash_variants(text), boundary=True)
-
-    # Pass 2: two-token concatenation (handles split across tokens)
-    for i in range(len(rec_texts) - 1):
-        _search(
-            _normalize_slash_variants(rec_texts[i] + rec_texts[i + 1]), boundary=True
-        )
-
-    # Pass 3: three-token concatenation (handles e.g. ["011", "/", "264"])
-    for i in range(len(rec_texts) - 2):
-        _search(
-            _normalize_slash_variants(
-                rec_texts[i] + rec_texts[i + 1] + rec_texts[i + 2]
-            ),
-            boundary=True,
-        )
-
-    # Pass 4: per-token without word boundaries (handles embedded, e.g. "C330/361EN")
-    for text in rec_texts:
-        if text:
-            _search(_normalize_slash_variants(text), boundary=False)
-
-    if collector_number_fields:
-        return max(collector_number_fields, key=len)
-
-    return _extract_standalone_collector_number(rec_texts)
-
-
-def extract_collector_number_and_base_set_size(
-    rec_texts: list[str],
-) -> tuple[str | None, str | None]:
-    """
-    Extract collector number and base set size from OCR texts, as printed (leading
-    zeros included).
-
-    Returns (collector_number, base_set_size). When only a standalone collector
-    number is found (Stage 2, no base set size), base_set_size is None.
-    """
-    collector_number_field = _extract_collector_number_field(rec_texts)
-    if collector_number_field is None:
-        return None, None
-    if "/" not in collector_number_field:
-        # Stage 2 result: standalone collector number, no base set size printed on card
-        return collector_number_field, None
-    collector_number, base_set_size = collector_number_field.split("/")
-    return collector_number, base_set_size
-
-
 def extract_card_name(texts: list[str]) -> str | None:
-    #
-    # filtered_list = [text.strip() for text in texts if len(text.strip()) > 1]
-
     filtered_list = [text.strip() for text in texts]
     filtered_list = list(filter(lambda text: len(text) >= 2, texts))
 

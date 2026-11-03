@@ -5,7 +5,7 @@ import numpy as np
 from mtg_recognition.engine.image import ImageSource, prepare_image
 from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
 from mtg_recognition.engine.ocr import scoring
-from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
+from mtg_recognition.engine.ocr.reading import Reading, load_paddleocr, read_card
 from mtg_recognition.engine.ranking import RankedPrinting
 from mtg_recognition.engine.segmentation import segment
 from mtg_recognition.reference.catalog import SqliteCardCatalog
@@ -62,7 +62,7 @@ class Pipeline:
         reference = ReferenceData.default()
         self.phash_index = load_phash_index(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
-        self.reader = PaddleCardReader()
+        self.paddleocr = load_paddleocr()
 
     def recognize(
         self, query_image: ImageSource, debug: bool = False
@@ -76,7 +76,7 @@ class Pipeline:
         Args:
             query_image: A path, encoded bytes, a file-like upload, a PIL image or an
                 already-decoded BGR array.
-            debug: When True, each reading holds the reader's debug artefacts.
+            debug: When True, each reading holds read_card's debug artefacts.
         """
         try:
             # prepare and segment the query image
@@ -104,7 +104,7 @@ class Pipeline:
                 reading: Reading | None = None
                 ocr_error: str | None = None
                 try:
-                    reading = self.reader.read(card_image, debug=debug)
+                    reading = read_card(self.paddleocr, card_image, debug=debug)
                 except RuntimeError as e:
                     ocr_error = f"{type(e).__name__}: {e}"
 
