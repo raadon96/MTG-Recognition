@@ -8,8 +8,11 @@ import shutil
 import subprocess
 import time
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from mtg_recognition.benchmark.results import (
     BASELINE_PATH,
@@ -29,7 +32,6 @@ from mtg_recognition.benchmark.results import (
     validate_manifest,
     write_results,
 )
-from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.reference.catalog import Printing, SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
 
@@ -47,6 +49,8 @@ def run() -> None:
     Exits non-zero when the manifest doesn't match the dataset, or when the results
     differ from the baseline in exact printing or card count, better or worse.
     """
+    run_at = datetime.now(UTC).isoformat(timespec="seconds")
+
     # check the manifest before loading any model
     manifest_path = DATASET_ROOT / MANIFEST_NAME
     if not manifest_path.exists():
@@ -75,6 +79,10 @@ def run() -> None:
         raise SystemExit(1)
 
     # recognise each query image at the pipeline's defaults
+    # imported here, not at the top: importing PaddleOCR takes seconds and prints
+    # a message, which every other `mtg` command would pay for
+    from mtg_recognition.engine.pipeline import Pipeline
+
     pipeline = Pipeline()
     images: dict[str, ImageOutcome] = {}
     for idx, (image, label) in enumerate(sorted(manifest.items()), 1):
@@ -97,7 +105,9 @@ def run() -> None:
         mark = "✓" if score.exact_printing and score.card_count else "✗"
         click.echo(f"[{idx}/{len(manifest)}] {mark} {image}  {runtime_s:.1f}s")
 
-    results = summarise(_commit(), reference.load_state().catalog_version, images)
+    results = summarise(
+        _commit(), reference.load_state().catalog_version, run_at, images
+    )
     write_results(results, LATEST_PATH)
     click.echo(f"\nResults written to {LATEST_PATH}")
 
@@ -111,7 +121,7 @@ def run() -> None:
         raise SystemExit(1)
     baseline = read_results(BASELINE_PATH)
     comparison = compare(results, baseline)
-    click.echo("\n".join(_comparison_report(results, baseline, comparison)))
+    click.echo("\n".join(comparison_report(results, baseline, comparison)))
     if comparison.differs:
         raise SystemExit(1)
 
@@ -160,6 +170,7 @@ def status(latest: bool, failures: bool) -> None:
     results = read_results(path)
     click.echo(f"{heading}: {path}")
     click.echo(f"Commit: {results.commit}")
+    click.echo(f"Date: {results.run_at or 'unknown'}")
     click.echo(f"MTGJSON: {results.mtgjson_version}")
     click.echo(totals_line(results.totals))
     click.echo(f"Runtime: {results.totals.runtime_s:.1f}s")
@@ -183,12 +194,13 @@ def status(latest: bool, failures: bool) -> None:
             click.echo(f"{latest_at} match the baseline")
 
     if failures:
-        click.echo("\n".join(_failure_lines(results)))
+        _print_failures(results)
 
 
-def _failure_lines(results: Results) -> list[str]:
-    """Each query image failing exact printing or card count, with its label from
-    the manifest, the printings recognised in it and its recognition error.
+def _print_failures(results: Results) -> None:
+    """A table of each query image failing exact printing or card count, with its
+    label from the manifest, the printings recognised in it and its recognition
+    error.
     """
     failing = {
         image: outcome
@@ -196,7 +208,8 @@ def _failure_lines(results: Results) -> list[str]:
         if not (outcome.score.exact_printing and outcome.score.card_count)
     }
     if not failing:
-        return ["Failures: none"]
+        click.echo("Failures: none")
+        return
 
     # the label is in the manifest, not the results, so it is the current label,
     # which may have changed since the run; without the dataset pulled, the
@@ -215,27 +228,36 @@ def _failure_lines(results: Results) -> list[str]:
         sorted(uuids)
     )
 
-    lines = ["Failures:"]
+    # the label and recognised printings come in different orders, so each cell
+    # lists its own, one per line, without pairing them
+    # fold rather than cut off with an ellipsis, so the image path stays whole and
+    # can be copied: on one line when the terminal is wide enough
+    table = Table(show_lines=True)
+    table.add_column("image", overflow="fold")
+    table.add_column("label", overflow="fold")
+    table.add_column("recognised", overflow="fold")
+    with_error = any(outcome.error is not None for outcome in failing.values())
+    if with_error:
+        table.add_column("error", overflow="fold")
     for image, outcome in failing.items():
         label = manifest.get(image)
-        label_names = (
-            _printing_names(label, printings) if label is not None else "unknown"
-        )
-        recognised_names = _printing_names(outcome.recognised, printings)
-        lines += [
-            f"  {image}",
-            f"    label: {label_names}",
-            f"    recognised: {recognised_names}",
+        cells = [
+            image,
+            _printing_names(label, printings) if label is not None else "unknown",
+            _printing_names(outcome.recognised, printings),
         ]
-        if outcome.error is not None:
-            lines.append(f"    error: {outcome.error}")
-    return lines
+        if with_error:
+            cells.append(outcome.error or "")
+        table.add_row(*cells)
+    click.echo("Failures:")
+    # markup off: an error message can hold square brackets
+    Console(markup=False, highlight=False).print(table)
 
 
 def _printing_names(uuids: Sequence[str | None], printings: dict[str, Printing]) -> str:
-    """`Lightning Bolt (M10), nothing`: the card name and set code of each UUID,
-    the bare UUID when the catalog lacks it, and `nothing` for a card without
-    candidates.
+    """`Lightning Bolt (M10)` and `nothing`, one per line: the card name and set
+    code of each UUID, the bare UUID when the catalog lacks it, and `nothing` for
+    a card without candidates.
     """
     names = []
     for uuid in uuids:
@@ -245,7 +267,7 @@ def _printing_names(uuids: Sequence[str | None], printings: dict[str, Printing])
             names.append(f"{printings[uuid].name} ({printings[uuid].set_code})")
         else:
             names.append(uuid)
-    return ", ".join(names) if names else "nothing"
+    return "\n".join(names) if names else "nothing"
 
 
 def _commit() -> str:
@@ -264,12 +286,14 @@ def _commit() -> str:
     return f"{head}-dirty" if status else head
 
 
-def _comparison_report(
+def comparison_report(
     results: Results, baseline: Results, comparison: Comparison
 ) -> list[str]:
     """Old vs new: the commits, the flips per image, the totals and the verdict."""
     lines = [
         f"Commit: {baseline.commit} (baseline) -> {results.commit} (now)",
+        f"Date: {baseline.run_at or 'unknown'} (baseline) -> "
+        f"{results.run_at or 'unknown'} (now)",
         f"MTGJSON: {baseline.mtgjson_version} (baseline) -> "
         f"{results.mtgjson_version} (now)",
         "",

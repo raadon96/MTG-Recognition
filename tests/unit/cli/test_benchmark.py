@@ -3,6 +3,7 @@ written in the test. The tests run in an empty directory, without model weights.
 """
 
 import json
+import re
 
 import pytest
 from click.testing import CliRunner
@@ -16,12 +17,13 @@ from mtg_recognition.benchmark.results import (
     ImageOutcome,
     ImageScore,
     Totals,
+    compare,
     read_results,
     summarise,
     write_results,
 )
 from mtg_recognition.cli import cli
-from mtg_recognition.cli.benchmark import totals_line
+from mtg_recognition.cli.benchmark import comparison_report, totals_line
 from mtg_recognition.reference.catalog import CatalogPrinting
 from mtg_recognition.reference.layout import ReferenceData
 
@@ -48,7 +50,17 @@ def in_tmp(tmp_path, monkeypatch):
 
 
 def status(*args: str):
-    return CliRunner().invoke(cli, ["benchmark", "status", *args])
+    # wide enough that rich doesn't wrap a table cell
+    return CliRunner(env={"COLUMNS": "200"}).invoke(cli, ["benchmark", "status", *args])
+
+
+def _table_rows(output: str) -> list[list[str]]:
+    """The cells of each line of the table in `output`, without its borders."""
+    return [
+        [cell.strip() for cell in re.split("[│┃]", line)[1:-1]]
+        for line in output.splitlines()
+        if line.startswith(("│", "┃"))
+    ]
 
 
 @pytest.mark.unit
@@ -68,10 +80,31 @@ def test_the_totals_line_names_each_metric() -> None:
 
 
 @pytest.mark.unit
+def test_the_run_report_dates_the_baseline_and_the_new_results() -> None:
+    baseline = summarise("abc123", "5.3.0", None, {"a": outcome(True)})
+    results = summarise(
+        "def456", "5.3.0", "2026-11-03T09:30:00+00:00", {"a": outcome(True)}
+    )
+
+    report = comparison_report(results, baseline, compare(results, baseline))
+
+    assert report[:3] == [
+        "Commit: abc123 (baseline) -> def456 (now)",
+        "Date: unknown (baseline) -> 2026-11-03T09:30:00+00:00 (now)",
+        "MTGJSON: 5.3.0 (baseline) -> 5.3.0 (now)",
+    ]
+
+
+@pytest.mark.unit
 class TestStatus:
     def test_summarises_the_baseline(self, in_tmp) -> None:
         write_results(
-            summarise("abc123", "5.3.0", {"a": outcome(True), "b": outcome(False)}),
+            summarise(
+                "abc123",
+                "5.3.0",
+                "2026-11-03T09:30:00+00:00",
+                {"a": outcome(True), "b": outcome(False)},
+            ),
             BASELINE_PATH,
         )
 
@@ -81,26 +114,32 @@ class TestStatus:
         assert result.output.splitlines() == [
             f"Baseline: {BASELINE_PATH}",
             "Commit: abc123",
+            "Date: 2026-11-03T09:30:00+00:00",
             "MTGJSON: 5.3.0",
             "exact printing 1/2, card count 2/2, same card name 1/2, OCR fallbacks 0",
             "Runtime: 3.0s",
         ]
 
     def test_latest_summarises_the_latest_results(self, in_tmp) -> None:
-        write_results(summarise("def456", "5.4.0", {}), LATEST_PATH)
+        write_results(summarise("def456", "5.4.0", None, {}), LATEST_PATH)
 
         result = status("--latest")
 
         assert result.exit_code == 0, result.output
-        assert result.output.splitlines()[:3] == [
+        assert result.output.splitlines()[:4] == [
             f"Latest results: {LATEST_PATH}",
             "Commit: def456",
+            "Date: unknown",
             "MTGJSON: 5.4.0",
         ]
 
     def test_reports_latest_results_that_match_the_baseline(self, in_tmp) -> None:
-        write_results(summarise("abc123", "5.3.0", {"a": outcome(True)}), BASELINE_PATH)
-        write_results(summarise("def456", "5.3.0", {"a": outcome(True)}), LATEST_PATH)
+        write_results(
+            summarise("abc123", "5.3.0", None, {"a": outcome(True)}), BASELINE_PATH
+        )
+        write_results(
+            summarise("def456", "5.3.0", None, {"a": outcome(True)}), LATEST_PATH
+        )
 
         result = status()
 
@@ -114,8 +153,8 @@ class TestStatus:
     ) -> None:
         baseline = {"a": outcome(True), "b": outcome(True), "gone": outcome(True)}
         latest = {"a": outcome(False), "b": outcome(True), "new": outcome(True)}
-        write_results(summarise("abc123", "5.3.0", baseline), BASELINE_PATH)
-        write_results(summarise("def456", "5.3.0", latest), LATEST_PATH)
+        write_results(summarise("abc123", "5.3.0", None, baseline), BASELINE_PATH)
+        write_results(summarise("def456", "5.3.0", None, latest), LATEST_PATH)
 
         result = status("--latest")
 
@@ -136,21 +175,50 @@ class TestStatus:
             "b.jpg": failing,
             "c.jpg": outcome(False, recognised=[UNKNOWN]),
         }
-        write_results(summarise("abc123", "5.3.0", images), BASELINE_PATH)
+        write_results(summarise("abc123", "5.3.0", None, images), BASELINE_PATH)
 
         result = status("--failures")
 
         assert result.exit_code == 0, result.output
-        assert result.output.splitlines()[5:] == [
-            "Failures:",
-            "  b.jpg",
-            "    label: Lightning Bolt (M10), Realm-Cloaked Giant // Cast Off (ZNR)",
-            "    recognised: nothing",
-            "    error: ValueError: unreadable",
-            "  c.jpg",
-            "    label: Lightning Bolt (M10)",
-            f"    recognised: {UNKNOWN}",
+        assert _table_rows(result.output) == [
+            ["image", "label", "recognised", "error"],
+            [
+                "b.jpg",
+                "Lightning Bolt (M10)",
+                "nothing",
+                "ValueError: unreadable",
+            ],
+            ["", "Realm-Cloaked Giant // Cast Off (ZNR)", "", ""],
+            ["c.jpg", "Lightning Bolt (M10)", UNKNOWN, ""],
         ]
+
+    def test_failures_show_the_error_column_only_when_an_error_exists(
+        self, in_tmp
+    ) -> None:
+        _write_catalog(in_tmp)
+        DATASET_ROOT.mkdir(parents=True)
+        (DATASET_ROOT / MANIFEST_NAME).write_text(json.dumps({"a.jpg": [GIANT]}))
+        images = {"a.jpg": outcome(False, recognised=[BOLT, GIANT])}
+        write_results(summarise("abc123", "5.3.0", None, images), BASELINE_PATH)
+
+        result = status("--failures")
+
+        assert result.exit_code == 0, result.output
+        assert _table_rows(result.output) == [
+            ["image", "label", "recognised"],
+            ["a.jpg", "Realm-Cloaked Giant // Cast Off (ZNR)", "Lightning Bolt (M10)"],
+            ["", "", "Realm-Cloaked Giant // Cast Off (ZNR)"],
+        ]
+
+    def test_no_failures_say_so(self, in_tmp) -> None:
+        write_results(
+            summarise("abc123", "5.3.0", None, {"a": outcome(True)}), BASELINE_PATH
+        )
+
+        result = status("--failures")
+
+        assert result.exit_code == 0, result.output
+        assert result.output.splitlines()[-1] == "Failures: none"
 
     def test_a_missing_baseline_names_the_command_that_creates_it(self, in_tmp) -> None:
         result = status()
@@ -164,7 +232,7 @@ class TestStatus:
     def test_missing_latest_results_name_the_command_that_creates_them(
         self, in_tmp
     ) -> None:
-        write_results(summarise("abc123", "5.3.0", {}), BASELINE_PATH)
+        write_results(summarise("abc123", "5.3.0", None, {}), BASELINE_PATH)
 
         result = status("--latest")
 
@@ -208,7 +276,7 @@ def _write_catalog(root) -> None:
 
 @pytest.mark.unit
 def test_update_baseline_adopts_the_latest_results(in_tmp) -> None:
-    latest = summarise("abc123", "5.3.0", {})
+    latest = summarise("abc123", "5.3.0", None, {})
     write_results(latest, LATEST_PATH)
 
     result = CliRunner().invoke(cli, ["benchmark", "update-baseline"])

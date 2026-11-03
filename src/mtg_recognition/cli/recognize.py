@@ -7,7 +7,6 @@ from pathlib import Path
 import click
 
 from mtg_recognition.cli.segment import query_image_paths
-from mtg_recognition.engine.pipeline import Pipeline
 
 
 @click.command(name="recognize")
@@ -67,6 +66,10 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
 
     if output_file is not None:
         output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # imported here, not at the top: importing PaddleOCR takes seconds and prints
+    # a message, which every other `mtg` command would pay for
+    from mtg_recognition.engine.pipeline import Pipeline
 
     pipeline = Pipeline(k_phash_candidates=k_phash, k_final_results=k)
     total = len(img_paths)
