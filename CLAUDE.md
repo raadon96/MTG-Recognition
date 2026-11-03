@@ -92,7 +92,7 @@ Feature PRs go into `dev` and are squash-merged, with GitHub's default commit me
 
 When the user asks to open a PR (without saying "main", which starts a release), start at step 1. When the user says "merge" on an open feature PR, start at step 2.
 
-1. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, ending with `(#<issue>)` when there is an issue, e.g. `fix: read the collector number from the right crop (#42)`.
+1. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, e.g. `fix: read the collector number from the right crop (#42)`. When there is an issue, end the title with `(#<issue>)` and start the body with `Closes #<issue>` and a blank line.
 2. Wait for CI: `gh pr checks <pr> --watch`. This can take several minutes; if no checks are reported yet, wait a few seconds and retry. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix. If CI passes and the user hasn't already said "merge", ask whether to merge, and stop unless they say yes.
 3. `gh pr merge <pr> --squash`
 4. `git switch dev && git pull`
