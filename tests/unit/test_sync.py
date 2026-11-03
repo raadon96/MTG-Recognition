@@ -299,6 +299,21 @@ class TestUpdate:
         assert indexed_uuids(reference) == ALL_V1
         assert not reference.log_file.exists()
 
+    def test_printing_that_loses_its_image_url_loses_its_phash(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        bolt_without_url = (*PRINTINGS_V1[0][:2], None, *PRINTINGS_V1[0][3:])
+        network.publish(V2, [bolt_without_url, *PRINTINGS_V1[1:]])
+
+        with network.client() as client:
+            result = update(reference, client, workers=1)
+
+        assert result.build is not None
+        assert result.build.without_phash == 1
+        assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
+
     def test_build_with_no_phash_keeps_no_catalog_and_resumes(
         self, reference, network
     ) -> None:

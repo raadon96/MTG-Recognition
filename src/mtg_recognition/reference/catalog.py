@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import Engine, MetaData, text
+from sqlalchemy import Engine, MetaData, func, text
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Field, Session, SQLModel, col, select
 
@@ -99,6 +99,17 @@ def read_phashes(catalog_path: Path) -> list[tuple[str, bytes]]:
         )
         with Session(engine) as session:
             return [(uuid, phash) for uuid, phash in session.exec(statement).all()]
+    finally:
+        engine.dispose()
+
+
+def count_phashes(catalog_path: Path) -> int:
+    """Number of printings in the catalog that have a pHash."""
+    engine = open_read_only(catalog_path)
+    try:
+        statement = select(func.count()).where(col(CatalogPrinting.phash).is_not(None))
+        with Session(engine) as session:
+            return session.exec(statement).one()
     finally:
         engine.dispose()
 

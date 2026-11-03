@@ -31,6 +31,7 @@ from mtg_recognition.reference.catalog import (
     CatalogMeta,
     CatalogPrinting,
     catalog_version,
+    count_phashes,
     read_image_urls,
     read_phashes,
 )
@@ -105,10 +106,10 @@ def extract_year(releaseDate: str) -> str | None:
     return releaseDate.split("-")[0]
 
 
-def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
+def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
     """Write the catalog at `catalog_path`, a new file, from AllPrintings,
     streaming the rows; every printing is written without a pHash. The `meta`
-    table gets AllPrintings' release. Returns the number of printings.
+    table gets AllPrintings' release, which is returned.
     """
     catalog_path.parent.mkdir(parents=True, exist_ok=True)
     source_engine = open_read_only(allprintings_path)
@@ -165,7 +166,6 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
 
             batch = []
             batch_size = 5000
-            total_migrated = 0
 
             for row in tqdm(results_stream, desc="Processing Cards", unit=" card"):
                 # Each face of a double-faced card is a printing of its own,
@@ -197,17 +197,15 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> int:
                 if len(batch) >= batch_size:
                     dest_session.add_all(batch)
                     dest_session.commit()
-                    total_migrated += len(batch)
                     batch = []
 
             if batch:
                 dest_session.add_all(batch)
                 dest_session.commit()
-                total_migrated += len(batch)
     finally:
         source_engine.dispose()
         dest_engine.dispose()
-    return total_migrated
+    return version
 
 
 # ---------------------------------------------------------------------------
@@ -471,9 +469,14 @@ def build(
     try:
         with _replacing(reference.catalog_path) as part_path:
             console.print("Building the catalog...")
-            build_catalog(reference.allprintings_path, part_path)
+            built_version = build_catalog(reference.allprintings_path, part_path)
             urls = read_image_urls(part_path)
-            reused = {uuid: previous[uuid] for uuid in urls.keys() & previous.keys()}
+            # a printing that lost its image URL loses its pHash with it
+            reused = {
+                uuid: previous[uuid]
+                for uuid, url in urls.items()
+                if url is not None and uuid in previous
+            }
             to_hash = {
                 uuid: url
                 for uuid, url in urls.items()
@@ -518,7 +521,7 @@ def build(
         _write_image_log(reference, [*failed, *unhashable])
 
     return BuildReport(
-        version=catalog_version(reference.catalog_path) or version,
+        version=built_version,
         allprintings_downloaded=allprintings_downloaded,
         removed=len(stray),
         downloaded=len(to_download) - len(failed),
@@ -564,7 +567,7 @@ def status(reference: ReferenceData, client: httpx.Client) -> Status:
     with_url = [uuid for uuid, url in urls.items() if url is not None]
     present = sum(reference.image_path(uuid).exists() for uuid in with_url)
     # a catalog from before ADR 0006 has no phash column
-    phashes = len(read_phashes(reference.catalog_path)) if version is not None else 0
+    phashes = count_phashes(reference.catalog_path) if version is not None else 0
     return Status(
         catalog_version=version,
         without_phash=len(urls) - phashes,
