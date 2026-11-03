@@ -5,7 +5,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from .geometry import find_corners_lines_intersect, perspective_transform
+from .geometry import find_corners_lines_intersect
 
 # MTG standard card dimensions: 63 mm × 88 mm (portrait)
 CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
@@ -69,14 +69,41 @@ def clamp_size(
     return out_w, out_h
 
 
-def warp_card(img: np.ndarray, corners: np.ndarray) -> np.ndarray:
-    """Perspective-transform, orient to portrait, and size the output.
+def warp_card(query_image: np.ndarray, corners: np.ndarray) -> np.ndarray:
+    """The card image inside four corners of the query image: straightened,
+    upright, and at its natural size clamped between CARD_IMAGE_MIN_SIZE and
+    CARD_IMAGE_MAX_SIZE.
 
-    The output resolution is the natural size derived from the corner distances
-    (as computed by perspective_transform), clamped between CARD_IMAGE_MIN_SIZE
-    (minimum) and CARD_IMAGE_MAX_SIZE (maximum).
+    Args:
+        query_image: BGR query image.
+        corners: Integer corners in any order, shape (4, 1, 2).
     """
-    card_image = perspective_transform(img, corners)
+    # Order the corners: the top-left has the smallest x + y, the bottom-right
+    # the largest; the top-right has the smallest y - x, the bottom-left the
+    # largest
+    points = corners.reshape(4, 2).astype(np.intp)
+    sums = points.sum(axis=1)
+    diffs = np.diff(points, axis=1).ravel()
+    tl, tr, br, bl = (
+        points[np.argmin(sums)],
+        points[np.argmin(diffs)],
+        points[np.argmax(sums)],
+        points[np.argmax(diffs)],
+    )
+
+    # Natural size: the longer side of each pair of opposite sides, truncated
+    width = max(int(_side_length(br, bl)), int(_side_length(tr, tl)))
+    height = max(int(_side_length(tr, br)), int(_side_length(tl, bl)))
+
+    # Straighten
+    source = np.array([tl, tr, br, bl], dtype=np.float32)
+    destination = np.array(
+        [[0, 0], [width, 0], [width, height], [0, height]], dtype=np.float32
+    )
+    transform = cv2.getPerspectiveTransform(source, destination)
+    card_image = cv2.warpPerspective(query_image, transform, (width, height))
+
+    # Turn upright and clamp the size
     h, w = card_image.shape[:2]
     if w > h:
         card_image = cv2.rotate(card_image, cv2.ROTATE_90_CLOCKWISE)
@@ -86,6 +113,10 @@ def warp_card(img: np.ndarray, corners: np.ndarray) -> np.ndarray:
     if (out_w, out_h) == (w, h):
         return card_image
     return cv2.resize(card_image, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+
+
+def _side_length(a: np.ndarray, b: np.ndarray) -> float:
+    return float(np.sqrt(((a - b) ** 2).sum()))
 
 
 def valid_aspect_ratio(corners: np.ndarray) -> bool:

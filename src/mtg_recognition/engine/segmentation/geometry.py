@@ -1,12 +1,8 @@
-"""Geometric helpers for card corner detection and perspective correction.
+"""Geometric helpers for card corner detection.
 
 All coordinates follow OpenCV's ``(x, y)`` convention. Corner arrays use the
 OpenCV contour format: shape ``(N, 1, 2)`` int32 unless stated otherwise.
-The canonical four-corner order throughout is: top-left, top-right,
-bottom-right, bottom-left (as produced by :func:`order_points`).
 """
-
-from collections.abc import Sequence
 
 import cv2
 import numpy as np
@@ -249,102 +245,3 @@ def compute_intersection(line1: np.ndarray, line2: np.ndarray) -> list[float] | 
     y = y1 + t1 * vy1
 
     return [float(x), float(y)]
-
-
-def order_points(pts: Sequence[Sequence[float]]) -> list[list[int]]:
-    """
-    Rearrange coordinates to order: top-left, top-right, bottom-right, bottom-left
-
-    Args:
-        pts (Sequence[Sequence[float]]): 4 points in the format of (x, y)
-
-    Returns:
-        List[List[int]]: List of 4 points in the format of
-        [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-    """
-    rect = np.zeros((4, 2), dtype=np.float32)
-    pts_arr = np.array(pts)
-    s = pts_arr.sum(axis=1)
-
-    # Top-left has smallest sum, Bottom-right has largest
-    rect[0] = pts_arr[np.argmin(s)]
-    rect[2] = pts_arr[np.argmax(s)]
-
-    diff = np.diff(pts_arr, axis=1).ravel()
-    # Top-right has smallest diff, Bottom-left has largest
-    rect[1] = pts_arr[np.argmin(diff)]
-    rect[3] = pts_arr[np.argmax(diff)]
-
-    return rect.astype(np.intp).tolist()
-
-
-def find_dest(pts: list[list[int]]) -> list[list[int]]:
-    """
-    Calculate the destination dimensions (width/height) for perspective transform.
-
-    Parameters
-    ----------
-    pts : list[list[int]]
-        Four corner points in top-left, top-right, bottom-right, bottom-left order
-        (as returned by :func:`order_points`).
-
-    Returns
-    -------
-    list[list[int]]
-        Destination corners in the same canonical order.
-    """
-    (tl, tr, br, bl) = pts
-
-    widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
-    widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
-    maxWidth = max(int(widthA), int(widthB))
-
-    heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
-    heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-    maxHeight = max(int(heightA), int(heightB))
-
-    destination_corners = [
-        [0, 0],
-        [maxWidth, 0],
-        [maxWidth, maxHeight],
-        [0, maxHeight],
-    ]
-    # order_points is redundant here (corners are already canonical), but kept
-    # to ensure the output contract is satisfied even for degenerate inputs.
-    return order_points(destination_corners)
-
-
-def perspective_transform(
-    img: np.ndarray,
-    corners: np.ndarray,
-) -> np.ndarray:
-    """
-    Warps the perspective of the found contour from the original image.
-
-    Parameters
-    ----------
-    img : np.ndarray
-        Input image
-    corners : np.ndarray
-        4 corner points of the contour in the image, shape (4, 1, 2).
-
-    Returns
-    -------
-    np.ndarray
-        Warped image
-    """
-    if corners.shape != (4, 1, 2):
-        raise ValueError(f"corners must have shape (4, 1, 2), got {corners.shape}")
-
-    ordered_corners = order_points(np.concatenate(corners).tolist())
-
-    dest_corners = find_dest(ordered_corners)
-    w, h = dest_corners[2][0], dest_corners[2][1]
-
-    M = cv2.getPerspectiveTransform(
-        np.array(ordered_corners, dtype=np.float32),
-        np.array(dest_corners, dtype=np.float32),
-    )
-    warped = cv2.warpPerspective(img, M, (w, h))
-
-    return warped
