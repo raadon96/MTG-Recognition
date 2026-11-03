@@ -116,7 +116,7 @@ class TestLoadPHashes:
 
         phashes = load_phashes(reference)
 
-        assert phashes.uuids == ["uuid-bolt", "uuid-aberration"]
+        assert phashes.uuids == ["uuid-aberration", "uuid-bolt"]
         assert phashes.hashes.shape == (2, 32)
 
     def test_catalog_without_phashes_raises(self, tmp_path, network) -> None:

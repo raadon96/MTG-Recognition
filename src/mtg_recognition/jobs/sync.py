@@ -160,6 +160,9 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                 )
                 .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
                 .join(Sets, Cards.setCode == Sets.code)
+                # Candidates with the same similarity keep the catalog's order
+                # (#146); ordering by UUID keeps it the same across releases.
+                .order_by(CardIdentifiers.uuid)
             )
 
             # Stream results (fetch only 1000 rows at a time, crucial for memory)
