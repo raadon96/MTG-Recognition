@@ -11,7 +11,8 @@ from mtg_recognition.cli import cli
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "command", ["recognize", "segment", "status", "update", "benchmark"]
+    "command",
+    ["recognize", "segment", "status", "update", "download-images", "benchmark"],
 )
 def test_help_lists_every_command(command) -> None:
     result = CliRunner().invoke(cli, ["--help"])

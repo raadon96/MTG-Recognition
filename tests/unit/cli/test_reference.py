@@ -1,13 +1,23 @@
-"""The summaries `mtg status` and `mtg update` print, on results built in the
-test.
+"""The summaries `mtg status`, `mtg update` and `mtg download-images` print, on
+results built in the test.
 """
 
 from dataclasses import replace
 
 import pytest
 
-from mtg_recognition.cli.reference import status_summary, update_summary
-from mtg_recognition.jobs.sync import BuildReport, ImageFailure, Status, UpdateResult
+from mtg_recognition.cli.reference import (
+    download_images_summary,
+    status_summary,
+    update_summary,
+)
+from mtg_recognition.jobs.sync import (
+    BuildReport,
+    DownloadReport,
+    ImageFailure,
+    Status,
+    UpdateResult,
+)
 from mtg_recognition.reference.layout import ReferenceData
 from tests.unit.sync_fakes import V1, V2
 
@@ -127,3 +137,21 @@ class TestStatusSummary:
         _, next_step = status_summary(replace(STATUS, latest_version=V2))
 
         assert next_step == "Run: mtg update"
+
+
+@pytest.mark.unit
+class TestDownloadImagesSummary:
+    def test_no_failure_is_one_line(self, reference) -> None:
+        lines = download_images_summary(reference, DownloadReport(3, failed=()))
+
+        assert lines == ["Reference images: 3 downloaded, 0 failed"]
+
+    def test_failed_downloads_point_to_the_log(self, reference) -> None:
+        failure = ImageFailure("uuid-bolt", "https://x", "download", "HTTP 404")
+
+        lines = download_images_summary(reference, DownloadReport(2, (failure,)))
+
+        assert lines == [
+            "Reference images: 2 downloaded, 1 failed",
+            f"Image failures written to {reference.log_file}",
+        ]

@@ -110,6 +110,12 @@ mtg status
 ```
 The catalog (`data/reference/catalog.sqlite`), which holds each printing's pHash, is committed to git, so recognition works right after cloning. `mtg status` shows the MTGJSON release it was built from, how many printings have no pHash, the reference images on disk and the latest MTGJSON release, then the command to run, if any.
 
+**Optional — download the reference images:**
+```bash
+mtg download-images
+```
+Recognition doesn't need the reference images, only the pHashes in the catalog. To look at them, for example to compare a card image with its candidates' reference images while debugging matching, this downloads the images missing from `data/reference/images/` for the printings in the committed catalog (~116k images, ~11 GB on a first run). It changes nothing else: it doesn't download MTGJSON, rebuild the catalog or compute pHashes. Failed downloads are written to `data/reference/image_errors.log`, as with `mtg update`; running it again downloads only what is still missing.
+
 **Maintainers only — build the reference data from a new MTGJSON release:**
 ```bash
 mtg update

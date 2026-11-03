@@ -24,7 +24,7 @@ src/mtg_recognition/
 └── cli/           the `mtg` group and its commands; the only package that imports Click
     ├── recognize.py     `mtg recognize`
     ├── segment.py       `mtg segment`
-    ├── reference.py     `mtg status`, `mtg update`
+    ├── reference.py     `mtg status`, `mtg update`, `mtg download-images`
     └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`, `mtg benchmark status`
 data/reference/    the reference data
 models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
@@ -145,7 +145,8 @@ uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
-uv run mtg --help                    # recognize, segment, status, update, benchmark
+uv run mtg --help                    # recognize, segment, status, update, download-images, benchmark
+uv run mtg download-images           # download the reference images missing for the committed catalog; changes nothing else
 uv run mtg benchmark status          # summarise the baseline (--latest: the latest results; --failures: list failing images)
 uv run mtg benchmark run             # recognise the labelled images; non-zero on any change from the baseline
 uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto data/benchmark-baseline.json

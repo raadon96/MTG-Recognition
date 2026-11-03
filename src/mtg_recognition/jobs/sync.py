@@ -1,4 +1,5 @@
-"""Reference data jobs, run by `mtg status` and `mtg update`.
+"""Reference data jobs, run by `mtg status`, `mtg update` and
+`mtg download-images`.
 
 The catalog, which holds each printing's pHash and the MTGJSON release it was
 built from (ADR 0006), is committed; the reference images are a local cache,
@@ -394,6 +395,14 @@ class BuildReport:
 
 
 @dataclass(frozen=True)
+class DownloadReport:
+    """Outcome of downloading the missing reference images of the catalog."""
+
+    downloaded: int
+    failed: tuple[ImageFailure, ...]
+
+
+@dataclass(frozen=True)
 class UpdateResult:
     latest_version: str
     catalog_version: str | None
@@ -485,11 +494,7 @@ def build(
 
             # reference images: download those to hash
             console.print("\n[bold]--- Reference images ---[/bold]")
-            to_download = {
-                uuid: url
-                for uuid, url in to_hash.items()
-                if force or not reference.image_path(uuid).exists()
-            }
+            to_download = to_hash if force else _missing_images(reference, to_hash)
             failed = download_images(reference, client, to_download)
 
             # pHashes; an image that fails to hash is deleted, so the next build
@@ -534,6 +539,15 @@ def build(
     )
 
 
+def _missing_images(reference: ReferenceData, urls: dict[str, str]) -> dict[str, str]:
+    """The printings in `urls` (UUID -> image URL) without an image on disk."""
+    return {
+        uuid: url
+        for uuid, url in urls.items()
+        if not reference.image_path(uuid).exists()
+    }
+
+
 def _write_phashes(catalog_path: Path, phashes: dict[str, bytes]) -> None:
     """Set the pHash of each printing in `phashes` (UUID -> packed pHash)."""
     engine = create_engine(f"sqlite:///{catalog_path}")
@@ -565,15 +579,33 @@ def status(reference: ReferenceData, client: httpx.Client) -> Status:
         latest = None
     version = catalog_version(reference.catalog_path)
     urls = read_image_urls(reference.catalog_path)
-    with_url = [uuid for uuid, url in urls.items() if url is not None]
-    present = sum(reference.image_path(uuid).exists() for uuid in with_url)
+    with_url = {uuid: url for uuid, url in urls.items() if url is not None}
+    missing = len(_missing_images(reference, with_url))
     # a catalog from before ADR 0006 has no phash column
     phashes = count_phashes(reference.catalog_path) if version is not None else 0
     return Status(
         catalog_version=version,
         without_phash=len(urls) - phashes,
         allprintings_version=allprintings_version(reference),
-        images_present=present,
-        images_missing=len(with_url) - present,
+        images_present=len(with_url) - missing,
+        images_missing=missing,
         latest_version=latest,
     )
+
+
+def download_missing_images(
+    reference: ReferenceData, client: httpx.Client
+) -> DownloadReport:
+    """Download the reference images missing from disk for the printings in the
+    catalog. Changes nothing else in the reference data: no MTGJSON download, no
+    catalog rebuild, no pHash. Failures are written to `reference.log_file`.
+    """
+    urls = read_image_urls(reference.catalog_path)
+    with_url = {uuid: url for uuid, url in urls.items() if url is not None}
+    to_download = _missing_images(reference, with_url)
+    failed = download_images(reference, client, to_download)
+    # without a failure, keep the log of the last build: it also lists the images
+    # that failed to hash, which this command doesn't report again
+    if failed:
+        _write_image_log(reference, list(failed))
+    return DownloadReport(downloaded=len(to_download) - len(failed), failed=failed)

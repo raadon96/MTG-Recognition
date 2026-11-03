@@ -12,6 +12,7 @@ def cli() -> None:
 
 cli.add_command(reference.status)
 cli.add_command(reference.update)
+cli.add_command(reference.download_images)
 cli.add_command(segment.segment)
 cli.add_command(recognize.recognize)
 cli.add_command(benchmark.benchmark)

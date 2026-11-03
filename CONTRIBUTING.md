@@ -51,6 +51,14 @@ uv run mtg benchmark status --failures # also list the images that fail exact pr
 
 `run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, date, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` prints a table of the failing images, with the printings of each label and the recognised printings one per line, and the recognition error when there is one; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
 
+### Download the reference images
+
+```bash
+uv run mtg download-images
+```
+
+Matching compares pHashes stored in the catalog, so the reference images aren't needed to recognise cards or run the tests. To compare a card image with its candidates' reference images while debugging matching, `download-images` fills `data/reference/images/` with the images missing for the printings in the committed catalog (~11 GB on a first run). It leaves the catalog unchanged, unlike `mtg update`, which may download a newer MTGJSON release and rebuild it.
+
 ### The benchmark in CI
 
 The `engine` workflow (`.github/workflows/engine.yml`) runs `pytest -m slow` and `mtg benchmark run` on every PR, except PRs that only change Markdown files, `docs/` or `.claude/`. It pulls `data/benchmark.dvc` with the `dataset-reader` key in the `GDRIVE_CREDENTIALS_DATA` secret, and uploads `output/benchmark/latest.json` as the `benchmark-latest` artifact. It caches the dataset and the files the libraries download on first use; the comments in `engine.yml` say what each cache is keyed on. A PR can restore its own caches, those of its base branch and those of `main`, the default branch, which every branch can read. GitHub deletes a cache that no run has restored for 7 days. So after the dataset or `uv.lock` changes, or after a week with no engine run, run the workflow by hand on `main` (Actions → engine → Run workflow): its caches serve every PR. A docs-only PR reports no `engine` check at all, so don't make it a required check.
