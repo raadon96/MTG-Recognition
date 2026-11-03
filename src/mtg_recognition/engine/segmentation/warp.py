@@ -1,18 +1,7 @@
-"""Shared geometric helpers for card segmentation."""
-
-from __future__ import annotations
+"""Straightening a card image out of the query image."""
 
 import cv2
 import numpy as np
-
-from .geometry import find_corners_lines_intersect
-
-# MTG standard card dimensions: 63 mm × 88 mm (portrait)
-CARD_ASPECT_RATIO = 63.0 / 88.0  # ≈ 0.716
-
-# Allowed relative deviation from CARD_ASPECT_RATIO for a found card: 0.2
-# accepts ratios in [0.57, 0.86]
-ASPECT_RATIO_TOLERANCE = 0.2
 
 # Canonical minimum output size for a perspective-corrected card (width × height),
 # consistent with the Scryfall "normal" card size (488 × 680) and the precomputed
@@ -23,50 +12,6 @@ CARD_IMAGE_MIN_SIZE: tuple[int, int] = (488, 680)
 # this ceiling so that close-up phone photos don't produce unbounded images.
 # 2× CARD_IMAGE_MIN_SIZE keeps per-card memory and temp-file sizes predictable.
 CARD_IMAGE_MAX_SIZE: tuple[int, int] = (976, 1360)
-
-
-def corners_from_binary_mask(mask: np.ndarray) -> np.ndarray | None:
-    """
-    Extract 4 card corners from a binary mask.
-
-    Applies polygon approximation with a Hough line-intersection fallback.
-
-    Args:
-        mask: Binary uint8 mask (0/255), same spatial size as the source image.
-
-    Returns:
-        np.ndarray of shape (4, 1, 2), or None if 4 corners could not be found.
-    """
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return None
-    contour = max(contours, key=cv2.contourArea)
-
-    epsilon = 0.02 * cv2.arcLength(contour, True)
-    corners = cv2.approxPolyDP(contour, epsilon, True)
-
-    if len(corners) == 4:
-        return corners
-
-    corners = find_corners_lines_intersect(contour)
-    if corners is not None:
-        return corners
-
-    return None
-
-
-def clamp_size(
-    size: tuple[int, int],
-    min_size: tuple[int, int],
-    max_size: tuple[int, int],
-) -> tuple[int, int]:
-    """Clamp a (width, height) size to be within the given min and max bounds."""
-    w, h = size
-    min_w, min_h = min_size
-    max_w, max_h = max_size
-    out_w = min(max(w, min_w), max_w)
-    out_h = min(max(h, min_h), max_h)
-    return out_w, out_h
 
 
 def warp_card(query_image: np.ndarray, corners: np.ndarray) -> np.ndarray:
@@ -119,15 +64,15 @@ def _side_length(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.sqrt(((a - b) ** 2).sum()))
 
 
-def valid_aspect_ratio(corners: np.ndarray) -> bool:
-    """Return True if the quad formed by corners has an MTG-card aspect ratio."""
-    pts = corners.reshape(4, 2).astype(float)
-    sides = [np.linalg.norm(pts[i] - pts[(i + 1) % 4]) for i in range(4)]
-    pair_a = (sides[0] + sides[2]) / 2
-    pair_b = (sides[1] + sides[3]) / 2
-    if max(pair_a, pair_b) < 1e-6:
-        return False
-    ratio = min(pair_a, pair_b) / max(pair_a, pair_b)
-    lo = CARD_ASPECT_RATIO * (1 - ASPECT_RATIO_TOLERANCE)
-    hi = CARD_ASPECT_RATIO * (1 + ASPECT_RATIO_TOLERANCE)
-    return bool(lo <= ratio <= hi)
+def clamp_size(
+    size: tuple[int, int],
+    min_size: tuple[int, int],
+    max_size: tuple[int, int],
+) -> tuple[int, int]:
+    """Clamp a (width, height) size to be within the given min and max bounds."""
+    w, h = size
+    min_w, min_h = min_size
+    max_w, max_h = max_size
+    out_w = min(max(w, min_w), max_w)
+    out_h = min(max(h, min_h), max_h)
+    return out_w, out_h

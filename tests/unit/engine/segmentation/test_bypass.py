@@ -5,7 +5,7 @@ its card aspect ratio and dark card border.
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.seg_utils import CARD_ASPECT_RATIO
+from mtg_recognition.engine.segmentation.corners import CARD_ASPECT_RATIO
 from mtg_recognition.engine.segmentation.segment import (
     scan_bypass_card_image,
     takes_scan_bypass,
@@ -62,10 +62,10 @@ def test_the_border_must_be_darker_than_100(grey, expected):
 
 
 def test_a_scan_within_the_size_limits_keeps_its_size():
-    card = scan_bypass_card_image(np.zeros((880, 630, 3), dtype=np.uint8))
-    assert card.shape[:2] == (880, 630)
+    card_image = scan_bypass_card_image(np.zeros((880, 630, 3), dtype=np.uint8))
+    assert card_image.shape[:2] == (880, 630)
 
 
 def test_a_landscape_scan_is_turned_upright():
-    card = scan_bypass_card_image(np.zeros((630, 880, 3), dtype=np.uint8))
-    assert card.shape[:2] == (880, 630)
+    card_image = scan_bypass_card_image(np.zeros((630, 880, 3), dtype=np.uint8))
+    assert card_image.shape[:2] == (880, 630)

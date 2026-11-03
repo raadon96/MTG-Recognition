@@ -14,16 +14,13 @@ import numpy as np
 
 from mtg_recognition.settings import settings
 
-from .seg_utils import (
+from .corners import (
     CARD_ASPECT_RATIO,
-    CARD_IMAGE_MAX_SIZE,
-    CARD_IMAGE_MIN_SIZE,
-    clamp_size,
+    card_corners_from_outline,
     corners_from_binary_mask,
     valid_aspect_ratio,
-    warp_card,
 )
-from .yolo import card_corners_from_outline
+from .warp import CARD_IMAGE_MAX_SIZE, CARD_IMAGE_MIN_SIZE, clamp_size, warp_card
 
 if TYPE_CHECKING:
     from rembg.sessions.base import BaseSession
@@ -119,26 +116,6 @@ def segment(
             )
 
 
-@cache
-def _yolo_model() -> YOLO:
-    from ultralytics import YOLO
-
-    model = YOLO(str(settings.YOLO_SEG_MODEL_PATH), task="segment")
-    if model.model is None:
-        raise ValueError(
-            f"Failed to load YOLO model from {settings.YOLO_SEG_MODEL_PATH}"
-        )
-    model.set_classes(_YOLO_CLASSES)
-    return model
-
-
-@cache
-def _rembg_session() -> BaseSession:
-    from rembg import new_session
-
-    return new_session(_REMBG_MODEL)
-
-
 def takes_scan_bypass(query_image: np.ndarray) -> bool:
     """Whether a query image is already a card image: card ratio, dark border."""
     h, w = query_image.shape[:2]
@@ -216,6 +193,19 @@ def enhance_contrast(img: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
 
 
+@cache
+def _yolo_model() -> YOLO:
+    from ultralytics import YOLO
+
+    model = YOLO(str(settings.YOLO_SEG_MODEL_PATH), task="segment")
+    if model.model is None:
+        raise ValueError(
+            f"Failed to load YOLO model from {settings.YOLO_SEG_MODEL_PATH}"
+        )
+    model.set_classes(_YOLO_CLASSES)
+    return model
+
+
 def box_card_images(
     enhanced_image: np.ndarray, query_image: np.ndarray
 ) -> list[np.ndarray]:
@@ -288,6 +278,13 @@ def rembg_card_images(query_image: np.ndarray) -> list[np.ndarray]:
             continue
         card_images.append(warp_card(query_image, corners))
     return card_images
+
+
+@cache
+def _rembg_session() -> BaseSession:
+    from rembg import new_session
+
+    return new_session(_REMBG_MODEL)
 
 
 def rembg_blob_corners(blob_mask: np.ndarray) -> np.ndarray | None:

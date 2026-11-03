@@ -6,10 +6,10 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.yolo import card_corners_from_outline
+from mtg_recognition.engine.segmentation.corners import card_corners_from_outline
 
 # YOLO computes masks on a grid of 160 cells along the query image's long side,
-# as _YOLO_MASK_CELLS in yolo.py
+# as _YOLO_MASK_CELLS in corners.py
 _YOLO_MASK_CELLS = 160
 
 
