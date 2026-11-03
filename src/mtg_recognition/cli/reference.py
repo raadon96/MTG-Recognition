@@ -1,5 +1,6 @@
-"""`mtg reference status`, `mtg reference update` and `mtg reference
-download-images`: run the reference data jobs and print their results.
+"""`mtg reference status`, `mtg reference update`, `mtg reference build` and
+`mtg reference download-images`: run the reference data jobs and print their
+results.
 """
 
 from collections.abc import Generator
@@ -37,32 +38,50 @@ def status() -> None:
     console.print(verdict)
 
 
-@reference.command(name="update")
-@click.option(
-    "--force",
-    is_flag=True,
-    default=False,
-    help="Rebuild even when the catalog already is the latest release, downloading "
-    "every image again and recomputing every pHash.",
-)
-@click.option(
+workers_option = click.option(
     "--workers",
     type=click.IntRange(min=1),
     default=DEFAULT_NUM_WORKERS,
     show_default=True,
     help="Processes hashing images (1 hashes in-process).",
 )
-def update(force: bool, workers: int) -> None:
+
+
+@reference.command(name="update")
+@workers_option
+def update(workers: int) -> None:
     """Build the reference data from the latest MTGJSON release: the catalog,
     then the missing reference images, then the pHashes of the printings that
     don't have one yet. Does nothing when the catalog already is that release.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
-        result = sync.update(reference, client, force=force, workers=workers)
+        result = sync.update(reference, client, workers=workers)
 
     lines = update_summary(reference, result)
     console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
+
+
+@reference.command(name="build")
+@click.option(
+    "--no-cache",
+    is_flag=True,
+    default=False,
+    help="Download AllPrintings and every image again and recompute every pHash.",
+)
+@workers_option
+def build(no_cache: bool, workers: int) -> None:
+    """Build the reference data again from the catalog's own MTGJSON release, for
+    when the code that builds the catalog changed. Reuses the AllPrintings on
+    disk, and the pHash of each printing whose image URL is unchanged. Never
+    changes which release the catalog is.
+    """
+    reference = ReferenceData.default()
+    with _exit_on_error(), sync.make_client() as client:
+        report = sync.build(reference, client, no_cache=no_cache, workers=workers)
+
+    lines = build_summary(reference, report)
+    console.print(Panel("\n".join(lines), title="Build Summary", expand=False))
 
 
 @reference.command(name="download-images")
@@ -91,7 +110,7 @@ def _exit_on_error() -> Generator[None]:
 def status_summary(report: sync.Status) -> tuple[list[str], Text]:
     """The lines of the panel, and the verdict printed after it."""
     lines = [
-        f"Catalog: {report.catalog_version or 'not built by `mtg reference update`'}",
+        f"Catalog: {report.catalog_version or "wasn't built"}",
         f"Printings without a pHash: {report.without_phash}",
         f"AllPrintings: {report.allprintings_version or 'absent'}",
         f"Reference images: {report.images_present} present, "
@@ -100,16 +119,19 @@ def status_summary(report: sync.Status) -> tuple[list[str], Text]:
     ]
     if report.next_command is not None:
         return lines, Text(f"✗ Outdated: run {report.next_command}", style="red")
-    # offline, a catalog built by `mtg reference update` may still be outdated
+    # offline, a catalog with a version may still be outdated
     if report.latest_version is None:
         return lines, Text("? Latest release unknown (offline)", style="yellow")
     return lines, Text("✓ Up to date", style="green")
 
 
 def update_summary(reference: ReferenceData, result: sync.UpdateResult) -> list[str]:
-    report = result.build
-    if report is None:
+    if result.build is None:
         return [f"Catalog: up to date ({result.catalog_version})"]
+    return build_summary(reference, result.build)
+
+
+def build_summary(reference: ReferenceData, report: sync.BuildReport) -> list[str]:
     source = "downloaded" if report.allprintings_downloaded else "reused"
     lines = [
         f"Catalog: rebuilt ({report.version})",
