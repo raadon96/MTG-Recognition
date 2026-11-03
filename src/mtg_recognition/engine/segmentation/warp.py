@@ -48,31 +48,22 @@ def warp_card(query_image: np.ndarray, corners: np.ndarray) -> np.ndarray:
     transform = cv2.getPerspectiveTransform(source, destination)
     card_image = cv2.warpPerspective(query_image, transform, (width, height))
 
-    # Turn upright and clamp the size
-    h, w = card_image.shape[:2]
-    if w > h:
-        card_image = cv2.rotate(card_image, cv2.ROTATE_90_CLOCKWISE)
-        h, w = w, h
-
-    out_w, out_h = clamp_size((w, h), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-    if (out_w, out_h) == (w, h):
-        return card_image
-    return cv2.resize(card_image, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+    return upright_card_image(card_image)
 
 
 def _side_length(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.sqrt(((a - b) ** 2).sum()))
 
 
-def clamp_size(
-    size: tuple[int, int],
-    min_size: tuple[int, int],
-    max_size: tuple[int, int],
-) -> tuple[int, int]:
-    """Clamp a (width, height) size to be within the given min and max bounds."""
-    w, h = size
-    min_w, min_h = min_size
-    max_w, max_h = max_size
-    out_w = min(max(w, min_w), max_w)
-    out_h = min(max(h, min_h), max_h)
-    return out_w, out_h
+def upright_card_image(card_image: np.ndarray) -> np.ndarray:
+    """A card image turned upright, its size clamped between CARD_IMAGE_MIN_SIZE
+    and CARD_IMAGE_MAX_SIZE, each axis on its own.
+    """
+    if card_image.shape[1] > card_image.shape[0]:
+        card_image = cv2.rotate(card_image, cv2.ROTATE_90_CLOCKWISE)
+    h, w = card_image.shape[:2]
+    out_w = min(max(w, CARD_IMAGE_MIN_SIZE[0]), CARD_IMAGE_MAX_SIZE[0])
+    out_h = min(max(h, CARD_IMAGE_MIN_SIZE[1]), CARD_IMAGE_MAX_SIZE[1])
+    if (out_w, out_h) == (w, h):
+        return card_image
+    return cv2.resize(card_image, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)

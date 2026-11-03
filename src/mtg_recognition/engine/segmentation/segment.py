@@ -20,11 +20,13 @@ from .corners import (
     corners_from_binary_mask,
     valid_aspect_ratio,
 )
-from .warp import CARD_IMAGE_MAX_SIZE, CARD_IMAGE_MIN_SIZE, clamp_size, warp_card
+from .warp import upright_card_image, warp_card
 
 if TYPE_CHECKING:
     from rembg.sessions.base import BaseSession
     from ultralytics import YOLO
+
+SegmentationMode = Literal["auto", "yolo", "rembg"]
 
 # Allow ±3 % from exact ratio for the scan bypass
 _BYPASS_RATIO_TOLERANCE = 0.03
@@ -76,7 +78,7 @@ _GAMMA_NORMAL = 1.05
 
 
 def segment(
-    query_image: np.ndarray, mode: Literal["auto", "yolo", "rembg"] = "auto"
+    query_image: np.ndarray, mode: SegmentationMode = "auto"
 ) -> list[np.ndarray]:
     """The card image of each card in a BGR query image; empty if none is found.
 
@@ -88,9 +90,9 @@ def segment(
     if mode == "rembg":
         return rembg_card_images(query_image)
 
-    # Scan bypass
+    # Scan bypass: the query image is already the card image
     if takes_scan_bypass(query_image):
-        return [scan_bypass_card_image(query_image)]
+        return [upright_card_image(query_image)]
 
     # YOLO
     enhanced_image = enhance_contrast(query_image)
@@ -136,20 +138,6 @@ def takes_scan_bypass(query_image: np.ndarray) -> bool:
         ]
     )
     return bool(np.mean(border) < _BYPASS_BORDER_MAX_MEAN)
-
-
-def scan_bypass_card_image(query_image: np.ndarray) -> np.ndarray:
-    """The card image of a query image that takes the scan bypass: upright, size
-    clamped.
-    """
-    out = query_image
-    if out.shape[1] > out.shape[0]:
-        out = cv2.rotate(out, cv2.ROTATE_90_CLOCKWISE)
-    h, w = out.shape[:2]
-    out_w, out_h = clamp_size((w, h), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-    if (out_w, out_h) != (w, h):
-        out = cv2.resize(out, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
-    return out
 
 
 def enhance_contrast(img: np.ndarray) -> np.ndarray:

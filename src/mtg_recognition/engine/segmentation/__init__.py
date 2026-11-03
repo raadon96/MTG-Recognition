@@ -1,3 +1,3 @@
-from .segment import segment
+from .segment import SegmentationMode, segment
 
-__all__ = ["segment"]
+__all__ = ["SegmentationMode", "segment"]

@@ -1,15 +1,13 @@
 """The scan bypass: a query image that is already one card image, recognised by
-its card aspect ratio and dark card border.
+its card aspect ratio and dark card border. Its card image is upright_card_image,
+tested in test_warp.py.
 """
 
 import numpy as np
 import pytest
 
 from mtg_recognition.engine.segmentation.corners import CARD_ASPECT_RATIO
-from mtg_recognition.engine.segmentation.segment import (
-    scan_bypass_card_image,
-    takes_scan_bypass,
-)
+from mtg_recognition.engine.segmentation.segment import takes_scan_bypass
 
 
 def _with_border(h: int, w: int, border: int, interior: int) -> np.ndarray:
@@ -59,13 +57,3 @@ def test_a_bright_border_around_a_dark_card_is_a_scanner_bed():
 def test_the_border_must_be_darker_than_100(grey, expected):
     img = np.full((880, 630, 3), grey, dtype=np.uint8)
     assert takes_scan_bypass(img) is expected
-
-
-def test_a_scan_within_the_size_limits_keeps_its_size():
-    card_image = scan_bypass_card_image(np.zeros((880, 630, 3), dtype=np.uint8))
-    assert card_image.shape[:2] == (880, 630)
-
-
-def test_a_landscape_scan_is_turned_upright():
-    card_image = scan_bypass_card_image(np.zeros((630, 880, 3), dtype=np.uint8))
-    assert card_image.shape[:2] == (880, 630)

@@ -8,13 +8,14 @@ Usage examples:
 """
 
 from pathlib import Path
-from typing import Literal
+from typing import get_args
 
 import click
 import cv2
 from tqdm import tqdm
 
 from mtg_recognition.engine.image import prepare_image
+from mtg_recognition.engine.segmentation import SegmentationMode
 from mtg_recognition.engine.segmentation import segment as segment_query_image
 from mtg_recognition.settings import settings
 
@@ -38,7 +39,7 @@ from mtg_recognition.settings import settings
 @click.option(
     "-m",
     "--mode",
-    type=click.Choice(["auto", "yolo", "rembg"], case_sensitive=False),
+    type=click.Choice(get_args(SegmentationMode), case_sensitive=False),
     default="auto",
     show_default=True,
     help=(
@@ -48,9 +49,7 @@ from mtg_recognition.settings import settings
         "'rembg' — rembg background removal only."
     ),
 )
-def segment(
-    input_path: Path, output_dir: Path, mode: Literal["auto", "yolo", "rembg"]
-) -> None:
+def segment(input_path: Path, output_dir: Path, mode: SegmentationMode) -> None:
     img_paths = query_image_paths(input_path)
     if not img_paths:
         click.echo(f"No image files found in: {input_path}", err=True)

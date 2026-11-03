@@ -1,11 +1,12 @@
 """Straightening a card image: its size, clamped, and its orientation."""
 
 import numpy as np
+import pytest
 
 from mtg_recognition.engine.segmentation.warp import (
     CARD_IMAGE_MAX_SIZE,
     CARD_IMAGE_MIN_SIZE,
-    clamp_size,
+    upright_card_image,
     warp_card,
 )
 
@@ -22,42 +23,30 @@ def _blank_img(w: int, h: int) -> np.ndarray:
     return np.zeros((h + 1, w + 1, 3), dtype=np.uint8)
 
 
-class TestClampSize:
-    def test_within_range_unchanged(self):
-        assert clamp_size((600, 840), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE) == (
-            600,
-            840,
-        )
+def _blank(w: int, h: int) -> np.ndarray:
+    return np.zeros((h, w, 3), dtype=np.uint8)
 
-    def test_below_min_clamped_to_min(self):
-        assert (
-            clamp_size((300, 400), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-            == CARD_IMAGE_MIN_SIZE
-        )
 
-    def test_above_max_clamped_to_max(self):
-        assert (
-            clamp_size((1100, 1500), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-            == CARD_IMAGE_MAX_SIZE
-        )
+class TestUprightCardImage:
+    @pytest.mark.parametrize(
+        ("size", "expected"),
+        [
+            ((600, 840), (600, 840)),  # within the limits
+            (CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MIN_SIZE),
+            (CARD_IMAGE_MAX_SIZE, CARD_IMAGE_MAX_SIZE),
+            ((300, 400), CARD_IMAGE_MIN_SIZE),
+            ((1100, 1500), CARD_IMAGE_MAX_SIZE),
+            # each axis is clamped on its own
+            ((300, 1500), (CARD_IMAGE_MIN_SIZE[0], CARD_IMAGE_MAX_SIZE[1])),
+        ],
+    )
+    def test_the_size_is_clamped_between_the_limits(self, size, expected):
+        h, w = upright_card_image(_blank(*size)).shape[:2]
+        assert (w, h) == expected
 
-    def test_at_min_boundary_unchanged(self):
-        assert (
-            clamp_size(CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-            == CARD_IMAGE_MIN_SIZE
-        )
-
-    def test_at_max_boundary_unchanged(self):
-        assert (
-            clamp_size(CARD_IMAGE_MAX_SIZE, CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-            == CARD_IMAGE_MAX_SIZE
-        )
-
-    def test_axes_clamped_independently(self):
-        # Width below min, height above max → each axis clamped independently
-        w_out, h_out = clamp_size((300, 1500), CARD_IMAGE_MIN_SIZE, CARD_IMAGE_MAX_SIZE)
-        assert w_out == CARD_IMAGE_MIN_SIZE[0]
-        assert h_out == CARD_IMAGE_MAX_SIZE[1]
+    def test_a_landscape_card_image_is_turned_upright(self):
+        h, w = upright_card_image(_blank(880, 630)).shape[:2]
+        assert (w, h) == (630, 880)
 
 
 class TestWarpCard:
