@@ -114,7 +114,7 @@ The catalog (`data/reference/catalog.sqlite`), which holds each printing's pHash
 ```bash
 mtg download-images
 ```
-Recognition doesn't need the reference images, only the pHashes in the catalog. To look at them, for example to compare a card image with its candidates' reference images while debugging matching, this downloads the images missing from `data/reference/images/` for the printings in the committed catalog (about 116k images and 12 GB on a first run). It changes nothing else: it doesn't download MTGJSON, rebuild the catalog or compute pHashes. Failed downloads are written to `data/reference/image_errors.log`, as with `mtg update`; running it again downloads only what is still missing.
+Recognition doesn't need the reference images, only the pHashes in the catalog. To look at them, for example to compare a card image with its candidates' reference images while debugging matching, this downloads the images missing from `data/reference/images/` for the printings in the committed catalog (about 116k images and 12 GB on a first run). It changes nothing else: it doesn't download MTGJSON, rebuild the catalog or compute pHashes. Failed downloads are written to `data/reference/download_errors.log`, which is removed when a run has none; `mtg update` keeps its own log, `data/reference/image_errors.log`, and this command leaves it as it is. Running it again downloads only what is still missing.
 
 **Maintainers only — build the reference data from a new MTGJSON release:**
 ```bash

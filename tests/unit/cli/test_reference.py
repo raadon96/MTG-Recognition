@@ -153,5 +153,5 @@ class TestDownloadImagesSummary:
 
         assert lines == [
             "Reference images: 2 downloaded, 1 failed",
-            f"Image failures written to {reference.log_file}",
+            f"Image failures written to {reference.download_log_file}",
         ]

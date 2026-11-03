@@ -127,5 +127,5 @@ def download_images_summary(
         f"Reference images: {report.downloaded} downloaded, {len(report.failed)} failed"
     ]
     if report.failed:
-        lines.append(f"Image failures written to {reference.log_file}")
+        lines.append(f"Image failures written to {reference.download_log_file}")
     return lines

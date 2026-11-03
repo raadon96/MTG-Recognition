@@ -362,14 +362,14 @@ def _decode_error(content: bytes) -> str | None:
     return None
 
 
-def _write_image_log(reference: ReferenceData, failed: list[ImageFailure]) -> None:
-    """Write the image failures of this build to `reference.log_file`, or remove
-    the log of an earlier one when there are none.
+def _write_image_log(log_file: Path, failed: list[ImageFailure]) -> None:
+    """Write the image failures of this run to `log_file`, or remove the log of
+    an earlier run when there are none.
     """
     if not failed:
-        reference.log_file.unlink(missing_ok=True)
+        log_file.unlink(missing_ok=True)
         return
-    reference.log_file.write_text(
+    log_file.write_text(
         "".join(f"{f.uuid}\t{f.url or ''}\t{f.step}\t{f.error}\n" for f in failed)
     )
 
@@ -516,7 +516,7 @@ def build(
                 raise ValueError("No printing has a pHash; the catalog is unchanged.")
             _write_phashes(part_path, reused | phashes)
     finally:
-        _write_image_log(reference, [*failed, *unhashable])
+        _write_image_log(reference.log_file, [*failed, *unhashable])
 
     # delete the images of no printing only now: until the new catalog replaced
     # the old one, the old one could still need them
@@ -598,14 +598,12 @@ def download_missing_images(
 ) -> DownloadReport:
     """Download the reference images missing from disk for the printings in the
     catalog. Changes nothing else in the reference data: no MTGJSON download, no
-    catalog rebuild, no pHash. Failures are written to `reference.log_file`.
+    catalog rebuild, no pHash. Failures are written to
+    `reference.download_log_file`, so the log of the last build stays as it is.
     """
     urls = read_image_urls(reference.catalog_path)
     with_url = {uuid: url for uuid, url in urls.items() if url is not None}
     to_download = _missing_images(reference, with_url)
     failed = download_images(reference, client, to_download)
-    # without a failure, keep the log of the last build: it also lists the images
-    # that failed to hash, which this command doesn't report again
-    if failed:
-        _write_image_log(reference, list(failed))
+    _write_image_log(reference.download_log_file, list(failed))
     return DownloadReport(downloaded=len(to_download) - len(failed), failed=failed)

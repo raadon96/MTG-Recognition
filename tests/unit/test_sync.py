@@ -458,20 +458,35 @@ class TestDownloadMissingImages:
 
         assert reference.catalog_path.read_bytes() == catalog_bytes
 
-    def test_run_without_failures_keeps_the_log_of_the_last_build(
+    def test_failures_go_to_its_own_log_and_leave_the_build_log(
         self, reference, network
     ) -> None:
         del network.images[BOLT_URL]
         with network.client() as client:
             update(reference, client, workers=1)
-        log = reference.log_file.read_text()
+        build_log = reference.log_file.read_text()
 
-        network.publish(V1, PRINTINGS_V1)  # Scryfall serves the image again
-        (reference.images_dir / "uuid-delver.jpg").unlink()
         with network.client() as client:
             download_missing_images(reference, client)
 
-        assert reference.log_file.read_text() == log
+        assert "uuid-bolt" in reference.download_log_file.read_text()
+        assert reference.log_file.read_text() == build_log
+
+    def test_run_without_failures_removes_its_log_and_leaves_the_build_log(
+        self, reference, network
+    ) -> None:
+        del network.images[BOLT_URL]
+        with network.client() as client:
+            update(reference, client, workers=1)
+            download_missing_images(reference, client)
+        build_log = reference.log_file.read_text()
+
+        network.publish(V1, PRINTINGS_V1)  # Scryfall serves the image again
+        with network.client() as client:
+            download_missing_images(reference, client)
+
+        assert not reference.download_log_file.exists()
+        assert reference.log_file.read_text() == build_log
 
     def test_second_run_downloads_nothing(self, reference, network) -> None:
         with network.client() as client:
@@ -488,7 +503,7 @@ class TestDownloadMissingImages:
         assert network.requests == []
         assert (second.downloaded, second.failed) == (0, ())
 
-    def test_failures_are_reported_and_logged(self, reference, network) -> None:
+    def test_failures_are_reported(self, reference, network) -> None:
         with network.client() as client:
             update(reference, client, workers=1)
         reference.image_path("uuid-bolt").unlink()
@@ -499,7 +514,6 @@ class TestDownloadMissingImages:
 
         assert report.downloaded == 0
         assert [f.uuid for f in report.failed] == ["uuid-bolt"]
-        assert "uuid-bolt" in reference.log_file.read_text()
 
 
 @pytest.mark.unit
