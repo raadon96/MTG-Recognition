@@ -1,5 +1,7 @@
 """The benchmark's validation, scoring and comparison, on plain data."""
 
+import json
+
 import pytest
 
 from mtg_recognition.benchmark.results import (
@@ -125,7 +127,7 @@ def outcome(exact: bool, count: bool = True, same_name: bool = True) -> ImageOut
 
 
 def results(**images: ImageOutcome):
-    return summarise("abc123", "5.3.0", images)
+    return summarise("abc123", "5.3.0", "2026-11-03T09:30:00+00:00", images)
 
 
 @pytest.mark.unit
@@ -203,3 +205,16 @@ def test_totals_are_worked_out_from_the_entries_not_the_stored_totals(
     totals = read_results(path).totals
 
     assert (totals.exact_printing, totals.card_count) == (1, 1)
+
+
+@pytest.mark.unit
+def test_results_written_before_run_at_existed_read_as_an_unknown_date(
+    tmp_path,
+) -> None:
+    path = tmp_path / "baseline.json"
+    write_results(results(a=outcome(True)), path)
+    data = json.loads(path.read_text())
+    del data["run_at"]
+    path.write_text(json.dumps(data))
+
+    assert read_results(path).run_at is None

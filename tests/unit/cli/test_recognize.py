@@ -7,7 +7,7 @@ import cv2
 from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
-from mtg_recognition.cli import recognize as recognize_cli
+from mtg_recognition.engine import pipeline
 from mtg_recognition.engine.ocr.reading import ReadingDebug
 from mtg_recognition.engine.pipeline import CardResult, RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
@@ -46,7 +46,8 @@ def _run_cli(monkeypatch, tmp_path, result, filename, *args, built=None):
 
     image_path = tmp_path / filename
     cv2.imwrite(str(image_path), card_image())
-    monkeypatch.setattr(recognize_cli, "Pipeline", StubPipeline)
+    # on the pipeline module: `mtg recognize` imports Pipeline when it runs
+    monkeypatch.setattr(pipeline, "Pipeline", StubPipeline)
     return CliRunner().invoke(cli, ["recognize", "-i", str(image_path), *args])
 
 
