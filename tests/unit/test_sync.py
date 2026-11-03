@@ -60,7 +60,7 @@ def image_requests(network: FakeNetwork) -> set[str]:
 
 def strip_to_a_catalog_without_version(reference: ReferenceData) -> None:
     """Turn the catalog into one from before ADR 0006, like the one committed
-    before `mtg update` stored pHashes: no `phash` column, no `meta` table.
+    before `mtg reference update` stored pHashes: no `phash` column, no `meta` table.
     """
     with sqlite3.connect(reference.catalog_path) as connection:
         connection.execute("ALTER TABLE catalog DROP COLUMN phash")
@@ -570,7 +570,7 @@ class TestStatus:
             report = status(reference, client)
 
         assert report.latest_version == V2
-        assert report.next_command == "mtg update"
+        assert report.next_command == "mtg reference update"
 
     def test_catalog_without_version_suggests_update(self, reference, network) -> None:
         with network.client() as client:
@@ -582,4 +582,4 @@ class TestStatus:
 
         assert report.catalog_version is None
         assert report.without_phash == 3
-        assert report.next_command == "mtg update"
+        assert report.next_command == "mtg reference update"

@@ -71,7 +71,7 @@ class SqliteCardCatalog:
 
 def catalog_version(catalog_path: Path) -> str | None:
     """The MTGJSON release the catalog at `catalog_path` was built from, or `None`
-    when it was never built by `mtg update`: the file is missing, or has no
+    when it was never built by `mtg reference update`: the file is missing, or has no
     `meta` table (catalogs from before ADR 0006).
     """
     if not catalog_path.exists():

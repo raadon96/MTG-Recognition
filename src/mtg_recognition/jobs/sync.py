@@ -1,5 +1,5 @@
-"""Reference data jobs, run by `mtg status`, `mtg update` and
-`mtg download-images`.
+"""Reference data jobs, run by `mtg reference status`, `mtg reference update`
+and `mtg reference download-images`.
 
 The catalog, which holds each printing's pHash and the MTGJSON release it was
 built from (ADR 0006), is committed; the reference images are a local cache,
@@ -414,7 +414,8 @@ class UpdateResult:
 
 @dataclass(frozen=True)
 class Status:
-    catalog_version: str | None  # None when `mtg update` never built the catalog
+    # None when `mtg reference update` never built the catalog
+    catalog_version: str | None
     without_phash: int
     allprintings_version: str | None  # None when AllPrintings is absent
     images_present: int
@@ -428,7 +429,7 @@ class Status:
             self.latest_version is not None
             and self.latest_version != self.catalog_version
         ):
-            return "mtg update"
+            return "mtg reference update"
         return None
 
 

@@ -54,10 +54,10 @@ uv run mtg benchmark status --failures # also list the images that fail exact pr
 ### Download the reference images
 
 ```bash
-uv run mtg download-images
+uv run mtg reference download-images
 ```
 
-Matching compares pHashes stored in the catalog, so the reference images aren't needed to recognise cards or run the tests. To compare a card image with its candidates' reference images while debugging matching, `download-images` fills `data/reference/images/` with the images missing for the printings in the committed catalog (about 116k images and 12 GB on a first run). It leaves the catalog unchanged, unlike `mtg update`, which may download a newer MTGJSON release and rebuild it.
+Matching compares pHashes stored in the catalog, so the reference images aren't needed to recognise cards or run the tests. To compare a card image with its candidates' reference images while debugging matching, `download-images` fills `data/reference/images/` with the images missing for the printings in the committed catalog (about 116k images and 12 GB on a first run). It leaves the catalog unchanged, unlike `mtg reference update`, which may download a newer MTGJSON release and rebuild it.
 
 ### The benchmark in CI
 

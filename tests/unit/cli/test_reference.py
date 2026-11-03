@@ -1,5 +1,5 @@
-"""The summaries `mtg status`, `mtg update` and `mtg download-images` print, on
-results built in the test.
+"""The summaries `mtg reference status`, `mtg reference update` and `mtg reference
+download-images` print, on results built in the test.
 """
 
 from dataclasses import replace
@@ -102,41 +102,47 @@ STATUS = Status(
 
 @pytest.mark.unit
 class TestStatusSummary:
-    def test_offline_summary_prints_the_latest_release_as_unknown(self) -> None:
-        report = replace(
-            STATUS,
-            without_phash=1,
-            images_present=2,
-            images_missing=1,
-            latest_version=None,
-        )
-
-        lines, next_step = status_summary(report)
+    def test_latest_release_is_up_to_date(self) -> None:
+        lines, verdict = status_summary(STATUS)
 
         assert lines == [
             f"Catalog: {V1}",
-            "Printings without a pHash: 1",
+            "Printings without a pHash: 0",
             f"AllPrintings: {V1}",
-            "Reference images: 2 present, 1 missing",
-            "Latest MTGJSON release: unknown",
+            "Reference images: 3 present, 0 missing",
+            f"Latest MTGJSON release: {V1}",
         ]
-        assert next_step == "Up to date: nothing to run."
+        assert verdict.plain == "✓ Up to date"
 
-    def test_catalog_without_version_and_missing_allprintings_are_shown(
-        self,
-    ) -> None:
-        lines, next_step = status_summary(
-            replace(STATUS, catalog_version=None, allprintings_version=None)
+    def test_absent_allprintings_does_not_change_the_verdict(self) -> None:
+        lines, verdict = status_summary(replace(STATUS, allprintings_version=None))
+
+        assert lines[2] == "AllPrintings: absent"
+        assert verdict.plain == "✓ Up to date"
+
+    def test_offline_the_latest_release_is_unknown(self) -> None:
+        lines, verdict = status_summary(replace(STATUS, latest_version=None))
+
+        assert lines[-1] == "Latest MTGJSON release: unknown"
+        assert verdict.plain == "? Latest release unknown (offline)"
+
+    def test_new_release_is_outdated(self) -> None:
+        _, verdict = status_summary(replace(STATUS, latest_version=V2))
+
+        assert verdict.plain == "✗ Outdated: run mtg reference update"
+
+    def test_catalog_without_version_is_outdated(self) -> None:
+        lines, verdict = status_summary(replace(STATUS, catalog_version=None))
+
+        assert lines[0] == "Catalog: not built by `mtg reference update`"
+        assert verdict.plain == "✗ Outdated: run mtg reference update"
+
+    def test_catalog_without_version_is_outdated_offline(self) -> None:
+        _, verdict = status_summary(
+            replace(STATUS, catalog_version=None, latest_version=None)
         )
 
-        assert lines[0] == "Catalog: not built by `mtg update`"
-        assert lines[2] == "AllPrintings: absent"
-        assert next_step == "Run: mtg update"
-
-    def test_new_release_names_the_command_to_run(self) -> None:
-        _, next_step = status_summary(replace(STATUS, latest_version=V2))
-
-        assert next_step == "Run: mtg update"
+        assert verdict.plain == "✗ Outdated: run mtg reference update"
 
 
 @pytest.mark.unit

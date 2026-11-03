@@ -32,7 +32,7 @@ def load_phashes(reference: ReferenceData) -> PHashes:
     if not rows:
         raise ValueError(
             f"The catalog {reference.catalog_path} holds no pHash. "
-            "Run `mtg update` first."
+            "Run `mtg reference update` first."
         )
     return phashes_from_rows(rows)
 

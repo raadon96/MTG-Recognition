@@ -126,5 +126,5 @@ class TestLoadPHashes:
         with sqlite3.connect(reference.catalog_path) as connection:
             connection.execute("UPDATE catalog SET phash = NULL")
 
-        with pytest.raises(ValueError, match="mtg update"):
+        with pytest.raises(ValueError, match="mtg reference update"):
             load_phashes(reference)
