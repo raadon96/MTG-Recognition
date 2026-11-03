@@ -7,11 +7,11 @@ import pytest
 from PIL import Image
 
 from mtg_recognition.engine.matching.phash import (
-    PHashIndex,
+    PHashes,
     _phash_bits,
     compute_phashes,
-    load_phash_index,
-    phash_index,
+    load_phashes,
+    phashes_from_rows,
     shortlist,
 )
 from mtg_recognition.jobs.sync import generate_image_uri, update
@@ -29,11 +29,11 @@ def write_jpegs(directory: Path, names: list[str]) -> dict[str, Path]:
     return images
 
 
-def index_of(images: dict[str, Path]) -> PHashIndex:
+def phashes_of(images: dict[str, Path]) -> PHashes:
     """The pHashes of `images`, in the order given, as the catalog would hold them."""
     phashes, failures = compute_phashes(images, workers=1)
     assert failures == {}
-    return phash_index([(uuid, phashes[uuid]) for uuid in images])
+    return phashes_from_rows([(uuid, phashes[uuid]) for uuid in images])
 
 
 @pytest.mark.unit
@@ -59,11 +59,11 @@ class TestComputePHashes:
 @pytest.mark.unit
 class TestShortlist:
     def test_an_indexed_image_shortlists_its_own_printing_first(self, tmp_path) -> None:
-        index = index_of(write_jpegs(tmp_path, ["a", "b", "c"]))
+        phashes = phashes_of(write_jpegs(tmp_path, ["a", "b", "c"]))
         query = cv2.imread(str(tmp_path / "b.jpg"))
         assert query is not None
 
-        uuids, similarities = shortlist(index, query, k=5)
+        uuids, similarities = shortlist(phashes, query, k=5)
 
         assert len(uuids) == 3
         assert uuids[0] == "uuid-b"
@@ -79,33 +79,33 @@ class TestShortlist:
             for uuid, path in images.items()
         }
 
-        shortlisted, similarities = shortlist(index_of(images), query, k=3)
+        shortlisted, similarities = shortlist(phashes_of(images), query, k=3)
 
         assert similarities == [expected[uuid] for uuid in shortlisted]
 
     def test_tied_printings_keep_index_order(self, tmp_path) -> None:
         # Hamming distances are whole bits, so ties are common; their order must
         # not depend on the CPU (#146)
-        bits = np.unpackbits(index_of(write_jpegs(tmp_path, ["a"])).hashes[0])
+        bits = np.unpackbits(phashes_of(write_jpegs(tmp_path, ["a"])).hashes[0])
         one_bit_off = bits.copy()
         one_bit_off[0] ^= 1
-        # 1000 tied printings, then the printing with the identical fingerprint
+        # 1000 tied printings, then the printing with the identical pHash
         rows = [one_bit_off] * 1000 + [bits]
-        index = PHashIndex(
+        tied = PHashes(
             hashes=np.packbits(np.array(rows), axis=1),
             uuids=[f"uuid-{i}" for i in range(len(rows))],
         )
         query = cv2.imread(str(tmp_path / "a.jpg"))
         assert query is not None
 
-        uuids, similarities = shortlist(index, query, k=20)
+        uuids, similarities = shortlist(tied, query, k=20)
 
         assert uuids == ["uuid-1000"] + [f"uuid-{i}" for i in range(19)]
         assert similarities == [1.0] + [255 / 256] * 19
 
 
 @pytest.mark.unit
-class TestLoadPHashIndex:
+class TestLoadPHashes:
     def test_phashes_load_in_catalog_order_without_the_printings_lacking_one(
         self, tmp_path, network
     ) -> None:
@@ -114,10 +114,10 @@ class TestLoadPHashIndex:
         with network.client() as client:
             update(reference, client, workers=1)
 
-        index = load_phash_index(reference)
+        phashes = load_phashes(reference)
 
-        assert index.uuids == ["uuid-bolt", "uuid-aberration"]
-        assert index.hashes.shape == (2, 32)
+        assert phashes.uuids == ["uuid-bolt", "uuid-aberration"]
+        assert phashes.hashes.shape == (2, 32)
 
     def test_catalog_without_phashes_raises(self, tmp_path, network) -> None:
         reference = ReferenceData(tmp_path / "reference")
@@ -127,4 +127,4 @@ class TestLoadPHashIndex:
             connection.execute("UPDATE catalog SET phash = NULL")
 
         with pytest.raises(ValueError, match="mtg update"):
-            load_phash_index(reference)
+            load_phashes(reference)

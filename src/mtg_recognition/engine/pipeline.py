@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from mtg_recognition.engine.image import ImageSource, prepare_image
-from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
+from mtg_recognition.engine.matching.phash import load_phashes, shortlist
 from mtg_recognition.engine.ocr import scoring
 from mtg_recognition.engine.ocr.reading import Reading, load_paddleocr, read_card
 from mtg_recognition.engine.ranking import RankedPrinting
@@ -58,7 +58,7 @@ class Pipeline:
         self.k_final_results = k_final_results
 
         reference = ReferenceData.default()
-        self.phash_index = load_phash_index(reference)
+        self.phashes = load_phashes(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
         self.paddleocr = load_paddleocr()
 
@@ -83,7 +83,7 @@ class Pipeline:
             for card_image in card_images:
                 # shortlist pHash candidates
                 uuids, _ = shortlist(
-                    self.phash_index, card_image, k=self.k_phash_candidates
+                    self.phashes, card_image, k=self.k_phash_candidates
                 )
 
                 # resolve them through the catalog, keeping pHash order and

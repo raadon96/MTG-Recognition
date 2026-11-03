@@ -12,7 +12,7 @@ import zipfile
 import cv2
 import pytest
 
-from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
+from mtg_recognition.engine.matching.phash import load_phashes, shortlist
 from mtg_recognition.jobs.sync import (
     META_URL,
     allprintings_version,
@@ -44,8 +44,8 @@ def reference(tmp_path) -> ReferenceData:
     return ReferenceData(tmp_path / "reference")
 
 
-def indexed_uuids(reference: ReferenceData) -> set[str]:
-    return set(load_phash_index(reference).uuids)
+def uuids_with_a_phash(reference: ReferenceData) -> set[str]:
+    return set(load_phashes(reference).uuids)
 
 
 def catalog_uuids(reference: ReferenceData) -> set[str]:
@@ -146,7 +146,7 @@ class TestUpdate:
         assert result.build.downloaded == 3
         assert result.build.hashed == 3
         assert catalog_uuids(reference) == ALL_V1
-        assert indexed_uuids(reference) == ALL_V1
+        assert uuids_with_a_phash(reference) == ALL_V1
         assert catalog_version(reference.catalog_path) == V1
         assert reference.allprintings_path.exists()
         assert not reference.allprintings_zip_path.exists()
@@ -183,7 +183,7 @@ class TestUpdate:
         assert image_requests(network) == {PONDER_URL}
         assert result.build is not None
         assert (result.build.reused, result.build.hashed) == (3, 1)
-        assert indexed_uuids(reference) == {*ALL_V1, "uuid-ponder"}
+        assert uuids_with_a_phash(reference) == {*ALL_V1, "uuid-ponder"}
         assert catalog_version(reference.catalog_path) == V2
 
     def test_reused_phash_still_shortlists_its_printing(
@@ -198,7 +198,7 @@ class TestUpdate:
         with network.client() as client:
             update(reference, client, workers=1)
 
-        uuids, similarities = shortlist(load_phash_index(reference), bolt, k=1)
+        uuids, similarities = shortlist(load_phashes(reference), bolt, k=1)
         assert (uuids, similarities) == (["uuid-bolt"], [1.0])
 
     def test_force_downloads_every_image_again_and_recomputes_every_phash(
@@ -233,7 +233,7 @@ class TestUpdate:
         assert image_requests(network) == set()
         assert result.build is not None
         assert (result.build.reused, result.build.hashed) == (0, 3)
-        assert indexed_uuids(reference) == ALL_V1
+        assert uuids_with_a_phash(reference) == ALL_V1
         assert catalog_version(reference.catalog_path) == V1
 
     def test_stale_allprintings_is_downloaded_again(self, reference, network) -> None:
@@ -280,7 +280,7 @@ class TestUpdate:
         assert reference.log_file.read_text() == (
             f"uuid-bolt\t{BOLT_URL}\tdownload\tHTTP 404\n"
         )
-        assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
+        assert uuids_with_a_phash(reference) == {"uuid-delver", "uuid-aberration"}
 
     def test_printing_without_phash_is_hashed_at_the_next_release(
         self, reference, network
@@ -296,7 +296,7 @@ class TestUpdate:
 
         assert result.build is not None
         assert (result.build.reused, result.build.hashed) == (2, 1)
-        assert indexed_uuids(reference) == ALL_V1
+        assert uuids_with_a_phash(reference) == ALL_V1
         assert not reference.log_file.exists()
 
     def test_printing_that_loses_its_image_url_loses_its_phash(
@@ -312,7 +312,7 @@ class TestUpdate:
 
         assert result.build is not None
         assert result.build.without_phash == 1
-        assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
+        assert uuids_with_a_phash(reference) == {"uuid-delver", "uuid-aberration"}
 
     def test_build_with_no_phash_keeps_no_catalog_and_resumes(
         self, reference, network
@@ -330,7 +330,7 @@ class TestUpdate:
             update(reference, client, workers=1)
 
         assert network.zip_requests() == 1
-        assert indexed_uuids(reference) == ALL_V1
+        assert uuids_with_a_phash(reference) == ALL_V1
         assert not reference.log_file.exists()
 
     def test_failed_build_keeps_the_images_of_the_previous_catalog(
@@ -398,7 +398,7 @@ class TestUpdate:
         assert reference.log_file.read_text().startswith(
             f"uuid-bolt\t{BOLT_URL}\tdownload\t"
         )
-        assert indexed_uuids(reference) == {"uuid-delver", "uuid-aberration"}
+        assert uuids_with_a_phash(reference) == {"uuid-delver", "uuid-aberration"}
 
     def test_unreadable_image_on_disk_is_deleted_then_downloaded_again(
         self, reference, network
@@ -417,7 +417,7 @@ class TestUpdate:
             ("uuid-bolt", "hash")
         ]
         assert not bolt.exists()
-        assert "uuid-bolt" not in indexed_uuids(reference)
+        assert "uuid-bolt" not in uuids_with_a_phash(reference)
         assert reference.log_file.read_text().startswith(
             f"uuid-bolt\t{BOLT_URL}\thash\t"
         )
@@ -428,7 +428,7 @@ class TestUpdate:
 
         assert result.build is not None
         assert result.build.downloaded == 1
-        assert indexed_uuids(reference) == ALL_V1
+        assert uuids_with_a_phash(reference) == ALL_V1
 
 
 @pytest.mark.unit

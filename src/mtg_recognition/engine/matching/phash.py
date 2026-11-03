@@ -16,12 +16,12 @@ DEFAULT_NUM_WORKERS = max(1, cpu_count() - 1)
 
 
 @dataclass(slots=True)
-class PHashIndex:
-    hashes: np.ndarray  # (printings, 32) uint8, one bit-packed fingerprint per row
+class PHashes:
+    hashes: np.ndarray  # (printings, 32) uint8, one bit-packed pHash per row
     uuids: list[str]  # the printing UUID of each row
 
 
-def load_phash_index(reference: ReferenceData) -> PHashIndex:
+def load_phashes(reference: ReferenceData) -> PHashes:
     """Read every pHash in the catalog of `reference`. A printing without a pHash
     is left out, so it is never a candidate.
 
@@ -34,15 +34,15 @@ def load_phash_index(reference: ReferenceData) -> PHashIndex:
             f"The catalog {reference.catalog_path} holds no pHash. "
             "Run `mtg update` first."
         )
-    return phash_index(rows)
+    return phashes_from_rows(rows)
 
 
-def phash_index(rows: list[tuple[str, bytes]]) -> PHashIndex:
-    """The `PHashIndex` of `(uuid, phash)` rows, each pHash packed 8 bits per byte
+def phashes_from_rows(rows: list[tuple[str, bytes]]) -> PHashes:
+    """The `PHashes` of `(uuid, phash)` rows, each pHash packed 8 bits per byte
     as the catalog stores it; the rows keep their order.
     """
     hashes = np.frombuffer(b"".join(phash for _, phash in rows), dtype=np.uint8)
-    return PHashIndex(
+    return PHashes(
         hashes=hashes.reshape(len(rows), -1), uuids=[uuid for uuid, _ in rows]
     )
 
@@ -77,34 +77,34 @@ def compute_phashes(
 
 
 def shortlist(
-    index: PHashIndex, image: np.ndarray, k: int
+    phashes: PHashes, image: np.ndarray, k: int
 ) -> tuple[list[str], list[float]]:
-    """The `k` printings of `index` whose fingerprint is closest to `image`'s.
+    """The `k` printings in `phashes` whose pHash is closest to `image`'s.
 
     Args:
-        index: The pHashes to search
+        phashes: The pHashes to search
         image: The card, as a BGR array
-        k: Number of printings to return; clamped to the index size
+        k: Number of printings to return; clamped to the number of pHashes
 
     Returns:
         `(uuids, similarities)`, best first; a similarity is `1 - hamming / 256`,
-        from 0 to 1, where 1 means identical fingerprints
+        from 0 to 1, where 1 means identical pHashes
     """
     bits = _phash_bits(Image.fromarray(image[:, :, ::-1]))
     # Hamming distance: XOR sets the bits that differ, bitwise_count counts them
-    differing = np.bitwise_xor(index.hashes, np.packbits(bits))
+    differing = np.bitwise_xor(phashes.hashes, np.packbits(bits))
     distances = np.bitwise_count(differing).sum(axis=1, dtype=np.int32)
     similarities = 1.0 - distances / bits.size
 
-    # top k, best first, ties in index order: distances are whole bits, so ties
+    # top k, best first, ties in catalog order: distances are whole bits, so ties
     # are common, and argpartition orders them differently on different CPUs
-    # (#146). A stable sort of the whole index takes ~3 ms per card, so find the
+    # (#146). A stable sort of every pHash takes ~3 ms per card, so find the
     # k-th distance and stable-sort only the printings at least that close.
-    k = min(k, len(index.uuids))
+    k = min(k, len(phashes.uuids))
     kth = np.partition(distances, k - 1)[k - 1]
     top = np.flatnonzero(distances <= kth)
     top = top[np.argsort(distances[top], kind="stable")][:k]
-    return [index.uuids[i] for i in top], similarities[top].tolist()
+    return [phashes.uuids[i] for i in top], similarities[top].tolist()
 
 
 def _compute_hashes(
@@ -138,5 +138,5 @@ def _compute_hash_worker(
 
 
 def _phash_bits(image: Image.Image) -> np.ndarray:
-    """The fingerprint of `image`: its pHash as a flat uint8 array of bits."""
+    """The pHash of `image` as a flat uint8 array of bits."""
     return imagehash.phash(image, hash_size=HASH_SIZE).hash.flatten().astype(np.uint8)
