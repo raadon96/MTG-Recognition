@@ -1,5 +1,5 @@
-"""`mtg status`, `mtg update` and `mtg download-images`: run the reference data
-jobs and print their results.
+"""`mtg reference status`, `mtg reference update` and `mtg reference
+download-images`: run the reference data jobs and print their results.
 """
 
 from collections.abc import Generator
@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import click
 from rich.console import Console
 from rich.panel import Panel
+from rich.text import Text
 
 from mtg_recognition.engine.matching.phash import DEFAULT_NUM_WORKERS
 from mtg_recognition.jobs import sync
@@ -16,21 +17,26 @@ from mtg_recognition.reference.layout import ReferenceData
 console = Console()
 
 
-@click.command(name="status")
+@click.group(name="reference")
+def reference() -> None:
+    """Check, build and download the reference data."""
+
+
+@reference.command(name="status")
 def status() -> None:
     """Show the catalog's MTGJSON release, the printings without a pHash, the
-    images on disk and the latest MTGJSON release, then the command to run, if any.
+    images on disk and the latest MTGJSON release, then whether the catalog is
+    the latest release.
     """
-    reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
-        report = sync.status(reference, client)
+        report = sync.status(ReferenceData.default(), client)
 
-    lines, next_step = status_summary(report)
+    lines, verdict = status_summary(report)
     console.print(Panel("\n".join(lines), title="Reference data", expand=False))
-    console.print(next_step)
+    console.print(verdict)
 
 
-@click.command(name="update")
+@reference.command(name="update")
 @click.option(
     "--force",
     is_flag=True,
@@ -58,7 +64,7 @@ def update(force: bool, workers: int) -> None:
     console.print(Panel("\n".join(lines), title="Update Summary", expand=False))
 
 
-@click.command(name="download-images")
+@reference.command(name="download-images")
 def download_images() -> None:
     """Download the reference images missing from disk for the printings in the
     committed catalog. Changes nothing else: the catalog, its pHashes and
@@ -81,19 +87,22 @@ def _exit_on_error() -> Generator[None]:
         raise SystemExit(1) from exc
 
 
-def status_summary(report: sync.Status) -> tuple[list[str], str]:
-    """The lines of the panel, and the line after it naming the command to run."""
+def status_summary(report: sync.Status) -> tuple[list[str], Text]:
+    """The lines of the panel, and the verdict printed after it."""
     lines = [
-        f"Catalog: {report.catalog_version or 'not built by `mtg update`'}",
+        f"Catalog: {report.catalog_version or 'not built by `mtg reference update`'}",
         f"Printings without a pHash: {report.without_phash}",
         f"AllPrintings: {report.allprintings_version or 'absent'}",
         f"Reference images: {report.images_present} present, "
         f"{report.images_missing} missing",
         f"Latest MTGJSON release: {report.latest_version or 'unknown'}",
     ]
-    if report.next_command is None:
-        return lines, "Up to date: nothing to run."
-    return lines, f"Run: {report.next_command}"
+    if report.next_command is not None:
+        return lines, Text(f"✗ Outdated: run {report.next_command}", style="red")
+    # offline, a catalog built by `mtg reference update` may still be outdated
+    if report.latest_version is None:
+        return lines, Text("? Latest release unknown (offline)", style="yellow")
+    return lines, Text("✓ Up to date", style="green")
 
 
 def update_summary(reference: ReferenceData, result: sync.UpdateResult) -> list[str]:
