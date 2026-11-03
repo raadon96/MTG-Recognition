@@ -114,13 +114,13 @@ The catalog (`data/reference/catalog.sqlite`), which holds each printing's pHash
 ```bash
 mtg download-images
 ```
-Recognition doesn't need the reference images, only the pHashes in the catalog. To look at them, for example to compare a card image with its candidates' reference images while debugging matching, this downloads the images missing from `data/reference/images/` for the printings in the committed catalog (~116k images, ~11 GB on a first run). It changes nothing else: it doesn't download MTGJSON, rebuild the catalog or compute pHashes. Failed downloads are written to `data/reference/image_errors.log`, as with `mtg update`; running it again downloads only what is still missing.
+Recognition doesn't need the reference images, only the pHashes in the catalog. To look at them, for example to compare a card image with its candidates' reference images while debugging matching, this downloads the images missing from `data/reference/images/` for the printings in the committed catalog (about 116k images and 12 GB on a first run). It changes nothing else: it doesn't download MTGJSON, rebuild the catalog or compute pHashes. Failed downloads are written to `data/reference/image_errors.log`, as with `mtg update`; running it again downloads only what is still missing.
 
 **Maintainers only — build the reference data from a new MTGJSON release:**
 ```bash
 mtg update
 ```
-This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the catalog, downloads the reference card images it needs that are missing from `data/reference/images/` (~116k images, ~11 GB, a local cache used only to compute the pHashes), then computes the pHashes. Printings already in the previous catalog keep their pHash, so only new printings are downloaded and hashed. It does nothing when the catalog already is the latest release; `--force` rebuilds anyway, downloading every image again and recomputing every pHash.
+This downloads the MTGJSON AllPrintings database (kept in `data/reference/mtgjson/`), rebuilds the catalog, downloads the reference card images it needs that are missing from `data/reference/images/` (about 116k images and 12 GB, a local cache used only to compute the pHashes), then computes the pHashes. Printings already in the previous catalog keep their pHash, so only new printings are downloaded and hashed. It does nothing when the catalog already is the latest release; `--force` rebuilds anyway, downloading every image again and recomputing every pHash.
 
 #### 6. Run Streamlit app
 
