@@ -344,16 +344,9 @@ def _extract_standalone_collector_number(rec_texts: list[str]) -> str | None:
 
 
 def extract_card_name(texts: list[str]) -> str | None:
-    filtered_list = [text.strip() for text in texts]
-    filtered_list = list(filter(lambda text: len(text) >= 2, texts))
-
-    if not filtered_list:
-        return None
-    if len(filtered_list) == 1:
-        return filtered_list[0]
-
-    card_name = " ".join(filtered_list)
-    return card_name
+    # one-character tokens are mana symbols or noise read from the name line
+    tokens = [token for text in texts if len(token := text.strip()) >= 2]
+    return " ".join(tokens) if tokens else None
 
 
 def extract_artist_name(texts: list[str]) -> str | None:
