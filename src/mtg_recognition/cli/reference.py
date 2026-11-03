@@ -28,8 +28,9 @@ def status() -> None:
     images on disk and the latest MTGJSON release, then whether the catalog is
     the latest release.
     """
+    reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
-        report = sync.status(ReferenceData.default(), client)
+        report = sync.status(reference, client)
 
     lines, verdict = status_summary(report)
     console.print(Panel("\n".join(lines), title="Reference data", expand=False))

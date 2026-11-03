@@ -414,9 +414,8 @@ class UpdateResult:
 
 @dataclass(frozen=True)
 class Status:
-    catalog_version: (
-        str | None
-    )  # None when `mtg reference update` never built the catalog
+    # None when `mtg reference update` never built the catalog
+    catalog_version: str | None
     without_phash: int
     allprintings_version: str | None  # None when AllPrintings is absent
     images_present: int

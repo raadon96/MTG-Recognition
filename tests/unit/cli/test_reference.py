@@ -137,6 +137,13 @@ class TestStatusSummary:
         assert lines[0] == "Catalog: not built by `mtg reference update`"
         assert verdict.plain == "✗ Outdated: run mtg reference update"
 
+    def test_catalog_without_version_is_outdated_offline(self) -> None:
+        _, verdict = status_summary(
+            replace(STATUS, catalog_version=None, latest_version=None)
+        )
+
+        assert verdict.plain == "✗ Outdated: run mtg reference update"
+
 
 @pytest.mark.unit
 class TestDownloadImagesSummary:
