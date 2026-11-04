@@ -14,7 +14,7 @@ from mtg_recognition.cli import cli
     ("group", "commands"),
     [
         ([], ["recognize", "segment", "reference", "benchmark"]),
-        (["reference"], ["status", "update", "download-images"]),
+        (["reference"], ["status", "update", "build", "download-images"]),
     ],
 )
 def test_help_lists_every_command(group, commands) -> None:

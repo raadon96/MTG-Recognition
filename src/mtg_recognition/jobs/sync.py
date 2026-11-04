@@ -1,5 +1,5 @@
-"""Reference data jobs, run by `mtg reference status`, `mtg reference update`
-and `mtg reference download-images`.
+"""Reference data jobs, run by `mtg reference status`, `mtg reference update`,
+`mtg reference build` and `mtg reference download-images`.
 
 The catalog, which holds each printing's pHash and the MTGJSON release it was
 built from (ADR 0006), is committed; the reference images are a local cache,
@@ -239,13 +239,13 @@ def allprintings_version(reference: ReferenceData) -> str | None:
 
 
 def ensure_allprintings(
-    reference: ReferenceData, client: httpx.Client, version: str
+    reference: ReferenceData, client: httpx.Client, version: str, no_cache: bool
 ) -> bool:
     """Make the AllPrintings on disk the release `version`: download the ZIP,
     extract it over the old file and delete it, unless the file on disk already is
-    that release. Returns whether it was downloaded.
+    that release and `no_cache` is false. Returns whether it was downloaded.
     """
-    if allprintings_version(reference) == version:
+    if not no_cache and allprintings_version(reference) == version:
         return False
 
     zip_path = reference.allprintings_zip_path
@@ -414,7 +414,7 @@ class UpdateResult:
 
 @dataclass(frozen=True)
 class Status:
-    # None when `mtg reference update` never built the catalog
+    # None when the catalog wasn't built: missing, or from before ADR 0006
     catalog_version: str | None
     without_phash: int
     allprintings_version: str | None  # None when AllPrintings is absent
@@ -436,46 +436,90 @@ class Status:
 def update(
     reference: ReferenceData,
     client: httpx.Client,
-    force: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> UpdateResult:
-    """Build the reference data from the latest MTGJSON release (see `build`),
-    unless the catalog already was built from it. `force` builds anyway.
+    """Build the reference data from the latest MTGJSON release (see
+    `build_release`), unless the catalog already was built from it.
     """
     latest = fetch_latest_version(client)
     built = catalog_version(reference.catalog_path)
-    if not force and built == latest:
+    if built == latest:
         return UpdateResult(latest, built, build=None)
 
-    report = build(reference, client, latest, force=force, workers=workers)
+    report = build_release(reference, client, latest, no_cache=False, workers=workers)
     return UpdateResult(latest, report.version, report)
 
 
 def build(
     reference: ReferenceData,
     client: httpx.Client,
+    no_cache: bool = False,
+    workers: int = DEFAULT_NUM_WORKERS,
+) -> BuildReport:
+    """Build the reference data again from the catalog's own MTGJSON release (see
+    `build_release`), for when the code that builds the catalog changed. Uses
+    the AllPrintings on disk when it is that release, without reaching MTGJSON;
+    otherwise downloads it, which only works while that release is MTGJSON's
+    latest. `no_cache` downloads AllPrintings and every image again and
+    recomputes every pHash.
+
+    Raises:
+        ValueError: If the catalog is missing or has no version, or if its release
+            is needed from MTGJSON and no longer the latest; nothing is changed
+    """
+    version = catalog_version(reference.catalog_path)
+    if version is None:
+        raise ValueError(
+            "The catalog is missing or has no MTGJSON version, so there is no "
+            "release to rebuild: run `mtg reference update`."
+        )
+    on_disk = allprintings_version(reference)
+    if no_cache or on_disk != version:
+        latest = fetch_latest_version(client)
+        if latest != version:
+            allprintings_state = (
+                "AllPrintings is absent"
+                if on_disk is None
+                else f"AllPrintings on disk is {on_disk}"
+            )
+            raise ValueError(
+                f"The catalog is MTGJSON release {version}; {allprintings_state}; "
+                f"the latest release is {latest}. MTGJSON no longer publishes "
+                f"{version}, so the catalog can't be rebuilt from it: run "
+                "`mtg reference update`."
+            )
+    return build_release(reference, client, version, no_cache, workers)
+
+
+def build_release(
+    reference: ReferenceData,
+    client: httpx.Client,
     version: str,
-    force: bool = False,
+    no_cache: bool,
     workers: int = DEFAULT_NUM_WORKERS,
 ) -> BuildReport:
     """Build the reference data from the MTGJSON release `version`: AllPrintings,
     then the catalog, then the missing reference images, then the pHashes.
 
-    The pHash of every printing already in the previous catalog is reused; only
-    the other printings' images are downloaded (when not on disk) and hashed. A
-    catalog without a version was never fully built, so nothing is reused from
-    it. `force` downloads every image again and recomputes every pHash. The new
-    catalog replaces the old one only once complete. Image failures are written
-    to `reference.log_file`.
+    A printing keeps its pHash from the previous catalog when its UUID and image
+    URL are both unchanged; the other printings' images are downloaded (when
+    not on disk, or when their URL changed) and hashed. A catalog without a
+    version was never fully built, so no pHash is reused from it. `no_cache`
+    downloads AllPrintings and every image again and recomputes every pHash.
+    The new catalog replaces the old one only once complete. Image failures are
+    written to `reference.log_file`.
 
     Raises:
         ValueError: If no printing has a pHash; the previous catalog is kept
     """
     console.print("\n[bold]--- Catalog ---[/bold]")
-    allprintings_downloaded = ensure_allprintings(reference, client, version)
-    previous: dict[str, bytes] = {}
-    if not force and catalog_version(reference.catalog_path) is not None:
-        previous = dict(read_phashes(reference.catalog_path))
+    allprintings_downloaded = ensure_allprintings(reference, client, version, no_cache)
+    previous_phashes: dict[str, bytes] = {}
+    previous_urls: dict[str, str | None] = {}
+    if reference.catalog_path.exists():
+        previous_urls = read_image_urls(reference.catalog_path)
+    if not no_cache and catalog_version(reference.catalog_path) is not None:
+        previous_phashes = dict(read_phashes(reference.catalog_path))
 
     failed: tuple[ImageFailure, ...] = ()
     unhashable: tuple[ImageFailure, ...] = ()
@@ -484,11 +528,19 @@ def build(
             console.print("Building the catalog...")
             built_version = build_catalog(reference.allprintings_path, part_path)
             urls = read_image_urls(part_path)
-            # a printing that lost its image URL loses its pHash with it
-            reused = {
-                uuid: previous[uuid]
+            url_changed = {
+                uuid
                 for uuid, url in urls.items()
-                if url is not None and uuid in previous
+                if uuid in previous_urls and previous_urls[uuid] != url
+            }
+            # a pHash is of the image at the URL it was computed from, so a
+            # printing whose URL changed or went away loses it
+            reused = {
+                uuid: previous_phashes[uuid]
+                for uuid, url in urls.items()
+                if url is not None
+                and uuid in previous_phashes
+                and uuid not in url_changed
             }
             to_hash = {
                 uuid: url
@@ -496,9 +548,12 @@ def build(
                 if url is not None and uuid not in reused
             }
 
-            # reference images: download those to hash
+            # reference images: download those to hash. An image from an old URL
+            # is deleted first, so a failed download can't leave it to be hashed.
             console.print("\n[bold]--- Reference images ---[/bold]")
-            to_download = to_hash if force else _missing_images(reference, to_hash)
+            for uuid in url_changed:
+                reference.image_path(uuid).unlink(missing_ok=True)
+            to_download = to_hash if no_cache else _missing_images(reference, to_hash)
             failed = download_images(reference, client, to_download)
 
             # pHashes; an image that fails to hash is deleted, so the next build

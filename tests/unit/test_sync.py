@@ -16,6 +16,7 @@ from mtg_recognition.engine.matching.phash import load_phashes, shortlist
 from mtg_recognition.jobs.sync import (
     META_URL,
     allprintings_version,
+    build,
     build_catalog,
     download_missing_images,
     generate_image_uri,
@@ -226,23 +227,34 @@ class TestUpdate:
         uuids, similarities = shortlist(load_phashes(reference), bolt, k=1)
         assert (uuids, similarities) == (["uuid-bolt"], [1.0])
 
-    def test_force_downloads_every_image_again_and_recomputes_every_phash(
+    def test_changed_image_url_downloads_the_image_again_and_recomputes_its_phash(
         self, reference, network
     ) -> None:
+        """A printing keeps its UUID but gets a new image URL, as each face of a
+        double-faced card did in #155; its old image and pHash are of the wrong
+        picture.
+        """
         with network.client() as client:
             update(reference, client, workers=1)
-        bolt = reference.image_path("uuid-bolt")
-        bolt.write_bytes(jpeg(7))
+        new_id = "a9999999-0000-0000-0000-000000000000"
+        new_url = generate_image_uri(new_id)
+        network.publish(
+            V2,
+            [
+                ("uuid-bolt", "Lightning Bolt", new_id, "normal", None, None),
+                *PRINTINGS_V1[1:],
+            ],
+        )
+        network.images[new_url] = jpeg(8)
         network.requests.clear()
 
         with network.client() as client:
-            result = update(reference, client, force=True, workers=1)
+            result = update(reference, client, workers=1)
 
-        assert image_requests(network) == set(network.images)
-        assert bolt.read_bytes() == network.images[BOLT_URL]
+        assert image_requests(network) == {new_url}
+        assert reference.image_path("uuid-bolt").read_bytes() == jpeg(8)
         assert result.build is not None
-        assert (result.build.reused, result.build.hashed) == (0, 3)
-        assert network.zip_requests() == 0  # the AllPrintings on disk is current
+        assert (result.build.reused, result.build.hashed) == (2, 1)
 
     def test_catalog_without_version_is_built_again_from_the_images_on_disk(
         self, reference, network
@@ -454,6 +466,181 @@ class TestUpdate:
         assert result.build is not None
         assert result.build.downloaded == 1
         assert uuids_with_a_phash(reference) == ALL_V1
+
+
+def set_catalog_image_url(reference: ReferenceData, uuid: str, url: str) -> None:
+    """Give a printing another image URL in the catalog, as an older version of
+    the code that builds the catalog would have.
+    """
+    with sqlite3.connect(reference.catalog_path) as connection:
+        connection.execute("UPDATE catalog SET url = ? WHERE uuid = ?", (url, uuid))
+
+
+def reference_files(reference: ReferenceData) -> dict[str, bytes]:
+    """Every file of the reference data, by path relative to its root."""
+    return {
+        str(path.relative_to(reference.root)): path.read_bytes()
+        for path in reference.root.rglob("*")
+        if path.is_file()
+    }
+
+
+@pytest.mark.unit
+class TestBuild:
+    def test_current_allprintings_rebuilds_offline_reusing_every_phash(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        network.offline = True
+        network.requests.clear()
+
+        with network.client() as client:
+            report = build(reference, client, workers=1)
+
+        assert network.requests == []
+        assert (report.reused, report.hashed, report.downloaded) == (3, 0, 0)
+        assert not report.allprintings_downloaded
+        assert uuids_with_a_phash(reference) == ALL_V1
+        assert catalog_version(reference.catalog_path) == V1
+
+    def test_absent_allprintings_is_downloaded_when_still_the_latest_release(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        reference.allprintings_path.unlink()
+        network.requests.clear()
+
+        with network.client() as client:
+            report = build(reference, client, workers=1)
+
+        assert network.zip_requests() == 1
+        assert image_requests(network) == set()
+        assert report.allprintings_downloaded
+        assert (report.version, report.reused, report.hashed) == (V1, 3, 0)
+        assert catalog_version(reference.catalog_path) == V1
+
+    @pytest.mark.parametrize(
+        ("allprintings", "described"),
+        [(None, "AllPrintings is absent"), (V2, f"AllPrintings on disk is {V2}")],
+    )
+    def test_release_no_longer_published_fails_and_changes_nothing(
+        self, reference, network, allprintings, described
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        reference.allprintings_path.unlink()
+        if allprintings is not None:
+            build_allprintings(reference.allprintings_path, allprintings, PRINTINGS_V1)
+        network.publish(V2, [*PRINTINGS_V1, PRINTING_V2])
+        files = reference_files(reference)
+        network.requests.clear()
+
+        with network.client() as client, pytest.raises(ValueError) as error:
+            build(reference, client, workers=1)
+
+        assert str(error.value) == (
+            f"The catalog is MTGJSON release {V1}; {described}; the latest release "
+            f"is {V2}. MTGJSON no longer publishes {V1}, so the catalog can't be "
+            "rebuilt from it: run `mtg reference update`."
+        )
+        assert network.requests == [META_URL]
+        assert reference_files(reference) == files
+
+    def test_no_catalog_fails_and_suggests_update(self, reference, network) -> None:
+        with network.client() as client, pytest.raises(ValueError) as error:
+            build(reference, client, workers=1)
+
+        assert "run `mtg reference update`" in str(error.value)
+        assert network.requests == []
+
+    def test_catalog_without_version_fails_and_suggests_update(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        strip_to_a_catalog_without_version(reference)
+
+        with network.client() as client, pytest.raises(ValueError) as error:
+            build(reference, client, workers=1)
+
+        assert "run `mtg reference update`" in str(error.value)
+
+    def test_changed_image_url_downloads_the_image_again_and_recomputes_its_phash(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        set_catalog_image_url(reference, "uuid-bolt", "https://old.example/bolt.jpg")
+        bolt = reference.image_path("uuid-bolt")
+        bolt.write_bytes(jpeg(7))
+        network.requests.clear()
+
+        with network.client() as client:
+            report = build(reference, client, workers=1)
+
+        assert image_requests(network) == {BOLT_URL}
+        assert bolt.read_bytes() == network.images[BOLT_URL]
+        assert (report.reused, report.hashed) == (2, 1)
+        served_bolt = cv2.imread(str(bolt))
+        assert served_bolt is not None
+        uuids, _ = shortlist(load_phashes(reference), served_bolt, k=1)
+        assert uuids == ["uuid-bolt"]
+
+    def test_changed_image_url_that_fails_to_download_leaves_no_phash(
+        self, reference, network
+    ) -> None:
+        """The image on disk is from the old URL, so hashing it would give the
+        printing the pHash of another picture.
+        """
+        with network.client() as client:
+            update(reference, client, workers=1)
+        set_catalog_image_url(reference, "uuid-bolt", "https://old.example/bolt.jpg")
+        del network.images[BOLT_URL]
+
+        with network.client() as client:
+            report = build(reference, client, workers=1)
+
+        assert [(f.uuid, f.step) for f in report.failed] == [("uuid-bolt", "download")]
+        assert not reference.image_path("uuid-bolt").exists()
+        assert uuids_with_a_phash(reference) == {"uuid-delver", "uuid-aberration"}
+
+    def test_no_cache_downloads_allprintings_and_every_image_again(
+        self, reference, network
+    ) -> None:
+        with network.client() as client:
+            update(reference, client, workers=1)
+        bolt = reference.image_path("uuid-bolt")
+        bolt.write_bytes(jpeg(7))
+        network.requests.clear()
+
+        with network.client() as client:
+            report = build(reference, client, no_cache=True, workers=1)
+
+        assert network.zip_requests() == 1
+        assert report.allprintings_downloaded
+        assert image_requests(network) == set(network.images)
+        assert bolt.read_bytes() == network.images[BOLT_URL]
+        assert (report.reused, report.hashed) == (0, 3)
+
+    def test_no_cache_with_release_no_longer_published_changes_nothing(
+        self, reference, network
+    ) -> None:
+        """The AllPrintings on disk is the catalog's release, but `--no-cache`
+        would download it again, and MTGJSON now serves another one.
+        """
+        with network.client() as client:
+            update(reference, client, workers=1)
+        network.publish(V2, [*PRINTINGS_V1, PRINTING_V2])
+        files = reference_files(reference)
+        network.requests.clear()
+
+        with network.client() as client, pytest.raises(ValueError, match="no longer"):
+            build(reference, client, no_cache=True, workers=1)
+
+        assert network.requests == [META_URL]
+        assert reference_files(reference) == files
 
 
 @pytest.mark.unit

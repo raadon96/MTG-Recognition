@@ -134,7 +134,7 @@ class TestStatusSummary:
     def test_catalog_without_version_is_outdated(self) -> None:
         lines, verdict = status_summary(replace(STATUS, catalog_version=None))
 
-        assert lines[0] == "Catalog: not built by `mtg reference update`"
+        assert lines[0] == "Catalog: wasn't built"
         assert verdict.plain == "✗ Outdated: run mtg reference update"
 
     def test_catalog_without_version_is_outdated_offline(self) -> None:

@@ -45,8 +45,8 @@ class ReferenceData:
 
     @property
     def log_file(self) -> Path:
-        """Images the last catalog build (`mtg reference update`) failed to download or
-        hash (absent when there were none).
+        """Images the last catalog build (`mtg reference update` or `mtg reference
+        build`) failed to download or hash (absent when there were none).
         """
         return self.root / "image_errors.log"
 

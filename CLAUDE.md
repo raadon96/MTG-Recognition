@@ -24,7 +24,7 @@ src/mtg_recognition/
 └── cli/           the `mtg` group and its commands; the only package that imports Click
     ├── recognize.py     `mtg recognize`
     ├── segment.py       `mtg segment`
-    ├── reference.py     `mtg reference status`, `mtg reference update`, `mtg reference download-images`
+    ├── reference.py     `mtg reference status`, `mtg reference update`, `mtg reference build`, `mtg reference download-images`
     └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`, `mtg benchmark status`
 data/reference/    the reference data
 models/            model weights: {segmentation,ocr}/prod is tracked, {segmentation,ocr}/test is gitignored
@@ -147,6 +147,8 @@ uv run pytest
 uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
 uv run mtg --help                    # recognize, segment, reference, benchmark
 uv run mtg reference status          # the catalog's MTGJSON release against the latest one
+uv run mtg reference update          # build the reference data from the latest MTGJSON release; nothing when the catalog already is it
+uv run mtg reference build           # rebuild the catalog's own release, reusing AllPrintings and unchanged pHashes (--no-cache: reuse nothing)
 uv run mtg reference download-images # download the reference images missing for the committed catalog; changes nothing else
 uv run mtg benchmark status          # summarise the baseline (--latest: the latest results; --failures: list failing images)
 uv run mtg benchmark run             # recognise the labelled images; non-zero on any change from the baseline
@@ -155,4 +157,4 @@ uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto da
 
 Test images are DVC-tracked on Google Drive; setup and adding images: `CONTRIBUTING.md`.
 
-`data/reference/catalog.sqlite` (each printing's details and pHash, and the MTGJSON version) is committed; change it only through `mtg reference update`. `data/benchmark-baseline.json` is committed; change it only through `mtg benchmark update-baseline`.
+`data/reference/catalog.sqlite` (each printing's details and pHash, and the MTGJSON version) is committed; change it only through `mtg reference update` or `mtg reference build`. `data/benchmark-baseline.json` is committed; change it only through `mtg benchmark update-baseline`.

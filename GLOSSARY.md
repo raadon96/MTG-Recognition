@@ -94,6 +94,10 @@ _Avoid_: score, confidence
 
 ### Reference data
 
+**MTGJSON release**:
+One build of MTGJSON's card data, identified by its version (e.g. `5.3.0+20261103`). The reference data is always built from exactly one release, and the catalog records which. MTGJSON publishes only its latest release, so an older one can't be downloaded again.
+_Avoid_: build (for the release), snapshot, dump
+
 **Reference data**:
 Everything built from one MTGJSON release and used to recognise cards: the catalog (committed) and the reference images the pHashes are computed from (a local cache, never versioned).
 _Avoid_: assets
