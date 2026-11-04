@@ -6,10 +6,10 @@ import cv2
 import numpy as np
 import pytest
 
-from mtg_recognition.engine.segmentation.yolo import card_corners_from_outline
+from mtg_recognition.engine.segmentation.corners import card_corners_from_outline
 
 # YOLO computes masks on a grid of 160 cells along the query image's long side,
-# as _YOLO_MASK_CELLS in yolo.py
+# as _YOLO_MASK_CELLS in corners.py
 _YOLO_MASK_CELLS = 160
 
 
@@ -59,7 +59,7 @@ def test_the_corners_found_from_a_stepped_outline_are_the_card_corners(angle_deg
     query_image = _query_image_with_card(card)
     outline = _yolo_outline(query_image, card)
 
-    corners = card_corners_from_outline(query_image, outline, 0.2)
+    corners = card_corners_from_outline(query_image, outline)
 
     assert corners is not None
     found = corners.reshape(4, 2).astype(float)
@@ -73,4 +73,4 @@ def test_an_outline_that_is_not_card_shaped_has_no_corners():
     query_image = _query_image_with_card(square)
     outline = _yolo_outline(query_image, square)
 
-    assert card_corners_from_outline(query_image, outline, 0.2) is None
+    assert card_corners_from_outline(query_image, outline) is None

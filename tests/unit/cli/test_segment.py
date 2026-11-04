@@ -1,4 +1,4 @@
-"""`mtg segment` over a fake segmentor."""
+"""`mtg segment` over a fake `segment`."""
 
 import cv2
 import numpy as np
@@ -6,10 +6,6 @@ from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
 from mtg_recognition.cli import segment as segment_cli
-from mtg_recognition.engine.segmentation.seg_utils import (
-    SegmentationResult,
-    SegmentedCard,
-)
 from tests.unit.engine.builders import card_image
 
 
@@ -20,15 +16,13 @@ class FakeSegmentor:
         self.card_images = card_images
         self.inputs: list[np.ndarray] = []
 
-    def segment(self, query_image: np.ndarray) -> SegmentationResult:
+    def segment(self, query_image: np.ndarray, mode: str) -> list[np.ndarray]:
         self.inputs.append(query_image)
-        return SegmentationResult(
-            cards=[SegmentedCard(card_image=c) for c in self.card_images]
-        )
+        return self.card_images
 
 
 def _run(monkeypatch, segmentor, input_path, output_dir):
-    monkeypatch.setattr(segment_cli, "_build_segmentor", lambda mode: segmentor)
+    monkeypatch.setattr(segment_cli, "segment_query_image", segmentor.segment)
     return CliRunner().invoke(
         cli, ["segment", "-i", str(input_path), "-o", str(output_dir)]
     )

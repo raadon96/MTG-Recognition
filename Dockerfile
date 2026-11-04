@@ -80,11 +80,7 @@ COPY src ./src
 # Copy project metadata + source
 
 COPY data/reference/catalog.sqlite ./data/reference/catalog.sqlite
-# Copy the catalog
-
-COPY data/reference/index/phash/hashes.npy ./data/reference/index/phash/hashes.npy
-COPY data/reference/index/phash/index_to_uuid.json ./data/reference/index/phash/index_to_uuid.json
-# Copy pHash artifacts
+# Copy the catalog, which holds the pHashes
 
 COPY models/segmentation/prod ./models/segmentation/prod
 # COPY mobileclip_blt.ts ./

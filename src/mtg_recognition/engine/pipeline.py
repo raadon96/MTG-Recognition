@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from mtg_recognition.engine.image import ImageSource, prepare_image
-from mtg_recognition.engine.matching.phash import load_phash_index, shortlist
+from mtg_recognition.engine.matching.phash import load_phashes, shortlist
 from mtg_recognition.engine.ocr import scoring
-from mtg_recognition.engine.ocr.reading import PaddleCardReader, Reading
+from mtg_recognition.engine.ocr.reading import Reading, load_paddleocr, read_card
 from mtg_recognition.engine.ranking import RankedPrinting
-from mtg_recognition.engine.segmentation.yolo import YoloSegmentor
+from mtg_recognition.engine.segmentation import segment
 from mtg_recognition.reference.catalog import SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
 
@@ -45,9 +45,7 @@ class Pipeline:
         k_final_results: Number of printings ranked per card.
 
     Raises:
-        ValueError: If the k parameters are invalid, or the pHash index files hold
-            different numbers of hashes and UUIDs.
-        FileNotFoundError: If a pHash index file is missing.
+        ValueError: If the k parameters are invalid, or the catalog holds no pHash.
     """
 
     def __init__(self, k_phash_candidates: int = 20, k_final_results: int = 1):
@@ -60,10 +58,9 @@ class Pipeline:
         self.k_final_results = k_final_results
 
         reference = ReferenceData.default()
-        self.phash_index = load_phash_index(reference)
+        self.phashes = load_phashes(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
-        self.segmentor = YoloSegmentor()
-        self.reader = PaddleCardReader()
+        self.paddleocr = load_paddleocr()
 
     def recognize(
         self, query_image: ImageSource, debug: bool = False
@@ -77,18 +74,16 @@ class Pipeline:
         Args:
             query_image: A path, encoded bytes, a file-like upload, a PIL image or an
                 already-decoded BGR array.
-            debug: When True, each reading holds the reader's debug artefacts.
+            debug: When True, each reading holds read_card's debug artefacts.
         """
         try:
             # prepare and segment the query image
-            segmentation = self.segmentor.segment(prepare_image(query_image))
+            card_images = segment(prepare_image(query_image))
             card_results: list[CardResult] = []
-            for card in segmentation.cards:
-                card_image = card.card_image
-
+            for card_image in card_images:
                 # shortlist pHash candidates
                 uuids, _ = shortlist(
-                    self.phash_index, card_image, k=self.k_phash_candidates
+                    self.phashes, card_image, k=self.k_phash_candidates
                 )
 
                 # resolve them through the catalog, keeping pHash order and
@@ -107,7 +102,7 @@ class Pipeline:
                 reading: Reading | None = None
                 ocr_error: str | None = None
                 try:
-                    reading = self.reader.read(card_image, debug=debug)
+                    reading = read_card(self.paddleocr, card_image, debug=debug)
                 except RuntimeError as e:
                     ocr_error = f"{type(e).__name__}: {e}"
 

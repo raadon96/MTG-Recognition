@@ -117,6 +117,9 @@ class Results:
 
     commit: str
     mtgjson_version: str | None  # the catalog's, from the reference data
+    # when the run started, in ISO 8601 and UTC; None in results written before
+    # it was recorded
+    run_at: str | None
     totals: Totals
     images: dict[str, ImageOutcome]  # by path relative to the dataset root
 
@@ -128,7 +131,10 @@ REPORTED_METRICS = ("same_card_name",)
 
 
 def summarise(
-    commit: str, mtgjson_version: str | None, images: dict[str, ImageOutcome]
+    commit: str,
+    mtgjson_version: str | None,
+    run_at: str | None,
+    images: dict[str, ImageOutcome],
 ) -> Results:
     """The results of a run, with their totals."""
     outcomes = images.values()
@@ -140,7 +146,9 @@ def summarise(
         ocr_fallbacks=sum(o.ocr_fallbacks for o in outcomes),
         runtime_s=round(sum(o.runtime_s for o in outcomes), 3),
     )
-    return Results(commit, mtgjson_version, totals, dict(sorted(images.items())))
+    return Results(
+        commit, mtgjson_version, run_at, totals, dict(sorted(images.items()))
+    )
 
 
 @dataclass(slots=True)
@@ -219,4 +227,6 @@ def read_results(path: Path) -> Results:
         )
         for image, outcome in data["images"].items()
     }
-    return summarise(data["commit"], data["mtgjson_version"], images)
+    return summarise(
+        data["commit"], data["mtgjson_version"], data.get("run_at"), images
+    )

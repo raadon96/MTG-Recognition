@@ -49,7 +49,15 @@ uv run mtg benchmark status --latest   # summarise the latest results instead
 uv run mtg benchmark status --failures # also list the images that fail exact printing or card count
 ```
 
-`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` lists each failing image with its label and the recognised printings; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
+`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, date, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` prints a table of the failing images, with the printings of each label and the recognised printings one per line, and the recognition error when there is one; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
+
+### Download the reference images
+
+```bash
+uv run mtg reference download-images
+```
+
+Matching compares pHashes stored in the catalog, so the reference images aren't needed to recognise cards or run the tests. To compare a card image with its candidates' reference images while debugging matching, `download-images` fills `data/reference/images/` with the images missing for the printings in the committed catalog (about 116k images and 12 GB on a first run). It leaves the catalog unchanged, unlike `mtg reference update`, which may download a newer MTGJSON release and rebuild it, and `mtg reference build`, which rebuilds it from its own release.
 
 ### The benchmark in CI
 

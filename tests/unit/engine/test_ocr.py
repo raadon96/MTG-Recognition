@@ -1,6 +1,7 @@
 import pytest
 
 from mtg_recognition.engine.ocr.ocr_extraction import (
+    extract_artist_name,
     extract_card_name,
     extract_collector_number_and_base_set_size,
     extract_copyright_year,
@@ -170,6 +171,31 @@ class TestExtractCardName:
     )
     def test_extract_card_name(self, texts, expected):
         assert extract_card_name(texts) == expected
+
+    def test_surrounding_spaces_are_stripped_from_the_card_name(self):
+        assert extract_card_name([" Ogre Errant "]) == "Ogre Errant"
+        assert extract_card_name(["Ogre ", " Errant"]) == "Ogre Errant"
+
+    def test_a_one_character_token_padded_with_spaces_is_dropped(self):
+        assert extract_card_name([" a ", "Ogre", "Errant"]) == "Ogre Errant"
+        assert extract_card_name([" a "]) is None
+
+
+class TestExtractArtistName:
+    def test_name_parts_are_kept_from_a_token_mixed_with_copyright_text(self):
+        assert extract_artist_name(["Jeff Easley © 1997"]) == "Jeff Easley"
+
+    def test_blocklisted_words_are_not_part_of_the_artist_name(self):
+        texts = ["Illus. Rebecca Guay", "Wizards of the Coast LLC"]
+        assert extract_artist_name(texts) == "Rebecca Guay"
+
+    def test_tokens_with_digits_are_not_part_of_the_artist_name(self):
+        assert extract_artist_name(["Ron Spencer", "011/264", "M2O"]) == "Ron Spencer"
+
+    def test_no_name_like_tokens_gives_no_artist_name(self):
+        assert extract_artist_name([]) is None
+        texts = ["011/264", "© 2019", "Wizards of the Coast"]
+        assert extract_artist_name(texts) is None
 
 
 class TestExtractCollectorNumberAndBaseSetSize:

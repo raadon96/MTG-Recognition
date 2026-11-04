@@ -37,6 +37,7 @@ dist/
 data/reference/images/
 data/reference/tmp/
 data/reference/image_errors.log
+data/reference/download_errors.log
 benchmarks/results/
 data/benchmark/
 data/scratch/
