@@ -14,6 +14,9 @@ from mtg_recognition.app.uploads import (
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
 
+# Number of printings ranked per card.
+RANKING_SIZE = 5
+
 # --- Streamlit Page Config ---
 st.set_page_config(
     page_title="MTGC Recognizer",
@@ -27,7 +30,7 @@ st.set_page_config(
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(k_phash_candidates=20, k_final_results=5)
+    return Pipeline(k_phash_candidates=20, k_final_results=RANKING_SIZE)
 
 
 def _score_color(score: float) -> str:
@@ -114,7 +117,7 @@ def create_thumbnail_grid(results):
                 st.caption(f"📄 {filename}")
 
 
-def display_upload_detail_view(results, selected_idx, top_k: int):
+def display_upload_detail_view(results, selected_idx, debug: bool):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
@@ -123,8 +126,6 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         st.error("Cannot display details for this result")
         return
     best_printing = best.printing
-
-    debug = st.session_state.get("debug_mode", False)
 
     # Build ordered list of navigable (success) result indices for prev/next
     success_indices = [
@@ -259,9 +260,9 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     # Show the ranking below
     st.markdown("---")
-    st.subheader(f"Top {top_k} Matches")
+    st.subheader(f"Top {RANKING_SIZE} Matches")
 
-    ranking_cols = st.columns(top_k)
+    ranking_cols = st.columns(RANKING_SIZE)
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
             img_url = entry.printing.image_url
@@ -347,7 +348,7 @@ def main():
 
     # Sidebar options
     st.sidebar.header("⚙️ Import")
-    st.sidebar.toggle("🔬 Debug Mode", key="debug_mode", value=True)
+    debug = st.sidebar.toggle("🔬 Debug Mode", value=True)
 
     # Initialize session state for upload results
     if "upload_results" not in st.session_state:
@@ -402,6 +403,7 @@ def main():
                         f"Processing: {done}/{len(uploads)} images"
                     )
                 st.session_state.upload_results = results
+                st.session_state.selected_result_idx = None
                 st.rerun()
 
             except Exception as e:
@@ -417,14 +419,13 @@ def main():
         # Detail view
         if st.session_state.selected_result_idx is not None:
             display_upload_detail_view(
-                results, st.session_state.selected_result_idx, pipeline.k_final_results
+                results, st.session_state.selected_result_idx, debug
             )
         else:
             # Grid view
             create_thumbnail_grid(results)
 
-    # Export and Clear Results in sidebar
-    if st.session_state.upload_results:
+        # Export and Clear Results in sidebar
         st.sidebar.markdown("---")
         st.sidebar.subheader("📥 Export Results")
 
@@ -446,6 +447,7 @@ def main():
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
             st.session_state.upload_results = None
+            st.session_state.selected_result_idx = None
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
             st.rerun()
