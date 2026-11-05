@@ -14,6 +14,8 @@ from mtg_recognition.settings import settings
 # Number of printings ranked per card.
 RANKING_SIZE = 5
 
+PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/300x420?text=No+Image"
+
 # --- Streamlit Page Config ---
 st.set_page_config(
     page_title="MTGC Recognizer",
@@ -50,17 +52,18 @@ def create_thumbnail_grid(results):
     for idx, result in enumerate(results):
         col_idx = idx % cols_per_row
 
+        # Truncated to fit the tile
+        filename = result.uploaded_filename
+        if len(filename) > 20:
+            filename = filename[:17] + "..."
+
         with cols[col_idx], st.container(border=True):
             best = result.best
             if result.status == UploadStatus.SUCCESS and best is not None:
                 best_printing = best.printing
                 # Display the best printing's reference image
                 img_url = best_printing.image_url
-                st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
-                )
+                st.image(img_url or PLACEHOLDER_IMAGE_URL)
 
                 # Display card name
                 st.markdown(f"**{best_printing.name}**")
@@ -80,10 +83,6 @@ def create_thumbnail_grid(results):
                     f"{best_printing.set_code} #{best_printing.collector_number}"
                 )
 
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
                 st.caption(f"📄 {filename}")
 
                 # View Details button
@@ -98,19 +97,11 @@ def create_thumbnail_grid(results):
             elif result.status == UploadStatus.NOT_RECOGNIZED:
                 st.caption("❌ No Match")
 
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
                 st.caption(f"📄 {filename}")
 
             else:  # error
                 st.caption("⚠️ Error")
 
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
                 st.caption(f"📄 {filename}")
 
 
@@ -193,9 +184,7 @@ def display_upload_detail_view(results, selected_idx, debug: bool):
     with col3:
         st.caption("**Best Match**")
         img_url = best_printing.image_url
-        st.image(
-            img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
-        )
+        st.image(img_url or PLACEHOLDER_IMAGE_URL)
 
     # Column 4: Metadata
     with col4:
@@ -263,11 +252,7 @@ def display_upload_detail_view(results, selected_idx, debug: bool):
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
             img_url = entry.printing.image_url
-            st.image(
-                img_url
-                if img_url
-                else "https://via.placeholder.com/300x420?text=No+Image",
-            )
+            st.image(img_url or PLACEHOLDER_IMAGE_URL)
             st.caption(f"**{entry.printing.name}**")
             st.caption(f"Score: {entry.score:.2f}")
 
