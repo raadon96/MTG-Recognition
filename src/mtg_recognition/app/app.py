@@ -1,7 +1,6 @@
-import argparse
 import io
 
-import requests
+import pandas as pd
 import streamlit as st
 
 from mtg_recognition.app.uploads import (
@@ -24,19 +23,7 @@ st.set_page_config(
 )
 
 
-def fetch_scryfall_data_from_url(scryfall_id):
-    """Fetches card data from Scryfall API."""
-    url = f"https://api.scryfall.com/cards/{scryfall_id}"
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            return r.json()
-    except Exception as e:
-        print(f"Scryfall API Error: {e}")
-    return None
-
-
-@st.cache_resource(scope="global")
+@st.cache_resource
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
@@ -52,7 +39,7 @@ def _score_color(score: float) -> str:
     return "#CC6600"
 
 
-def create_thumbnail_grid(results, results_key="upload_results"):
+def create_thumbnail_grid(results):
     """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
 
@@ -102,11 +89,10 @@ def create_thumbnail_grid(results, results_key="upload_results"):
                 # View Details button
                 if st.button(
                     "Details",
-                    key=f"detail_btn_{idx}_{results_key}",
+                    key=f"detail_btn_{idx}",
                     width="stretch",
                 ):
                     st.session_state.selected_result_idx = idx
-                    st.session_state.selected_results_key = results_key
                     st.rerun()
 
             elif result.status == UploadStatus.NOT_RECOGNIZED:
@@ -146,10 +132,7 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
         for i, r in enumerate(results)
         if r.status == UploadStatus.SUCCESS and r.best is not None
     ]
-    try:
-        pos = success_indices.index(selected_idx)
-    except ValueError:
-        pos = None
+    pos = success_indices.index(selected_idx)
 
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
@@ -159,32 +142,31 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             ):
                 st.session_state.selected_result_idx = None
                 st.rerun()
-        if pos is not None:
-            with col_prev:
-                if st.button(
-                    "◀",
-                    key=f"prev_{key_suffix}",
-                    disabled=pos == 0,
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_result_idx = success_indices[pos - 1]
-                    st.rerun()
-            with col_pos:
-                st.markdown(
-                    "<p style='text-align:center; margin:0; padding-top:6px; "
-                    "color:gray;'>"
-                    f"{pos + 1} / {len(success_indices)}</p>",
-                    unsafe_allow_html=True,
-                )
-            with col_next:
-                if st.button(
-                    "▶",
-                    key=f"next_{key_suffix}",
-                    disabled=pos == len(success_indices) - 1,
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_result_idx = success_indices[pos + 1]
-                    st.rerun()
+        with col_prev:
+            if st.button(
+                "◀",
+                key=f"prev_{key_suffix}",
+                disabled=pos == 0,
+                use_container_width=True,
+            ):
+                st.session_state.selected_result_idx = success_indices[pos - 1]
+                st.rerun()
+        with col_pos:
+            st.markdown(
+                "<p style='text-align:center; margin:0; padding-top:6px; "
+                "color:gray;'>"
+                f"{pos + 1} / {len(success_indices)}</p>",
+                unsafe_allow_html=True,
+            )
+        with col_next:
+            if st.button(
+                "▶",
+                key=f"next_{key_suffix}",
+                disabled=pos == len(success_indices) - 1,
+                use_container_width=True,
+            ):
+                st.session_state.selected_result_idx = success_indices[pos + 1]
+                st.rerun()
 
     _nav_bar("top")
 
@@ -259,8 +241,6 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     if debug and best.breakdown:
         with st.expander("📊 Table 1 — Reading vs. Best Printing", expanded=True):
-            import pandas as pd
-
             df_prop = (
                 pd.DataFrame(
                     [
@@ -281,24 +261,21 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     st.markdown("---")
     st.subheader(f"Top {top_k} Matches")
 
-    if ranked:
-        ranking_cols = st.columns(top_k)
-        for col_idx, entry in enumerate(ranked[:top_k]):
-            with ranking_cols[col_idx]:
-                img_url = entry.printing.image_url
-                st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
-                )
-                st.caption(f"**{entry.printing.name}**")
-                st.caption(f"Score: {entry.score:.2f}")
+    ranking_cols = st.columns(top_k)
+    for col_idx, entry in enumerate(ranked):
+        with ranking_cols[col_idx]:
+            img_url = entry.printing.image_url
+            st.image(
+                img_url
+                if img_url
+                else "https://via.placeholder.com/300x420?text=No+Image",
+            )
+            st.caption(f"**{entry.printing.name}**")
+            st.caption(f"Score: {entry.score:.2f}")
 
     # Debug: score matrix below the ranking
-    if debug and ranked and ranked[0].breakdown:
+    if debug and best.breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
-            import pandas as pd
-
             # Prefix each label with its rank so duplicate card names (reprints)
             # don't produce a non-unique index, which breaks pandas Styler.
             score_matrix = pd.DataFrame(
@@ -361,7 +338,6 @@ def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
 
 
 def main():
-    parse_args()
     st.title("Decksray MTGC Recognizer")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
@@ -378,8 +354,6 @@ def main():
         st.session_state.upload_results = None
     if "selected_result_idx" not in st.session_state:
         st.session_state.selected_result_idx = None
-    if "selected_results_key" not in st.session_state:
-        st.session_state.selected_results_key = None
     if "uploader_key" not in st.session_state:
         st.session_state.uploader_key = 0
 
@@ -428,8 +402,6 @@ def main():
                         f"Processing: {done}/{len(uploads)} images"
                     )
                 st.session_state.upload_results = results
-
-                st.success("✅ Processing complete!")
                 st.rerun()
 
             except Exception as e:
@@ -449,7 +421,7 @@ def main():
             )
         else:
             # Grid view
-            create_thumbnail_grid(results, results_key="upload_results")
+            create_thumbnail_grid(results)
 
     # Export and Clear Results in sidebar
     if st.session_state.upload_results:
@@ -477,16 +449,6 @@ def main():
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
             st.rerun()
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "App for MTG card recognition with multi-image uploads, "
-            "detailed results view, and export functionality."
-        )
-    )
-    return parser.parse_args()
 
 
 if __name__ == "__main__":
