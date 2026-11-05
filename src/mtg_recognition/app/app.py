@@ -1,14 +1,11 @@
-import io
-
 import pandas as pd
 import streamlit as st
 
 from mtg_recognition.app.uploads import (
+    EXPORT_FORMATS,
     Upload,
-    UploadResult,
     UploadStatus,
-    results_json,
-    results_table,
+    export_bytes,
     upload_results,
 )
 from mtg_recognition.engine.pipeline import Pipeline
@@ -298,44 +295,6 @@ def display_upload_detail_view(results, selected_idx, debug: bool):
     # Bottom navigation bar — same controls as top, so no scrolling required
     st.markdown("---")
     _nav_bar("bottom")
-
-
-EXPORT_FORMATS = {  # format -> (MIME type, file name)
-    "CSV": ("text/csv", "results.csv"),
-    "Excel": (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "results.xlsx",
-    ),
-    "JSON": ("application/json", "results.json"),
-}
-
-
-def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
-    """The export file's contents, built when the user clicks Download.
-
-    Streamlit ignores st.* calls made here, so a failure is raised with an
-    "Export failed: ..." message, which Streamlit shows on the download button.
-    """
-    try:
-        match export_format:
-            case "CSV":
-                return results_table(results).to_csv(index=False).encode()
-            case "Excel":
-                buffer = io.BytesIO()
-                # pandas' stub types reject BytesIO, which to_excel accepts.
-                results_table(results).to_excel(
-                    buffer,  # ty: ignore[invalid-argument-type]
-                    index=False,
-                    sheet_name="Results",
-                    engine="openpyxl",
-                )
-                return buffer.getvalue()
-            case "JSON":
-                return results_json(results).encode()
-            case _:
-                raise ValueError(f"unknown format {export_format!r}")
-    except Exception as e:
-        raise RuntimeError(f"Export failed: {e}") from e
 
 
 def main():

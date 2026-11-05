@@ -11,8 +11,7 @@ import pytest
 from mtg_recognition.app.uploads import (
     Upload,
     UploadStatus,
-    results_json,
-    results_table,
+    export_bytes,
     upload_results,
 )
 from mtg_recognition.engine.ocr.reading import Reading, ReadingDebug
@@ -147,9 +146,9 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(upload):
         upload, ERROR
     )
 
-    csv = results_table(results).to_csv(index=False)
+    csv = export_bytes(results, "CSV")
 
-    df = pd.read_csv(io.StringIO(csv), dtype=str, keep_default_na=False)
+    df = pd.read_csv(io.BytesIO(csv), dtype=str, keep_default_na=False)
     assert list(df.columns) == [
         "Uploaded Filename",
         "Status",
@@ -190,6 +189,39 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(upload):
     ]
 
 
+def test_excel_export_has_one_row_per_result_with_the_best_printing(upload):
+    results = upload_results(upload, _recognized(_card())) + upload_results(
+        upload, ERROR
+    )
+
+    excel = export_bytes(results, "Excel")
+
+    df = pd.read_excel(io.BytesIO(excel), sheet_name="Results")
+    assert list(df.columns) == [
+        "Uploaded Filename",
+        "Status",
+        "Card Name",
+        "UUID",
+        "Score",
+        "Set Code",
+        "Collector Number",
+        "Base Set Size",
+        "Artist",
+        "Scryfall URL",
+    ]
+    assert df["Status"].tolist() == ["success", "error"]
+    assert df["Card Name"][0] == "Card p0"
+    assert df["Score"][0] == 100.0
+    assert df["Card Name"].isna()[1]
+
+
+def test_an_unknown_export_format_fails_with_a_message_for_the_download_button(upload):
+    results = upload_results(upload, _recognized(_card()))
+
+    with pytest.raises(RuntimeError, match="Export failed"):
+        export_bytes(results, "PDF")
+
+
 def test_json_export_has_one_item_per_result_with_the_best_printing(upload):
     results = (
         upload_results(upload, _recognized(_card()))
@@ -197,7 +229,7 @@ def test_json_export_has_one_item_per_result_with_the_best_printing(upload):
         + upload_results(upload, ERROR)
     )
 
-    items = json.loads(results_json(results))
+    items = json.loads(export_bytes(results, "JSON"))
 
     no_printing = {
         "card_name": None,
