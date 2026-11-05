@@ -1,3 +1,5 @@
+import contextlib
+
 import pandas as pd
 import streamlit as st
 
@@ -13,10 +15,12 @@ from mtg_recognition.app.uploads import (
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
 
-# Number of printings ranked per card.
 RANKING_SIZE = 5
 
 PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/300x420?text=No+Image"
+
+# In pixels: at full width a phone photo would fill several screens.
+QUERY_IMAGE_WIDTH = 400
 
 # --- Streamlit Page Config ---
 st.set_page_config(
@@ -86,26 +90,22 @@ def create_thumbnail_grid(results: list[UploadResult]):
                         f"{best_printing.set_code} #{best_printing.collector_number}"
                     )
 
-                    st.caption(f"📄 {filename}")
-
-                    # View Details button
-                    if st.button(
-                        "Details",
-                        key=f"detail_btn_{idx}",
-                        width="stretch",
-                    ):
-                        st.session_state.selected_result_idx = idx
-                        st.rerun()
-
                 case NotRecognized():
                     st.caption("❌ No Match")
-
-                    st.caption(f"📄 {filename}")
 
                 case Failed():
                     st.caption("⚠️ Error")
 
-                    st.caption(f"📄 {filename}")
+            st.caption(f"📄 {filename}")
+
+            # View Details button
+            if st.button(
+                "Details",
+                key=f"detail_btn_{idx}",
+                width="stretch",
+            ):
+                st.session_state.selected_result_idx = idx
+                st.rerun()
 
 
 def display_upload_detail_view(
@@ -113,16 +113,6 @@ def display_upload_detail_view(
 ):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
-
-    if not isinstance(result, Recognized):
-        st.error("Cannot display details for this result")
-        return
-    best = result.ranked[0]
-    best_printing = best.printing
-
-    # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [i for i, r in enumerate(results) if isinstance(r, Recognized)]
-    pos = success_indices.index(selected_idx)
 
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
@@ -136,33 +126,54 @@ def display_upload_detail_view(
             if st.button(
                 "◀",
                 key=f"prev_{key_suffix}",
-                disabled=pos == 0,
+                disabled=selected_idx == 0,
                 use_container_width=True,
             ):
-                st.session_state.selected_result_idx = success_indices[pos - 1]
+                st.session_state.selected_result_idx = selected_idx - 1
                 st.rerun()
         with col_pos:
             st.markdown(
                 "<p style='text-align:center; margin:0; padding-top:6px; "
                 "color:gray;'>"
-                f"{pos + 1} / {len(success_indices)}</p>",
+                f"{selected_idx + 1} / {len(results)}</p>",
                 unsafe_allow_html=True,
             )
         with col_next:
             if st.button(
                 "▶",
                 key=f"next_{key_suffix}",
-                disabled=pos == len(success_indices) - 1,
+                disabled=selected_idx == len(results) - 1,
                 use_container_width=True,
             ):
-                st.session_state.selected_result_idx = success_indices[pos + 1]
+                st.session_state.selected_result_idx = selected_idx + 1
                 st.rerun()
 
     _nav_bar("top")
 
     st.subheader(f"📋 {result.uploaded_filename}")
 
+    match result:
+        case Recognized():
+            display_recognized_detail(result, debug)
+        case NotRecognized():
+            st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            st.warning("Not recognized: no printing was found for this image.")
+        case Failed():
+            # An unreadable or oversized query image is one reason to fail, and st.image
+            # raises on it, which would stop the rest of the page rendering.
+            with contextlib.suppress(Exception):
+                st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            st.error("Failed: this image could not be processed.")
+
+    # Bottom navigation bar — same controls as top, so no scrolling required
+    st.markdown("---")
+    _nav_bar("bottom")
+
+
+def display_recognized_detail(result: Recognized, debug: bool):
     ranked = result.ranked
+    best = ranked[0]
+    best_printing = best.printing
     reading_debug = result.reading_debug
 
     # Main layout: 3 columns for images + 1 column for metadata
@@ -274,10 +285,6 @@ def display_upload_detail_view(
                 ).format("{:.1f}"),
                 width="stretch",
             )
-
-    # Bottom navigation bar — same controls as top, so no scrolling required
-    st.markdown("---")
-    _nav_bar("bottom")
 
 
 def main():
