@@ -3,8 +3,10 @@ import streamlit as st
 
 from mtg_recognition.app.uploads import (
     EXPORT_FORMATS,
-    Upload,
-    UploadStatus,
+    Failed,
+    NotRecognized,
+    Recognized,
+    UploadResult,
     export_bytes,
     upload_results,
 )
@@ -41,7 +43,7 @@ def _score_color(score: float) -> str:
     return "#CC6600"
 
 
-def create_thumbnail_grid(results):
+def create_thumbnail_grid(results: list[UploadResult]):
     """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
 
@@ -58,69 +60,68 @@ def create_thumbnail_grid(results):
             filename = filename[:17] + "..."
 
         with cols[col_idx], st.container(border=True):
-            best = result.best
-            if result.status == UploadStatus.SUCCESS and best is not None:
-                best_printing = best.printing
-                # Display the best printing's reference image
-                img_url = best_printing.image_url
-                st.image(img_url or PLACEHOLDER_IMAGE_URL)
+            match result:
+                case Recognized():
+                    best = result.ranked[0]
+                    best_printing = best.printing
+                    # Display the best printing's reference image
+                    img_url = best_printing.image_url
+                    st.image(img_url or PLACEHOLDER_IMAGE_URL)
 
-                # Display card name
-                st.markdown(f"**{best_printing.name}**")
+                    # Display card name
+                    st.markdown(f"**{best_printing.name}**")
 
-                # Color-coded score indicator (scores are 0–100)
-                score = best.score
-                st.markdown(
-                    f'<div style="background-color: {_score_color(score)}; '
-                    f"padding: 2px 6px; border-radius: 3px; "
-                    "text-align: center; font-size: 12px; font-weight: bold; "
-                    'color: white;">'
-                    f"{score:.1f}</div>",
-                    unsafe_allow_html=True,
-                )
+                    # Color-coded score indicator (scores are 0–100)
+                    score = best.score
+                    st.markdown(
+                        f'<div style="background-color: {_score_color(score)}; '
+                        f"padding: 2px 6px; border-radius: 3px; "
+                        "text-align: center; font-size: 12px; font-weight: bold; "
+                        'color: white;">'
+                        f"{score:.1f}</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                st.caption(
-                    f"{best_printing.set_code} #{best_printing.collector_number}"
-                )
+                    st.caption(
+                        f"{best_printing.set_code} #{best_printing.collector_number}"
+                    )
 
-                st.caption(f"📄 {filename}")
+                    st.caption(f"📄 {filename}")
 
-                # View Details button
-                if st.button(
-                    "Details",
-                    key=f"detail_btn_{idx}",
-                    width="stretch",
-                ):
-                    st.session_state.selected_result_idx = idx
-                    st.rerun()
+                    # View Details button
+                    if st.button(
+                        "Details",
+                        key=f"detail_btn_{idx}",
+                        width="stretch",
+                    ):
+                        st.session_state.selected_result_idx = idx
+                        st.rerun()
 
-            elif result.status == UploadStatus.NOT_RECOGNIZED:
-                st.caption("❌ No Match")
+                case NotRecognized():
+                    st.caption("❌ No Match")
 
-                st.caption(f"📄 {filename}")
+                    st.caption(f"📄 {filename}")
 
-            else:  # error
-                st.caption("⚠️ Error")
+                case Failed():
+                    st.caption("⚠️ Error")
 
-                st.caption(f"📄 {filename}")
+                    st.caption(f"📄 {filename}")
 
 
-def display_upload_detail_view(results, selected_idx, debug: bool):
+def display_upload_detail_view(
+    results: list[UploadResult], selected_idx: int, debug: bool
+):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
 
-    best = result.best
-    if result.status != UploadStatus.SUCCESS or best is None:
+    if not isinstance(result, Recognized):
         st.error("Cannot display details for this result")
         return
+    best = result.ranked[0]
     best_printing = best.printing
 
     # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [
-        i
-        for i, r in enumerate(results)
-        if r.status == UploadStatus.SUCCESS and r.best is not None
-    ]
+    success_indices = [i for i, r in enumerate(results) if isinstance(r, Recognized)]
     pos = success_indices.index(selected_idx)
 
     def _nav_bar(key_suffix: str) -> None:
@@ -175,10 +176,7 @@ def display_upload_detail_view(results, selected_idx, debug: bool):
     # Column 2: card image
     with col2:
         st.caption("**Warped Image**")
-        if result.card_image_jpeg is not None:
-            st.image(result.card_image_jpeg)
-        else:
-            st.info("Warped image not available")
+        st.image(result.card_image_jpeg)
 
     # Column 3: the best printing's reference image
     with col3:
@@ -330,8 +328,6 @@ def main():
 
         # Start processing button
         if st.sidebar.button("🚀 START PROCESSING", type="primary"):
-            uploads = [Upload(name=f.name, data=f.getvalue()) for f in uploaded_files]
-
             # Progress container
             progress_placeholder = st.empty()
             progress_bar = st.progress(0)
@@ -339,12 +335,13 @@ def main():
             # Process uploads
             try:
                 results = []
-                for done, upload in enumerate(uploads, 1):
-                    recognition = pipeline.recognize(upload.data, debug=True)
-                    results.extend(upload_results(upload, recognition))
-                    progress_bar.progress(done / len(uploads))
+                for done, file in enumerate(uploaded_files, 1):
+                    data = file.getvalue()
+                    recognition = pipeline.recognize(data, debug=True)
+                    results.extend(upload_results(file.name, data, recognition))
+                    progress_bar.progress(done / len(uploaded_files))
                     progress_placeholder.info(
-                        f"Processing: {done}/{len(uploads)} images"
+                        f"Processing: {done}/{len(uploaded_files)} images"
                     )
                 st.session_state.upload_results = results
                 st.session_state.selected_result_idx = None

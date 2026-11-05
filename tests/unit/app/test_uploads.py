@@ -9,8 +9,9 @@ import pandas as pd
 import pytest
 
 from mtg_recognition.app.uploads import (
-    Upload,
-    UploadStatus,
+    Failed,
+    NotRecognized,
+    Recognized,
     export_bytes,
     upload_results,
 )
@@ -19,6 +20,8 @@ from mtg_recognition.engine.pipeline import CardResult, RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
 from tests.unit.engine.builders import card_image, printing
 
+NAME = "card.jpg"
+DATA = b"uploaded bytes"
 ERROR = RecognitionResult(cards=[], error="RuntimeError: model exploded")
 NO_CARD = RecognitionResult(cards=[], error=None)
 
@@ -31,63 +34,54 @@ def _card(uuid: str = "p0", value: int = 3) -> CardResult:
     )
 
 
-def _recognized(*cards: CardResult) -> RecognitionResult:
+def _recognition(*cards: CardResult) -> RecognitionResult:
     return RecognitionResult(cards=list(cards), error=None)
 
 
-@pytest.fixture
-def upload() -> Upload:
-    return Upload(name="card.jpg", data=b"uploaded bytes")
+def test_a_card_with_candidates_is_recognition():
+    [result] = upload_results(NAME, DATA, _recognition(_card()))
+
+    assert isinstance(result, Recognized)
 
 
-def test_a_recognized_card_is_a_success(upload):
-    [result] = upload_results(upload, _recognized(_card()))
+def test_a_query_image_without_a_card_is_not_recognition():
+    [result] = upload_results(NAME, DATA, NO_CARD)
 
-    assert result.status == UploadStatus.SUCCESS
-    assert result.error_message is None
-
-
-def test_a_query_image_without_a_card_is_not_recognized(upload):
-    [result] = upload_results(upload, NO_CARD)
-
-    assert result.status == UploadStatus.NOT_RECOGNIZED
+    assert isinstance(result, NotRecognized)
 
 
-def test_a_card_without_candidates_is_not_recognized(upload):
+def test_a_card_without_candidates_is_not_recognized_and_holds_no_card_image():
     card = CardResult(card_image=card_image(), ranked=[], reading=None)
 
-    [result] = upload_results(upload, _recognized(card))
+    [result] = upload_results(NAME, DATA, _recognition(card))
 
-    assert result.status == UploadStatus.NOT_RECOGNIZED
-
-
-def test_a_recognition_failure_is_an_error(upload):
-    [result] = upload_results(upload, ERROR)
-
-    assert result.status == UploadStatus.ERROR
-    assert result.error_message == "RuntimeError: model exploded"
+    assert result == NotRecognized(NAME, DATA)
 
 
-def test_one_result_per_card_in_the_order_found(upload):
-    results = upload_results(upload, _recognized(_card("p1"), _card("p2")))
+def test_a_recognition_failure_holds_its_error_message():
+    [result] = upload_results(NAME, DATA, ERROR)
 
-    assert [r.status for r in results] == [UploadStatus.SUCCESS, UploadStatus.SUCCESS]
-    assert [r.ranked[0].printing.uuid for r in results] == ["p1", "p2"]
+    assert result == Failed(NAME, DATA, "RuntimeError: model exploded")
 
 
-def test_the_uploaded_filename_is_the_name_of_the_upload():
-    png = Upload(name="card.png", data=b"png bytes")
+def test_one_result_per_card_in_the_order_found():
+    [first, second] = upload_results(NAME, DATA, _recognition(_card("p1"), _card("p2")))
 
-    [result] = upload_results(png, _recognized(_card()))
+    assert isinstance(first, Recognized) and isinstance(second, Recognized)
+    assert first.ranked[0].printing.uuid == "p1"
+    assert second.ranked[0].printing.uuid == "p2"
+
+
+def test_the_uploaded_filename_is_the_name_given():
+    [result] = upload_results("card.png", DATA, _recognition(_card()))
 
     assert result.uploaded_filename == "card.png"
 
 
-def test_a_result_holds_the_query_image_and_the_card_image_as_jpeg(upload):
-    [result] = upload_results(upload, _recognized(_card(value=3)))
+def test_a_recognized_result_holds_the_card_image_as_jpeg():
+    [result] = upload_results(NAME, DATA, _recognition(_card(value=3)))
 
-    assert result.query_image == upload.data
-    assert result.card_image_jpeg is not None
+    assert isinstance(result, Recognized)
     decoded = cv2.imdecode(
         np.frombuffer(result.card_image_jpeg, np.uint8), cv2.IMREAD_COLOR
     )
@@ -96,15 +90,14 @@ def test_a_result_holds_the_query_image_and_the_card_image_as_jpeg(upload):
     assert abs(int(decoded[0, 0, 0]) - 3) <= 2
 
 
-@pytest.mark.parametrize("recognition", [NO_CARD, ERROR])
-def test_a_result_without_a_card_still_holds_the_query_image(upload, recognition):
-    [result] = upload_results(upload, recognition)
+@pytest.mark.parametrize("recognition", [_recognition(_card()), NO_CARD, ERROR])
+def test_every_kind_of_result_holds_the_query_image(recognition):
+    [result] = upload_results(NAME, DATA, recognition)
 
-    assert result.query_image == upload.data
-    assert result.card_image_jpeg is None
+    assert result.query_image == DATA
 
 
-def test_a_result_holds_the_readings_debug_artefacts(upload):
+def test_a_recognized_result_holds_the_readings_debug_artefacts():
     debug = ReadingDebug(
         annotated_image=None, texts=["M10·EN"], scores=[0.9], boxes=[(0, 0, 9, 9)]
     )
@@ -114,36 +107,15 @@ def test_a_result_holds_the_readings_debug_artefacts(upload):
         reading=Reading(name="Card p0", debug=debug),
     )
 
-    [result] = upload_results(upload, _recognized(card))
+    [result] = upload_results(NAME, DATA, _recognition(card))
 
+    assert isinstance(result, Recognized)
     assert result.reading_debug is debug
 
 
-def test_best_is_the_top_ranked_entry(upload):
-    card = CardResult(
-        card_image=card_image(),
-        ranked=[
-            RankedPrinting(printing("p0"), 100.0),
-            RankedPrinting(printing("p1"), 40.0),
-        ],
-        reading=None,
-    )
-
-    [result] = upload_results(upload, _recognized(card))
-
-    assert result.best is not None
-    assert (result.best.printing, result.best.score) == (printing("p0"), 100.0)
-
-
-def test_best_is_none_with_an_empty_ranking(upload):
-    [result] = upload_results(upload, NO_CARD)
-
-    assert result.best is None
-
-
-def test_csv_export_has_one_row_per_result_with_the_best_printing(upload):
-    results = upload_results(upload, _recognized(_card())) + upload_results(
-        upload, ERROR
+def test_csv_export_has_one_row_per_result_with_the_best_printing():
+    results = upload_results(NAME, DATA, _recognition(_card())) + upload_results(
+        NAME, DATA, ERROR
     )
 
     csv = export_bytes(results, "CSV")
@@ -189,9 +161,9 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing(upload):
     ]
 
 
-def test_excel_export_has_one_row_per_result_with_the_best_printing(upload):
-    results = upload_results(upload, _recognized(_card())) + upload_results(
-        upload, ERROR
+def test_excel_export_has_one_row_per_result_with_the_best_printing():
+    results = upload_results(NAME, DATA, _recognition(_card())) + upload_results(
+        NAME, DATA, ERROR
     )
 
     excel = export_bytes(results, "Excel")
@@ -215,18 +187,18 @@ def test_excel_export_has_one_row_per_result_with_the_best_printing(upload):
     assert df["Card Name"].isna()[1]
 
 
-def test_an_unknown_export_format_fails_with_a_message_for_the_download_button(upload):
-    results = upload_results(upload, _recognized(_card()))
+def test_an_unknown_export_format_fails_with_a_message_for_the_download_button():
+    results = upload_results(NAME, DATA, _recognition(_card()))
 
     with pytest.raises(RuntimeError, match="Export failed"):
         export_bytes(results, "PDF")
 
 
-def test_json_export_has_one_item_per_result_with_the_best_printing(upload):
+def test_json_export_has_one_item_per_result_with_the_best_printing():
     results = (
-        upload_results(upload, _recognized(_card()))
-        + upload_results(upload, NO_CARD)
-        + upload_results(upload, ERROR)
+        upload_results(NAME, DATA, _recognition(_card()))
+        + upload_results(NAME, DATA, NO_CARD)
+        + upload_results(NAME, DATA, ERROR)
     )
 
     items = json.loads(export_bytes(results, "JSON"))

@@ -4,8 +4,7 @@ app.
 
 import io
 import json
-from dataclasses import dataclass, field
-from enum import StrEnum
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
@@ -42,68 +41,65 @@ _EXPORT_COLUMNS = {
 }
 
 
-@dataclass(frozen=True)
-class Upload:
-    """One uploaded query image file: its name and its encoded bytes, as uploaded."""
-
-    name: str
-    data: bytes
-
-
-class UploadStatus(StrEnum):
-    SUCCESS = "success"
-    NOT_RECOGNIZED = "not_recognized"
-    ERROR = "error"
-
-
-@dataclass
-class UploadResult:
-    """Result for one card found in an uploaded query image, or for a query image with
-    no card or an error.
-    """
+@dataclass(slots=True)
+class Recognized:
+    """A card found in an uploaded query image, with its ranking."""
 
     uploaded_filename: str
     query_image: bytes  # as uploaded
-    status: UploadStatus
-    ranked: list[RankedPrinting] = field(default_factory=list)  # best first
-    error_message: str | None = None
-    card_image_jpeg: bytes | None = None  # for display only
-    reading_debug: ReadingDebug | None = None
+    ranked: list[RankedPrinting]  # best first, never empty
+    card_image_jpeg: bytes  # for display only
+    reading_debug: ReadingDebug | None
 
-    @property
-    def best(self) -> RankedPrinting | None:
-        """The best printing's entry, or None when the ranking is empty."""
-        return self.ranked[0] if self.ranked else None
+
+@dataclass(slots=True)
+class NotRecognized:
+    """A query image with no card, or a card with no candidates."""
+
+    uploaded_filename: str
+    query_image: bytes  # as uploaded
+
+
+@dataclass(slots=True)
+class Failed:
+    """A query image that recognition could not process."""
+
+    uploaded_filename: str
+    query_image: bytes  # as uploaded
+    error_message: str
+
+
+UploadResult = Recognized | NotRecognized | Failed
 
 
 def upload_results(
-    upload: Upload, recognition: RecognitionResult
+    name: str, data: bytes, recognition: RecognitionResult
 ) -> list[UploadResult]:
-    """The results of recognizing one upload: one per card found, or a single one for
-    a query image with no card or an error.
+    """The results of recognizing one uploaded query image: one per card found, or a
+    single one for a query image with no card or an error.
     """
-    name, data = upload.name, upload.data
-
     if recognition.error is not None:
-        return [
-            UploadResult(
-                name, data, UploadStatus.ERROR, error_message=recognition.error
-            )
-        ]
+        return [Failed(name, data, recognition.error)]
     if not recognition.cards:
-        return [UploadResult(name, data, UploadStatus.NOT_RECOGNIZED)]
+        return [NotRecognized(name, data)]
 
-    return [
-        UploadResult(
-            name,
-            data,
-            UploadStatus.SUCCESS if card.ranked else UploadStatus.NOT_RECOGNIZED,
-            ranked=card.ranked,
-            card_image_jpeg=_encode_jpeg(card.card_image),
-            reading_debug=(card.reading.debug if card.reading is not None else None),
-        )
-        for card in recognition.cards
-    ]
+    results: list[UploadResult] = []
+    for card in recognition.cards:
+        if card.ranked:
+            results.append(
+                Recognized(
+                    name,
+                    data,
+                    ranked=card.ranked,
+                    card_image_jpeg=_encode_jpeg(card.card_image),
+                    reading_debug=(
+                        card.reading.debug if card.reading is not None else None
+                    ),
+                )
+            )
+        else:
+            results.append(NotRecognized(name, data))
+    return results
 
 
 def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
@@ -118,18 +114,24 @@ def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
         for result in results:
             row: dict[str, object] = dict.fromkeys(_EXPORT_COLUMNS)
             row["uploaded_filename"] = result.uploaded_filename
-            row["status"] = result.status.value
-            best = result.best
-            if best is not None:
-                row["card_name"] = best.printing.name
-                row["uuid"] = best.printing.uuid
-                row["score"] = best.score
-                row["set_code"] = best.printing.set_code
-                row["collector_number"] = best.printing.collector_number
-                row["base_set_size"] = best.printing.base_set_size
-                row["artist"] = best.printing.artist
-                row["scryfall_url"] = best.printing.image_url
-            row["error_message"] = result.error_message
+            row["error_message"] = None
+            match result:
+                case Recognized():
+                    best = result.ranked[0]
+                    row["status"] = "success"
+                    row["card_name"] = best.printing.name
+                    row["uuid"] = best.printing.uuid
+                    row["score"] = best.score
+                    row["set_code"] = best.printing.set_code
+                    row["collector_number"] = best.printing.collector_number
+                    row["base_set_size"] = best.printing.base_set_size
+                    row["artist"] = best.printing.artist
+                    row["scryfall_url"] = best.printing.image_url
+                case NotRecognized():
+                    row["status"] = "not_recognized"
+                case Failed():
+                    row["status"] = "error"
+                    row["error_message"] = result.error_message
             rows.append(row)
 
         if export_format == "JSON":
