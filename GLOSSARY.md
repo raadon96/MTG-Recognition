@@ -14,6 +14,14 @@ _Avoid_: card (when the edition matters), row, match (for the thing matched)
 The physical object in a photo or scan. For a card independent of edition (e.g. "Lightning Bolt", which has many printings), say **card name**.
 _Avoid_: card (for the name), printing (when the edition is unknown or irrelevant)
 
+**Frame**:
+The generation of visual design a printing is drawn in: 1993, 1997, 2003, 2015 or future.
+_Avoid_: era, template, layout (for the design generation)
+
+**Layout**:
+How a printing's content is arranged on the card, such as normal, transform, adventure, split or saga.
+_Avoid_: frame (for the arrangement)
+
 ### Printed details
 
 **Collector information**:
