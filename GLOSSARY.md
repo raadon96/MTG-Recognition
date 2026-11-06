@@ -92,6 +92,10 @@ _Avoid_: confidence (it is not a probability), distance
 How alike a card image looks to a printing's reference image, from 0 to 1; higher is more alike. It shortlists candidates and is never shown as a score.
 _Avoid_: score, confidence
 
+**Upload result**:
+What the app holds for a query image, or for one card in it, after recognition. It is one of three kinds: **Recognized** (a card with a ranking), **NotRecognized** (no card found, or a card with no candidates), or **Failed** (recognition raised an error).
+_Avoid_: status, success
+
 ### Reference data
 
 **MTGJSON release**:

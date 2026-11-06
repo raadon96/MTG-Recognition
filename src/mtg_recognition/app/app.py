@@ -1,19 +1,26 @@
-import argparse
-import io
+import contextlib
 
-import requests
+import pandas as pd
 import streamlit as st
 
 from mtg_recognition.app.uploads import (
-    Upload,
+    EXPORT_FORMATS,
+    Failed,
+    NotRecognized,
+    Recognized,
     UploadResult,
-    UploadStatus,
-    results_json,
-    results_table,
+    export_bytes,
     upload_results,
 )
 from mtg_recognition.engine.pipeline import Pipeline
 from mtg_recognition.settings import settings
+
+RANKING_SIZE = 5
+
+PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/300x420?text=No+Image"
+
+# In pixels: at full width a phone photo would fill several screens.
+QUERY_IMAGE_WIDTH = 400
 
 # --- Streamlit Page Config ---
 st.set_page_config(
@@ -24,23 +31,11 @@ st.set_page_config(
 )
 
 
-def fetch_scryfall_data_from_url(scryfall_id):
-    """Fetches card data from Scryfall API."""
-    url = f"https://api.scryfall.com/cards/{scryfall_id}"
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            return r.json()
-    except Exception as e:
-        print(f"Scryfall API Error: {e}")
-    return None
-
-
-@st.cache_resource(scope="global")
+@st.cache_resource
 def load_pipeline():
     """Load the card recognition pipeline."""
     print("Loading pipeline (this may take a moment)...")
-    return Pipeline(k_phash_candidates=20, k_final_results=5)
+    return Pipeline(k_phash_candidates=20, k_final_results=RANKING_SIZE)
 
 
 def _score_color(score: float) -> str:
@@ -52,7 +47,7 @@ def _score_color(score: float) -> str:
     return "#CC6600"
 
 
-def create_thumbnail_grid(results, results_key="upload_results"):
+def create_thumbnail_grid(results: list[UploadResult]):
     """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
 
@@ -63,93 +58,61 @@ def create_thumbnail_grid(results, results_key="upload_results"):
     for idx, result in enumerate(results):
         col_idx = idx % cols_per_row
 
+        # Truncated to fit the tile
+        filename = result.uploaded_filename
+        if len(filename) > 20:
+            filename = filename[:17] + "..."
+
         with cols[col_idx], st.container(border=True):
-            best = result.best
-            if result.status == UploadStatus.SUCCESS and best is not None:
-                best_printing = best.printing
-                # Display the best printing's reference image
-                img_url = best_printing.image_url
-                st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
-                )
+            match result:
+                case Recognized():
+                    best = result.ranked[0]
+                    best_printing = best.printing
+                    # Display the best printing's reference image
+                    img_url = best_printing.image_url
+                    st.image(img_url or PLACEHOLDER_IMAGE_URL)
 
-                # Display card name
-                st.markdown(f"**{best_printing.name}**")
+                    # Display card name
+                    st.markdown(f"**{best_printing.name}**")
 
-                # Color-coded score indicator (scores are 0–100)
-                score = best.score
-                st.markdown(
-                    f'<div style="background-color: {_score_color(score)}; '
-                    f"padding: 2px 6px; border-radius: 3px; "
-                    "text-align: center; font-size: 12px; font-weight: bold; "
-                    'color: white;">'
-                    f"{score:.1f}</div>",
-                    unsafe_allow_html=True,
-                )
+                    # Color-coded score indicator (scores are 0–100)
+                    score = best.score
+                    st.markdown(
+                        f'<div style="background-color: {_score_color(score)}; '
+                        f"padding: 2px 6px; border-radius: 3px; "
+                        "text-align: center; font-size: 12px; font-weight: bold; "
+                        'color: white;">'
+                        f"{score:.1f}</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                st.caption(
-                    f"{best_printing.set_code} #{best_printing.collector_number}"
-                )
+                    st.caption(
+                        f"{best_printing.set_code} #{best_printing.collector_number}"
+                    )
 
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
-                st.caption(f"📄 {filename}")
+                case NotRecognized():
+                    st.caption("❌ No Match")
 
-                # View Details button
-                if st.button(
-                    "Details",
-                    key=f"detail_btn_{idx}_{results_key}",
-                    width="stretch",
-                ):
-                    st.session_state.selected_result_idx = idx
-                    st.session_state.selected_results_key = results_key
-                    st.rerun()
+                case Failed():
+                    st.caption("⚠️ Error")
 
-            elif result.status == UploadStatus.NOT_RECOGNIZED:
-                st.caption("❌ No Match")
+            st.caption(f"📄 {filename}")
 
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
-                st.caption(f"📄 {filename}")
-
-            else:  # error
-                st.caption("⚠️ Error")
-
-                # Filename (truncated)
-                filename = result.uploaded_filename
-                if len(filename) > 20:
-                    filename = filename[:17] + "..."
-                st.caption(f"📄 {filename}")
+            # View Details button
+            if st.button(
+                "Details",
+                key=f"detail_btn_{idx}",
+                width="stretch",
+            ):
+                st.session_state.selected_result_idx = idx
+                st.rerun()
 
 
-def display_upload_detail_view(results, selected_idx, top_k: int):
+def display_upload_detail_view(
+    results: list[UploadResult], selected_idx: int, debug: bool
+):
     """Display detailed view of a selected upload result."""
     result = results[selected_idx]
-
-    best = result.best
-    if result.status != UploadStatus.SUCCESS or best is None:
-        st.error("Cannot display details for this result")
-        return
-    best_printing = best.printing
-
-    debug = st.session_state.get("debug_mode", False)
-
-    # Build ordered list of navigable (success) result indices for prev/next
-    success_indices = [
-        i
-        for i, r in enumerate(results)
-        if r.status == UploadStatus.SUCCESS and r.best is not None
-    ]
-    try:
-        pos = success_indices.index(selected_idx)
-    except ValueError:
-        pos = None
 
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
@@ -159,38 +122,58 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
             ):
                 st.session_state.selected_result_idx = None
                 st.rerun()
-        if pos is not None:
-            with col_prev:
-                if st.button(
-                    "◀",
-                    key=f"prev_{key_suffix}",
-                    disabled=pos == 0,
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_result_idx = success_indices[pos - 1]
-                    st.rerun()
-            with col_pos:
-                st.markdown(
-                    "<p style='text-align:center; margin:0; padding-top:6px; "
-                    "color:gray;'>"
-                    f"{pos + 1} / {len(success_indices)}</p>",
-                    unsafe_allow_html=True,
-                )
-            with col_next:
-                if st.button(
-                    "▶",
-                    key=f"next_{key_suffix}",
-                    disabled=pos == len(success_indices) - 1,
-                    use_container_width=True,
-                ):
-                    st.session_state.selected_result_idx = success_indices[pos + 1]
-                    st.rerun()
+        with col_prev:
+            if st.button(
+                "◀",
+                key=f"prev_{key_suffix}",
+                disabled=selected_idx == 0,
+                use_container_width=True,
+            ):
+                st.session_state.selected_result_idx = selected_idx - 1
+                st.rerun()
+        with col_pos:
+            st.markdown(
+                "<p style='text-align:center; margin:0; padding-top:6px; "
+                "color:gray;'>"
+                f"{selected_idx + 1} / {len(results)}</p>",
+                unsafe_allow_html=True,
+            )
+        with col_next:
+            if st.button(
+                "▶",
+                key=f"next_{key_suffix}",
+                disabled=selected_idx == len(results) - 1,
+                use_container_width=True,
+            ):
+                st.session_state.selected_result_idx = selected_idx + 1
+                st.rerun()
 
     _nav_bar("top")
 
     st.subheader(f"📋 {result.uploaded_filename}")
 
+    match result:
+        case Recognized():
+            display_recognized_detail(result, debug)
+        case NotRecognized():
+            st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            st.warning("Not recognized: no printing was found for this image.")
+        case Failed():
+            # An unreadable or oversized query image is one reason to fail, and st.image
+            # raises on it, which would stop the rest of the page rendering.
+            with contextlib.suppress(Exception):
+                st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            st.error("Failed: this image could not be processed.")
+
+    # Bottom navigation bar — same controls as top, so no scrolling required
+    st.markdown("---")
+    _nav_bar("bottom")
+
+
+def display_recognized_detail(result: Recognized, debug: bool):
     ranked = result.ranked
+    best = ranked[0]
+    best_printing = best.printing
     reading_debug = result.reading_debug
 
     # Main layout: 3 columns for images + 1 column for metadata
@@ -204,18 +187,13 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
     # Column 2: card image
     with col2:
         st.caption("**Warped Image**")
-        if result.card_image_jpeg is not None:
-            st.image(result.card_image_jpeg)
-        else:
-            st.info("Warped image not available")
+        st.image(result.card_image_jpeg)
 
     # Column 3: the best printing's reference image
     with col3:
         st.caption("**Best Match**")
         img_url = best_printing.image_url
-        st.image(
-            img_url if img_url else "https://via.placeholder.com/300x420?text=No+Image",
-        )
+        st.image(img_url or PLACEHOLDER_IMAGE_URL)
 
     # Column 4: Metadata
     with col4:
@@ -259,8 +237,6 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     if debug and best.breakdown:
         with st.expander("📊 Table 1 — Reading vs. Best Printing", expanded=True):
-            import pandas as pd
-
             df_prop = (
                 pd.DataFrame(
                     [
@@ -279,26 +255,19 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
 
     # Show the ranking below
     st.markdown("---")
-    st.subheader(f"Top {top_k} Matches")
+    st.subheader(f"Top {RANKING_SIZE} Matches")
 
-    if ranked:
-        ranking_cols = st.columns(top_k)
-        for col_idx, entry in enumerate(ranked[:top_k]):
-            with ranking_cols[col_idx]:
-                img_url = entry.printing.image_url
-                st.image(
-                    img_url
-                    if img_url
-                    else "https://via.placeholder.com/300x420?text=No+Image",
-                )
-                st.caption(f"**{entry.printing.name}**")
-                st.caption(f"Score: {entry.score:.2f}")
+    ranking_cols = st.columns(RANKING_SIZE)
+    for col_idx, entry in enumerate(ranked):
+        with ranking_cols[col_idx]:
+            img_url = entry.printing.image_url
+            st.image(img_url or PLACEHOLDER_IMAGE_URL)
+            st.caption(f"**{entry.printing.name}**")
+            st.caption(f"Score: {entry.score:.2f}")
 
     # Debug: score matrix below the ranking
-    if debug and ranked and ranked[0].breakdown:
+    if debug and best.breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
-            import pandas as pd
-
             # Prefix each label with its rank so duplicate card names (reprints)
             # don't produce a non-unique index, which breaks pandas Styler.
             score_matrix = pd.DataFrame(
@@ -317,51 +286,8 @@ def display_upload_detail_view(results, selected_idx, top_k: int):
                 width="stretch",
             )
 
-    # Bottom navigation bar — same controls as top, so no scrolling required
-    st.markdown("---")
-    _nav_bar("bottom")
-
-
-EXPORT_FORMATS = {  # format -> (MIME type, file name)
-    "CSV": ("text/csv", "results.csv"),
-    "Excel": (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "results.xlsx",
-    ),
-    "JSON": ("application/json", "results.json"),
-}
-
-
-def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
-    """The export file's contents, built when the user clicks Download.
-
-    Streamlit ignores st.* calls made here, so a failure is raised with an
-    "Export failed: ..." message, which Streamlit shows on the download button.
-    """
-    try:
-        match export_format:
-            case "CSV":
-                return results_table(results).to_csv(index=False).encode()
-            case "Excel":
-                buffer = io.BytesIO()
-                # pandas' stub types reject BytesIO, which to_excel accepts.
-                results_table(results).to_excel(
-                    buffer,  # ty: ignore[invalid-argument-type]
-                    index=False,
-                    sheet_name="Results",
-                    engine="openpyxl",
-                )
-                return buffer.getvalue()
-            case "JSON":
-                return results_json(results).encode()
-            case _:
-                raise ValueError(f"unknown format {export_format!r}")
-    except Exception as e:
-        raise RuntimeError(f"Export failed: {e}") from e
-
 
 def main():
-    parse_args()
     st.title("Decksray MTGC Recognizer")
     st.markdown(
         "Upload or capture a Magic: The Gathering card image for instant recognition."
@@ -371,15 +297,13 @@ def main():
 
     # Sidebar options
     st.sidebar.header("⚙️ Import")
-    st.sidebar.toggle("🔬 Debug Mode", key="debug_mode", value=True)
+    debug = st.sidebar.toggle("🔬 Debug Mode", value=True)
 
     # Initialize session state for upload results
     if "upload_results" not in st.session_state:
         st.session_state.upload_results = None
     if "selected_result_idx" not in st.session_state:
         st.session_state.selected_result_idx = None
-    if "selected_results_key" not in st.session_state:
-        st.session_state.selected_results_key = None
     if "uploader_key" not in st.session_state:
         st.session_state.uploader_key = 0
 
@@ -411,8 +335,6 @@ def main():
 
         # Start processing button
         if st.sidebar.button("🚀 START PROCESSING", type="primary"):
-            uploads = [Upload(name=f.name, data=f.getvalue()) for f in uploaded_files]
-
             # Progress container
             progress_placeholder = st.empty()
             progress_bar = st.progress(0)
@@ -420,16 +342,16 @@ def main():
             # Process uploads
             try:
                 results = []
-                for done, upload in enumerate(uploads, 1):
-                    recognition = pipeline.recognize(upload.data, debug=True)
-                    results.extend(upload_results(upload, recognition))
-                    progress_bar.progress(done / len(uploads))
+                for done, file in enumerate(uploaded_files, 1):
+                    data = file.getvalue()
+                    recognition = pipeline.recognize(data, debug=True)
+                    results.extend(upload_results(file.name, data, recognition))
+                    progress_bar.progress(done / len(uploaded_files))
                     progress_placeholder.info(
-                        f"Processing: {done}/{len(uploads)} images"
+                        f"Processing: {done}/{len(uploaded_files)} images"
                     )
                 st.session_state.upload_results = results
-
-                st.success("✅ Processing complete!")
+                st.session_state.selected_result_idx = None
                 st.rerun()
 
             except Exception as e:
@@ -445,14 +367,13 @@ def main():
         # Detail view
         if st.session_state.selected_result_idx is not None:
             display_upload_detail_view(
-                results, st.session_state.selected_result_idx, pipeline.k_final_results
+                results, st.session_state.selected_result_idx, debug
             )
         else:
             # Grid view
-            create_thumbnail_grid(results, results_key="upload_results")
+            create_thumbnail_grid(results)
 
-    # Export and Clear Results in sidebar
-    if st.session_state.upload_results:
+        # Export and Clear Results in sidebar
         st.sidebar.markdown("---")
         st.sidebar.subheader("📥 Export Results")
 
@@ -474,19 +395,10 @@ def main():
         st.sidebar.markdown("---")
         if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
             st.session_state.upload_results = None
+            st.session_state.selected_result_idx = None
             # Clear the file uploader by resetting the key
             st.session_state.uploader_key += 1
             st.rerun()
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "App for MTG card recognition with multi-image uploads, "
-            "detailed results view, and export functionality."
-        )
-    )
-    return parser.parse_args()
 
 
 if __name__ == "__main__":
