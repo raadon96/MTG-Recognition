@@ -1,0 +1,49 @@
+{
+ "catalog on disk": 43753472,
+ "unchanged": 40177664,
+ "layout only": 40861696,
+ "full": 42500096,
+ "sparse": 41816064
+}
+
+set_code: rule | rows | same as catalog | paper rows | same
+  own set | 64365 | 64365 | 59621 | 59621
+  not printed: 2003 frame | 17927 | 0 | 17042 | 0
+  not printed: 1997 frame | 12325 | 0 | 10979 | 0
+  parent set's card | 7231 | 0 | 7173 | 0
+  not printed: 1993 frame | 5645 | 0 | 5645 | 0
+  The List: original set | 3864 | 0 | 3864 | 0
+  not derivable: promo set's own numbering | 3174 | 0 | 815 | 0
+  not printed: playtest card | 972 | 0 | 972 | 0
+  not printed: future frame | 252 | 0 | 249 | 0
+  oversized: parent set's code | 120 | 0 | 106 | 0
+
+number: rule | rows | same as catalog | paper rows | same
+  own set | 88112 | 84525 | 82067 | 78843
+  not printed: before Exodus | 8092 | 0 | 8080 | 0
+  parent set's card | 7451 | 388 | 7393 | 330
+  The List: original set | 5551 | 0 | 5551 | 0
+  promo set's own number | 3174 | 2935 | 815 | 576
+  not derivable: old-frame promo | 1833 | 0 | 898 | 0
+  not printed: playtest card | 973 | 0 | 973 | 0
+  World Championship: original set | 688 | 0 | 688 | 0
+  not printed: no digits | 1 | 0 | 1 | 0
+
+base_set_size: rule | rows | same as catalog | paper rows | same
+  own set | 49038 | 49038 | 44466 | 44466
+  not printed: from April 2023 | 34041 | 0 | 32538 | 0
+  not printed: no number | 10899 | 0 | 9952 | 0
+  not printed: above the base set size | 9379 | 0 | 7534 | 0
+  The List: original set | 4988 | 0 | 4988 | 0
+  parent set's card | 4849 | 13 | 4849 | 13
+  not printed: retro reprint | 1121 | 0 | 1087 | 0
+  not derivable: promo set's own number | 872 | 0 | 364 | 0
+  World Championship: original set | 688 | 0 | 688 | 0
+
+year: rule | rows | same as catalog | paper rows | same
+  own set | 89448 | 89448 | 83576 | 83576
+  originalReleaseDate | 9177 | 1136 | 5698 | 1131
+  parent set's card | 7959 | 7922 | 7901 | 7864
+  The List: original set | 5764 | 299 | 5764 | 299
+  not printed: before Legends | 2317 | 0 | 2317 | 0
+  World Championship: original set | 1210 | 317 | 1210 | 317

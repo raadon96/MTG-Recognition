@@ -1,0 +1,121 @@
+group | n | set_code rule, catalog | number rule, catalog | base_set_size rule, catalog | year rule, catalog
+frame 1993 | 20 | 0/0, 0/20 | 0/0, 0/20 | 0/0, 0/20 | 7/10, 6/20
+frame 1997, before Exodus | 20 | 0/0, 0/20 | 0/0, 0/20 | 0/0, 0/20 | 14/20, 13/20
+frame 1997, 1998-2003 | 20 | 0/0, 0/20 | 17/20, 15/20 | 17/20, 16/20 | 19/20, 18/20
+frame 1997, retro reprint (2014+) | 20 | 0/0, 0/20 | 15/19, 14/20 | 0/0, 0/20 | 12/20, 8/20
+frame 2003 | 20 | 0/0, 0/20 | 15/20, 15/20 | 15/20, 15/20 | 19/20, 19/20
+frame 2015, 2014-2022 | 20 | 18/20, 15/20 | 20/20, 18/20 | 14/17, 11/20 | 17/20, 17/20
+frame 2015, 2023+ | 20 | 19/19, 18/20 | 19/19, 18/20 | 0/0, 0/20 | 20/20, 20/20
+frame 2015, borderless | 20 | 20/20, 20/20 | 20/20, 19/20 | 0/0, 0/20 | 16/20, 12/20
+frame future | 20 | 0/0, 0/20 | 19/19, 19/20 | 8/8, 7/20 | 19/20, 18/20
+The List (PLST) | 20 | 17/17, 0/20 | 20/20, 0/20 | 16/17, 0/20 | 20/20, 0/20
+layout transform | 20 | 16/16, 15/20 | 19/20, 16/20 | 7/11, 4/20 | 19/20, 17/20
+layout transform, battle | 20 | 20/20, 11/20 | 20/20, 11/20 | 0/0, 0/20 | 20/20, 20/20
+layout modal_dfc | 20 | 20/20, 14/20 | 20/20, 14/20 | 13/13, 7/20 | 19/20, 17/20
+layout adventure | 20 | 20/20, 15/20 | 20/20, 15/20 | 4/4, 1/20 | 20/20, 18/20
+layout split, 2003 frame or older | 20 | 0/0, 0/20 | 11/18, 6/20 | 8/18, 5/20 | 11/20, 8/20
+layout split, 2015 frame | 20 | 16/16, 15/20 | 16/16, 14/20 | 6/6, 6/20 | 16/20, 15/20
+layout aftermath | 20 | 20/20, 14/20 | 20/20, 14/20 | 13/13, 7/20 | 20/20, 17/20
+layout flip | 20 | 1/1, 1/20 | 17/20, 11/20 | 14/20, 10/20 | 18/20, 15/20
+layout prepare | 20 | 20/20, 19/20 | 20/20, 19/20 | 0/0, 0/20 | 20/20, 20/20
+layout saga | 20 | 20/20, 15/20 | 20/20, 15/20 | 5/5, 2/20 | 19/20, 19/20
+layout class | 20 | 20/20, 9/20 | 20/20, 9/20 | 10/10, 2/20 | 20/20, 17/20
+layout case | 20 | 20/20, 13/20 | 20/20, 12/20 | 0/0, 0/20 | 20/20, 20/20
+layout mutate | 20 | 20/20, 16/20 | 20/20, 16/20 | 11/11, 8/20 | 20/20, 20/20
+layout leveler | 20 | 5/5, 3/20 | 18/20, 12/20 | 16/18, 10/20 | 19/20, 11/20
+layout prototype | 20 | 20/20, 15/20 | 20/20, 15/20 | 16/16, 11/20 | 20/20, 19/20
+layout meld | 20 | 20/20, 16/20 | 20/20, 12/20 | 13/13, 9/20 | 20/20, 18/20
+layout planar | 20 | 13/13, 8/20 | 18/19, 18/20 | 11/11, 11/20 | 13/20, 13/20
+
+### positions: 540 readings
+set_code: derived 347: token 345 vs catalog 250, extracted 324 vs 239; of these differing from the catalog 95: token 95 vs 0; left out 193: catalog value in tokens 2
+number: derived 490: token 464 vs catalog 346, extracted 422 vs 311; of these differing from the catalog 123: token 118 vs 0; left out 50: catalog value in tokens 1
+base_set_size: derived 251: token 217 vs catalog 142, extracted 203 vs 133; of these differing from the catalog 81: token 75 vs 0; left out 289: catalog value in tokens 0
+year: derived 530: token 477 vs catalog 415, extracted 487 vs 424; of these differing from the catalog 69: token 62 vs 0; left out 10: catalog value in tokens 0
+
+set_code: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 252 | 250 | 250 | 239 | 239 | 0
+  not printed: 2003 frame | 78 | 0 | 0 | 0 | 0 | 0
+  not printed: 1997 frame | 68 | 0 | 0 | 0 | 0 | 0
+  parent set's card | 58 | 58 | 0 | 53 | 0 | 0
+  The List: original set | 32 | 32 | 0 | 32 | 0 | 0
+  not printed: 1993 frame | 20 | 0 | 0 | 0 | 0 | 0
+  not printed: future frame | 20 | 0 | 0 | 0 | 0 | 0
+  not printed: playtest card | 6 | 0 | 1 | 0 | 1 | 0
+  oversized: parent set's code | 5 | 5 | 0 | 0 | 0 | 0
+  not derivable: promo set's own numbering | 1 | 0 | 1 | 0 | 1 | 1
+
+number: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 377 | 355 | 344 | 319 | 309 | 0
+  parent set's card | 60 | 59 | 1 | 58 | 1 | 0
+  The List: original set | 49 | 46 | 0 | 42 | 0 | 0
+  not printed: before Exodus | 40 | 0 | 0 | 0 | 0 | 0
+  not printed: playtest card | 6 | 0 | 0 | 0 | 0 | 1
+  not derivable: old-frame promo | 4 | 0 | 1 | 0 | 0 | 2
+  World Championship: original set | 3 | 3 | 0 | 2 | 0 | 0
+  promo set's own number | 1 | 1 | 1 | 1 | 1 | 0
+
+base_set_size: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  not printed: from April 2023 | 198 | 0 | 0 | 0 | 0 | 0
+  own set | 170 | 142 | 142 | 133 | 133 | 0
+  not printed: no number | 50 | 0 | 0 | 0 | 0 | 0
+  The List: original set | 43 | 39 | 0 | 35 | 0 | 0
+  parent set's card | 35 | 34 | 0 | 33 | 0 | 0
+  not printed: above the base set size | 29 | 0 | 0 | 0 | 0 | 0
+  not printed: retro reprint | 12 | 0 | 0 | 0 | 0 | 0
+  World Championship: original set | 3 | 2 | 0 | 2 | 0 | 0
+
+year: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 388 | 348 | 348 | 357 | 357 | 0
+  parent set's card | 63 | 59 | 59 | 59 | 59 | 0
+  The List: original set | 49 | 47 | 3 | 47 | 3 | 0
+  originalReleaseDate | 25 | 18 | 4 | 19 | 4 | 0
+  not printed: before Legends | 10 | 0 | 0 | 0 | 0 | 0
+  World Championship: original set | 5 | 5 | 1 | 5 | 1 | 0
+
+### survey: 2734 readings
+set_code: derived 1123: token 1080 vs catalog 776, extracted 1022 vs 753; of these differing from the catalog 309: token 307 vs 3; left out 1611: catalog value in tokens 117
+number: derived 2148: token 1869 vs catalog 1464, extracted 1658 vs 1305; of these differing from the catalog 471: token 405 vs 0; left out 586: catalog value in tokens 138
+base_set_size: derived 1317: token 1040 vs catalog 719, extracted 841 vs 533; of these differing from the catalog 397: token 323 vs 2; left out 1417: catalog value in tokens 214
+year: derived 2697: token 2209 vs catalog 2074, extracted 2268 vs 2129; of these differing from the catalog 221: token 155 vs 20; left out 37: catalog value in tokens 2
+
+set_code: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 814 | 773 | 773 | 753 | 753 | 0
+  not printed: 2003 frame | 740 | 0 | 64 | 0 | 1 | 0
+  not printed: 1997 frame | 411 | 0 | 7 | 0 | 0 | 0
+  not derivable: promo set's own numbering | 305 | 0 | 45 | 0 | 39 | 294
+  parent set's card | 305 | 303 | 3 | 265 | 0 | 0
+  not printed: 1993 frame | 115 | 0 | 1 | 0 | 0 | 0
+  not printed: future frame | 24 | 0 | 0 | 0 | 0 | 0
+  not printed: playtest card | 16 | 0 | 0 | 0 | 0 | 0
+  The List: original set | 4 | 4 | 0 | 4 | 0 | 0
+
+number: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 1356 | 1198 | 1158 | 1078 | 1051 | 0
+  parent set's card | 449 | 388 | 101 | 373 | 98 | 0
+  not derivable: old-frame promo | 395 | 0 | 137 | 0 | 40 | 158
+  promo set's own number | 305 | 251 | 205 | 176 | 156 | 0
+  not printed: before Exodus | 174 | 0 | 1 | 0 | 0 | 1
+  World Championship: original set | 24 | 19 | 0 | 18 | 0 | 0
+  not printed: playtest card | 16 | 0 | 0 | 0 | 0 | 2
+  The List: original set | 14 | 13 | 0 | 13 | 0 | 0
+  not printed: no digits | 1 | 0 | 0 | 0 | 0 | 0
+
+base_set_size: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 917 | 714 | 714 | 530 | 530 | 0
+  not printed: no number | 586 | 0 | 116 | 0 | 35 | 36
+  not printed: from April 2023 | 527 | 0 | 0 | 0 | 0 | 0
+  parent set's card | 365 | 299 | 5 | 285 | 3 | 0
+  not derivable: promo set's own number | 182 | 0 | 97 | 0 | 6 | 139
+  not printed: above the base set size | 85 | 0 | 0 | 0 | 0 | 7
+  not printed: retro reprint | 37 | 0 | 1 | 0 | 2 | 1
+  World Championship: original set | 24 | 17 | 0 | 16 | 0 | 0
+  The List: original set | 11 | 10 | 0 | 10 | 0 | 0
+
+year: rule | n | token derived | token catalog | extracted derived | extracted catalog | found anyway
+  own set | 1897 | 1587 | 1587 | 1620 | 1620 | 0
+  parent set's card | 460 | 375 | 370 | 392 | 387 | 0
+  originalReleaseDate | 288 | 213 | 104 | 221 | 109 | 0
+  not printed: before Legends | 37 | 0 | 2 | 0 | 2 | 2
+  World Championship: original set | 36 | 22 | 12 | 22 | 12 | 0
+  The List: original set | 16 | 12 | 1 | 13 | 1 | 0

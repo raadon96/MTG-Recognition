@@ -1,0 +1,360 @@
+{
+ "coverage": {
+  "set_code": {
+   "The List: original set": {
+    "rows": {
+     "rows": 3864,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 3864,
+     "same as catalog": 0
+    }
+   },
+   "not derivable: promo set's own numbering": {
+    "rows": {
+     "rows": 3174,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 815,
+     "same as catalog": 0
+    }
+   },
+   "not printed: 1993 frame": {
+    "rows": {
+     "rows": 5645,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 5645,
+     "same as catalog": 0
+    }
+   },
+   "not printed: 1997 frame": {
+    "rows": {
+     "rows": 12325,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 10979,
+     "same as catalog": 0
+    }
+   },
+   "not printed: 2003 frame": {
+    "rows": {
+     "rows": 17927,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 17042,
+     "same as catalog": 0
+    }
+   },
+   "not printed: future frame": {
+    "rows": {
+     "rows": 252,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 249,
+     "same as catalog": 0
+    }
+   },
+   "not printed: playtest card": {
+    "rows": {
+     "rows": 972,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 972,
+     "same as catalog": 0
+    }
+   },
+   "oversized: parent set's code": {
+    "rows": {
+     "rows": 120,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 106,
+     "same as catalog": 0
+    }
+   },
+   "own set": {
+    "rows": {
+     "rows": 64365,
+     "same as catalog": 64365
+    },
+    "paper": {
+     "rows": 59621,
+     "same as catalog": 59621
+    }
+   },
+   "parent set's card": {
+    "rows": {
+     "rows": 7231,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 7173,
+     "same as catalog": 0
+    }
+   }
+  },
+  "number": {
+   "The List: original set": {
+    "rows": {
+     "rows": 5551,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 5551,
+     "same as catalog": 0
+    }
+   },
+   "World Championship: original set": {
+    "rows": {
+     "rows": 688,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 688,
+     "same as catalog": 0
+    }
+   },
+   "not derivable: old-frame promo": {
+    "rows": {
+     "rows": 1833,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 898,
+     "same as catalog": 0
+    }
+   },
+   "not printed: before Exodus": {
+    "rows": {
+     "rows": 8092,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 8080,
+     "same as catalog": 0
+    }
+   },
+   "not printed: no digits": {
+    "rows": {
+     "rows": 1,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 1,
+     "same as catalog": 0
+    }
+   },
+   "not printed: playtest card": {
+    "rows": {
+     "rows": 973,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 973,
+     "same as catalog": 0
+    }
+   },
+   "own set": {
+    "rows": {
+     "rows": 88112,
+     "same as catalog": 84525
+    },
+    "paper": {
+     "rows": 82067,
+     "same as catalog": 78843
+    }
+   },
+   "parent set's card": {
+    "rows": {
+     "rows": 7451,
+     "same as catalog": 388
+    },
+    "paper": {
+     "rows": 7393,
+     "same as catalog": 330
+    }
+   },
+   "promo set's own number": {
+    "rows": {
+     "rows": 3174,
+     "same as catalog": 2935
+    },
+    "paper": {
+     "rows": 815,
+     "same as catalog": 576
+    }
+   }
+  },
+  "base_set_size": {
+   "The List: original set": {
+    "rows": {
+     "rows": 4988,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 4988,
+     "same as catalog": 0
+    }
+   },
+   "World Championship: original set": {
+    "rows": {
+     "rows": 688,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 688,
+     "same as catalog": 0
+    }
+   },
+   "not derivable: promo set's own number": {
+    "rows": {
+     "rows": 872,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 364,
+     "same as catalog": 0
+    }
+   },
+   "not printed: above the base set size": {
+    "rows": {
+     "rows": 9379,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 7534,
+     "same as catalog": 0
+    }
+   },
+   "not printed: from April 2023": {
+    "rows": {
+     "rows": 34041,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 32538,
+     "same as catalog": 0
+    }
+   },
+   "not printed: no number": {
+    "rows": {
+     "rows": 10899,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 9952,
+     "same as catalog": 0
+    }
+   },
+   "not printed: retro reprint": {
+    "rows": {
+     "rows": 1121,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 1087,
+     "same as catalog": 0
+    }
+   },
+   "own set": {
+    "rows": {
+     "rows": 49038,
+     "same as catalog": 49038
+    },
+    "paper": {
+     "rows": 44466,
+     "same as catalog": 44466
+    }
+   },
+   "parent set's card": {
+    "rows": {
+     "rows": 4849,
+     "same as catalog": 13
+    },
+    "paper": {
+     "rows": 4849,
+     "same as catalog": 13
+    }
+   }
+  },
+  "year": {
+   "The List: original set": {
+    "rows": {
+     "rows": 5764,
+     "same as catalog": 299
+    },
+    "paper": {
+     "rows": 5764,
+     "same as catalog": 299
+    }
+   },
+   "World Championship: original set": {
+    "rows": {
+     "rows": 1210,
+     "same as catalog": 317
+    },
+    "paper": {
+     "rows": 1210,
+     "same as catalog": 317
+    }
+   },
+   "not printed: before Legends": {
+    "rows": {
+     "rows": 2317,
+     "same as catalog": 0
+    },
+    "paper": {
+     "rows": 2317,
+     "same as catalog": 0
+    }
+   },
+   "originalReleaseDate": {
+    "rows": {
+     "rows": 9177,
+     "same as catalog": 1136
+    },
+    "paper": {
+     "rows": 5698,
+     "same as catalog": 1131
+    }
+   },
+   "own set": {
+    "rows": {
+     "rows": 89448,
+     "same as catalog": 89448
+    },
+    "paper": {
+     "rows": 83576,
+     "same as catalog": 83576
+    }
+   },
+   "parent set's card": {
+    "rows": {
+     "rows": 7959,
+     "same as catalog": 7922
+    },
+    "paper": {
+     "rows": 7901,
+     "same as catalog": 7864
+    }
+   }
+  }
+ },
+ "sizes": {
+  "catalog on disk": 43753472,
+  "unchanged": 40177664,
+  "layout only": 40861696,
+  "full": 42500096,
+  "sparse": 41816064
+ },
+ "rows": 115875
+}
