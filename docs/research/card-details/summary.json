@@ -1,0 +1,2819 @@
+{
+ "frame 1993": {
+  "catalog_rows": 5613,
+  "catalog_share": 4.8440129449838185,
+  "paper_with_image": 5613,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 9,
+    "median_box": [
+     0.068,
+     0.037,
+     0.375,
+     0.09
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.092,
+     0.9,
+     0.517,
+     0.935
+    ]
+   },
+   "copyright year": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.092,
+     0.927,
+     0.616,
+     0.954
+    ]
+   },
+   "power/toughness": {
+    "found": 6,
+    "found_upright": 6,
+    "inside_crop": 6,
+    "median_box": [
+     0.844,
+     0.9,
+     0.934,
+     0.947
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 7,
+   "copyright_year_differs_from_set_year": [
+    "PTC 1996 printed 1995"
+   ],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 1,
+   "other_text_examples": [
+    "mllus."
+   ]
+  }
+ },
+ "frame 1997, before Exodus": {
+  "catalog_rows": 2166,
+  "catalog_share": 1.8692556634304207,
+  "paper_with_image": 2154,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.102,
+     0.042,
+     0.438,
+     0.089
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.097,
+     0.894,
+     0.422,
+     0.928
+    ]
+   },
+   "copyright year": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 16,
+    "median_box": [
+     0.098,
+     0.923,
+     0.611,
+     0.946
+    ]
+   },
+   "power/toughness": {
+    "found": 6,
+    "found_upright": 6,
+    "inside_crop": 6,
+    "median_box": [
+     0.824,
+     0.894,
+     0.923,
+     0.947
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 16,
+   "copyright_year_differs_from_set_year": [
+    "WC97 1997 printed 1996",
+    "VIS 1997 printed 1996"
+   ],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 0,
+   "other_text_examples": []
+  }
+ },
+ "frame 1997, 1998-2003": {
+  "catalog_rows": 6385,
+  "catalog_share": 5.51024811218986,
+  "paper_with_image": 6132,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.102,
+     0.041,
+     0.422,
+     0.091
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 15,
+    "found_upright": 15,
+    "inside_crop": 15,
+    "median_box": [
+     0.233,
+     0.923,
+     0.758,
+     0.945
+    ]
+   },
+   "base set size": {
+    "found": 13,
+    "found_upright": 13,
+    "inside_crop": 13,
+    "median_box": [
+     0.233,
+     0.923,
+     0.758,
+     0.946
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.318,
+     0.893,
+     0.669,
+     0.927
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.241,
+     0.923,
+     0.737,
+     0.945
+    ]
+   },
+   "power/toughness": {
+    "found": 5,
+    "found_upright": 5,
+    "inside_crop": 5,
+    "median_box": [
+     0.822,
+     0.896,
+     0.922,
+     0.945
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "WC01 2001 printed 2000",
+    "USG 1998 printed 1993"
+   ],
+   "printed_size_differs_from_base_set_size": 1,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 3,
+   "other_text_examples": [
+    "10120",
+    "2/12",
+    "2/12"
+   ]
+  }
+ },
+ "frame 1997, retro reprint (2014+)": {
+  "catalog_rows": 1762,
+  "catalog_share": 1.520604099244876,
+  "paper_with_image": 1712,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.1,
+     0.043,
+     0.475,
+     0.09
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 15,
+    "found_upright": 15,
+    "inside_crop": 15,
+    "median_box": [
+     0.301,
+     0.923,
+     0.698,
+     0.947
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.318,
+     0.895,
+     0.674,
+     0.928
+    ]
+   },
+   "copyright year": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.302,
+     0.923,
+     0.698,
+     0.946
+    ]
+   },
+   "power/toughness": {
+    "found": 9,
+    "found_upright": 9,
+    "inside_crop": 9,
+    "median_box": [
+     0.825,
+     0.892,
+     0.924,
+     0.944
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 17,
+   "copyright_year_differs_from_set_year": [
+    "TSR 2021 printed 2020",
+    "TSR 2021 printed 2020",
+    "SLD 2019 printed 2026",
+    "PEWK 2022 printed 2024",
+    "SLD 2019 printed 2026",
+    "SLD 2019 printed 2025"
+   ],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "C02Wa",
+    "Lat SacdeByeutstacn",
+    "82022Wardef Cot 30"
+   ]
+  }
+ },
+ "frame 2003": {
+  "catalog_rows": 15670,
+  "catalog_share": 13.52319309600863,
+  "paper_with_image": 15477,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.081,
+     0.057,
+     0.469,
+     0.103
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 14,
+    "found_upright": 14,
+    "inside_crop": 14,
+    "median_box": [
+     0.077,
+     0.94,
+     0.61,
+     0.965
+    ]
+   },
+   "base set size": {
+    "found": 14,
+    "found_upright": 14,
+    "inside_crop": 14,
+    "median_box": [
+     0.077,
+     0.94,
+     0.61,
+     0.965
+    ]
+   },
+   "artist": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.105,
+     0.913,
+     0.367,
+     0.942
+    ]
+   },
+   "copyright year": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.077,
+     0.94,
+     0.609,
+     0.965
+    ]
+   },
+   "power/toughness": {
+    "found": 5,
+    "found_upright": 5,
+    "inside_crop": 5,
+    "median_box": [
+     0.791,
+     0.895,
+     0.887,
+     0.94
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 17,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "-1BZY",
+    "WS e21993-2007 wzads of che"
+   ]
+  }
+ },
+ "frame 2015, 2014-2022": {
+  "catalog_rows": 38772,
+  "catalog_share": 33.460194174757284,
+  "paper_with_image": 36023,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.076,
+     0.051,
+     0.578,
+     0.099
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.056,
+     0.947,
+     0.383,
+     0.973
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.057,
+     0.931,
+     0.21,
+     0.953
+    ]
+   },
+   "base set size": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.058,
+     0.93,
+     0.213,
+     0.953
+    ]
+   },
+   "artist": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.056,
+     0.949,
+     0.384,
+     0.973
+    ]
+   },
+   "copyright year": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.59,
+     0.941,
+     0.938,
+     0.967
+    ]
+   },
+   "power/toughness": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.815,
+     0.894,
+     0.91,
+     0.939
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 18,
+   "copyright_year_differs_from_set_year": [
+    "TSR 2021 printed 2020"
+   ],
+   "printed_size_differs_from_base_set_size": 3,
+   "rarity_before_number": 1,
+   "samples_with_other_text_in_collector_crop": 5,
+   "other_text_examples": [
+    "lifetime warranty.",
+    "2022oCa",
+    "279/269",
+    "onto the battlefield, then shuffles.",
+    "of turn. Tap it."
+   ]
+  }
+ },
+ "frame 2015, 2023+": {
+  "catalog_rows": 26440,
+  "catalog_share": 22.817691477885653,
+  "paper_with_image": 24982,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 19,
+    "median_box": [
+     0.077,
+     0.053,
+     0.501,
+     0.101
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.946,
+     0.386,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.929,
+     0.166,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.946,
+     0.389,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.946,
+     0.935,
+     0.971
+    ]
+   },
+   "power/toughness": {
+    "found": 8,
+    "found_upright": 8,
+    "inside_crop": 7,
+    "median_box": [
+     0.813,
+     0.893,
+     0.908,
+     0.939
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 19,
+   "samples_with_other_text_in_collector_crop": 6,
+   "other_text_examples": [
+    "MARVEL",
+    "Squad nor Fearsome Foursome caught on.",
+    "blocked this turn.",
+    "2024BSW",
+    "★/★",
+    "-Haldir",
+    "MEE"
+   ]
+  }
+ },
+ "frame 2015, borderless": {
+  "catalog_rows": 6221,
+  "catalog_share": 5.368716289104639,
+  "paper_with_image": 6209,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 15,
+    "median_box": [
+     0.078,
+     0.053,
+     0.522,
+     0.101
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.059,
+     0.947,
+     0.401,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.059,
+     0.931,
+     0.167,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.059,
+     0.947,
+     0.401,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.589,
+     0.946,
+     0.934,
+     0.97
+    ]
+   },
+   "power/toughness": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.814,
+     0.894,
+     0.907,
+     0.938
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "MAR 2025 printed 2026",
+    "SPG 2023 printed 2026",
+    "SLC 2022 printed 2026",
+    "SLD 2019 printed 2024",
+    "SLD 2019 printed 2025",
+    "SLD 2019 printed 2025",
+    "SLD 2019 printed 2025"
+   ],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 16,
+   "samples_with_other_text_in_collector_crop": 11,
+   "other_text_examples": [
+    "MARVEL",
+    "OMEE",
+    "in their mana costs.",
+    "OMARVEL",
+    "FFO SQUARE ENIX",
+    "CFM",
+    "hand this way.",
+    "OMEE"
+   ]
+  }
+ },
+ "frame future": {
+  "catalog_rows": 252,
+  "catalog_share": 0.2174757281553398,
+  "paper_with_image": 249,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.172,
+     0.06,
+     0.56,
+     0.107
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.355,
+     0.926,
+     0.828,
+     0.951
+    ]
+   },
+   "base set size": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.322,
+     0.921,
+     0.912,
+     0.948
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.614,
+     0.9,
+     0.833,
+     0.93
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.355,
+     0.926,
+     0.828,
+     0.951
+    ]
+   },
+   "power/toughness": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.79,
+     0.896,
+     0.89,
+     0.942
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2007"
+   ],
+   "printed_size_differs_from_base_set_size": 1,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 0,
+   "other_text_examples": []
+  }
+ },
+ "The List (PLST)": {
+  "catalog_rows": 5764,
+  "catalog_share": 4.974325782092772,
+  "paper_with_image": 5764,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.078,
+     0.051,
+     0.514,
+     0.099
+    ]
+   },
+   "name (other face)": {
+    "found": 2,
+    "found_upright": 2,
+    "inside_crop": 0,
+    "median_box": [
+     0.463,
+     0.595,
+     0.625,
+     0.684
+    ]
+   },
+   "set code": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.055,
+     0.947,
+     0.373,
+     0.973
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.056,
+     0.93,
+     0.213,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.055,
+     0.947,
+     0.373,
+     0.972
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.589,
+     0.937,
+     0.935,
+     0.962
+    ]
+   },
+   "power/toughness": {
+    "found": 9,
+    "found_upright": 9,
+    "inside_crop": 9,
+    "median_box": [
+     0.814,
+     0.895,
+     0.908,
+     0.94
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2016",
+    "PLST 2020 printed 2019",
+    "PLST 2020 printed 2022",
+    "PLST 2020 printed 2023",
+    "PLST 2020 printed 2017",
+    "PLST 2020 printed 1998",
+    "PLST 2020 printed 2000",
+    "PLST 2020 printed 2010",
+    "PLST 2020 printed 2019",
+    "PLST 2020 printed 2016",
+    "PLST 2020 printed 2023",
+    "PLST 2020 printed 2026",
+    "PLST 2020 printed 2017",
+    "PLST 2020 printed 2015",
+    "PLST 2020 printed 2019",
+    "PLST 2020 printed 2019",
+    "PLST 2020 printed 2018",
+    "PLST 2020 printed 2016",
+    "PLST 2020 printed 2014",
+    "PLST 2020 printed 2018"
+   ],
+   "printed_size_differs_from_base_set_size": 16,
+   "rarity_before_number": 2,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "uncertain future.",
+    "-iD"
+   ]
+  }
+ },
+ "layout transform": {
+  "catalog_rows": 2066,
+  "catalog_share": 1.782955771305286,
+  "paper_with_image": 1928,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 11,
+    "found_upright": 11,
+    "inside_crop": 11,
+    "median_box": [
+     0.158,
+     0.05,
+     0.725,
+     0.101
+    ]
+   },
+   "name (other face)": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 9,
+    "median_box": [
+     0.155,
+     0.05,
+     0.7,
+     0.098
+    ]
+   },
+   "set code": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.057,
+     0.948,
+     0.387,
+     0.974
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.931,
+     0.213,
+     0.954
+    ]
+   },
+   "base set size": {
+    "found": 4,
+    "found_upright": 4,
+    "inside_crop": 4,
+    "median_box": [
+     0.057,
+     0.928,
+     0.215,
+     0.953
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.947,
+     0.389,
+     0.973
+    ]
+   },
+   "copyright year": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.591,
+     0.947,
+     0.935,
+     0.971
+    ]
+   },
+   "power/toughness": {
+    "found": 15,
+    "found_upright": 15,
+    "inside_crop": 15,
+    "median_box": [
+     0.815,
+     0.895,
+     0.91,
+     0.941
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 19,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2011",
+    "SCH 2022 printed 2025"
+   ],
+   "printed_size_differs_from_base_set_size": 3,
+   "rarity_before_number": 3,
+   "samples_with_other_text_in_collector_crop": 6,
+   "other_text_examples": [
+    "OTOMY",
+    "FFO SQUARE ENIX",
+    "FFXIV",
+    "FFO SQUARE ENIX",
+    "If you do, transform Jerren.",
+    "it instead.",
+    "in terror."
+   ]
+  }
+ },
+ "layout transform, battle": {
+  "catalog_rows": 54,
+  "catalog_share": 0.04660194174757282,
+  "paper_with_image": 54,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.05,
+     0.474,
+     0.119,
+     0.82
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.056,
+     0.951,
+     0.401,
+     0.974
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.933,
+     0.163,
+     0.954
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.056,
+     0.952,
+     0.405,
+     0.974
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.592,
+     0.933,
+     0.94,
+     0.956
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 19,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "M&O",
+    "Story Spotlight",
+    "mtgstory.com"
+   ]
+  }
+ },
+ "layout modal_dfc": {
+  "catalog_rows": 654,
+  "catalog_share": 0.5644012944983818,
+  "paper_with_image": 522,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 15,
+    "found_upright": 15,
+    "inside_crop": 15,
+    "median_box": [
+     0.154,
+     0.048,
+     0.638,
+     0.1
+    ]
+   },
+   "name (other face)": {
+    "found": 12,
+    "found_upright": 12,
+    "inside_crop": 12,
+    "median_box": [
+     0.154,
+     0.05,
+     0.644,
+     0.1
+    ]
+   },
+   "set code": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.056,
+     0.947,
+     0.393,
+     0.972
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.929,
+     0.212,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.056,
+     0.929,
+     0.213,
+     0.952
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.947,
+     0.392,
+     0.972
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.931,
+     0.937,
+     0.957
+    ]
+   },
+   "power/toughness": {
+    "found": 6,
+    "found_upright": 6,
+    "inside_crop": 6,
+    "median_box": [
+     0.813,
+     0.895,
+     0.909,
+     0.94
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "SLU 2020 printed 2021",
+    "PLST 2020 printed 2021",
+    "SLU 2020 printed 2021"
+   ],
+   "printed_size_differs_from_base_set_size": 6,
+   "rarity_before_number": 3,
+   "samples_with_other_text_in_collector_crop": 20,
+   "other_text_examples": [
+    "Land",
+    "C: Add ④",
+    "ISorcery",
+    "Cleric",
+    "Land",
+    ":Add",
+    "Cleric",
+    "Land"
+   ]
+  }
+ },
+ "layout adventure": {
+  "catalog_rows": 914,
+  "catalog_share": 0.7887810140237325,
+  "paper_with_image": 401,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.078,
+     0.053,
+     0.533,
+     0.101
+    ]
+   },
+   "name (other face)": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 0,
+    "median_box": [
+     0.078,
+     0.631,
+     0.34,
+     0.67
+    ]
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.39,
+     0.972
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.931,
+     0.166,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 1,
+    "found_upright": 1,
+    "inside_crop": 1,
+    "median_box": [
+     0.058,
+     0.93,
+     0.212,
+     0.956
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.39,
+     0.972
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.947,
+     0.935,
+     0.971
+    ]
+   },
+   "power/toughness": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.815,
+     0.896,
+     0.906,
+     0.938
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2022",
+    "PLST 2020 printed 2019"
+   ],
+   "printed_size_differs_from_base_set_size": 3,
+   "rarity_before_number": 13,
+   "samples_with_other_text_in_collector_crop": 9,
+   "other_text_examples": [
+    "FFO SQUARE ENIX",
+    "from exile.)",
+    "control.",
+    "2024BSW",
+    "cards.",
+    "their owner's control.",
+    "later from exile.)",
+    "this card.)"
+   ]
+  }
+ },
+ "layout split, 2003 frame or older": {
+  "catalog_rows": 151,
+  "catalog_share": 0.1303128371089536,
+  "paper_with_image": 71,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 19,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.07,
+     0.854,
+     0.134,
+     0.952
+    ]
+   },
+   "name (other face)": {
+    "found": 20,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.071,
+     0.36,
+     0.133,
+     0.468
+    ]
+   },
+   "set code": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "collector number": {
+    "found": 11,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.922,
+     0.548,
+     0.951,
+     0.911
+    ]
+   },
+   "base set size": {
+    "found": 5,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.897,
+     0.549,
+     0.933,
+     0.911
+    ]
+   },
+   "artist": {
+    "found": 16,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.897,
+     0.707,
+     0.931,
+     0.927
+    ]
+   },
+   "copyright year": {
+    "found": 12,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.923,
+     0.549,
+     0.951,
+     0.92
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 0,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "の老川",
+    "IIOL"
+   ]
+  }
+ },
+ "layout split, 2015 frame": {
+  "catalog_rows": 366,
+  "catalog_share": 0.31585760517799355,
+  "paper_with_image": 166,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 16,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.055,
+     0.663,
+     0.12,
+     0.901
+    ]
+   },
+   "name (other face)": {
+    "found": 20,
+    "found_upright": 4,
+    "inside_crop": 0,
+    "median_box": [
+     0.066,
+     0.308,
+     0.13,
+     0.444
+    ]
+   },
+   "set code": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.058,
+     0.947,
+     0.378,
+     0.972
+    ]
+   },
+   "collector number": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 16,
+    "median_box": [
+     0.059,
+     0.931,
+     0.167,
+     0.953
+    ]
+   },
+   "base set size": {
+    "found": 5,
+    "found_upright": 5,
+    "inside_crop": 5,
+    "median_box": [
+     0.058,
+     0.934,
+     0.213,
+     0.955
+    ]
+   },
+   "artist": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 16,
+    "median_box": [
+     0.058,
+     0.947,
+     0.379,
+     0.972
+    ]
+   },
+   "copyright year": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.59,
+     0.932,
+     0.934,
+     0.954
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 18,
+   "copyright_year_differs_from_set_year": [
+    "TSR 2021 printed 2020",
+    "CMB2 2021 printed 2019",
+    "CMB2 2021 printed 2019"
+   ],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 10,
+   "samples_with_other_text_in_collector_crop": 5,
+   "other_text_examples": [
+    "your hand.)",
+    "CONFIDENTIAL1/29/2025",
+    "216/261",
+    "DA1 RZ15",
+    "TEST CARD-Not for constructedplay",
+    "221/",
+    "GRN",
+    "TEST CARD - Not for constructed play"
+   ]
+  }
+ },
+ "layout aftermath": {
+  "catalog_rows": 194,
+  "catalog_share": 0.1674217907227616,
+  "paper_with_image": 71,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.074,
+     0.052,
+     0.217,
+     0.1
+    ]
+   },
+   "name (other face)": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 0,
+    "median_box": [
+     0.855,
+     0.558,
+     0.92,
+     0.664
+    ]
+   },
+   "set code": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.058,
+     0.947,
+     0.406,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.929,
+     0.212,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.058,
+     0.929,
+     0.213,
+     0.952
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.946,
+     0.406,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.929,
+     0.935,
+     0.954
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2017",
+    "PLST 2020 printed 2017",
+    "PLST 2020 printed 2017"
+   ],
+   "printed_size_differs_from_base_set_size": 6,
+   "rarity_before_number": 4,
+   "samples_with_other_text_in_collector_crop": 1,
+   "other_text_examples": [
+    "MEE"
+   ]
+  }
+ },
+ "layout flip": {
+  "catalog_rows": 78,
+  "catalog_share": 0.06731391585760518,
+  "paper_with_image": 37,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.077,
+     0.063,
+     0.529,
+     0.11
+    ]
+   },
+   "name (other face)": {
+    "found": 18,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.321,
+     0.858,
+     0.922,
+     0.907
+    ]
+   },
+   "set code": {
+    "found": 1,
+    "found_upright": 1,
+    "inside_crop": 1,
+    "median_box": [
+     0.055,
+     0.948,
+     0.358,
+     0.973
+    ]
+   },
+   "collector number": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 16,
+    "median_box": [
+     0.076,
+     0.942,
+     0.609,
+     0.966
+    ]
+   },
+   "base set size": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.075,
+     0.942,
+     0.609,
+     0.965
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.111,
+     0.917,
+     0.325,
+     0.946
+    ]
+   },
+   "copyright year": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.076,
+     0.942,
+     0.61,
+     0.966
+    ]
+   },
+   "power/toughness": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 0,
+    "median_box": [
+     0.818,
+     0.252,
+     0.919,
+     0.3
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 19,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2004",
+    "PLST 2020 printed 2005",
+    "PSAL 2005 printed 2006",
+    "PLST 2020 printed 2004"
+   ],
+   "printed_size_differs_from_base_set_size": 6,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 1,
+   "other_text_examples": [
+    "Key Waiker"
+   ]
+  }
+ },
+ "layout prepare": {
+  "catalog_rows": 248,
+  "catalog_share": 0.2140237324703344,
+  "paper_with_image": 119,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.079,
+     0.054,
+     0.547,
+     0.098
+    ]
+   },
+   "name (other face)": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 0,
+    "median_box": [
+     0.514,
+     0.632,
+     0.735,
+     0.67
+    ]
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.393,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.059,
+     0.93,
+     0.163,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.393,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.589,
+     0.947,
+     0.935,
+     0.971
+    ]
+   },
+   "power/toughness": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.814,
+     0.895,
+     0.906,
+     0.938
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 20,
+   "samples_with_other_text_in_collector_crop": 11,
+   "other_text_examples": [
+    "prepared.",
+    "your library.",
+    "it.)",
+    "becomes prepared.",
+    "as a sorcery.",
+    "it.)",
+    "to your hand.",
+    "unprepares it.)"
+   ]
+  }
+ },
+ "layout saga": {
+  "catalog_rows": 426,
+  "catalog_share": 0.36763754045307445,
+  "paper_with_image": 414,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.077,
+     0.052,
+     0.607,
+     0.099
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.391,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.93,
+     0.17,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 2,
+    "found_upright": 2,
+    "inside_crop": 2,
+    "median_box": [
+     0.059,
+     0.932,
+     0.211,
+     0.952
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.058,
+     0.947,
+     0.393,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.946,
+     0.935,
+     0.97
+    ]
+   },
+   "power/toughness": {
+    "found": 4,
+    "found_upright": 4,
+    "inside_crop": 4,
+    "median_box": [
+     0.815,
+     0.894,
+     0.906,
+     0.938
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 3,
+   "rarity_before_number": 11,
+   "samples_with_other_text_in_collector_crop": 12,
+   "other_text_examples": [
+    "MARVEL",
+    " BBC",
+    "MEE",
+    "MARVEL",
+    "MARVEL",
+    "FFO SQUARE ENIX",
+    "FFO SQUARE ENIX",
+    "MARVEL"
+   ]
+  }
+ },
+ "layout class": {
+  "catalog_rows": 72,
+  "catalog_share": 0.062135922330097085,
+  "paper_with_image": 71,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.076,
+     0.052,
+     0.424,
+     0.097
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.379,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.93,
+     0.19,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 2,
+    "found_upright": 2,
+    "inside_crop": 2,
+    "median_box": [
+     0.057,
+     0.929,
+     0.213,
+     0.953
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.058,
+     0.947,
+     0.379,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.929,
+     0.935,
+     0.956
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2021",
+    "PLST 2020 printed 2021",
+    "PLST 2020 printed 2024"
+   ],
+   "printed_size_differs_from_base_set_size": 8,
+   "rarity_before_number": 10,
+   "samples_with_other_text_in_collector_crop": 2,
+   "other_text_examples": [
+    "C2026 Viacom.",
+    "C2026 Viacom."
+   ]
+  }
+ },
+ "layout case": {
+  "catalog_rows": 27,
+  "catalog_share": 0.02330097087378641,
+  "paper_with_image": 24,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.079,
+     0.052,
+     0.716,
+     0.098
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 18,
+    "found_upright": 18,
+    "inside_crop": 18,
+    "median_box": [
+     0.057,
+     0.946,
+     0.39,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.056,
+     0.929,
+     0.166,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.946,
+     0.392,
+     0.971
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.93,
+     0.933,
+     0.954
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 20,
+   "samples_with_other_text_in_collector_crop": 0,
+   "other_text_examples": []
+  }
+ },
+ "layout mutate": {
+  "catalog_rows": 146,
+  "catalog_share": 0.12599784250269688,
+  "paper_with_image": 103,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 17,
+    "median_box": [
+     0.074,
+     0.05,
+     0.569,
+     0.099
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.055,
+     0.949,
+     0.403,
+     0.974
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 18,
+    "median_box": [
+     0.056,
+     0.931,
+     0.211,
+     0.954
+    ]
+   },
+   "base set size": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.056,
+     0.93,
+     0.213,
+     0.954
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.055,
+     0.949,
+     0.399,
+     0.974
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.591,
+     0.948,
+     0.936,
+     0.974
+    ]
+   },
+   "power/toughness": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.815,
+     0.896,
+     0.91,
+     0.941
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 3,
+   "rarity_before_number": 1,
+   "samples_with_other_text_in_collector_crop": 5,
+   "other_text_examples": [
+    "047/274",
+    "or into your hand.",
+    "battlefield.",
+    "or into your hand.",
+    "controls."
+   ]
+  }
+ },
+ "layout leveler": {
+  "catalog_rows": 63,
+  "catalog_share": 0.05436893203883495,
+  "paper_with_image": 61,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.08,
+     0.058,
+     0.559,
+     0.102
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 5,
+    "found_upright": 5,
+    "inside_crop": 5,
+    "median_box": [
+     0.056,
+     0.947,
+     0.364,
+     0.971
+    ]
+   },
+   "collector number": {
+    "found": 16,
+    "found_upright": 16,
+    "inside_crop": 16,
+    "median_box": [
+     0.075,
+     0.939,
+     0.612,
+     0.964
+    ]
+   },
+   "base set size": {
+    "found": 8,
+    "found_upright": 8,
+    "inside_crop": 8,
+    "median_box": [
+     0.076,
+     0.939,
+     0.616,
+     0.966
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.111,
+     0.915,
+     0.348,
+     0.942
+    ]
+   },
+   "copyright year": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.076,
+     0.94,
+     0.617,
+     0.965
+    ]
+   },
+   "power/toughness": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 0,
+    "median_box": [
+     0.798,
+     0.651,
+     0.89,
+     0.695
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 19,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2013",
+    "PLST 2020 printed 2015",
+    "PLST 2020 printed 2010",
+    "PLST 2020 printed 2010",
+    "SLD 2019 printed 2023",
+    "PLST 2020 printed 2010",
+    "PLST 2020 printed 2015",
+    "PLST 2020 printed 2010"
+   ],
+   "printed_size_differs_from_base_set_size": 6,
+   "rarity_before_number": 1,
+   "samples_with_other_text_in_collector_crop": 1,
+   "other_text_examples": [
+    "blocked.",
+    "040/320"
+   ]
+  }
+ },
+ "layout prototype": {
+  "catalog_rows": 49,
+  "catalog_share": 0.042286947141316075,
+  "paper_with_image": 40,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.077,
+     0.05,
+     0.571,
+     0.099
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.951,
+     0.398,
+     0.974
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.057,
+     0.932,
+     0.215,
+     0.955
+    ]
+   },
+   "base set size": {
+    "found": 10,
+    "found_upright": 10,
+    "inside_crop": 10,
+    "median_box": [
+     0.057,
+     0.932,
+     0.215,
+     0.955
+    ]
+   },
+   "artist": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.057,
+     0.951,
+     0.4,
+     0.974
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.592,
+     0.949,
+     0.942,
+     0.976
+    ]
+   },
+   "power/toughness": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.818,
+     0.897,
+     0.912,
+     0.942
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "PLST 2020 printed 2022"
+   ],
+   "printed_size_differs_from_base_set_size": 5,
+   "rarity_before_number": 1,
+   "samples_with_other_text_in_collector_crop": 6,
+   "other_text_examples": [
+    "power and toughness.",
+    "mana cost.",
+    "power and toughness.",
+    "turn.",
+    "078/287",
+    "It's still a land."
+   ]
+  }
+ },
+ "layout meld": {
+  "catalog_rows": 72,
+  "catalog_share": 0.062135922330097085,
+  "paper_with_image": 63,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.155,
+     0.05,
+     0.7,
+     0.1
+    ]
+   },
+   "name (other face)": {
+    "found": 4,
+    "found_upright": 4,
+    "inside_crop": 0,
+    "median_box": [
+     0.079,
+     0.835,
+     0.702,
+     0.873
+    ]
+   },
+   "set code": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.947,
+     0.387,
+     0.972
+    ]
+   },
+   "collector number": {
+    "found": 19,
+    "found_upright": 19,
+    "inside_crop": 19,
+    "median_box": [
+     0.057,
+     0.929,
+     0.213,
+     0.952
+    ]
+   },
+   "base set size": {
+    "found": 7,
+    "found_upright": 7,
+    "inside_crop": 7,
+    "median_box": [
+     0.057,
+     0.929,
+     0.213,
+     0.953
+    ]
+   },
+   "artist": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.057,
+     0.947,
+     0.387,
+     0.972
+    ]
+   },
+   "copyright year": {
+    "found": 20,
+    "found_upright": 20,
+    "inside_crop": 20,
+    "median_box": [
+     0.59,
+     0.946,
+     0.936,
+     0.971
+    ]
+   },
+   "power/toughness": {
+    "found": 17,
+    "found_upright": 17,
+    "inside_crop": 17,
+    "median_box": [
+     0.815,
+     0.896,
+     0.91,
+     0.939
+    ]
+   }
+  },
+  "traps": {
+   "copyright_year_read": 20,
+   "copyright_year_differs_from_set_year": [
+    "SLD 2019 printed 2023",
+    "SLD 2019 printed 2023"
+   ],
+   "printed_size_differs_from_base_set_size": 5,
+   "rarity_before_number": 6,
+   "samples_with_other_text_in_collector_crop": 5,
+   "other_text_examples": [
+    "FFXIII",
+    "FFO SQUARE ENIX",
+    "FFO SQUARE ENIX",
+    "FFXIII",
+    "FPO SQUARE ENIX",
+    "091/205",
+    " Create two tapped Powerstone tokens."
+   ]
+  }
+ },
+ "layout planar": {
+  "catalog_rows": 330,
+  "catalog_share": 0.284789644012945,
+  "paper_with_image": 324,
+  "read": 20,
+  "details": {
+   "name": {
+    "found": 20,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.054,
+     0.402,
+     0.111,
+     0.601
+    ]
+   },
+   "name (other face)": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   },
+   "set code": {
+    "found": 13,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.957,
+     0.657,
+     0.986,
+     0.901
+    ]
+   },
+   "collector number": {
+    "found": 18,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.96,
+     0.37,
+     0.987,
+     0.663
+    ]
+   },
+   "base set size": {
+    "found": 6,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.966,
+     0.37,
+     0.99,
+     0.629
+    ]
+   },
+   "artist": {
+    "found": 17,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.942,
+     0.462,
+     0.972,
+     0.555
+    ]
+   },
+   "copyright year": {
+    "found": 14,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": [
+     0.962,
+     0.339,
+     0.986,
+     0.631
+    ]
+   },
+   "power/toughness": {
+    "found": 0,
+    "found_upright": 0,
+    "inside_crop": 0,
+    "median_box": null
+   }
+  },
+  "traps": {
+   "copyright_year_read": 0,
+   "copyright_year_differs_from_set_year": [],
+   "printed_size_differs_from_base_set_size": 0,
+   "rarity_before_number": 0,
+   "samples_with_other_text_in_collector_crop": 0,
+   "other_text_examples": []
+  }
+ }
+}
