@@ -3,8 +3,9 @@
 
 For every paper printing in AllPrintings, decides with the rules in
 `printed-details/rules.py` which details the card shows, and sorts it into
-groups: frame and era, split at the rules' dates (table A), and the layouts that
-move details (table B). Each detail of each group gets a label:
+groups: frame and collector style (table A), and the layouts that move details
+(table B). The collector style is which details the collector information
+prints, and in what form; the rules' dates and conditions decide it. Each detail of each group gets a label:
 
 - always shown: on at least 95% of the group's paper rows;
 - never shown: on at most 5%;
@@ -52,7 +53,7 @@ DETAILS = {
     "name": ("name", "#4363d8"),
     "second name": ("second name", "#42d4f4"),
     "set code": ("set code", "#f58231"),
-    "number": ("number", "#911eb4"),
+    "number": ("collector number", "#911eb4"),
     "base set size": ("base set size", "#3cb44b"),
     "artist": ("artist", "#9a6324"),
     "year": ("year", "#f032e6"),
@@ -86,20 +87,28 @@ OLD_LAYOUT_GROUPS = {
         f"layout {lay}": "same places as a normal card" for lay in SAME_PLACES_AS_NORMAL
     },
 }
-ROWS_A = [
-    "1993 frame, before Legends (June 1994)",
-    "1993 frame, from Legends",
-    "1997 frame, before Exodus (June 1998)",
-    "1997 frame, from Exodus",
-    "1997 frame, retro reprint (2014 on)",
-    "2003 frame",
-    "2015 frame, to September 2019",
-    "2015 frame, October 2019 to March 2023, numbered within the base set",
-    "2015 frame, October 2019 to March 2023, numbered above the base set size",
-    "2015 frame, from April 2023",
-    "future frame, before April 2023",
-    "future frame, from April 2023",
-]
+# table A: (frame, collector style) -> the condition besides the dates, if any
+ROWS_A = {
+    ("1993", "artist only"): "",
+    ("1993", "artist and year"): "",
+    ("1997", "artist and year"): "",
+    ("1997", "number and size"): "",
+    ("1997", "number alone"): "retro reprints",
+    ("2003", "number and size"): "",
+    ("2015", "number and size"): "",
+    ("2015", "number alone"): "numbered above the base set size",
+    ("2015", "rarity first"): "",
+    ("future", "number and size"): "",
+    ("future", "number alone"): "",
+}
+# the form each collector style prints, for the legend
+STYLES = {
+    "artist only": "Illus. Artist",
+    "artist and year": "Illus. Artist © 1995",
+    "number and size": "123/280",
+    "number alone": "123",
+    "rarity first": "R 0123",
+}
 ROWS_B = [
     "same places as a normal card",
     "adventure",
@@ -140,17 +149,22 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
     paper = [c for c in cards.values() if c["paper"]]
 
     # what each group shows: count paper rows per group, detail and rule
-    groups = {name: new_group("A", name) for name in ROWS_A} | {
-        name: new_group("B", name) for name in ROWS_B
-    }
+    groups = {
+        row_name(frame, style): new_group(
+            "A", row_name(frame, style), frame, style, only
+        )
+        for (frame, style), only in ROWS_A.items()
+    } | {name: new_group("B", name) for name in ROWS_B}
     for c in paper:
         d = derived[c["uuid"]]
         row_b = layout_row(c)
-        for name in (frame_row(c, sets, sources), row_b):
+        row_a, date = frame_row(c, sets, sources)
+        for name in (row_a, row_b):
             if name is None:
                 continue
             g = groups[name]
             g["rows"] += 1
+            g["dates"].append(date)
             for detail in DETAILS:
                 g["shown"][detail][shown_on_card(detail, c, d, row_b)] += 1
 
@@ -168,7 +182,7 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
         elif old_group.startswith("layout"):
             continue
         else:
-            name = frame_row(c, sets, sources)
+            name = frame_row(c, sets, sources)[0]
         g = groups[name]
         g["samples"].append(s)
         for detail in DETAILS:
@@ -200,22 +214,28 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
     print("groups without a sample:", missing, file=sys.stderr)
 
 
-def new_group(table: str, name: str) -> dict:
+def new_group(
+    table: str, name: str, frame: str = "", style: str = "", only: str = ""
+) -> dict:
     return {
         "table": table,
         "name": name,
+        "frame": frame,
+        "style": style,
+        "only": only,
         "rows": 0,
         "shown": {d: Counter() for d in DETAILS},
         "crop": {d: Counter() for d in DETAILS},
         "samples": [],
+        "dates": [],
     }
 
 
-def frame_row(card: dict, sets: dict, sources: dict) -> str:
-    """The table A row: the frame, split at the rules' dates. The date is the
-    one `printed_details` decides the format by: the source set's release date
-    for The List, promos and World Championship cards, else
-    `originalReleaseDate` or the set's release date."""
+def frame_row(card: dict, sets: dict, sources: dict) -> tuple[str, str]:
+    """The table A row (frame and collector style), and the date the card's
+    details come from: the source set's release date for The List, promos and
+    World Championship cards, else `originalReleaseDate` or the set's release
+    date. The rules in `printed_details` decide by the same date."""
     if card["uuid"] in sources:
         code = sources[card["uuid"]][0]
         date = sets[code]["releaseDate"]
@@ -227,38 +247,29 @@ def frame_row(card: dict, sets: dict, sources: dict) -> str:
         number = digits(card["number"])
     frame = card["frameVersion"]
     retro = frame in ("1993", "1997", "2003") and date >= MAGIC_2015
-    match frame:
-        case "1993":
-            # no paper 1993-frame card is a retro reprint
-            if date < LEGENDS:
-                return "1993 frame, before Legends (June 1994)"
-            return "1993 frame, from Legends"
-        case "1997":
-            if retro:
-                return "1997 frame, retro reprint (2014 on)"
-            if date < EXODUS:
-                return "1997 frame, before Exodus (June 1998)"
-            return "1997 frame, from Exodus"
-        case "2003":
-            # 6 paper retro reprints, too few for a row of their own
-            return "2003 frame"
-        case "2015":
-            if date < EXTRAS_NUMBER_ALONE_FROM:
-                return "2015 frame, to September 2019"
-            if date >= NO_BASE_SET_SIZE_FROM:
-                return "2015 frame, from April 2023"
-            if number is not None and int(number) > size:
-                return (
-                    "2015 frame, October 2019 to March 2023,"
-                    " numbered above the base set size"
-                )
-            return (
-                "2015 frame, October 2019 to March 2023, numbered within the base set"
-            )
-        case _:
-            if date >= NO_BASE_SET_SIZE_FROM:
-                return "future frame, from April 2023"
-            return "future frame, before April 2023"
+    above_size = number is not None and int(number) > size
+
+    if date < LEGENDS and not retro:
+        style = "artist only"
+    elif date < EXODUS and not retro:
+        style = "artist and year"
+    elif frame == "2003":
+        # 6 paper retro reprints, too few for a row of their own
+        style = "number and size"
+    elif retro:
+        style = "number alone"
+    elif date >= NO_BASE_SET_SIZE_FROM:
+        style = "rarity first" if frame == "2015" else "number alone"
+    elif above_size and date >= EXTRAS_NUMBER_ALONE_FROM:
+        style = "number alone"
+    else:
+        style = "number and size"
+    # no 1993-frame card is from Exodus on, and no future-frame card is older
+    return row_name(frame, style), date
+
+
+def row_name(frame: str, style: str) -> str:
+    return f"{frame} frame, {style}"
 
 
 def layout_row(card: dict) -> str | None:
@@ -368,12 +379,34 @@ def summarise(g: dict, total: int) -> dict:
     return {
         "table": g["table"],
         "name": g["name"],
+        "frame": g["frame"],
+        "style": g["style"],
+        "only": g["only"],
+        # the dates the row's details come from, 1st to 99th percentile, so a
+        # few promos with odd dates don't stretch the range; no "to" while the
+        # style is still printed
+        "from": month(percentile(g["dates"], 0.01)),
+        "to": ""
+        if percentile(g["dates"], 0.99) >= "2026"
+        else month(percentile(g["dates"], 0.99)),
         "rows": g["rows"],
         "share_percent": round(100 * g["rows"] / total, 2),
         "samples": len(g["samples"]),
         "details": details,
         "example": example(g),
     }
+
+
+def percentile(dates: list[str], q: float) -> str:
+    ordered = sorted(dates)
+    return ordered[min(len(ordered) - 1, int(q * len(ordered)))]
+
+
+def month(date: str) -> str:
+    """'1998-06-15' -> 'June 1998'."""
+    names = ["January", "February", "March", "April", "May", "June", "July",
+             "August", "September", "October", "November", "December"]  # fmt: skip
+    return f"{names[int(date[5:7]) - 1]} {date[:4]}"
 
 
 def crop_label(crop: Counter) -> str:
@@ -467,9 +500,11 @@ def page(summary: dict, total: int) -> str:
 prints). {total:,} paper printings, MTGJSON <code>5.3.0+20261103</code>. Details:
 <code>card-details-summary.md</code>. Click a card to enlarge it.</p>
 {legend()}
-<h2>A. By frame and era</h2>
-<p>Every paper printing is in exactly one row. The rows are split at the dates where
-what is printed changes.</p>
+<h2>A. By frame and collector style</h2>
+<p>Every paper printing is in exactly one row. The <b>frame</b> decides where the details
+sit; the <b>collector style</b> decides which details the collector information prints.
+"From" and "to" are the release dates the row's details come from (the original set's,
+for The List and promos).</p>
 {table(a, COLUMNS_A)}
 <h2>B. Layouts that move details</h2>
 <p>These cards are also counted in table A. Rarer layouts (reversible, scheme,
@@ -504,6 +539,9 @@ with the main reason it's missing &nbsp;
 <span class="mark">✂</span> partly cut off by the crop &nbsp;
 <span class="mark">↻</span> printed sideways or upside down &nbsp;
 <span class="mark">◐</span> inside on some cards only &nbsp; no mark: not read on any sample</td></tr>
+<tr><th>Collector style: which details are printed</th><td>
+{" &nbsp; ".join(f"<b>{name}</b> <code>{html.escape(form)}</code>" for name, form in STYLES.items())}
+</td></tr>
 <tr><th>Boxes on the cards</th><td>
 <span class="swatch" style="border:3px dashed #ff0000"></span> today's two crops &nbsp;
 {swatches}</td></tr>
@@ -518,19 +556,34 @@ def table(groups: list[dict], columns: list[str]) -> str:
         f"{DETAILS[d][0]}</th>"
         for d in columns
     )
+    by_style = groups[0]["table"] == "A"
     rows = []
     for g in groups:
-        note = LAYOUT_NOTES.get(g["name"], "")
-        note = f"<br><small>{note}</small>" if note else ""
+        if by_style:
+            only = f"<small>only {html.escape(g['only'])}</small>" if g["only"] else ""
+            group = (
+                f'<th class="group"><b>{g["frame"]}</b></th>'
+                f'<th class="group"><b>{g["style"]}</b>{only}</th>'
+                f"<td>{g['from']}</td><td>{g['to'] or 'today'}</td>"
+            )
+        else:
+            note = LAYOUT_NOTES.get(g["name"], "")
+            note = f"<br><small>{note}</small>" if note else ""
+            group = f'<th class="group"><b>{html.escape(g["name"])}</b>{note}</th>'
         cells = "".join(cell(g["details"][d]) for d in columns)
         rows.append(
-            f'<tr><th class="group"><b>{html.escape(g["name"])}</b>{note}</th>'
+            f"<tr>{group}"
             f"<td>{card(g['example'])}</td>"
             f"<td>{g['share_percent']:.1f}%<br><small>{g['rows']:,} rows</small></td>"
             f"{cells}</tr>"
         )
+    first = (
+        "<th>frame</th><th>collector style</th><th>from</th><th>to</th>"
+        if by_style
+        else "<th>layout</th>"
+    )
     return (
-        f"<table><tr><th>group</th><th>example</th><th>share</th>{head}</tr>"
+        f"<table><tr>{first}<th>example</th><th>share</th>{head}</tr>"
         + "\n".join(rows)
         + "</table>"
     )
@@ -619,9 +672,9 @@ base set size 5,075 in the catalog, but prints <code>HOP 128/169</code>. A prere
 <code>PKHM 214p</code> prints <code>KHM 214/285</code>.</li>
 <li><b>The year on the card isn't the set's year.</b> Secret Lair prints 2023 to 2026, the
 catalog says 2019; Time Spiral Remastered prints 2020, the catalog says 2021.</li>
-<li><b>The frame doesn't tell the era.</b> Retro reprints (The List, Remasters, 30A,
-Secret Lair) use an old frame with modern details: a 1997-frame card from 2023 prints a
-number, but no base set size.</li>
+<li><b>The frame doesn't tell the collector style.</b> Retro reprints (The List,
+Remasters, 30A, Secret Lair) use an old frame with modern details: a 1997-frame card from
+2023 prints a collector number, but no base set size.</li>
 <li><b>Two-name cards have one name in the catalog.</b> Both rows of
 <code>Bonecrusher Giant // Stomp</code> carry the full name, the same number and the same
 image.</li>
@@ -644,18 +697,24 @@ def markdown_tables(summary: dict) -> str:
     out = []
     for table_name, columns in (("A", COLUMNS_A), ("B", COLUMNS_B)):
         groups = [g for g in summary.values() if g["table"] == table_name]
-        out.append(f"\n### Table {table_name}\n")
-        out.append(
-            "| Group | Share | " + " | ".join(DETAILS[d][0] for d in columns) + " |"
+        first = (
+            ["Frame", "Collector style", "From", "To"]
+            if table_name == "A"
+            else ["Layout"]
         )
-        out.append("| --- | --- |" + " --- |" * len(columns))
+        details = [DETAILS[d][0] for d in columns]
+        out.append(f"\n### Table {table_name}\n")
+        out.append("| " + " | ".join([*first, "Share", *details]) + " |")
+        out.append("|" + " --- |" * (len(first) + 1 + len(columns)))
         for g in groups:
+            if table_name == "A":
+                style = g["style"] + (f" (only {g['only']})" if g["only"] else "")
+                group = [g["frame"], style, g["from"], g["to"] or "today"]
+            else:
+                group = [g["name"]]
             cells = [md_cell(g["details"][d]) for d in columns]
-            out.append(
-                f"| {g['name']} | {g['share_percent']:.1f}% ({g['rows']:,}) | "
-                + " | ".join(cells)
-                + " |"
-            )
+            share = f"{g['share_percent']:.1f}% ({g['rows']:,})"
+            out.append("| " + " | ".join([*group, share, *cells]) + " |")
     return "\n".join(out)
 
 

@@ -1,7 +1,12 @@
 {
- "1993 frame, before Legends (June 1994)": {
+ "1993 frame, artist only": {
   "table": "A",
-  "name": "1993 frame, before Legends (June 1994)",
+  "name": "1993 frame, artist only",
+  "frame": "1993",
+  "style": "artist only",
+  "only": "",
+  "from": "August 1993",
+  "to": "April 1994",
   "rows": 2317,
   "share_percent": 2.18,
   "samples": 10,
@@ -171,9 +176,14 @@
    ]
   }
  },
- "1993 frame, from Legends": {
+ "1993 frame, artist and year": {
   "table": "A",
-  "name": "1993 frame, from Legends",
+  "name": "1993 frame, artist and year",
+  "frame": "1993",
+  "style": "artist and year",
+  "only": "",
+  "from": "June 1994",
+  "to": "December 1996",
   "rows": 3328,
   "share_percent": 3.13,
   "samples": 10,
@@ -348,9 +358,14 @@
    ]
   }
  },
- "1997 frame, before Exodus (June 1998)": {
+ "1997 frame, artist and year": {
   "table": "A",
-  "name": "1997 frame, before Exodus (June 1998)",
+  "name": "1997 frame, artist and year",
+  "frame": "1997",
+  "style": "artist and year",
+  "only": "",
+  "from": "June 1996",
+  "to": "March 1998",
   "rows": 2435,
   "share_percent": 2.29,
   "samples": 20,
@@ -525,9 +540,14 @@
    ]
   }
  },
- "1997 frame, from Exodus": {
+ "1997 frame, number and size": {
   "table": "A",
-  "name": "1997 frame, from Exodus",
+  "name": "1997 frame, number and size",
+  "frame": "1997",
+  "style": "number and size",
+  "only": "",
+  "from": "June 1998",
+  "to": "October 2006",
   "rows": 6764,
   "share_percent": 6.35,
   "samples": 22,
@@ -722,9 +742,14 @@
    ]
   }
  },
- "1997 frame, retro reprint (2014 on)": {
+ "1997 frame, number alone": {
   "table": "A",
-  "name": "1997 frame, retro reprint (2014 on)",
+  "name": "1997 frame, number alone",
+  "frame": "1997",
+  "style": "number alone",
+  "only": "retro reprints",
+  "from": "March 2021",
+  "to": "",
   "rows": 1780,
   "share_percent": 1.67,
   "samples": 20,
@@ -927,9 +952,14 @@
    ]
   }
  },
- "2003 frame": {
+ "2003 frame, number and size": {
   "table": "A",
-  "name": "2003 frame",
+  "name": "2003 frame, number and size",
+  "frame": "2003",
+  "style": "number and size",
+  "only": "",
+  "from": "July 2003",
+  "to": "June 2014",
   "rows": 17042,
   "share_percent": 16.01,
   "samples": 21,
@@ -1161,12 +1191,17 @@
    ]
   }
  },
- "2015 frame, to September 2019": {
+ "2015 frame, number and size": {
   "table": "A",
-  "name": "2015 frame, to September 2019",
-  "rows": 17294,
-  "share_percent": 16.24,
-  "samples": 19,
+  "name": "2015 frame, number and size",
+  "frame": "2015",
+  "style": "number and size",
+  "only": "",
+  "from": "July 2014",
+  "to": "February 2023",
+  "rows": 32569,
+  "share_percent": 30.59,
+  "samples": 31,
   "details": {
    "name": {
     "label": "always",
@@ -1174,314 +1209,102 @@
     "not_derivable_percent": 0.0,
     "reasons": [],
     "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
+    "printed_samples": 31,
+    "read": 31,
+    "inside": 31,
     "sideways": 0,
     "clipped": 0
    },
    "second name": {
     "label": "never",
-    "shown_percent": 1.0,
+    "shown_percent": 1.3,
     "not_derivable_percent": 0.0,
     "reasons": [
      [
       "not shown: one name",
-      99.0
+      98.7
      ]
     ],
     "crop": "outside",
-    "printed_samples": 1,
-    "read": 1,
+    "printed_samples": 2,
+    "read": 2,
     "inside": 0,
     "sideways": 0,
     "clipped": 0
    },
    "set code": {
-    "label": "always",
-    "shown_percent": 98.6,
-    "not_derivable_percent": 1.4,
-    "reasons": [
-     [
-      "not derivable: promo set's own numbering",
-      1.4
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "number": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "base set size": {
-    "label": "always",
-    "shown_percent": 98.6,
-    "not_derivable_percent": 1.4,
-    "reasons": [
-     [
-      "not derivable: promo set's own number",
-      1.4
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "artist": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "year": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 19,
-    "read": 19,
-    "inside": 19,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "power/toughness": {
-    "label": "sometimes",
-    "shown_percent": 47.3,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: not a creature or vehicle",
-      52.7
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 8,
-    "read": 8,
-    "inside": 8,
-    "sideways": 0,
-    "clipped": 0
-   }
-  },
-  "example": {
-   "name": "Siege Mastodon",
-   "printing": "M20 312",
-   "scryfallId": "71fd27a8-2de6-454f-8174-a60918bfe60e",
-   "boxes": [
-    {
-     "detail": "name",
-     "box": [
-      0.0727,
-      0.0507,
-      0.46,
-      0.1022
-     ],
-     "text": "Siege Mastodon"
-    },
-    {
-     "detail": "set code",
-     "box": [
-      0.8002,
-      0.561,
-      0.9314,
-      0.6118
-     ],
-     "text": "M20"
-    },
-    {
-     "detail": "power/toughness",
-     "box": [
-      0.8145,
-      0.8912,
-      0.9078,
-      0.936
-     ],
-     "text": "3/5"
-    },
-    {
-     "detail": "base set size",
-     "box": [
-      0.0584,
-      0.9294,
-      0.2111,
-      0.9522
-     ],
-     "text": "312/280 C"
-    },
-    {
-     "detail": "number",
-     "box": [
-      0.0584,
-      0.9294,
-      0.2111,
-      0.9522
-     ],
-     "text": "312/280 C"
-    },
-    {
-     "detail": "artist",
-     "box": [
-      0.0564,
-      0.9456,
-      0.3791,
-      0.9713
-     ],
-     "text": "M20·EN MATT CAVOTTA"
-    },
-    {
-     "detail": "set code",
-     "box": [
-      0.0564,
-      0.9456,
-      0.3791,
-      0.9713
-     ],
-     "text": "M20·EN MATT CAVOTTA"
-    },
-    {
-     "detail": "year",
-     "box": [
-      0.5891,
-      0.9449,
-      0.9355,
-      0.9706
-     ],
-     "text": "TM&  2019 Wizards of the Coast"
-    }
-   ]
-  }
- },
- "2015 frame, October 2019 to March 2023, numbered within the base set": {
-  "table": "A",
-  "name": "2015 frame, October 2019 to March 2023, numbered within the base set",
-  "rows": 15275,
-  "share_percent": 14.35,
-  "samples": 12,
-  "details": {
-   "name": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 12,
-    "read": 12,
-    "inside": 12,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "second name": {
-    "label": "never",
-    "shown_percent": 1.7,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: one name",
-      98.3
-     ]
-    ],
-    "crop": "outside",
-    "printed_samples": 1,
-    "read": 1,
-    "inside": 0,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "set code": {
-    "label": "always",
-    "shown_percent": 97.1,
-    "not_derivable_percent": 0.9,
-    "reasons": [
-     [
-      "not shown: playtest card",
-      2.1
-     ],
-     [
-      "not derivable: promo set's own numbering",
-      0.9
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 12,
-    "read": 10,
-    "inside": 10,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "number": {
     "label": "always",
     "shown_percent": 97.9,
+    "not_derivable_percent": 1.1,
+    "reasons": [
+     [
+      "not derivable: promo set's own numbering",
+      1.1
+     ],
+     [
+      "not shown: playtest card",
+      1.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 31,
+    "read": 29,
+    "inside": 29,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 99.0,
     "not_derivable_percent": 0.0,
     "reasons": [
      [
       "not shown: playtest card",
-      2.1
+      1.0
      ]
     ],
     "crop": "inside",
-    "printed_samples": 12,
-    "read": 12,
-    "inside": 12,
+    "printed_samples": 31,
+    "read": 31,
+    "inside": 31,
     "sideways": 0,
     "clipped": 0
    },
    "base set size": {
     "label": "always",
-    "shown_percent": 97.1,
-    "not_derivable_percent": 0.9,
+    "shown_percent": 97.9,
+    "not_derivable_percent": 1.1,
     "reasons": [
      [
-      "not shown: no number",
-      2.1
+      "not derivable: promo set's own number",
+      1.1
      ],
      [
-      "not derivable: promo set's own number",
-      0.9
+      "not shown: no number",
+      1.0
      ]
     ],
     "crop": "inside",
-    "printed_samples": 12,
-    "read": 9,
-    "inside": 9,
+    "printed_samples": 31,
+    "read": 28,
+    "inside": 28,
     "sideways": 0,
     "clipped": 0
    },
    "artist": {
     "label": "always",
-    "shown_percent": 99.6,
+    "shown_percent": 99.8,
     "not_derivable_percent": 0.0,
     "reasons": [
      [
       "not shown: no artist",
-      0.4
+      0.2
      ]
     ],
     "crop": "inside",
-    "printed_samples": 12,
-    "read": 11,
-    "inside": 11,
+    "printed_samples": 31,
+    "read": 30,
+    "inside": 30,
     "sideways": 0,
     "clipped": 0
    },
@@ -1491,26 +1314,26 @@
     "not_derivable_percent": 0.0,
     "reasons": [],
     "crop": "inside",
-    "printed_samples": 12,
-    "read": 9,
-    "inside": 9,
+    "printed_samples": 31,
+    "read": 28,
+    "inside": 28,
     "sideways": 0,
     "clipped": 0
    },
    "power/toughness": {
     "label": "sometimes",
-    "shown_percent": 51.0,
+    "shown_percent": 49.0,
     "not_derivable_percent": 0.0,
     "reasons": [
      [
       "not shown: not a creature or vehicle",
-      49.0
+      51.0
      ]
     ],
     "crop": "inside",
-    "printed_samples": 8,
-    "read": 8,
-    "inside": 8,
+    "printed_samples": 16,
+    "read": 16,
+    "inside": 16,
     "sideways": 0,
     "clipped": 0
    }
@@ -1593,9 +1416,14 @@
    ]
   }
  },
- "2015 frame, October 2019 to March 2023, numbered above the base set size": {
+ "2015 frame, number alone": {
   "table": "A",
-  "name": "2015 frame, October 2019 to March 2023, numbered above the base set size",
+  "name": "2015 frame, number alone",
+  "frame": "2015",
+  "style": "number alone",
+  "only": "numbered above the base set size",
+  "from": "October 2019",
+  "to": "February 2023",
   "rows": 7534,
   "share_percent": 7.08,
   "samples": 5,
@@ -1780,9 +1608,14 @@
    ]
   }
  },
- "2015 frame, from April 2023": {
+ "2015 frame, rarity first": {
   "table": "A",
-  "name": "2015 frame, from April 2023",
+  "name": "2015 frame, rarity first",
+  "frame": "2015",
+  "style": "rarity first",
+  "only": "",
+  "from": "April 2023",
+  "to": "",
   "rows": 32448,
   "share_percent": 30.48,
   "samples": 41,
@@ -1990,9 +1823,14 @@
    ]
   }
  },
- "future frame, before April 2023": {
+ "future frame, number and size": {
   "table": "A",
-  "name": "future frame, before April 2023",
+  "name": "future frame, number and size",
+  "frame": "future",
+  "style": "number and size",
+  "only": "",
+  "from": "May 2007",
+  "to": "September 2022",
   "rows": 98,
   "share_percent": 0.09,
   "samples": 8,
@@ -2187,9 +2025,14 @@
    ]
   }
  },
- "future frame, from April 2023": {
+ "future frame, number alone": {
   "table": "A",
-  "name": "future frame, from April 2023",
+  "name": "future frame, number alone",
+  "frame": "future",
+  "style": "number alone",
+  "only": "",
+  "from": "August 2024",
+  "to": "",
   "rows": 151,
   "share_percent": 0.14,
   "samples": 12,
@@ -2391,6 +2234,11 @@
  "same places as a normal card": {
   "table": "B",
   "name": "same places as a normal card",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "September 2011",
+  "to": "",
   "rows": 3165,
   "share_percent": 2.97,
   "samples": 160,
@@ -2629,6 +2477,11 @@
  "adventure": {
   "table": "B",
   "name": "adventure",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "October 2019",
+  "to": "",
   "rows": 802,
   "share_percent": 0.75,
   "samples": 20,
@@ -2858,6 +2711,11 @@
  "prepare": {
   "table": "B",
   "name": "prepare",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "April 2026",
+  "to": "",
   "rows": 238,
   "share_percent": 0.22,
   "samples": 20,
@@ -3055,6 +2913,11 @@
  "aftermath": {
   "table": "B",
   "name": "aftermath",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "April 2017",
+  "to": "February 2025",
   "rows": 142,
   "share_percent": 0.13,
   "samples": 20,
@@ -3281,6 +3144,11 @@
  "flip": {
   "table": "B",
   "name": "flip",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "October 2004",
+  "to": "August 2018",
   "rows": 74,
   "share_percent": 0.07,
   "samples": 20,
@@ -3483,6 +3351,11 @@
  "split, 2015 frame": {
   "table": "B",
   "name": "split, 2015 frame",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "November 2016",
+  "to": "",
   "rows": 338,
   "share_percent": 0.32,
   "samples": 20,
@@ -3708,6 +3581,11 @@
  "split, before the 2015 frame": {
   "table": "B",
   "name": "split, before the 2015 frame",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "October 2000",
+  "to": "November 2013",
   "rows": 145,
   "share_percent": 0.14,
   "samples": 20,
@@ -3944,6 +3822,11 @@
  "battle": {
   "table": "B",
   "name": "battle",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "April 2023",
+  "to": "January 2025",
   "rows": 54,
   "share_percent": 0.05,
   "samples": 20,
@@ -4180,6 +4063,11 @@
  "planar": {
   "table": "B",
   "name": "planar",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "September 2009",
+  "to": "February 2025",
   "rows": 324,
   "share_percent": 0.3,
   "samples": 20,
@@ -4374,6 +4262,11 @@
  "leveler": {
   "table": "B",
   "name": "leveler",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "April 2010",
+  "to": "August 2024",
   "rows": 61,
   "share_percent": 0.06,
   "samples": 20,
