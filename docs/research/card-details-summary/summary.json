@@ -1,0 +1,4613 @@
+{
+ "1993 frame, before Legends (June 1994)": {
+  "table": "A",
+  "name": "1993 frame, before Legends (June 1994)",
+  "rows": 2317,
+  "share_percent": 2.18,
+  "samples": 10,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 10,
+    "inside": 9,
+    "sideways": 0,
+    "clipped": 1
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 1993 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: before Exodus",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 10,
+    "inside": 10,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: before Legends",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 32.7,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      67.3
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 2,
+    "read": 2,
+    "inside": 2,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Giant Spider",
+   "printing": "3ED 200",
+   "scryfallId": "5440ff00-e7fa-46ac-b46c-3fa4e10712b0",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0666,
+      0.0397,
+      0.3668,
+      0.0971
+     ],
+     "text": "Giant Spider"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0912,
+      0.914,
+      0.665,
+      0.9559
+     ],
+     "text": "Illus. O Sandra Everingham"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.835,
+      0.9074,
+      0.9365,
+      0.9574
+     ],
+     "text": "2/4"
+    }
+   ]
+  }
+ },
+ "1993 frame, from Legends": {
+  "table": "A",
+  "name": "1993 frame, from Legends",
+  "rows": 3328,
+  "share_percent": 3.13,
+  "samples": 10,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "clipped",
+    "printed_samples": 10,
+    "read": 8,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 8
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 1993 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: before Exodus",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 9,
+    "inside": 9,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 7,
+    "inside": 7,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 41.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      58.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 4,
+    "read": 4,
+    "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Icatian Skirmishers",
+   "printing": "FEM 14",
+   "scryfallId": "15f6d115-c02d-45a3-aa6d-402964df47dd",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0748,
+      0.0353,
+      0.5277,
+      0.0787
+     ],
+     "text": "Icat ian Skirrnishers"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8463,
+      0.8904,
+      0.9344,
+      0.9404
+     ],
+     "text": "1/1"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0953,
+      0.9015,
+      0.4959,
+      0.9353
+     ],
+     "text": "Illus. Fleather Hudson"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.0922,
+      0.9272,
+      0.7336,
+      0.9551
+     ],
+     "text": "©1994 Wizards of the Coast, Inc. All rights reserved."
+    }
+   ]
+  }
+ },
+ "1997 frame, before Exodus (June 1998)": {
+  "table": "A",
+  "name": "1997 frame, before Exodus (June 1998)",
+  "rows": 2435,
+  "share_percent": 2.29,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 1997 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: before Exodus",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 14,
+    "inside": 14,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 42.5,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      57.5
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 6,
+    "read": 6,
+    "inside": 6,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Rootwater Diver",
+   "printing": "TMP 81",
+   "scryfallId": "a6315323-cf82-46c0-b164-e6ea1bf809f4",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1014,
+      0.0382,
+      0.5195,
+      0.0941
+     ],
+     "text": "Rootwater Diver"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0963,
+      0.8934,
+      0.4273,
+      0.9301
+     ],
+     "text": "Ilus Ron Spencer"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8248,
+      0.9,
+      0.917,
+      0.9449
+     ],
+     "text": "1/1"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.0953,
+      0.9235,
+      0.4283,
+      0.9478
+     ],
+     "text": "c 1997 Wizards ot the Coast Inc."
+    }
+   ]
+  }
+ },
+ "1997 frame, from Exodus": {
+  "table": "A",
+  "name": "1997 frame, from Exodus",
+  "rows": 6764,
+  "share_percent": 6.35,
+  "samples": 22,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 22,
+    "inside": 22,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.6,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      99.4
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 1997 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 97.0,
+    "not_derivable_percent": 3.0,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      3.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 97.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      3.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 21,
+    "inside": 21,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 21,
+    "inside": 21,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 45.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      55.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 9,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Hollow Dogs",
+   "printing": "S99 81",
+   "scryfallId": "ecbecdc8-7140-4485-85d9-86e6e4fbed14",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1035,
+      0.039,
+      0.4129,
+      0.0949
+     ],
+     "text": "hollow Dogs"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.3422,
+      0.8926,
+      0.6691,
+      0.9257
+     ],
+     "text": "Illus. Jeff Miracola"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8197,
+      0.8912,
+      0.9221,
+      0.9449
+     ],
+     "text": "313"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.2746,
+      0.9213,
+      0.7367,
+      0.9441
+     ],
+     "text": "1993-1999 Wizards of the Coast, Inc. 81/173"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.2746,
+      0.9213,
+      0.7367,
+      0.9441
+     ],
+     "text": "1993-1999 Wizards of the Coast, Inc. 81/173"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.2746,
+      0.9213,
+      0.7367,
+      0.9441
+     ],
+     "text": "1993-1999 Wizards of the Coast, Inc. 81/173"
+    }
+   ]
+  }
+ },
+ "1997 frame, retro reprint (2014 on)": {
+  "table": "A",
+  "name": "1997 frame, retro reprint (2014 on)",
+  "rows": 1780,
+  "share_percent": 1.67,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 1997 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "sometimes",
+    "shown_percent": 94.7,
+    "not_derivable_percent": 5.3,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      5.3
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 15,
+    "inside": 15,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: retro reprint",
+      61.1
+     ],
+     [
+      "not shown: from April 2023",
+      33.7
+     ],
+     [
+      "not shown: no number",
+      5.3
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 40.2,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      59.8
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 9,
+    "read": 9,
+    "inside": 9,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Rith, the Awakener",
+   "printing": "DMR 366",
+   "scryfallId": "1c0a3c92-826e-491a-8e80-7861e5b199c2",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0994,
+      0.0471,
+      0.5717,
+      0.0926
+     ],
+     "text": "Rith, the Fwakener"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.1168,
+      0.6551,
+      0.7859,
+      0.6963
+     ],
+     "text": "Whenever Rith, the Awakener"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.3064,
+      0.8919,
+      0.6885,
+      0.925
+     ],
+     "text": "Illus. Mathias Kollros"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8268,
+      0.8919,
+      0.9242,
+      0.9404
+     ],
+     "text": "616"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.3033,
+      0.9199,
+      0.6977,
+      0.9456
+     ],
+     "text": "TM&  2023 Wizards of the Coast 366"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.3033,
+      0.9199,
+      0.6977,
+      0.9456
+     ],
+     "text": "TM&  2023 Wizards of the Coast 366"
+    }
+   ]
+  }
+ },
+ "2003 frame": {
+  "table": "A",
+  "name": "2003 frame",
+  "rows": 17042,
+  "share_percent": 16.01,
+  "samples": 21,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 21,
+    "inside": 21,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 1.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      98.9
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 96.5,
+    "not_derivable_percent": 3.5,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      3.5
+     ],
+     [
+      "not shown: no digits",
+      0.0
+     ],
+     [
+      "not shown: playtest card",
+      0.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 96.5,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      3.5
+     ],
+     [
+      "not shown: from April 2023",
+      0.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 47.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      52.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 6,
+    "read": 6,
+    "inside": 6,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Duergar Hedge-Mage",
+   "printing": "EVE 137",
+   "scryfallId": "4d45e026-58fc-4a0c-9099-6849e5a8fa67",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0809,
+      0.0581,
+      0.6076,
+      0.1066
+     ],
+     "text": "Duergar Hedge-Mage"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0932,
+      0.6199,
+      0.8309,
+      0.6669
+     ],
+     "text": "When Duergar Hedge-Mage comes"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0953,
+      0.7625,
+      0.8289,
+      0.8044
+     ],
+     "text": "When Duergar Hedge-Mage comes"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.791,
+      0.8963,
+      0.8893,
+      0.9404
+     ],
+     "text": "2/2"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.1004,
+      0.9118,
+      0.3381,
+      0.9426
+     ],
+     "text": "- Dave Allsop"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0768,
+      0.9412,
+      0.6219,
+      0.9647
+     ],
+     "text": "iv o e4993 2008 Wizards ot the Coast, Inc. 137/180"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0768,
+      0.9412,
+      0.6219,
+      0.9647
+     ],
+     "text": "iv o e4993 2008 Wizards ot the Coast, Inc. 137/180"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.0768,
+      0.9412,
+      0.6219,
+      0.9647
+     ],
+     "text": "iv o e4993 2008 Wizards ot the Coast, Inc. 137/180"
+    }
+   ]
+  }
+ },
+ "2015 frame, to September 2019": {
+  "table": "A",
+  "name": "2015 frame, to September 2019",
+  "rows": 17294,
+  "share_percent": 16.24,
+  "samples": 19,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 1.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      99.0
+     ]
+    ],
+    "crop": "outside",
+    "printed_samples": 1,
+    "read": 1,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 98.6,
+    "not_derivable_percent": 1.4,
+    "reasons": [
+     [
+      "not derivable: promo set's own numbering",
+      1.4
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 98.6,
+    "not_derivable_percent": 1.4,
+    "reasons": [
+     [
+      "not derivable: promo set's own number",
+      1.4
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 47.3,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      52.7
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Siege Mastodon",
+   "printing": "M20 312",
+   "scryfallId": "71fd27a8-2de6-454f-8174-a60918bfe60e",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0727,
+      0.0507,
+      0.46,
+      0.1022
+     ],
+     "text": "Siege Mastodon"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.8002,
+      0.561,
+      0.9314,
+      0.6118
+     ],
+     "text": "M20"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8145,
+      0.8912,
+      0.9078,
+      0.936
+     ],
+     "text": "3/5"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9294,
+      0.2111,
+      0.9522
+     ],
+     "text": "312/280 C"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9294,
+      0.2111,
+      0.9522
+     ],
+     "text": "312/280 C"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0564,
+      0.9456,
+      0.3791,
+      0.9713
+     ],
+     "text": "M20·EN MATT CAVOTTA"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0564,
+      0.9456,
+      0.3791,
+      0.9713
+     ],
+     "text": "M20·EN MATT CAVOTTA"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9449,
+      0.9355,
+      0.9706
+     ],
+     "text": "TM&  2019 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "2015 frame, October 2019 to March 2023, numbered within the base set": {
+  "table": "A",
+  "name": "2015 frame, October 2019 to March 2023, numbered within the base set",
+  "rows": 15275,
+  "share_percent": 14.35,
+  "samples": 12,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 1.7,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      98.3
+     ]
+    ],
+    "crop": "outside",
+    "printed_samples": 1,
+    "read": 1,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 97.1,
+    "not_derivable_percent": 0.9,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      2.1
+     ],
+     [
+      "not derivable: promo set's own numbering",
+      0.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 10,
+    "inside": 10,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 97.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      2.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 97.1,
+    "not_derivable_percent": 0.9,
+    "reasons": [
+     [
+      "not shown: no number",
+      2.1
+     ],
+     [
+      "not derivable: promo set's own number",
+      0.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 9,
+    "inside": 9,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 99.6,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.4
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 11,
+    "inside": 11,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 9,
+    "inside": 9,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 51.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      49.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Monastery Mentor",
+   "printing": "2X2 21",
+   "scryfallId": "64c8e27f-a7eb-4247-bd3d-2d0b02ead334",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0758,
+      0.0515,
+      0.5277,
+      0.0971
+     ],
+     "text": "Monastery Mentor"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8166,
+      0.8985,
+      0.9139,
+      0.9426
+     ],
+     "text": "2/2"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0574,
+      0.9324,
+      0.2172,
+      0.9551
+     ],
+     "text": "021/331M"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0574,
+      0.9324,
+      0.2172,
+      0.9551
+     ],
+     "text": "021/331M"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0574,
+      0.9515,
+      0.4365,
+      0.975
+     ],
+     "text": "2X2·EN MAGALI VILLENEUVE"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0574,
+      0.9515,
+      0.4365,
+      0.975
+     ],
+     "text": "2X2·EN MAGALI VILLENEUVE"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5922,
+      0.9485,
+      0.9416,
+      0.9765
+     ],
+     "text": "TM & O 2022 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "2015 frame, October 2019 to March 2023, numbered above the base set size": {
+  "table": "A",
+  "name": "2015 frame, October 2019 to March 2023, numbered above the base set size",
+  "rows": 7534,
+  "share_percent": 7.08,
+  "samples": 5,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 4,
+    "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 1.6,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      98.4
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 99.0,
+    "not_derivable_percent": 1.0,
+    "reasons": [
+     [
+      "not derivable: promo set's own numbering",
+      1.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: above the base set size",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 99.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 2,
+    "inside": 2,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 50.3,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      49.7
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 1,
+    "read": 1,
+    "inside": 1,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Mikokoro, Center of the Sea",
+   "printing": "C21 302",
+   "scryfallId": "8f788b3c-bc36-47a8-b4c4-32c8642e26ad",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0717,
+      0.0485,
+      0.7551,
+      0.0963
+     ],
+     "text": "Mikokoro, Center of the Sea"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0553,
+      0.9316,
+      0.1199,
+      0.9544
+     ],
+     "text": "302"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9294,
+      0.9375,
+      0.9574
+     ],
+     "text": "M&O 2021 Wizards of the Coast"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0543,
+      0.9485,
+      0.3402,
+      0.9743
+     ],
+     "text": "C21·EN IOHN AVON"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0543,
+      0.9485,
+      0.3402,
+      0.9743
+     ],
+     "text": "C21·EN IOHN AVON"
+    }
+   ]
+  }
+ },
+ "2015 frame, from April 2023": {
+  "table": "A",
+  "name": "2015 frame, from April 2023",
+  "rows": 32448,
+  "share_percent": 30.48,
+  "samples": 41,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 41,
+    "read": 38,
+    "inside": 36,
+    "sideways": 0,
+    "clipped": 1
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 3.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      97.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 96.8,
+    "not_derivable_percent": 1.2,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      2.0
+     ],
+     [
+      "not derivable: promo set's own numbering",
+      1.2
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 40,
+    "read": 40,
+    "inside": 40,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 98.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      2.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 40,
+    "read": 40,
+    "inside": 40,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      98.0
+     ],
+     [
+      "not shown: no number",
+      2.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 98.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      1.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 41,
+    "read": 39,
+    "inside": 39,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 41,
+    "read": 37,
+    "inside": 37,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 49.7,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      50.3
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 19,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Serra Angel",
+   "printing": "FDN 147",
+   "scryfallId": "3cee9303-9d65-45a2-93d4-ef4aba59141b",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0758,
+      0.0522,
+      0.3627,
+      0.1022
+     ],
+     "text": "Serra Angel"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8125,
+      0.8934,
+      0.9078,
+      0.939
+     ],
+     "text": "4/4"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9287,
+      0.1619,
+      0.9522
+     ],
+     "text": "U 0147"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0594,
+      0.9478,
+      0.374,
+      0.9713
+     ],
+     "text": "FDN ·EN GREG STAPLES"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0594,
+      0.9478,
+      0.374,
+      0.9713
+     ],
+     "text": "FDN ·EN GREG STAPLES"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9478,
+      0.9355,
+      0.9706
+     ],
+     "text": "TM&2024 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "future frame, before April 2023": {
+  "table": "A",
+  "name": "future frame, before April 2023",
+  "rows": 98,
+  "share_percent": 0.09,
+  "samples": 8,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: future frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 99.0,
+    "not_derivable_percent": 1.0,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      1.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 99.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      1.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 62.2,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      37.8
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 4,
+    "read": 4,
+    "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Tombstalker",
+   "printing": "FUT 91",
+   "scryfallId": "8bd55a11-8658-4b92-9151-d6173a11991a",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1732,
+      0.0581,
+      0.4867,
+      0.1015
+     ],
+     "text": "Tombstalker"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.5359,
+      0.8971,
+      0.7459,
+      0.9265
+     ],
+     "text": "Aleksi Briclot"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.791,
+      0.8949,
+      0.8893,
+      0.9397
+     ],
+     "text": "5/5"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.1701,
+      0.9206,
+      0.748,
+      0.9478
+     ],
+     "text": "m & O 1993-2007 Wizards of the Coast, Inc: 91/180"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.1701,
+      0.9206,
+      0.748,
+      0.9478
+     ],
+     "text": "m & O 1993-2007 Wizards of the Coast, Inc: 91/180"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.1701,
+      0.9206,
+      0.748,
+      0.9478
+     ],
+     "text": "m & O 1993-2007 Wizards of the Coast, Inc: 91/180"
+    }
+   ]
+  }
+ },
+ "future frame, from April 2023": {
+  "table": "A",
+  "name": "future frame, from April 2023",
+  "rows": 151,
+  "share_percent": 0.14,
+  "samples": 12,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: future frame",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 96.7,
+    "not_derivable_percent": 3.3,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      3.3
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 11,
+    "read": 11,
+    "inside": 11,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      96.7
+     ],
+     [
+      "not shown: no number",
+      3.3
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 11,
+    "inside": 11,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 31.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      68.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 6,
+    "read": 6,
+    "inside": 6,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Gerrard, Weatherlight Hero",
+   "printing": "MB2 251",
+   "scryfallId": "0137f066-68ec-44d1-877e-009256127ede",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1721,
+      0.0618,
+      0.8791,
+      0.1088
+     ],
+     "text": "Gerrard, Weatherlight Hero"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0994,
+      0.6779,
+      0.8955,
+      0.7125
+     ],
+     "text": "When Gerrard, Weatherlight Hero dies, exile"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.4816,
+      0.9015,
+      0.7459,
+      0.9301
+     ],
+     "text": "Douglas Shuler"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.7941,
+      0.9,
+      0.8842,
+      0.9419
+     ],
+     "text": "3/3"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.3576,
+      0.9294,
+      0.7439,
+      0.9507
+     ],
+     "text": "r & O 2024 Wizards of the Coast 251"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.3576,
+      0.9294,
+      0.7439,
+      0.9507
+     ],
+     "text": "r & O 2024 Wizards of the Coast 251"
+    }
+   ]
+  }
+ },
+ "same places as a normal card": {
+  "table": "B",
+  "name": "same places as a normal card",
+  "rows": 3165,
+  "share_percent": 2.97,
+  "samples": 160,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 145,
+    "inside": 143,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 94.5,
+    "not_derivable_percent": 1.1,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      2.5
+     ],
+     [
+      "not shown: 1997 frame",
+      1.7
+     ],
+     [
+      "not derivable: promo set's own numbering",
+      1.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 156,
+    "read": 156,
+    "inside": 156,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 99.8,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      0.2
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 159,
+    "inside": 158,
+    "sideways": 0,
+    "clipped": 1
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 48.3,
+    "not_derivable_percent": 0.6,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      40.3
+     ],
+     [
+      "not shown: above the base set size",
+      10.5
+     ],
+     [
+      "not derivable: promo set's own number",
+      0.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 79,
+    "read": 75,
+    "inside": 75,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 99.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 156,
+    "inside": 156,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 158,
+    "inside": 157,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 57.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      42.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 82,
+    "read": 82,
+    "inside": 82,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+   "printing": "EMN 28",
+   "scryfallId": "c75c035a-7da9-4b36-982d-fca8220b1797",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1568,
+      0.0478,
+      0.9283,
+      0.1
+     ],
+     "text": "Gisela, the Broken Blade ②"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.0779,
+      0.811,
+      0.7029,
+      0.8471
+     ],
+     "text": "into Brisela, Voice of Nightmares."
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8125,
+      0.8956,
+      0.9098,
+      0.9404
+     ],
+     "text": "4/3"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2131,
+      0.9529
+     ],
+     "text": "028/205M"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2131,
+      0.9529
+     ],
+     "text": "028/205M"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0584,
+      0.9485,
+      0.3781,
+      0.9721
+     ],
+     "text": "EMN·EN CLINT CEARLEY"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0584,
+      0.9485,
+      0.3781,
+      0.9721
+     ],
+     "text": "EMN·EN CLINT CEARLEY"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5902,
+      0.9471,
+      0.9355,
+      0.9728
+     ],
+     "text": "rM & O 2016 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "adventure": {
+  "table": "B",
+  "name": "adventure",
+  "rows": 802,
+  "share_percent": 0.75,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "outside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 97.0,
+    "not_derivable_percent": 2.2,
+    "reasons": [
+     [
+      "not derivable: promo set's own numbering",
+      2.2
+     ],
+     [
+      "not shown: playtest card",
+      0.7
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 99.3,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      0.7
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 1
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 24.2,
+    "not_derivable_percent": 0.7,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      61.6
+     ],
+     [
+      "not shown: above the base set size",
+      12.7
+     ],
+     [
+      "not derivable: promo set's own number",
+      0.7
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 4,
+    "read": 4,
+    "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 99.8,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.2
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 41.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      58.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 19,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Smitten Swordmaster // Curry Favor",
+   "printing": "ELD 105",
+   "scryfallId": "f82541f2-b17c-45b4-87ff-f9b46d23578c",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0748,
+      0.0544,
+      0.5912,
+      0.0956
+     ],
+     "text": "Smitten Swordmaster"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.0779,
+      0.6338,
+      0.3023,
+      0.6728
+     ],
+     "text": "Curry Favor"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8186,
+      0.8978,
+      0.9057,
+      0.9397
+     ],
+     "text": "2/1"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2121,
+      0.9559
+     ],
+     "text": "105/269 C"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2121,
+      0.9559
+     ],
+     "text": "105/269 C"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0564,
+      0.9471,
+      0.4355,
+      0.9743
+     ],
+     "text": "ELD ·EN TAYLOR INGVARSSON"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0564,
+      0.9471,
+      0.4355,
+      0.9743
+     ],
+     "text": "ELD ·EN TAYLOR INGVARSSON"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5912,
+      0.9478,
+      0.9385,
+      0.9728
+     ],
+     "text": "TM& O 2019 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "prepare": {
+  "table": "B",
+  "name": "prepare",
+  "rows": 238,
+  "share_percent": 0.22,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "outside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 99.2,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      0.8
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 50.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      50.0
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Strife Scholar // Awaken the Ages",
+   "printing": "SOS 131",
+   "scryfallId": "8de79312-2046-425e-9919-49afe19be81b",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0768,
+      0.0537,
+      0.416,
+      0.0978
+     ],
+     "text": "Strife Scholar"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.5143,
+      0.6324,
+      0.8248,
+      0.6713
+     ],
+     "text": "Awaken the Ages"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8105,
+      0.8934,
+      0.9068,
+      0.9397
+     ],
+     "text": "3/2"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0594,
+      0.9294,
+      0.1557,
+      0.9529
+     ],
+     "text": "C 0131"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0584,
+      0.9463,
+      0.416,
+      0.9713
+     ],
+     "text": "SOS·EN CRAIGISPEARING"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0584,
+      0.9463,
+      0.416,
+      0.9713
+     ],
+     "text": "SOS·EN CRAIGISPEARING"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9463,
+      0.9355,
+      0.9713
+     ],
+     "text": "TM&2026 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "aftermath": {
+  "table": "B",
+  "name": "aftermath",
+  "rows": 142,
+  "share_percent": 0.13,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "outside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 77.5,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      12.7
+     ],
+     [
+      "not shown: above the base set size",
+      9.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 13,
+    "read": 13,
+    "inside": 13,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Dusk // Dawn",
+   "printing": "AKH 210",
+   "scryfallId": "937dbc51-b589-4237-9fce-ea5c757f7c48",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0748,
+      0.0515,
+      0.2162,
+      0.1015
+     ],
+     "text": "Dusk"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.8576,
+      0.5588,
+      0.918,
+      0.6603
+     ],
+     "text": "Dawn"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9287,
+      0.2131,
+      0.9522
+     ],
+     "text": "210/269 R"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9287,
+      0.2131,
+      0.9522
+     ],
+     "text": "210/269 R"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5902,
+      0.9287,
+      0.9355,
+      0.9537
+     ],
+     "text": "Tu & © 2017 Wizards of the Coast"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0584,
+      0.9463,
+      0.3863,
+      0.9713
+     ],
+     "text": "AKH·EN NOAH BRADLEY"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0584,
+      0.9463,
+      0.3863,
+      0.9713
+     ],
+     "text": "AKH·EN NOAH BRADLEY"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0748,
+      0.0551,
+      0.2121,
+      0.1
+     ],
+     "text": "Dusk"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9309,
+      0.9334,
+      0.9566
+     ],
+     "text": "Tu & © 2017 Wizards of the Coast"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.8566,
+      0.5574,
+      0.9221,
+      0.6618
+     ],
+     "text": "Dawn"
+    }
+   ]
+  }
+ },
+ "flip": {
+  "table": "B",
+  "name": "flip",
+  "rows": 74,
+  "share_percent": 0.07,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 0,
+    "sideways": 18,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 5.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      94.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 1,
+    "read": 1,
+    "inside": 1,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 17,
+    "inside": 17,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 14,
+    "inside": 14,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 90.5,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      9.5
+     ]
+    ],
+    "crop": "outside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Budoka Gardener // Dokai, Weaver of Life",
+   "printing": "C18 134",
+   "scryfallId": "58164521-aeec-43fc-9db9-d595432dea6f",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0758,
+      0.0353,
+      0.5133,
+      0.0838
+     ],
+     "text": "Budoka Gardener"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8258,
+      0.2346,
+      0.9211,
+      0.2853
+     ],
+     "text": "2/1"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0564,
+      0.9316,
+      0.2131,
+      0.9544
+     ],
+     "text": "134/307 R"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0564,
+      0.9316,
+      0.2131,
+      0.9544
+     ],
+     "text": "134/307 R"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0553,
+      0.9478,
+      0.3576,
+      0.9728
+     ],
+     "text": "C18·EN KEV WALKER"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0553,
+      0.9478,
+      0.3576,
+      0.9728
+     ],
+     "text": "C18·EN KEV WALKER"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5922,
+      0.9478,
+      0.9365,
+      0.9743
+     ],
+     "text": "M&  2018 Wizards of the Coast"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.4139,
+      0.8419,
+      0.9283,
+      0.8868
+     ],
+     "text": "Dokai, Weaver of Life"
+    }
+   ]
+  }
+ },
+ "split, 2015 frame": {
+  "table": "B",
+  "name": "split, 2015 frame",
+  "rows": 338,
+  "share_percent": 0.32,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 16,
+    "inside": 0,
+    "sideways": 16,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 16,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 91.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      8.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 16,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "sometimes",
+    "shown_percent": 91.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      8.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 16,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 31.7,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      57.4
+     ],
+     [
+      "not shown: no number",
+      8.6
+     ],
+     [
+      "not shown: above the base set size",
+      2.4
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 6,
+    "read": 6,
+    "inside": 6,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 96.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      3.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 18,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Collision // Colossus",
+   "printing": "RNA 223",
+   "scryfallId": "9bd15da6-2b86-4dba-951d-318c7d9a5dde",
+   "boxes": [
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9331,
+      0.2141,
+      0.9559
+     ],
+     "text": "223/ 259U"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9331,
+      0.2141,
+      0.9559
+     ],
+     "text": "223/ 259U"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5891,
+      0.9338,
+      0.9344,
+      0.9551
+     ],
+     "text": "TM&C 2019 Wizards of the Coast"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0574,
+      0.9515,
+      0.3986,
+      0.975
+     ],
+     "text": "RNA·EN IASON RAINVILLE"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0574,
+      0.9515,
+      0.3986,
+      0.975
+     ],
+     "text": "RNA·EN IASON RAINVILLE"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0697,
+      0.7522,
+      0.1332,
+      0.9037
+     ],
+     "text": "Collision"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.0717,
+      0.2971,
+      0.1311,
+      0.4434
+     ],
+     "text": "Colossus"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5881,
+      0.9338,
+      0.9334,
+      0.9596
+     ],
+     "text": "TM& C 2019 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "split, before the 2015 frame": {
+  "table": "B",
+  "name": "split, before the 2015 frame",
+  "rows": 145,
+  "share_percent": 0.14,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 0,
+    "sideways": 19,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 20,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      73.8
+     ],
+     [
+      "not shown: 1997 frame",
+      26.2
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 95.9,
+    "not_derivable_percent": 4.1,
+    "reasons": [
+     [
+      "not derivable: old-frame promo",
+      4.1
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 18,
+    "read": 11,
+    "inside": 0,
+    "sideways": 11,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "always",
+    "shown_percent": 95.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no number",
+      4.1
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 18,
+    "read": 8,
+    "inside": 0,
+    "sideways": 8,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 16,
+    "inside": 0,
+    "sideways": 16,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 11,
+    "inside": 0,
+    "sideways": 11,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Order // Chaos",
+   "printing": "APC 132",
+   "scryfallId": "14e4f5a4-b1ea-4816-b2d7-cf148468a388",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0502,
+      0.8243,
+      0.1127,
+      0.9346
+     ],
+     "text": "Order"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.0543,
+      0.35,
+      0.1137,
+      0.4566
+     ],
+     "text": "Chaos"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.8596,
+      0.5515,
+      0.9047,
+      0.9324
+     ],
+     "text": "Mus. Greg & Tim Hlildebrandt"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.8586,
+      0.0713,
+      0.9037,
+      0.4515
+     ],
+     "text": "Illus. Greg & Tim Hildebrandt"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.8975,
+      0.5493,
+      0.9324,
+      0.9338
+     ],
+     "text": "M& O1993-2001 Wizards of the Coast, Inc. 132/143"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.8975,
+      0.5493,
+      0.9324,
+      0.9338
+     ],
+     "text": "M& O1993-2001 Wizards of the Coast, Inc. 132/143"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.8975,
+      0.5493,
+      0.9324,
+      0.9338
+     ],
+     "text": "M& O1993-2001 Wizards of the Coast, Inc. 132/143"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.9006,
+      0.0699,
+      0.9303,
+      0.4537
+     ],
+     "text": "M & O 1993 2001 Wizards of the Coast, Inc. 132/143"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.9006,
+      0.0699,
+      0.9303,
+      0.4537
+     ],
+     "text": "M & O 1993 2001 Wizards of the Coast, Inc. 132/143"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.9006,
+      0.0699,
+      0.9303,
+      0.4537
+     ],
+     "text": "M & O 1993 2001 Wizards of the Coast, Inc. 132/143"
+    }
+   ]
+  }
+ },
+ "battle": {
+  "table": "B",
+  "name": "battle",
+  "rows": 54,
+  "share_percent": 0.05,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 20,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "always",
+    "shown_percent": 98.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      1.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 98.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      1.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      98.1
+     ],
+     [
+      "not shown: no number",
+      1.9
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 98.1,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      1.9
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Invasion of Kaldheim // Pyre of the World Tree",
+   "printing": "MOM 145",
+   "scryfallId": "f7cedd62-efc8-464d-8387-220bb55e07e9",
+   "boxes": [
+    {
+     "detail": "number",
+     "box": [
+      0.0574,
+      0.9331,
+      0.1619,
+      0.9544
+     ],
+     "text": "R0145"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5932,
+      0.9331,
+      0.9395,
+      0.9559
+     ],
+     "text": "TM & O 2023 Wizards of the Coast"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0564,
+      0.9493,
+      0.3566,
+      0.9743
+     ],
+     "text": "MOM·EN BRYAN SOLA"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0564,
+      0.9493,
+      0.3566,
+      0.9743
+     ],
+     "text": "MOM·EN BRYAN SOLA"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0553,
+      0.9478,
+      0.3545,
+      0.9794
+     ],
+     "text": "MOM·EN BRYAN SOLA"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0553,
+      0.9478,
+      0.3545,
+      0.9794
+     ],
+     "text": "MOM·EN BRYAN SOLA"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.0492,
+      0.4463,
+      0.1199,
+      0.8206
+     ],
+     "text": "Invasion of Kaldheim"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0809,
+      0.9331,
+      0.1629,
+      0.9566
+     ],
+     "text": "0145"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5912,
+      0.9338,
+      0.9385,
+      0.961
+     ],
+     "text": "TM & O 2023 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "planar": {
+  "table": "B",
+  "name": "planar",
+  "rows": 324,
+  "share_percent": 0.3,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 20,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 57.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      26.5
+     ],
+     [
+      "not shown: playtest card",
+      16.0
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 13,
+    "read": 13,
+    "inside": 0,
+    "sideways": 13,
+    "clipped": 0
+   },
+   "number": {
+    "label": "sometimes",
+    "shown_percent": 82.1,
+    "not_derivable_percent": 1.9,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      16.0
+     ],
+     [
+      "not derivable: old-frame promo",
+      1.9
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 19,
+    "read": 18,
+    "inside": 0,
+    "sideways": 18,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 51.2,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      30.9
+     ],
+     [
+      "not shown: no number",
+      17.9
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 11,
+    "read": 11,
+    "inside": 0,
+    "sideways": 11,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "sometimes",
+    "shown_percent": 84.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      16.0
+     ]
+    ],
+    "crop": "sideways",
+    "printed_samples": 19,
+    "read": 17,
+    "inside": 0,
+    "sideways": 17,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 13,
+    "inside": 0,
+    "sideways": 13,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Ood Sphere",
+   "printing": "WHO 594",
+   "scryfallId": "642c9e68-4d5f-4e7f-894b-56dec4081fc7",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0533,
+      0.4103,
+      0.1189,
+      0.5904
+     ],
+     "text": "Ood Sphere"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.9611,
+      0.7037,
+      0.9857,
+      0.9007
+     ],
+     "text": "0594 WHO·EN EVANSHIPARD"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.9611,
+      0.7037,
+      0.9857,
+      0.9007
+     ],
+     "text": "0594 WHO·EN EVANSHIPARD"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.9611,
+      0.7037,
+      0.9857,
+      0.9007
+     ],
+     "text": "0594 WHO·EN EVANSHIPARD"
+    }
+   ]
+  }
+ },
+ "leveler": {
+  "table": "B",
+  "name": "leveler",
+  "rows": 61,
+  "share_percent": 0.06,
+  "samples": 20,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 27.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      70.5
+     ],
+     [
+      "not shown: playtest card",
+      1.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 98.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      1.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 18,
+    "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 90.2,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      6.6
+     ],
+     [
+      "not shown: no number",
+      1.6
+     ],
+     [
+      "not shown: above the base set size",
+      1.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 18,
+    "read": 16,
+    "inside": 16,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "always",
+    "shown_percent": 98.4,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      1.6
+     ]
+    ],
+    "crop": "outside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Hada Spy Patrol",
+   "printing": "CMA 40",
+   "scryfallId": "905f1b28-8d53-4163-9118-414dad789509",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.0738,
+      0.0515,
+      0.4682,
+      0.1022
+     ],
+     "text": "Hada Spy Patrol"
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8166,
+      0.6522,
+      0.9047,
+      0.6971
+     ],
+     "text": "1/1"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.1957,
+      0.736,
+      0.6609,
+      0.7743
+     ],
+     "text": "Hada Spy Patrol can't be"
+    },
+    {
+     "detail": "name",
+     "box": [
+      0.1988,
+      0.8574,
+      0.6598,
+      0.8926
+     ],
+     "text": "Hada Spy Patrol can't be"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0594,
+      0.9324,
+      0.1834,
+      0.9529
+     ],
+     "text": "040/320"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0594,
+      0.9324,
+      0.1834,
+      0.9529
+     ],
+     "text": "040/320"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0543,
+      0.9456,
+      0.9375,
+      0.975
+     ],
+     "text": "CMA·EN ZoLTAN BoROS & GABOR SziKSZAI & 2017 Wizards of the Coast"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0543,
+      0.9456,
+      0.9375,
+      0.975
+     ],
+     "text": "CMA·EN ZoLTAN BoROS & GABOR SziKSZAI & 2017 Wizards of the Coast"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.0543,
+      0.9456,
+      0.9375,
+      0.975
+     ],
+     "text": "CMA·EN ZoLTAN BoROS & GABOR SziKSZAI & 2017 Wizards of the Coast"
+    }
+   ]
+  }
+ }
+}
