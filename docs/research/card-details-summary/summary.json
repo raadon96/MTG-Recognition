@@ -136,6 +136,18 @@
     "inside": 2,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 10,
+    "inside": 10,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -306,6 +318,18 @@
     "printed_samples": 4,
     "read": 4,
     "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 10,
+    "read": 9,
+    "inside": 9,
     "sideways": 0,
     "clipped": 0
    }
@@ -490,6 +514,18 @@
     "inside": 6,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -670,6 +706,18 @@
     "printed_samples": 9,
     "read": 5,
     "inside": 5,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 22,
+    "read": 22,
+    "inside": 22,
     "sideways": 0,
     "clipped": 0
    }
@@ -880,6 +928,18 @@
     "printed_samples": 9,
     "read": 9,
     "inside": 9,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
     "sideways": 0,
     "clipped": 0
    }
@@ -1099,6 +1159,18 @@
     "printed_samples": 6,
     "read": 6,
     "inside": 6,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 21,
+    "read": 20,
+    "inside": 20,
     "sideways": 0,
     "clipped": 0
    }
@@ -1336,6 +1408,18 @@
     "inside": 16,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 31,
+    "read": 31,
+    "inside": 31,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -1548,6 +1632,18 @@
     "inside": 1,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 5,
+    "read": 5,
+    "inside": 5,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -1753,6 +1849,18 @@
     "inside": 18,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 41,
+    "read": 41,
+    "inside": 41,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -1953,6 +2061,18 @@
     "printed_samples": 4,
     "read": 4,
     "inside": 4,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 8,
+    "read": 8,
+    "inside": 8,
     "sideways": 0,
     "clipped": 0
    }
@@ -2161,6 +2281,18 @@
     "inside": 6,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 12,
+    "read": 12,
+    "inside": 12,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -2227,249 +2359,6 @@
       0.9507
      ],
      "text": "r & O 2024 Wizards of the Coast 251"
-    }
-   ]
-  }
- },
- "same places as a normal card": {
-  "table": "B",
-  "name": "same places as a normal card",
-  "frame": "",
-  "style": "",
-  "only": "",
-  "from": "September 2011",
-  "to": "",
-  "rows": 3165,
-  "share_percent": 2.97,
-  "samples": 160,
-  "details": {
-   "name": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 160,
-    "read": 145,
-    "inside": 143,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "second name": {
-    "label": "never",
-    "shown_percent": 0.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: one name",
-      100.0
-     ]
-    ],
-    "crop": "not measured",
-    "printed_samples": 0,
-    "read": 0,
-    "inside": 0,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "set code": {
-    "label": "sometimes",
-    "shown_percent": 94.5,
-    "not_derivable_percent": 1.1,
-    "reasons": [
-     [
-      "not shown: 2003 frame",
-      2.5
-     ],
-     [
-      "not shown: 1997 frame",
-      1.7
-     ],
-     [
-      "not derivable: promo set's own numbering",
-      1.1
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 156,
-    "read": 156,
-    "inside": 156,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "number": {
-    "label": "always",
-    "shown_percent": 99.8,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: playtest card",
-      0.2
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 160,
-    "read": 159,
-    "inside": 158,
-    "sideways": 0,
-    "clipped": 1
-   },
-   "base set size": {
-    "label": "sometimes",
-    "shown_percent": 48.3,
-    "not_derivable_percent": 0.6,
-    "reasons": [
-     [
-      "not shown: from April 2023",
-      40.3
-     ],
-     [
-      "not shown: above the base set size",
-      10.5
-     ],
-     [
-      "not derivable: promo set's own number",
-      0.6
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 79,
-    "read": 75,
-    "inside": 75,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "artist": {
-    "label": "always",
-    "shown_percent": 99.9,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: no artist",
-      0.1
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 160,
-    "read": 156,
-    "inside": 156,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "year": {
-    "label": "always",
-    "shown_percent": 100.0,
-    "not_derivable_percent": 0.0,
-    "reasons": [],
-    "crop": "inside",
-    "printed_samples": 160,
-    "read": 158,
-    "inside": 157,
-    "sideways": 0,
-    "clipped": 0
-   },
-   "power/toughness": {
-    "label": "sometimes",
-    "shown_percent": 57.9,
-    "not_derivable_percent": 0.0,
-    "reasons": [
-     [
-      "not shown: not a creature or vehicle",
-      42.1
-     ]
-    ],
-    "crop": "inside",
-    "printed_samples": 82,
-    "read": 82,
-    "inside": 82,
-    "sideways": 0,
-    "clipped": 0
-   }
-  },
-  "example": {
-   "name": "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
-   "printing": "EMN 28",
-   "scryfallId": "c75c035a-7da9-4b36-982d-fca8220b1797",
-   "boxes": [
-    {
-     "detail": "name",
-     "box": [
-      0.1568,
-      0.0478,
-      0.9283,
-      0.1
-     ],
-     "text": "Gisela, the Broken Blade ②"
-    },
-    {
-     "detail": "second name",
-     "box": [
-      0.0779,
-      0.811,
-      0.7029,
-      0.8471
-     ],
-     "text": "into Brisela, Voice of Nightmares."
-    },
-    {
-     "detail": "power/toughness",
-     "box": [
-      0.8125,
-      0.8956,
-      0.9098,
-      0.9404
-     ],
-     "text": "4/3"
-    },
-    {
-     "detail": "base set size",
-     "box": [
-      0.0584,
-      0.9301,
-      0.2131,
-      0.9529
-     ],
-     "text": "028/205M"
-    },
-    {
-     "detail": "number",
-     "box": [
-      0.0584,
-      0.9301,
-      0.2131,
-      0.9529
-     ],
-     "text": "028/205M"
-    },
-    {
-     "detail": "artist",
-     "box": [
-      0.0584,
-      0.9485,
-      0.3781,
-      0.9721
-     ],
-     "text": "EMN·EN CLINT CEARLEY"
-    },
-    {
-     "detail": "set code",
-     "box": [
-      0.0584,
-      0.9485,
-      0.3781,
-      0.9721
-     ],
-     "text": "EMN·EN CLINT CEARLEY"
-    },
-    {
-     "detail": "year",
-     "box": [
-      0.5902,
-      0.9471,
-      0.9355,
-      0.9728
-     ],
-     "text": "rM & O 2016 Wizards of the Coast"
     }
    ]
   }
@@ -2616,6 +2505,18 @@
     "printed_samples": 19,
     "read": 18,
     "inside": 18,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
     "sideways": 0,
     "clipped": 0
    }
@@ -2830,6 +2731,18 @@
     "inside": 20,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -3029,6 +2942,18 @@
     "printed_samples": 0,
     "read": 0,
     "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
     "sideways": 0,
     "clipped": 0
    }
@@ -3256,6 +3181,18 @@
     "printed_samples": 20,
     "read": 20,
     "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 19,
     "sideways": 0,
     "clipped": 0
    }
@@ -3488,6 +3425,18 @@
     "inside": 0,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 17,
+    "inside": 17,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -3708,6 +3657,18 @@
     "read": 0,
     "inside": 0,
     "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 17,
+    "inside": 0,
+    "sideways": 17,
     "clipped": 0
    }
   },
@@ -3960,6 +3921,18 @@
     "inside": 0,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -4209,6 +4182,18 @@
     "inside": 0,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "sideways",
+    "printed_samples": 20,
+    "read": 19,
+    "inside": 0,
+    "sideways": 19,
+    "clipped": 0
    }
   },
   "example": {
@@ -4403,6 +4388,18 @@
     "inside": 0,
     "sideways": 0,
     "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 20,
+    "read": 20,
+    "inside": 20,
+    "sideways": 0,
+    "clipped": 0
    }
   },
   "example": {
@@ -4499,6 +4496,261 @@
       0.975
      ],
      "text": "CMA·EN ZoLTAN BoROS & GABOR SziKSZAI & 2017 Wizards of the Coast"
+    }
+   ]
+  }
+ },
+ "same places as a normal card": {
+  "table": "same places",
+  "name": "same places as a normal card",
+  "frame": "",
+  "style": "",
+  "only": "",
+  "from": "September 2011",
+  "to": "",
+  "rows": 3165,
+  "share_percent": 2.97,
+  "samples": 160,
+  "details": {
+   "name": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 145,
+    "inside": 143,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "second name": {
+    "label": "never",
+    "shown_percent": 0.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: one name",
+      100.0
+     ]
+    ],
+    "crop": "not measured",
+    "printed_samples": 0,
+    "read": 0,
+    "inside": 0,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "set code": {
+    "label": "sometimes",
+    "shown_percent": 94.5,
+    "not_derivable_percent": 1.1,
+    "reasons": [
+     [
+      "not shown: 2003 frame",
+      2.5
+     ],
+     [
+      "not shown: 1997 frame",
+      1.7
+     ],
+     [
+      "not derivable: promo set's own numbering",
+      1.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 156,
+    "read": 156,
+    "inside": 156,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "number": {
+    "label": "always",
+    "shown_percent": 99.8,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: playtest card",
+      0.2
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 159,
+    "inside": 158,
+    "sideways": 0,
+    "clipped": 1
+   },
+   "base set size": {
+    "label": "sometimes",
+    "shown_percent": 48.3,
+    "not_derivable_percent": 0.6,
+    "reasons": [
+     [
+      "not shown: from April 2023",
+      40.3
+     ],
+     [
+      "not shown: above the base set size",
+      10.5
+     ],
+     [
+      "not derivable: promo set's own number",
+      0.6
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 79,
+    "read": 75,
+    "inside": 75,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "artist": {
+    "label": "always",
+    "shown_percent": 99.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: no artist",
+      0.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 156,
+    "inside": 156,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "year": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 158,
+    "inside": 157,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "power/toughness": {
+    "label": "sometimes",
+    "shown_percent": 57.9,
+    "not_derivable_percent": 0.0,
+    "reasons": [
+     [
+      "not shown: not a creature or vehicle",
+      42.1
+     ]
+    ],
+    "crop": "inside",
+    "printed_samples": 82,
+    "read": 82,
+    "inside": 82,
+    "sideways": 0,
+    "clipped": 0
+   },
+   "collector information": {
+    "label": "always",
+    "shown_percent": 100.0,
+    "not_derivable_percent": 0.0,
+    "reasons": [],
+    "crop": "inside",
+    "printed_samples": 160,
+    "read": 160,
+    "inside": 160,
+    "sideways": 0,
+    "clipped": 0
+   }
+  },
+  "example": {
+   "name": "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+   "printing": "EMN 28",
+   "scryfallId": "c75c035a-7da9-4b36-982d-fca8220b1797",
+   "boxes": [
+    {
+     "detail": "name",
+     "box": [
+      0.1568,
+      0.0478,
+      0.9283,
+      0.1
+     ],
+     "text": "Gisela, the Broken Blade ②"
+    },
+    {
+     "detail": "second name",
+     "box": [
+      0.0779,
+      0.811,
+      0.7029,
+      0.8471
+     ],
+     "text": "into Brisela, Voice of Nightmares."
+    },
+    {
+     "detail": "power/toughness",
+     "box": [
+      0.8125,
+      0.8956,
+      0.9098,
+      0.9404
+     ],
+     "text": "4/3"
+    },
+    {
+     "detail": "base set size",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2131,
+      0.9529
+     ],
+     "text": "028/205M"
+    },
+    {
+     "detail": "number",
+     "box": [
+      0.0584,
+      0.9301,
+      0.2131,
+      0.9529
+     ],
+     "text": "028/205M"
+    },
+    {
+     "detail": "artist",
+     "box": [
+      0.0584,
+      0.9485,
+      0.3781,
+      0.9721
+     ],
+     "text": "EMN·EN CLINT CEARLEY"
+    },
+    {
+     "detail": "set code",
+     "box": [
+      0.0584,
+      0.9485,
+      0.3781,
+      0.9721
+     ],
+     "text": "EMN·EN CLINT CEARLEY"
+    },
+    {
+     "detail": "year",
+     "box": [
+      0.5902,
+      0.9471,
+      0.9355,
+      0.9728
+     ],
+     "text": "rM & O 2016 Wizards of the Coast"
     }
    ]
   }

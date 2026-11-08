@@ -66,7 +66,11 @@ RULE_DETAILS = {
     "year": "year",
 }
 COLUMNS_A = [d for d in DETAILS if d != "second name"]
-COLUMNS_B = list(DETAILS)
+# table B shows only what the layout moves: the collector information's details
+# move together, so they are one column there
+COLLECTOR_INFORMATION = "collector information"
+COLLECTOR_DETAILS = ["set code", "number", "base set size", "artist", "year"]
+COLUMNS_B = ["name", "second name", COLLECTOR_INFORMATION, "power/toughness"]
 
 TWO_NAME_LAYOUTS = {"adventure", "prepare", "aftermath", "flip", "split"}
 SAME_PLACES_AS_NORMAL = {
@@ -109,8 +113,10 @@ STYLES = {
     "number alone": "123",
     "rarity first": "R 0123",
 }
+# layouts that place every detail where a normal card does: measured, but shown
+# as a sentence under table B rather than as a row
+SAME_PLACES = "same places as a normal card"
 ROWS_B = [
-    "same places as a normal card",
     "adventure",
     "prepare",
     "aftermath",
@@ -121,12 +127,6 @@ ROWS_B = [
     "planar",
     "leveler",
 ]
-LAYOUT_NOTES = {
-    "same places as a normal card": (
-        "transform, modal_dfc, saga, class, case, mutate, prototype, meld"
-    ),
-}
-
 ALWAYS, NEVER = 95.0, 5.0
 
 
@@ -155,6 +155,7 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
         )
         for (frame, style), only in ROWS_A.items()
     } | {name: new_group("B", name) for name in ROWS_B}
+    groups[SAME_PLACES] = new_group("same places", SAME_PLACES)
     for c in paper:
         d = derived[c["uuid"]]
         row_b = layout_row(c)
@@ -185,23 +186,21 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
             name = frame_row(c, sets, sources)[0]
         g = groups[name]
         g["samples"].append(s)
-        for detail in DETAILS:
-            if shown_on_card(detail, c, d, layout_row(c)) != "shown":
-                continue
-            g["crop"][detail]["printed"] += 1
+        shown = [
+            detail
+            for detail in DETAILS
+            if shown_on_card(detail, c, d, layout_row(c)) == "shown"
+        ]
+        for detail in shown:
             boxes = [t for t in s["tokens"] if detail in t["tags"]]
-            if not boxes:
-                continue
-            g["crop"][detail]["read"] += 1
-            if all(t["orientation"] != "up" for t in boxes):
-                g["crop"][detail]["sideways"] += 1
-            else:
-                upright = [t["box"] for t in boxes if t["orientation"] == "up"]
-                best = max(overlap(b, crop_for(detail)) for b in upright)
-                if best >= 0.9:
-                    g["crop"][detail]["inside"] += 1
-                elif best >= 0.5:
-                    g["crop"][detail]["clipped"] += 1
+            measure(g["crop"][detail], boxes, crop_for(detail))
+        # the collector information as a whole: the tokens of its details
+        boxes = [
+            t
+            for t in s["tokens"]
+            if set(t["tags"]) & set(COLLECTOR_DETAILS) & set(shown)
+        ]
+        measure(g["crop"][COLLECTOR_INFORMATION], boxes, COLLECTOR_INFORMATION_ROI)
 
     total = len(paper)
     summary = {name: summarise(g, total) for name, g in groups.items()}
@@ -212,6 +211,23 @@ def main(allprintings: str, positions_paths: list[str]) -> None:
     print(markdown_tables(summary))
     missing = [n for n, g in summary.items() if not g["example"]]
     print("groups without a sample:", missing, file=sys.stderr)
+
+
+def measure(counts: Counter, boxes: list[dict], crop: tuple) -> None:
+    """Count one sample where the card shows a detail: whether it was read, and
+    where its boxes sit against today's crop."""
+    counts["printed"] += 1
+    if not boxes:
+        return
+    counts["read"] += 1
+    if all(t["orientation"] != "up" for t in boxes):
+        counts["sideways"] += 1
+        return
+    best = max(overlap(t["box"], crop) for t in boxes if t["orientation"] == "up")
+    if best >= 0.9:
+        counts["inside"] += 1
+    elif best >= 0.5:
+        counts["clipped"] += 1
 
 
 def new_group(
@@ -225,7 +241,7 @@ def new_group(
         "only": only,
         "rows": 0,
         "shown": {d: Counter() for d in DETAILS},
-        "crop": {d: Counter() for d in DETAILS},
+        "crop": {d: Counter() for d in [*DETAILS, COLLECTOR_INFORMATION]},
         "samples": [],
         "dates": [],
     }
@@ -376,6 +392,20 @@ def summarise(g: dict, total: int) -> dict:
             "sideways": crop["sideways"],
             "clipped": crop["clipped"],
         }
+    # every card has a collector information strip
+    crop = g["crop"][COLLECTOR_INFORMATION]
+    details[COLLECTOR_INFORMATION] = {
+        "label": "always",
+        "shown_percent": 100.0,
+        "not_derivable_percent": 0.0,
+        "reasons": [],
+        "crop": crop_label(crop),
+        "printed_samples": crop["printed"],
+        "read": crop["read"],
+        "inside": crop["inside"],
+        "sideways": crop["sideways"],
+        "clipped": crop["clipped"],
+    }
     return {
         "table": g["table"],
         "name": g["name"],
@@ -492,6 +522,11 @@ ul.traps li { margin-bottom: 0.4rem; }
 def page(summary: dict, total: int) -> str:
     a = [g for g in summary.values() if g["table"] == "A"]
     b = [g for g in summary.values() if g["table"] == "B"]
+    same = summary[SAME_PLACES]
+    measured = [
+        same["details"][d] for d in ["name", COLLECTOR_INFORMATION, "power/toughness"]
+    ]
+    all_inside = all(m["crop"] == "inside" for m in measured)
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>What each card shows, and where</title><style>{STYLE}</style></head><body>
@@ -507,9 +542,16 @@ sit; the <b>collector style</b> decides which details the collector information 
 for The List and promos).</p>
 {table(a, COLUMNS_A)}
 <h2>B. Layouts that move details</h2>
-<p>These cards are also counted in table A. Rarer layouts (reversible, scheme,
-vanguard, host, augment: 0.3%) are left out.</p>
+<p>Only <b>where</b> the layout puts things: which details are printed is table A's job.
+The collector information's details (set code, collector number, base set size, artist,
+year) always move together, so they are one column here. These cards are also counted in
+table A.</p>
 {table(b, COLUMNS_B)}
+<p>The other common layouts (transform, modal_dfc, saga, class, case, mutate, prototype,
+meld: {same["share_percent"]:.1f}% of paper printings) place every detail where a normal
+card does: on {same["samples"]} samples, the name, the collector information and
+power/toughness were {"all" if all_inside else "not all"} inside today's crops.
+Rarer layouts (reversible, scheme, vanguard, host, augment: 0.3%) are left out.</p>
 <h2>Traps</h2>
 {TRAPS}
 <script>
@@ -552,7 +594,9 @@ sampled reference images (for information only: it doesn't decide the colour).</
 
 def table(groups: list[dict], columns: list[str]) -> str:
     head = "".join(
-        f'<th><span class="swatch" style="border-color:{DETAILS[d][1]}"></span><br>'
+        f"<th>{COLLECTOR_INFORMATION}</th>"
+        if d == COLLECTOR_INFORMATION
+        else f'<th><span class="swatch" style="border-color:{DETAILS[d][1]}"></span><br>'
         f"{DETAILS[d][0]}</th>"
         for d in columns
     )
@@ -567,9 +611,7 @@ def table(groups: list[dict], columns: list[str]) -> str:
                 f"<td>{g['from']}</td><td>{g['to'] or 'today'}</td>"
             )
         else:
-            note = LAYOUT_NOTES.get(g["name"], "")
-            note = f"<br><small>{note}</small>" if note else ""
-            group = f'<th class="group"><b>{html.escape(g["name"])}</b>{note}</th>'
+            group = f'<th class="group"><b>{html.escape(g["name"])}</b></th>'
         cells = "".join(cell(g["details"][d]) for d in columns)
         rows.append(
             f"<tr>{group}"
@@ -676,7 +718,7 @@ catalog says 2019; Time Spiral Remastered prints 2020, the catalog says 2021.</l
 Remasters, 30A, Secret Lair) use an old frame with modern details: a 1997-frame card from
 2023 prints a collector number, but no base set size.</li>
 <li><b>Two-name cards have one name in the catalog.</b> Both rows of
-<code>Bonecrusher Giant // Stomp</code> carry the full name, the same number and the same
+<code>Bonecrusher Giant // Stomp</code> carry the full name, the same collector number and the same
 image.</li>
 <li><b>The big name may not be the card's name.</b> On flavor-name cards (2.9%) the large
 name is the flavor name; the real name is printed small below it, outside the name
@@ -702,7 +744,7 @@ def markdown_tables(summary: dict) -> str:
             if table_name == "A"
             else ["Layout"]
         )
-        details = [DETAILS[d][0] for d in columns]
+        details = [DETAILS[d][0] if d in DETAILS else d for d in columns]
         out.append(f"\n### Table {table_name}\n")
         out.append("| " + " | ".join([*first, "Share", *details]) + " |")
         out.append("|" + " --- |" * (len(first) + 1 + len(columns)))

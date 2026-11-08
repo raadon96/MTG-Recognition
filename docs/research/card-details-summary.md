@@ -84,7 +84,7 @@ How the rules decide it, in order (`frame_row` in `build.py`, using the dates in
 The date is the one the printing's details come from: the original set's for The List, the parent set's for promos that reprint a parent card, `originalReleaseDate` for Secret Lair and similar, else the set's release date. So a List card sits in the row of the set whose details it prints, and The List has no row of its own.
 
 - **Table A** sorts every paper printing (106,466) into exactly one row, by frame and collector style. "From" and "to" are the 1st and 99th percentile of the rows' dates, so a few promos with odd dates don't stretch the range; "today" means the style is still printed. Where a row needs a condition besides the dates, the style says "only …".
-- **Table B** groups the layouts that move details. These printings are also in table A. "Same places as a normal card" folds transform, modal_dfc, saga, class, case, mutate, prototype and meld, which place every detail where a normal card does. Rarer layouts (reversible, scheme, vanguard, host, augment: 0.3%) are left out.
+- **Table B** answers only **where** the layout puts things; which details are printed is table A's job. These printings are also in table A. Its columns are the name, the second name, the collector information as a whole (its details move together: upright in one strip, or sideways together), and power/toughness. Transform, modal_dfc, saga, class, case, mutate, prototype and meld place every detail where a normal card does, so they have no row (see below the table). Rarer layouts (reversible, scheme, vanguard, host, augment: 0.3%) are left out.
 
 Merged: no paper 1993-frame card is a retro reprint, and the 6 paper 2003-frame retro reprints are counted in "2003, number and size". Borderless is not a boundary: it changes no detail, so borderless cards sit in their collector style's row.
 
@@ -112,20 +112,21 @@ Samples per row: #193's frame groups and its 20 List samples, re-sorted by the r
 
 ### Table B: layouts that move details
 
-| Layout | Share | name | second name | set code | collector number | base set size | artist | year | power/toughness |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| same places as a normal card | 3.0% (3,165) | always; inside, read 145/160 | never (0%) | sometimes (94%), 2015 frame only; inside, read 156/156 | always (100%); inside, read 159/160 | sometimes (48%), not from April 2023; inside, read 75/79 | always (100%); inside, read 156/160 | always; inside, read 158/160 | sometimes (58%), creatures and vehicles only; inside, read 82/82 |
-| adventure | 0.8% (802) | always; inside, read 20/20 | always; outside, read 20/20 | always (97%); inside, read 20/20 | always (99%); inside, read 20/20 | sometimes (24%), not from April 2023; inside, read 4/4 | always (100%); inside, read 20/20 | always; inside, read 20/20 | sometimes (41%), creatures and vehicles only; inside, read 18/19 |
-| prepare | 0.2% (238) | always; inside, read 20/20 | always; outside, read 20/20 | always (99%); inside, read 20/20 | always; inside, read 20/20 | never (0%) | always; inside, read 20/20 | always; inside, read 20/20 | sometimes (50%), creatures and vehicles only; inside, read 20/20 |
-| aftermath | 0.1% (142) | always; inside, read 20/20 | always; outside, read 20/20 | always; inside, read 20/20 | always; inside, read 20/20 | sometimes (78%), not from April 2023; inside, read 13/13 | always; inside, read 20/20 | always; inside, read 20/20 | never (0%) |
-| flip | 0.1% (74) | always; inside, read 18/20 | always; sideways, read 18/20 | sometimes (5%), 2015 frame only; inside, read 1/1 | always; inside, read 17/20 | always; inside, read 14/20 | always; inside, read 19/20 | always; inside, read 18/20 | sometimes (90%), creatures and vehicles only; outside, read 20/20 |
-| split, 2015 frame | 0.3% (338) | always; sideways, read 16/20 | always; sideways, read 20/20 | sometimes (91%), not on playtest cards; inside, read 16/16 | sometimes (91%), not on playtest cards; inside, read 16/16 | sometimes (32%), not from April 2023; inside, read 6/6 | always (96%); inside, read 16/18 | always; inside, read 16/20 | never (0%) |
-| split, before the 2015 frame | 0.1% (145) | always; sideways, read 19/20 | always; sideways, read 20/20 | never (0%) | always (96%); sideways, read 11/18 | always (96%); sideways, read 8/18 | always; sideways, read 16/20 | always; sideways, read 11/20 | never (0%) |
-| battle | 0.1% (54) | always; sideways, read 20/20 | never (0%) | always (98%); inside, read 20/20 | always (98%); inside, read 20/20 | never (0%) | always (98%); inside, read 19/20 | always; inside, read 20/20 | never (0%) |
-| planar | 0.3% (324) | always; sideways, read 20/20 | never (0%) | sometimes (57%), 2015 frame only; sideways, read 13/13 | sometimes (82%), not on playtest cards; sideways, read 18/19 | sometimes (51%), not from April 2023; sideways, read 11/11 | sometimes (84%), not on some Un-cards; sideways, read 17/19 | always; sideways, read 13/20 | never (0%) |
-| leveler | 0.1% (61) | always; inside, read 20/20 | never (0%) | sometimes (28%), 2015 frame only; inside, read 5/5 | always (98%); inside, read 18/20 | sometimes (90%), not from April 2023; inside, read 16/18 | always; inside, read 20/20 | always; inside, read 19/20 | always (98%); outside, read 20/20 |
+| Layout | Share | name | second name | collector information | power/toughness |
+| --- | --- | --- | --- | --- | --- |
+| adventure | 0.8% (802) | always; inside, read 20/20 | always; outside, read 20/20 | always; inside, read 20/20 | sometimes (41%), creatures and vehicles only; inside, read 18/19 |
+| prepare | 0.2% (238) | always; inside, read 20/20 | always; outside, read 20/20 | always; inside, read 20/20 | sometimes (50%), creatures and vehicles only; inside, read 20/20 |
+| aftermath | 0.1% (142) | always; inside, read 20/20 | always; outside, read 20/20 | always; inside, read 20/20 | never (0%) |
+| flip | 0.1% (74) | always; inside, read 18/20 | always; sideways, read 18/20 | always; inside, read 19/20 | sometimes (90%), creatures and vehicles only; outside, read 20/20 |
+| split, 2015 frame | 0.3% (338) | always; sideways, read 16/20 | always; sideways, read 20/20 | always; inside, read 17/20 | never (0%) |
+| split, before the 2015 frame | 0.1% (145) | always; sideways, read 19/20 | always; sideways, read 20/20 | always; sideways, read 17/20 | never (0%) |
+| battle | 0.1% (54) | always; sideways, read 20/20 | never (0%) | always; inside, read 20/20 | never (0%) |
+| planar | 0.3% (324) | always; sideways, read 20/20 | never (0%) | always; sideways, read 19/20 | never (0%) |
+| leveler | 0.1% (61) | always; inside, read 20/20 | never (0%) | always; inside, read 20/20 | always (98%); outside, read 20/20 |
 
-Samples per row: #193's 20 per layout group (160 for the folded row). The "sometimes" cells in table B come from layouts that span several collector styles: table A explains each one.
+Samples per row: #193's 20 per layout group. "Collector information" counts a sample as read when OCR read any of its details (set code, collector number, base set size, artist, year) that the card shows.
+
+The other common layouts (transform, modal_dfc, saga, class, case, mutate, prototype, meld: 3.0% of paper printings) have no row: on #193's 160 samples of them, the name, the collector information and power/toughness were all inside today's crops.
 
 ### What the tables show
 
