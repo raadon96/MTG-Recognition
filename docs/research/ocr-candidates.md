@@ -4,6 +4,7 @@ Task for issue #196 (map #189): which OCR model and runtime should we use, judge
 
 ## Setup
 
+- **Library upgrade alone** (v5_mobile, Paddle): paddleocr 3.4.0 and 3.7.0 give identical text, scores and boxes on all 1,291 card images. Speed isn't settled: 3.4.0 ran once (0.163 s per card) against three runs on 3.7.0 (0.136 s), and the 3.7.0 install also moved numpy from 2.4.2 to 2.3.5.
 - **Libraries**: the experiment venv has paddleocr 3.7.0 and paddlex 3.7.2 (installed with `uv pip`; `pyproject.toml` unchanged), with paddlepaddle 3.2.0 and onnxruntime 1.24.3. paddlepaddle 3.2.0 loads and runs the PP-OCRv6 static graphs (verified).
 - **Models**: `PP-OCRv5_mobile_{det,rec}` from `models/ocr/prod`; `PP-OCRv6_{tiny,small}_{det,rec}` from Hugging Face `PaddlePaddle/PP-OCRv6_*`, and the official ONNX exports `PaddlePaddle/*_onnx`, all in the gitignored `models/ocr/test`.
 - **Card images** (`scripts/ocr_sample.json`, built by `scripts/ocr_compare.py sample`), 1,291 in all:
@@ -113,7 +114,7 @@ Removing it changes nothing: identical tokens, scores and boxes on all 1,291 car
 - **Do the claimed gains hold?** Accuracy, yes for small; speed, no. On this CPU and these crops v6 small is about 1.4x slower than v5_mobile on Paddle (0.196 against 0.136 s per card), not equal as Baidu's table says, and about 1.24x slower on onnxruntime. Tiny is 2.2x faster.
 - **Is tiny accurate enough to replace small?** No, not as a pair: tiny detection misses text on photos (benchmark numbers 253 → 220–246), and end to end it loses 11 to 16 exact printings net. Tiny *recognition* after v5_mobile detection is close to v5_mobile on raw text (better on set code, number, size, year; worse on 1993-frame names, 59 → 39) at 1.37x on the whole pipeline.
 - **The gap between raw text and extraction**: v5 det + v6 tiny rec reads more set codes, numbers and years than v5_mobile, yet ranks the correct printing first less often (601 against 612). The one benchmark image it loses is the `01997` year, an extraction miss. So part of its loss is extraction tuned on v5 output.
-- **`enable_hpi=True`**: **not measured**. Installing `ultra-infer-python` from Baidu's server was blocked in this session. The onnxruntime engine above is HPI's second choice on CPU after OpenVINO, so it gives a lower bound on what HPI gives. It is a gain the browser port could use (ONNX Runtime Web), unlike OpenVINO.
+- **`enable_hpi=True`**: **skipped**, by the maintainer's decision. It needs `ultra-infer-python`, published only on Baidu's server. The onnxruntime engine above is HPI's second choice on CPU after OpenVINO, gives most of the gain, and unlike OpenVINO the browser port could use it (ONNX Runtime Web).
 - **`precision="fp16"`**: verified no effect on CPU. It can be removed.
 - **48 px upscale, detection settings**: left to "Sweep OCR settings on the winning combination" (#198). Only v6's own detection settings against today's were compared here.
 
@@ -125,7 +126,7 @@ Its cost: about 0.91x on the whole pipeline on Paddle, and about the same speed 
 
 **The fast option, v5_mobile detection with v6 tiny recognition, is also for the maintainer.** It is 1.37x faster on the whole pipeline (estimated), 56% smaller (9.5 MB), and loses one card name. That loss is an extraction miss, which a new extraction may fix. Its tokens are saved too, so the prototype can score both at almost no cost before the final decision.
 
-Whichever model is chosen, run it through onnxruntime. It gives the same text, loads in half the time or less, uses about 200 MB less memory, is as fast or faster, and is the runtime the browser port needs.
+Whichever model is chosen, run it through onnxruntime. The gain comes from changing the runtime, not from upgrading paddleocr; the upgrade only makes it possible, since the `engine` option exists from paddleocr 3.5. It gives the same text, loads in half the time or less, uses about 200 MB less memory, is as fast or faster, and is the runtime the browser port needs.
 
 ## Assumptions and things not measured
 
@@ -133,7 +134,7 @@ Whichever model is chosen, run it through onnxruntime. It gives the same text, l
 - Timing noise between repeats is up to about 5%, so differences under that aren't meaningful. Runs marked ¹ have one repeat.
 - Raw-text name hits can't reach 100%: non-English cards print a translated name, and split cards print their names sideways.
 - Mixed pairs (v5 det with a v6 rec) use v5_mobile's detection with today's settings. Whether v6 tiny rec reads better at another upscale height is for #198.
-- HPI (OpenVINO), ONNX Runtime Web and RapidOCR weren't tested.
+- ONNX Runtime Web and RapidOCR weren't tested; HPI (OpenVINO) was skipped.
 
 ## How to rerun
 
