@@ -76,6 +76,10 @@ def main() -> None:
     run_parser.add_argument(
         "--segment-only", action="store_true", help="no OCR: card count only"
     )
+    # OCR detection settings (#196); read_card sets text_det_thresh to 0.05
+    run_parser.add_argument("--det-thresh", type=float)
+    run_parser.add_argument("--det-box-thresh", type=float)
+    run_parser.add_argument("--det-unclip", type=float)
     args = parser.parse_args()
 
     if args.command == "split":
@@ -292,8 +296,18 @@ def run(args: argparse.Namespace) -> None:
     if paddleocr is not None:
         predict = paddleocr.predict
 
+        det_settings = {
+            k: v
+            for k, v in (
+                ("text_det_thresh", args.det_thresh),
+                ("text_det_box_thresh", args.det_box_thresh),
+                ("text_det_unclip_ratio", args.det_unclip),
+            )
+            if v is not None
+        }
+
         def keep_raw(*a, **kw):
-            raw["last"] = predict(*a, **kw)
+            raw["last"] = predict(*a, **{**kw, **det_settings})
             return raw["last"]
 
         paddleocr.predict = keep_raw
@@ -480,6 +494,11 @@ def run(args: argparse.Namespace) -> None:
             "segment_only": args.segment_only,
             "ocr_detection": det_name,
             "ocr_recognition": rec_name,
+            "ocr_detection_settings": {
+                "thresh": args.det_thresh,
+                "box_thresh": args.det_box_thresh,
+                "unclip_ratio": args.det_unclip,
+            },
             "threads": args.threads or "default",
             "repeats": args.repeats,
             "subset": args.subset,
