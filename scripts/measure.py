@@ -10,6 +10,8 @@ correct printing, the card images and the OCR tokens.
     uv run python scripts/measure.py run NAME [--threads 4] [--repeats 3]
         [--subset all|tune|confirm] [--cards-from output/measure/OTHER]
         [--yolo models/.../model.pt] [--ocr-det NAME=DIR] [--ocr-rec NAME=DIR]
+        [--prompts "a|b"] [--conf C] [--iou I] [--imgsz N] [--head one2one|one2many]
+        [--retina] [--no-enhance] [--onnx-runner direct|ultralytics] [--segment-only]
 
 `split` writes scripts/measure_split.json, the fixed tuning and confirming halves.
 `run` writes output/measure/NAME/: summary.json, images.json, ocr.json and cards/.
@@ -35,6 +37,7 @@ SPLIT_SEED = 189
 STAGES = (
     "prepare",
     "segmentation",
+    "yolo",  # inside segmentation: YOLO's predict alone
     "shortlist",
     "ocr_detection",
     "ocr_recognition",
@@ -59,6 +62,20 @@ def main() -> None:
     run_parser.add_argument("--yolo", type=Path)
     run_parser.add_argument("--ocr-det", help="NAME=DIR")
     run_parser.add_argument("--ocr-rec", help="NAME=DIR")
+    # segmentation candidates (#195)
+    run_parser.add_argument("--prompts", help="'|'-separated; .pt only")
+    run_parser.add_argument("--conf", type=float)
+    run_parser.add_argument("--iou", type=float)
+    run_parser.add_argument("--imgsz", type=int)
+    run_parser.add_argument("--head", choices=["one2one", "one2many"])
+    run_parser.add_argument("--retina", action="store_true")
+    run_parser.add_argument("--no-enhance", action="store_true")
+    run_parser.add_argument(
+        "--onnx-runner", choices=["direct", "ultralytics"], default="direct"
+    )
+    run_parser.add_argument(
+        "--segment-only", action="store_true", help="no OCR: card count only"
+    )
     args = parser.parse_args()
 
     if args.command == "split":
@@ -154,15 +171,61 @@ def run(args: argparse.Namespace) -> None:
         "mtg_recognition.engine.segmentation.segment"
     )
     yolo_path = args.yolo or settings.YOLO_SEG_MODEL_PATH
-    if args.yolo:
+    prompts = args.prompts.split("|") if args.prompts else segment_module._YOLO_CLASSES
+    if yolo_path.suffix == ".onnx" and args.onnx_runner == "direct":
+        import yoloe_onnx
+
+        yolo = yoloe_onnx.OnnxYoloe(str(yolo_path), args.threads)
+    else:
         from ultralytics import YOLO
 
-        yolo = YOLO(str(args.yolo), task="segment")
-        yolo.set_classes(segment_module._YOLO_CLASSES)
-        segment_module._yolo_model = lambda: yolo
-    else:
-        segment_module._yolo_model()
+        yolo = YOLO(str(yolo_path), task="segment")
+        if yolo_path.suffix == ".pt":
+            yolo.set_classes(prompts)
+    segment_module._yolo_model = lambda: yolo
     load_s["yolo"] = time.perf_counter() - start
+
+    # predict settings: segment() reads the module's dict at each call
+    seg_kwargs = segment_module._YOLO_PREDICT_KWARGS
+    for key, value in (("conf", args.conf), ("iou", args.iou), ("imgsz", args.imgsz)):
+        if value is not None:
+            seg_kwargs[key] = value
+    if args.head:
+        seg_kwargs["end2end"] = args.head == "one2one"
+    if args.retina:
+        seg_kwargs["retina_masks"] = True
+    if args.no_enhance:
+        segment_module.enhance_contrast = lambda image: image
+
+    # which way segment() found the cards: count the calls into each path
+    paths_taken: list[str] = []
+    for function, path_name in (
+        ("takes_scan_bypass", "scan_bypass"),
+        ("box_card_images", "box_fallback"),
+        ("rembg_card_images", "rembg"),
+    ):
+        original = getattr(segment_module, function)
+
+        def counted(*a, _original=original, _path=path_name, **kw):
+            result = _original(*a, **kw)
+            if result:
+                paths_taken.append(_path)
+            return result
+
+        setattr(segment_module, function, counted)
+    predict_yolo = yolo.predict
+
+    yolo_s = [0.0]
+
+    def counted_predict(*a, **kw):
+        start = time.perf_counter()
+        results = predict_yolo(*a, **kw)
+        yolo_s[0] += time.perf_counter() - start
+        masks = results[0].masks
+        paths_taken.append(f"yolo:{len(masks.xy) if masks is not None else 0}")
+        return results
+
+    yolo.predict = counted_predict
 
     # as load_paddleocr, with the models and thread count as arguments
     det_name, det_dir = (
@@ -182,19 +245,23 @@ def run(args: argparse.Namespace) -> None:
         )
     )
     start = time.perf_counter()
-    paddleocr = PaddleOCR(
-        use_doc_unwarping=False,
-        doc_unwarping_model_name=None,
-        use_textline_orientation=False,
-        text_detection_model_name=det_name,
-        text_detection_model_dir=det_dir,
-        text_recognition_model_name=rec_name,
-        text_recognition_model_dir=rec_dir,
-        device="cpu",
-        enable_hpi=False,
-        precision="fp16",
-        lang="en",
-        **({"cpu_threads": args.threads} if args.threads else {}),
+    paddleocr = (
+        None
+        if args.segment_only
+        else PaddleOCR(
+            use_doc_unwarping=False,
+            doc_unwarping_model_name=None,
+            use_textline_orientation=False,
+            text_detection_model_name=det_name,
+            text_detection_model_dir=det_dir,
+            text_recognition_model_name=rec_name,
+            text_recognition_model_dir=rec_dir,
+            device="cpu",
+            enable_hpi=False,
+            precision="fp16",
+            lang="en",
+            **({"cpu_threads": args.threads} if args.threads else {}),
+        )
     )
     load_s["ocr"] = time.perf_counter() - start
     peak_after_load_mb = _peak_rss_mb()
@@ -204,10 +271,14 @@ def run(args: argparse.Namespace) -> None:
     # pipeline's models, so its own code runs unchanged
     ocr_s = {"ocr_detection": 0.0, "ocr_recognition": 0.0}
     raw: dict[str, list] = {}
-    inner = paddleocr.paddlex_pipeline._pipeline
+    inner = paddleocr.paddlex_pipeline._pipeline if paddleocr else None
     for stage, attr in (
-        ("ocr_detection", "text_det_model"),
-        ("ocr_recognition", "text_rec_model"),
+        ()
+        if args.segment_only
+        else (
+            ("ocr_detection", "text_det_model"),
+            ("ocr_recognition", "text_rec_model"),
+        )
     ):
         model = getattr(inner, attr)
 
@@ -218,13 +289,14 @@ def run(args: argparse.Namespace) -> None:
             return results
 
         setattr(inner, attr, timed)
-    predict = paddleocr.predict
+    if paddleocr is not None:
+        predict = paddleocr.predict
 
-    def keep_raw(*a, **kw):
-        raw["last"] = predict(*a, **kw)
-        return raw["last"]
+        def keep_raw(*a, **kw):
+            raw["last"] = predict(*a, **kw)
+            return raw["last"]
 
-    paddleocr.predict = keep_raw
+        paddleocr.predict = keep_raw
 
     def card_images_of(image: str, query_image) -> list:
         if args.cards_from is None:
@@ -237,7 +309,8 @@ def run(args: argparse.Namespace) -> None:
     start = time.perf_counter()
     first_query_image = prepare_image(DATASET_ROOT / images[0])
     for card_image in card_images_of(images[0], first_query_image):
-        read_card(paddleocr, card_image)
+        if paddleocr is not None:
+            read_card(paddleocr, card_image)
     first_inference_s = time.perf_counter() - start
 
     # recognise every query image, timing each stage; accuracy, card images and
@@ -258,6 +331,8 @@ def run(args: argparse.Namespace) -> None:
             best = []
             fallbacks = 0
             error = None
+            paths_taken.clear()
+            yolo_s[0] = 0.0
             try:
                 start = time.perf_counter()
                 query_image = prepare_image(DATASET_ROOT / image)
@@ -267,7 +342,7 @@ def run(args: argparse.Namespace) -> None:
                 card_images = card_images_of(image, query_image)
                 stage_s["segmentation"] = time.perf_counter() - start
 
-                for card_image in card_images:
+                for card_image in [] if args.segment_only else card_images:
                     # shortlist pHash candidates, resolved through the catalog
                     start = time.perf_counter()
                     uuids, _ = shortlist(phashes, card_image, k=20)
@@ -299,12 +374,16 @@ def run(args: argparse.Namespace) -> None:
                 error = f"{type(e).__name__}: {e}"
                 best = []
             stage_s["total"] = time.perf_counter() - image_start
+            stage_s["yolo"] = yolo_s[0]
             stage_s["ocr_detection"] = ocr_s["ocr_detection"]
             stage_s["ocr_recognition"] = ocr_s["ocr_recognition"]
             stage_s["ocr_other"] -= ocr_s["ocr_detection"] + ocr_s["ocr_recognition"]
             times[image].append(stage_s)
 
             label = [labelled[u] for u in manifest[image]]
+            if args.segment_only:
+                # card count only: no printing is recognised
+                best = [None] * len(card_images) if error is None else []
             outcome = ImageOutcome(
                 score=score_image(label, best),
                 recognised=[p.uuid if p is not None else None for p in best],
@@ -328,9 +407,17 @@ def run(args: argparse.Namespace) -> None:
                         card_dir = out / "cards" / Path(image).with_suffix("")
                         card_dir.mkdir(parents=True, exist_ok=True)
                         cv2.imwrite(str(card_dir / f"{card_idx}.png"), card_image)
+                if args.segment_only and error is None:
+                    card_dir = out / "cards" / Path(image).with_suffix("")
+                    card_dir.mkdir(parents=True, exist_ok=True)
+                    for card_idx, card_image in enumerate(card_images):
+                        cv2.imwrite(str(card_dir / f"{card_idx}.png"), card_image)
                 outcomes[image] = outcome
                 tokens[image] = card_tokens
                 details[image] = {
+                    "segmentation": list(paths_taken),
+                    "cards_found": len(card_images) if error is None else None,
+                    "cards_labelled": len(manifest[image]),
                     "cards": cards,
                     "raw_text": _raw_text_hits(label, card_tokens),
                 }
@@ -386,6 +473,11 @@ def run(args: argparse.Namespace) -> None:
     summary = {
         "configuration": {
             "yolo": str(yolo_path),
+            "prompts": prompts if yolo_path.suffix == ".pt" else "exported",
+            "onnx_runner": args.onnx_runner if yolo_path.suffix == ".onnx" else None,
+            "predict": {k: v for k, v in seg_kwargs.items() if k != "verbose"},
+            "enhance_contrast": not args.no_enhance,
+            "segment_only": args.segment_only,
             "ocr_detection": det_name,
             "ocr_recognition": rec_name,
             "threads": args.threads or "default",
@@ -405,6 +497,21 @@ def run(args: argparse.Namespace) -> None:
             for f in comparison.flips
         ],
         "unstable_images": [i for i, d in details.items() if "unstable_repeats" in d],
+        "segmentation_paths": _path_counts(details),
+        "card_count_misses": [
+            {"image": i, "found": d["cards_found"], "labelled": d["cards_labelled"]}
+            for i, d in details.items()
+            if d["cards_found"] != d["cards_labelled"]
+        ],
+        "multi_card_images": {
+            i: {
+                "found": d["cards_found"],
+                "labelled": d["cards_labelled"],
+                "exact_printing": outcomes[i].score.exact_printing,
+            }
+            for i, d in details.items()
+            if d["cards_labelled"] > 1
+        },
         "raw_text": raw_text,
         "margin": margin_summary,
         "load_s": {k: round(v, 2) for k, v in load_s.items()},
@@ -417,6 +524,18 @@ def run(args: argparse.Namespace) -> None:
     (out / "images.json").write_text(json.dumps(details, indent=2) + "\n")
     (out / "ocr.json").write_text(json.dumps(tokens) + "\n")
     print(json.dumps(summary, indent=2))
+
+
+def _path_counts(details: dict) -> dict:
+    """How many query images each segmentation path found the cards in."""
+    counts: dict[str, int] = {}
+    for d in details.values():
+        steps = d["segmentation"]
+        found = [s for s in steps if not s.startswith("yolo")] or [
+            "yolo" if steps and steps[-1] != "yolo:0" else "none"
+        ]
+        counts[found[-1]] = counts.get(found[-1], 0) + 1
+    return counts
 
 
 def _tokens(raw_results) -> dict:
