@@ -44,6 +44,14 @@ _Avoid_: set size, total
 The illustrator named in a card's illustration credit.
 _Avoid_: illustrator
 
+**Collector style**:
+Which details a printing's collector information prints, and in what form: artist only, artist and year, number and size, number alone, or rarity first. Together with the frame, it decides whether each detail is shown on the card.
+_Avoid_: era, print format, pattern
+
+**Shown on the card**:
+What a printing actually prints, as opposed to what the catalog holds for it. The two differ on promos, The List and retro reprints, whose printed set code, collector number, base set size or year can differ from the catalog's.
+_Avoid_: catalog value (for what is printed)
+
 ### Images
 
 **Query image**:
@@ -89,11 +97,11 @@ The first entry of a card's ranking: the printing the card is recognised as.
 _Avoid_: best match, top match, top printing
 
 **Reading**:
-The details read off one card image before they are compared with any printing: its name, power/toughness and its collector information (set code, collector number, illustration credit, copyright year). A reading can be wrong or incomplete, which is why it is scored rather than looked up.
+The raw text of a card image's name crop and collector information crop, as read by OCR. Each candidate's details are looked for in it when scoring.
 _Avoid_: properties, OCR result, printing properties
 
 **Score**:
-How well a card's reading agrees with a printing's details, from 0 to 100; higher is better.
+How well a card's reading agrees with the details a printing shows on the card, from 0 to 100; higher is better.
 _Avoid_: confidence (it is not a probability), distance
 
 **Similarity**:
