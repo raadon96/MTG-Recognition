@@ -63,6 +63,14 @@ def main() -> None:
     run_parser.add_argument("--det-thresh", type=float, default=0.05)
     run_parser.add_argument("--det-box-thresh", type=float)
     run_parser.add_argument("--det-unclip", type=float)
+    # #198: detection input size, and the collector information crop's upscaling
+    run_parser.add_argument("--det-limit-side-len", type=int)
+    run_parser.add_argument("--det-limit-type", choices=["min", "max"])
+    run_parser.add_argument("--target-height", type=int)
+    run_parser.add_argument("--ratio-text-to-crop", type=float)
+    run_parser.add_argument("--max-upscale", type=float)
+    # both crops' smallest side, upscaled before OCR (32 today)
+    run_parser.add_argument("--min-dim", type=int)
     report_parser = commands.add_parser("report")
     report_parser.add_argument("names", nargs="+")
     report_parser.add_argument(
@@ -184,6 +192,19 @@ def run(args: argparse.Namespace) -> None:
     from mtg_recognition.engine.ocr import reading as reading_module
 
     cv2.setNumThreads(args.threads)
+    # read_card reads these module constants on every call
+    upscale = {
+        k: v
+        for k, v in (
+            ("TARGET_TEXT_HEIGHT", args.target_height),
+            ("RATIO_TEXT_TO_CROP", args.ratio_text_to_crop),
+            ("MAX_UPSCALE", args.max_upscale),
+            ("_MIN_DIM", args.min_dim),
+        )
+        if v is not None
+    }
+    for k, v in upscale.items():
+        setattr(reading_module, k, v)
     entries = _subset(json.loads(SAMPLE_PATH.read_text()), args.subset)
     out = OUTPUT_ROOT / args.name
     out.mkdir(parents=True, exist_ok=True)
@@ -246,6 +267,8 @@ def run(args: argparse.Namespace) -> None:
         for k, v in (
             ("text_det_box_thresh", args.det_box_thresh),
             ("text_det_unclip_ratio", args.det_unclip),
+            ("text_det_limit_side_len", args.det_limit_side_len),
+            ("text_det_limit_type", args.det_limit_type),
         )
         if v is not None
     }
@@ -312,7 +335,7 @@ def run(args: argparse.Namespace) -> None:
             "onnxruntime": args.onnxruntime,
             "fp16": not args.no_fp16, "threads": args.threads,
             "repeats": args.repeats, "subset": args.subset,
-            "det_thresh": args.det_thresh, **det_kwargs,
+            "det_thresh": args.det_thresh, **det_kwargs, **upscale,
         },
         "cards": len(entries),
         "load_s": round(load_s, 2),

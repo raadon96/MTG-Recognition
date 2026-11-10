@@ -65,11 +65,15 @@ def main() -> None:
     report_parser.add_argument(
         "--subset", choices=["all", "tune", "confirm"], default="all"
     )
+    # #198: only these variants, and drop tokens below a recognition score, as
+    # text_rec_score_thresh would (the runs keep every token: its default is 0)
+    report_parser.add_argument("--variant", action="append")
+    report_parser.add_argument("--min-rec-score", type=float, default=0.0)
     args = parser.parse_args()
     if args.command == "prepare":
         prepare()
     else:
-        report(args.runs, args.subset)
+        report(args.runs, args.subset, args.variant, args.min_rec_score)
 
 
 def prepare() -> None:
@@ -186,18 +190,28 @@ def prepare() -> None:
     )  # fmt: skip
 
 
-def report(runs: list[str], subset: str) -> None:
+def report(
+    runs: list[str], subset: str, variants: list[str] | None, min_rec_score: float
+) -> None:
     cases = json.loads((OUT / "cases.json").read_text())
     printings = cases["printings"]
     tables = {}
     for run in runs:
         readings = json.loads((READINGS_ROOT / run / "readings.json").read_text())
+        if min_rec_score > 0:
+            for r in readings:
+                for t in r["tokens"].values():
+                    keep = [i for i, s in enumerate(t["scores"]) if s >= min_rec_score]
+                    for k in ("texts", "scores", "boxes"):
+                        t[k] = [t[k][i] for i in keep]
         by_path = {r["path"]: r for r in readings}
         picked = [
             r for r in readings if subset == "all" or r["half"] in (subset, "both")
         ]
         table = {}
         for label, method, values, average in VARIANTS:
+            if variants and label not in variants:
+                continue
 
             def score(r, uuid, method=method, values=values, average=average):
                 # printings showing the same details tie on printed values: prefer
@@ -213,7 +227,10 @@ def report(runs: list[str], subset: str) -> None:
             }
         tables[run] = table
         print_run(run, table)
-    (OUT / f"report-{subset}.json").write_text(json.dumps(tables, indent=1) + "\n")
+    suffix = f"-rec{min_rec_score}" if min_rec_score > 0 else ""
+    (OUT / f"report-{subset}{suffix}.json").write_text(
+        json.dumps(tables, indent=1) + "\n"
+    )
 
 
 def field_scores(method: str, values: str, r: dict, p: dict) -> dict:
