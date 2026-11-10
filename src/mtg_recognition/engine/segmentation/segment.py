@@ -21,10 +21,10 @@ from .corners import (
     valid_aspect_ratio,
 )
 from .warp import upright_card_image, warp_card
+from .yoloe_onnx import OnnxYoloe
 
 if TYPE_CHECKING:
     from rembg.sessions.base import BaseSession
-    from ultralytics import YOLO
 
 SegmentationMode = Literal["auto", "yolo", "rembg"]
 
@@ -42,7 +42,7 @@ _BYPASS_BORDER_MAX_MEAN = 100
 
 _YOLO_CLASSES = ["book cover", "art work"]
 _YOLO_PREDICT_KWARGS: dict[str, Any] = {
-    "conf": 0.1,  # Higher confidence to filter weak overlaps
+    "conf": 0.05,  # #195: the 9-card scan with border gaps finds all 9 cards
     "iou": 0.0,  # Lower IoU for more aggressive suppression
     "agnostic_nms": True,  # Prevent overlaps between different classes
     "overlap_mask": False,  # Ensure masks do not overlap at the pixel level
@@ -182,16 +182,10 @@ def enhance_contrast(img: np.ndarray) -> np.ndarray:
 
 
 @cache
-def _yolo_model() -> YOLO:
-    from ultralytics import YOLO
-
-    model = YOLO(str(settings.YOLO_SEG_MODEL_PATH), task="segment")
-    if model.model is None:
-        raise ValueError(
-            f"Failed to load YOLO model from {settings.YOLO_SEG_MODEL_PATH}"
-        )
-    model.set_classes(_YOLO_CLASSES)
-    return model
+def _yolo_model() -> OnnxYoloe:
+    # the prompts are fused into the export: set_classes(_YOLO_CLASSES), then
+    # export(format="onnx", dynamic=True, agnostic_nms=True, imgsz=640, opset=20)
+    return OnnxYoloe(str(settings.YOLO_SEG_MODEL_PATH))
 
 
 def box_card_images(

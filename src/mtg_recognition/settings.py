@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
-        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.pt"
+        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.onnx"
 
     @property
     def OCR_DETECTION_MODEL_DIR(self) -> Path:
