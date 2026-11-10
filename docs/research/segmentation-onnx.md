@@ -48,7 +48,7 @@ What changed for the second image (commit on this branch):
 
 - Verified: the WASM results on every benchmark query image that reaches YOLO; the image sizes, venv sizes and package counts; that torch, torchvision, ultralytics and clip can't be imported in the second image; the exact-printing results in the container.
 - Not measured: a real browser (Node's WASM backend is the same runtime, as in #199); WebGPU; speed in Docker (Docker Desktop's VM, default threads: median 0.7 s per query image, not comparable with #194's numbers); the third image running OCR.
-- The no-card image took 32.5 s in the container: YOLO finds nothing, so the box fallback and then rembg run, and rembg downloads `silueta` into the container's home directory on first use instead of using `models/segmentation/prod/silueta.onnx`. That happens in today's image too, and is outside this ticket.
+- The no-card image took 32.5 s in the container: YOLO finds nothing, so the box fallback and then rembg run. Not explained. It isn't a download: `settings.py` sets `U2NET_HOME` to the models directory, and `models/segmentation/prod/silueta.onnx` matches the hash rembg expects, so rembg loads the local file. The time is more likely rembg loading and running in Docker Desktop's VM; not measured.
 
 ## How to rerun
 
