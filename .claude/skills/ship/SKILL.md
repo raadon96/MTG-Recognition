@@ -29,7 +29,7 @@ The `merge` argument counts as the user having already said "merge": don't ask a
 Feature PRs go into `dev` and are squash-merged, with GitHub's default commit message: the PR title followed by `(#<pr>)`.
 
 1. Write the PR body: if `mattpocock-skills:pr` is in the available skills, call the Skill tool with it and follow it. When there is an issue, start the body with `Closes #<issue>` and a blank line.
-2. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, e.g. `fix: read the collector number from the right crop (#42)`. When there is an issue, end the title with `(#<issue>)`.
+2. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, `<type>: <summary> (#<issue>)`, where `<type>` is the branch's type (`fix/211-…` → `fix`) and `<issue>` is the issue the PR closes; without an issue, the title ends at the summary. For example: `fix: read the collector number from the right crop (#42)`, or `chore: write the PR body with the pr skill in /ship`.
 3. Wait for CI: `gh pr checks <pr> --watch`. This can take several minutes; if no checks are reported yet, wait a few seconds and retry. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix. If CI passes and the user hasn't already said "merge", ask whether to merge, and stop unless they say yes.
 4. `gh pr merge <pr> --squash`
 5. `git switch dev && git pull`
