@@ -56,6 +56,17 @@ dev = [
     "pre-commit>=4.7.0",
     "pre-commit-hooks>=6.0.0",
 ]
+# Only for scripts/export_segmentation.py: `uv run --group export ...`.
+# ultralytics is fixed because a new version can change the exported model
+# (docs/adr/0007).
+export = [
+    "ultralytics==8.4.21",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "clip==1.0",
+    "onnx>=1.19.0",
+    "onnxslim>=0.1.71",
+]
 
 [build-system]
 requires = ["uv_build>=0.10.7,<0.11.0"]
