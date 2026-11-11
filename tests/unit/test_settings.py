@@ -11,3 +11,15 @@ def test_rembg_finds_its_models_under_models_dir(monkeypatch):
     Settings(MODELS_DIR=Path("elsewhere"))
 
     assert os.environ["U2NET_HOME"] == "elsewhere/segmentation/prod"
+
+
+def test_thread_count_defaults_to_4(monkeypatch):
+    monkeypatch.delenv("THREAD_COUNT", raising=False)
+
+    assert Settings(_env_file=None).THREAD_COUNT == 4
+
+
+def test_thread_count_is_read_from_the_environment(monkeypatch):
+    monkeypatch.setenv("THREAD_COUNT", "8")
+
+    assert Settings(_env_file=None).THREAD_COUNT == 8

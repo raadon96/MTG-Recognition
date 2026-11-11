@@ -183,6 +183,7 @@ def enhance_contrast(img: np.ndarray) -> np.ndarray:
 
 @cache
 def _yolo_model() -> YOLO:
+    import torch
     from ultralytics import YOLO
 
     model = YOLO(str(settings.YOLO_SEG_MODEL_PATH), task="segment")
@@ -191,6 +192,13 @@ def _yolo_model() -> YOLO:
             f"Failed to load YOLO model from {settings.YOLO_SEG_MODEL_PATH}"
         )
     model.set_classes(_YOLO_CLASSES)
+
+    # ultralytics sets OpenCV to no threading when imported, and torch to
+    # min(8, cores - 1) threads when its first predict picks the device. Run that
+    # predict on a blank image now, then set both thread counts.
+    model.predict(np.zeros((64, 64, 3), np.uint8), **_YOLO_PREDICT_KWARGS)
+    torch.set_num_threads(settings.THREAD_COUNT)
+    cv2.setNumThreads(settings.THREAD_COUNT)
     return model
 
 

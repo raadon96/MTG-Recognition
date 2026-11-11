@@ -95,6 +95,7 @@ def load_paddleocr() -> PaddleOCR:
         text_recognition_model_dir=str(settings.OCR_RECOGNITION_MODEL_DIR),
         # other params
         device="cpu",
+        cpu_threads=settings.THREAD_COUNT,
         enable_hpi=False,  # enable high-performance inference
         precision="fp16",  # set to "fp16" for acceleration
         lang="en",
