@@ -4,6 +4,7 @@ import json
 from dataclasses import replace
 
 import cv2
+import numpy as np
 from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
@@ -14,7 +15,7 @@ from mtg_recognition.engine.ranking import RankedPrinting
 from tests.unit.engine.builders import card_image, printing, reading_of
 
 DEBUG = ReadingDebug(
-    annotated_image=None,
+    collector_information_crop=np.zeros((20, 100, 3), dtype=np.uint8),
     texts=["Card p0"],
     scores=[0.99],
     boxes=[(0, 0, 10, 10)],
@@ -102,7 +103,7 @@ def test_cli_writes_the_ocr_fallback_to_the_output_json(monkeypatch, tmp_path):
                 card_image=card_image(3),
                 ranked=[RankedPrinting(printing("p0"), 0.0)],
                 reading=None,
-                ocr_error="RuntimeError: paddle exploded",
+                ocr_error="RuntimeError: OCR exploded",
             )
         ],
         error=None,
@@ -113,7 +114,7 @@ def test_cli_writes_the_ocr_fallback_to_the_output_json(monkeypatch, tmp_path):
     assert result.exit_code == 0, result.output
     [query_image] = json.loads(output.read_text())
     [card] = query_image["cards"]
-    assert card["ocr_error"] == "RuntimeError: paddle exploded"
+    assert card["ocr_error"] == "RuntimeError: OCR exploded"
 
 
 def test_cli_reports_an_error_without_a_card_count(monkeypatch, tmp_path):

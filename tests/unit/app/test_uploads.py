@@ -99,7 +99,10 @@ def test_every_kind_of_result_holds_the_query_image(recognition):
 
 def test_a_recognized_result_holds_the_readings_debug_artefacts():
     debug = ReadingDebug(
-        annotated_image=None, texts=["M10·EN"], scores=[0.9], boxes=[(0, 0, 9, 9)]
+        collector_information_crop=np.zeros((20, 100, 3), dtype=np.uint8),
+        texts=["M10·EN"],
+        scores=[0.9],
+        boxes=[(0, 0, 9, 9)],
     )
     card = CardResult(
         card_image=card_image(),
