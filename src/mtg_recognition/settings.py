@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
     MODELS_DIR: Path = Path("models")
 
+    # --- Inference ---
+    # CPU threads for PaddleOCR, torch and OpenCV. Their defaults (PaddleOCR 10,
+    # torch one per core) oversubscribe the CPU: 4 measured 1.3x faster with the
+    # same results (#194), 8 the same as 4, 16 about 2x slower (#198).
+    THREAD_COUNT: int = 4
+
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
     PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
 
