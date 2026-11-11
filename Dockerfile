@@ -17,20 +17,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 # All following relative paths are under /app.
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 \
-    libglib2.0-0 \
-    libgomp1 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Installs system libraries:
-#     - OpenCV/ML runtime libs (libgl1, libglib2.0-0, etc.)
-#     Cleans apt cache at end to keep image smaller.
-# No git here: only the build stage needs it, and `mtg benchmark run` records an
-# unknown commit without it.
+# No system packages: opencv-python-headless needs no GUI libraries, and numba
+# (through rembg) uses its own thread pool without libgomp1. No git either:
+# `mtg benchmark run` records an unknown commit without it.
 
 
 FROM base AS build
