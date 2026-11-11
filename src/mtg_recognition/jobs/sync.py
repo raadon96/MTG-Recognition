@@ -40,6 +40,7 @@ from mtg_recognition.reference.layout import ReferenceData
 from mtg_recognition.reference.sqlite import open_read_only
 from mtg_recognition.settings import settings
 
+from .printed import PrintingRow, SetRow, is_plain, printed_details, printed_sources
 from .schemas import CardIdentifiers, Cards, Meta, Sets
 
 SCRYFALL_HEADERS = {
@@ -138,7 +139,39 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
             )
             dest_session.add(CatalogMeta(version=version, date=date))
 
-            # sqlmodel's select overloads stop at 4 columns; this select takes more.
+            # what each printing shows depends on other printings (The List's
+            # original, a promo's parent set card), so every printing is read
+            # first.
+            #
+            # Every set in AllPrintings has a base set size and a release date;
+            # the schema only declares them nullable
+            sets = {
+                row.code: SetRow(
+                    code=row.code,
+                    type=row.type,
+                    parent_code=row.parentCode,
+                    keyrune_code=row.keyruneCode,
+                    base_set_size=row.baseSetSize or 0,
+                    release_date=row.releaseDate or "",
+                )
+                for row in source_session.exec(select(Sets))
+            }
+            # sqlmodel's select overloads stop at 4 columns; these selects take more.
+            printing_rows = source_session.exec(
+                select(  # ty: ignore[no-matching-overload]
+                    Cards.uuid,
+                    Cards.setCode,
+                    Cards.number,
+                    Cards.name,
+                    Cards.artist,
+                    Cards.frameVersion,
+                    Cards.originalReleaseDate,
+                    Cards.promoTypes,
+                )
+            )
+            printings = {row.uuid: PrintingRow(*row) for row in printing_rows}
+            sources = printed_sources(printings.values(), sets)
+
             statement = (
                 select(  # ty: ignore[no-matching-overload]
                     CardIdentifiers.uuid,
@@ -146,20 +179,19 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                     Cards.manaCost,
                     Cards.type,
                     Cards.number,
-                    Sets.baseSetSize,
                     Cards.setCode,
                     Cards.artist,
                     Cards.power,
                     Cards.toughness,
                     Cards.borderColor,
                     CardIdentifiers.scryfallId,
-                    Sets.releaseDate,
                     Cards.layout,
                     Cards.side,
                     Cards.faceName,
+                    Cards.flavorName,
+                    Cards.faceFlavorName,
                 )
                 .join(CardIdentifiers, Cards.uuid == CardIdentifiers.uuid)
-                .join(Sets, Cards.setCode == Sets.code)
                 # Candidates with the same similarity keep the catalog's order
                 # (#146); ordering by UUID keeps it the same across releases.
                 .order_by(CardIdentifiers.uuid)
@@ -176,6 +208,10 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                 # with the face's own name and image (see GLOSSARY.md).
                 double_faced = row.layout in DOUBLE_FACED_LAYOUTS
                 face = "back" if double_faced and row.side == "b" else "front"
+                own_set = sets[row.setCode]
+                printing = printings[row.uuid]
+                source = sources.get(row.uuid)
+                shown = printed_details(printing, sets, source)
                 batch.append(
                     CatalogPrinting(
                         uuid=row.uuid,
@@ -183,7 +219,7 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                         manaCost=row.manaCost,
                         type=row.type,
                         number=row.number,
-                        baseSetSize=row.baseSetSize,
+                        baseSetSize=own_set.base_set_size,
                         setCode=row.setCode,
                         url=(
                             generate_image_uri(row.scryfallId, face)
@@ -194,7 +230,13 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                         power=row.power,
                         toughness=row.toughness,
                         borderColor=row.borderColor,
-                        setReleaseYear=extract_year(row.releaseDate),
+                        setReleaseYear=extract_year(own_set.release_date),
+                        printedSetCode=shown.set_code,
+                        printedCollectorNumber=shown.collector_number,
+                        printedBaseSetSize=shown.base_set_size,
+                        printedYear=shown.year,
+                        flavorName=row.faceFlavorName or row.flavorName,
+                        isPlain=is_plain(printing, source),
                     )
                 )
 

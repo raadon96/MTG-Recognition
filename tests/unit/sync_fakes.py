@@ -67,6 +67,31 @@ PRINTING_V2: FakePrinting = (
 
 def build_allprintings(path: Path, version: str, printings: list[FakePrinting]) -> None:
     """Write a tiny AllPrintings database: one set holding `printings`."""
+    rows: list[SQLModel] = [
+        Sets(code="ISD", name="Innistrad", baseSetSize=264, releaseDate="2011-09-30")
+    ]
+    for number, (uuid, name, scryfall_id, layout, side, face_name) in enumerate(
+        printings, start=1
+    ):
+        rows.append(
+            Cards(
+                uuid=uuid,
+                name=name,
+                setCode="ISD",
+                number=str(number),
+                layout=layout,
+                side=side,
+                faceName=face_name,
+            )
+        )
+        rows.append(CardIdentifiers(uuid=uuid, scryfallId=scryfall_id))
+    write_allprintings(path, version, rows)
+
+
+def write_allprintings(path: Path, version: str, rows: list[SQLModel]) -> None:
+    """Write an AllPrintings database of release `version` holding `rows`: `Sets`,
+    `Cards` and `CardIdentifiers`.
+    """
     engine = create_engine(f"sqlite:///{path}")
     # SQLModel sets __table__ on table models at runtime but doesn't declare it
     # on the class.
@@ -81,26 +106,7 @@ def build_allprintings(path: Path, version: str, printings: list[FakePrinting]) 
     )
     with Session(engine) as session:
         session.add(Meta(version=version))
-        session.add(
-            Sets(
-                code="ISD", name="Innistrad", baseSetSize=264, releaseDate="2011-09-30"
-            )
-        )
-        for number, (uuid, name, scryfall_id, layout, side, face_name) in enumerate(
-            printings, start=1
-        ):
-            session.add(
-                Cards(
-                    uuid=uuid,
-                    name=name,
-                    setCode="ISD",
-                    number=str(number),
-                    layout=layout,
-                    side=side,
-                    faceName=face_name,
-                )
-            )
-            session.add(CardIdentifiers(uuid=uuid, scryfallId=scryfall_id))
+        session.add_all(rows)
         session.commit()
     engine.dispose()
 

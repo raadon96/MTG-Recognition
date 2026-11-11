@@ -33,6 +33,16 @@ class Printing:
     power: str | None = None
     toughness: str | None = None
     image_url: str | None = None
+    # what the card shows, which differs from the values above on promos, The
+    # List and retro reprints; None when the card doesn't show the detail
+    printed_set_code: str | None = None
+    printed_collector_number: str | None = None
+    printed_base_set_size: str | None = None
+    printed_year: str | None = None
+    flavor_name: str | None = None
+    # shows its own details and its number has no suffix (`254★`), so it comes
+    # first among printings showing the same details
+    is_plain: bool = False
 
 
 class SqliteCardCatalog:
@@ -64,6 +74,12 @@ class SqliteCardCatalog:
                 power=row.power,
                 toughness=row.toughness,
                 image_url=row.url,
+                printed_set_code=row.printedSetCode,
+                printed_collector_number=row.printedCollectorNumber,
+                printed_base_set_size=row.printedBaseSetSize,
+                printed_year=row.printedYear,
+                flavor_name=row.flavorName,
+                is_plain=row.isPlain,
             )
             for row in rows
         }
@@ -180,6 +196,15 @@ class CatalogPrinting(
     # bytes); None when the printing has no image URL, or its image failed to
     # download or hash.
     phash: bytes | None = Field(default=None)
+    # What the card shows, from the rules in `jobs.printed`; None when the card
+    # doesn't show the detail. Scoring compares the reading with these.
+    printedSetCode: str | None = Field(default=None)
+    printedCollectorNumber: str | None = Field(default=None)
+    printedBaseSetSize: str | None = Field(default=None)
+    printedYear: str | None = Field(default=None)
+    # the large name on the card, when it isn't the card name
+    flavorName: str | None = Field(default=None)
+    isPlain: bool = Field(default=False)
     # text: str | None = Field(default=None)
     # flavorText: str | None = Field(default=None)
     # scryfallId: str
