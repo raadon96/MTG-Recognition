@@ -40,6 +40,6 @@ OpenCV stays at 4.10: under OpenCV 5 the same code reads 13 of 80 card images di
 ## Consequences
 
 - torch, torchvision, clip and ultralytics are not runtime dependencies. The Docker image no longer keeps a cache volume for the MobileCLIP files.
-- torch used to set OpenMP's thread count as a side effect. Settings now sets `OMP_NUM_THREADS` from `THREAD_COUNT`; without it the benchmark ran 1.3x slower.
+- torch used to set OpenMP's thread count as a side effect; without it the benchmark ran 1.3x slower, so Settings set `OMP_NUM_THREADS` from `THREAD_COUNT`. Only numba, through rembg, still loads OpenMP, and it ignores `OMP_NUM_THREADS`, so Settings sets `NUMBA_NUM_THREADS` instead.
 - A change to processing is checked against the benchmark, as any segmentation or OCR change (ADR 0004).
 - paddlepaddle, paddleocr and paddlex are not dependencies, so nothing is installed from Paddle's package index, and the Docker image no longer downloads PaddleX's font. The app's debug view draws the OCR boxes on the collector information crop itself, in place of PaddleOCR's annotated image.
