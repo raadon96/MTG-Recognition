@@ -272,7 +272,7 @@ def _mean_score(text_map: np.ndarray, quad: np.ndarray) -> float:
     y_max = int(np.clip(math.ceil(quad[:, 1].max()), 0, h - 1))
     mask = np.zeros((y_max - y_min + 1, x_max - x_min + 1), dtype=np.uint8)
     shifted = quad - [x_min, y_min]
-    cv2.fillPoly(mask, shifted.reshape(1, -1, 2).astype(np.int32), 1)
+    cv2.fillPoly(mask, [shifted.astype(np.int32)], (1,))
     return cv2.mean(text_map[y_min : y_max + 1, x_min : x_max + 1], mask)[0]
 
 
