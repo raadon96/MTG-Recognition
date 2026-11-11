@@ -260,14 +260,14 @@ def _write_catalog(root) -> None:
                     uuid=BOLT,
                     name="Lightning Bolt",
                     setCode="M10",
-                    number="1",
+                    collectorNumber="1",
                     baseSetSize="1",
                 ),
                 CatalogPrinting(
                     uuid=GIANT,
                     name="Realm-Cloaked Giant // Cast Off",
                     setCode="ZNR",
-                    number="2",
+                    collectorNumber="2",
                     baseSetSize="1",
                 ),
             ]

@@ -33,6 +33,16 @@ class Printing:
     power: str | None = None
     toughness: str | None = None
     image_url: str | None = None
+    # what the card shows, which differs from the values above on promos, The
+    # List and retro reprints; None when the card doesn't show the detail
+    printed_set_code: str | None = None
+    printed_collector_number: str | None = None
+    printed_base_set_size: str | None = None
+    printed_year: str | None = None
+    flavor_name: str | None = None
+    # shows its own details and its number has no suffix (`254★`), so it comes
+    # first among printings showing the same details
+    is_plain: bool = False
 
 
 class SqliteCardCatalog:
@@ -57,13 +67,19 @@ class SqliteCardCatalog:
                 uuid=row.uuid,
                 name=row.name,
                 set_code=row.setCode,
-                collector_number=row.number,
+                collector_number=row.collectorNumber,
                 base_set_size=row.baseSetSize,
                 artist=row.artist,
                 set_release_year=row.setReleaseYear,
                 power=row.power,
                 toughness=row.toughness,
                 image_url=row.url,
+                printed_set_code=row.printedSetCode,
+                printed_collector_number=row.printedCollectorNumber,
+                printed_base_set_size=row.printedBaseSetSize,
+                printed_year=row.printedYear,
+                flavor_name=row.flavorName,
+                is_plain=row.isPlain,
             )
             for row in rows
         }
@@ -157,25 +173,37 @@ class CatalogPrinting(
     # )
     uuid: str = Field(primary_key=True, index=True)
     name: str = Field(default=None, index=False)
+    # the large name on the card, when it isn't the card name
+    flavorName: str | None = Field(default=None)
+
+    # Each detail beside what the card shows of it, from the rules in
+    # `jobs.printed`; a printed column is None when the card doesn't show the
+    # detail. Scoring compares the reading with the printed columns.
     setCode: str = Field(default=None, index=False)  # index=True
-
-    number: str = Field(default=None, index=False)
+    printedSetCode: str | None = Field(default=None)
+    collectorNumber: str = Field(default=None, index=False)
+    printedCollectorNumber: str | None = Field(default=None)
     baseSetSize: str = Field(default=None, index=False)
-
+    printedBaseSetSize: str | None = Field(default=None)
     # number: str = Field(default=None) # Use with composite index
     # baseSetSize: str = Field(default=None) # Use with composite index
-
     # The year of the set's release date, set when the catalog is built. Scoring
     # compares it with the copyright year in a card's reading.
     setReleaseYear: str | None = Field(None, index=False)
+    printedYear: str | None = Field(default=None)
+    # shows its own details and its collector number has no suffix (`254★`)
+    isPlain: bool = Field(default=False)
+
     artist: str | None = Field(default=None)
-    url: str | None = Field(default=None)
     manaCost: str | None = Field(default=None)
     type: str | None = Field(default=None)
     # setName: Optional[str] = Field(None, description="Set name")
     power: str | None = Field(default=None)
     toughness: str | None = Field(default=None)
     borderColor: str | None = Field(default=None)
+
+    # the reference image the pHash is computed from
+    url: str | None = Field(default=None)
     # The 256-bit pHash of the reference image, packed 8 bits per byte (32
     # bytes); None when the printing has no image URL, or its image failed to
     # download or hash.
