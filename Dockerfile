@@ -18,7 +18,6 @@ WORKDIR /app
 # All following relative paths are under /app.
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
@@ -28,7 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Installs system libraries:
-#     - curl (downloads the PaddleX font below)
 #     - OpenCV/ML runtime libs (libgl1, libglib2.0-0, etc.)
 #     Cleans apt cache at end to keep image smaller.
 # No git here: only the build stage needs it, and `mtg benchmark run` records an
@@ -94,13 +92,9 @@ COPY models/segmentation/prod ./models/segmentation/prod
 COPY models/ocr/prod ./models/ocr/prod
 # Copy OCR models
 
-RUN mkdir -p /home/appuser/.paddlex/fonts /app/output \
-    && curl -fsSL https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/simfang.ttf \
-       -o /home/appuser/.paddlex/fonts/simfang.ttf \
-    && chown -R appuser:appuser /home/appuser/.paddlex /app/output
-# Only the folders the app writes to change owner:
-#     - the PaddleX font folder
-#     - /app/output, where `mtg benchmark run` writes its results
+RUN mkdir -p /app/output && chown appuser:appuser /app/output
+# Only the folder the app writes to changes owner: /app/output, where
+# `mtg benchmark run` writes its results
 
 USER appuser
 # Run as unpriviledged (i.e. non-root) user

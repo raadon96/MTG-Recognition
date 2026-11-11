@@ -33,14 +33,10 @@ class Settings(BaseSettings):
     MODELS_DIR: Path = Path("models")
 
     # --- Inference ---
-    # CPU threads for PaddleOCR, OpenMP, onnxruntime and OpenCV. Their defaults
-    # (PaddleOCR 10, the others one per core) oversubscribe the CPU: 4 measured
-    # 1.3x faster with the same results (#194), 8 the same as 4, 16 about 2x
-    # slower (#198).
+    # CPU threads for OpenMP, onnxruntime and OpenCV. Their defaults (one per
+    # core) oversubscribe the CPU: 4 measured 1.3x faster with the same results
+    # (#194), 8 the same as 4, 16 about 2x slower (#198).
     THREAD_COUNT: int = 4
-
-    # --- Third-party env vars (pushed to os.environ on instantiation) ---
-    PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
 
     # --- Derived paths (reference data paths: reference.layout.ReferenceData) ---
     @property
@@ -62,10 +58,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _apply_third_party_env_vars(self) -> "Settings":
         """Push third-party vars to os.environ so libraries read them at import time."""
-        os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = str(
-            self.PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK
-        )
-        # OpenMP reads its thread count once, when paddle first loads it. torch
+        # OpenMP reads its thread count once, when it is first loaded. torch
         # used to set it; without it, the benchmark ran 1.3x slower (#214).
         os.environ["OMP_NUM_THREADS"] = str(self.THREAD_COUNT)
         # rembg looks for its model files in U2NET_HOME

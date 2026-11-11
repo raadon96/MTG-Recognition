@@ -1,22 +1,16 @@
-"""Reading a card: what PaddleOCR finds printed on a card image (see Reading in
+"""Reading a card: what OCR finds printed on a card image (see Reading in
 GLOSSARY.md).
 
 The reading reports what the card shows; comparing it with printings is scoring's
 job (`engine/ocr/scoring.py`).
 """
 
-import logging
 from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
-from paddleocr import PaddleOCR
-from PIL import Image
 
-from mtg_recognition.engine.ocr import ocr_extraction
-from mtg_recognition.settings import settings
-
-logger = logging.getLogger(__name__)
+from mtg_recognition.engine.ocr import ocr_extraction, pp_ocr
 
 # OCR regions as fractions of the card image's height and width:
 # (top, bottom, left, right)
@@ -39,7 +33,7 @@ RATIO_TEXT_TO_CROP = 0.15
 MIN_UPSCALE = 1.0
 MAX_UPSCALE = 4.0
 
-# PaddleOCR's text detection model requires both dimensions >= 32 px.
+# PP-OCR's text detection model requires both dimensions >= 32 px.
 _MIN_DIM = 32
 
 
@@ -49,9 +43,9 @@ class ReadingDebug:
     to a Reading only when read_card is called with debug=True.
     """
 
-    # Annotated collector information crop from PaddleOCR
-    # (side-by-side: original + text labels). None if PaddleOCR doesn't provide it.
-    annotated_image: Image.Image | None
+    # The collector information crop OCR read, upscaled (BGR); the boxes are in
+    # its pixels.
+    collector_information_crop: np.ndarray
     # Raw OCR tokens of the collector information (flavor-text filtered), with their
     # confidences and boxes.
     texts: list[str]
@@ -77,43 +71,18 @@ class Reading:
     debug: ReadingDebug | None = None
 
 
-def load_paddleocr() -> PaddleOCR:
-    """The PaddleOCR model that reads card images, with the production weights."""
-    return PaddleOCR(
-        # text image rectification (performs geometric transformations on images
-        # to correct distortions, inclinations, perspective deformations)
-        use_doc_unwarping=False,
-        doc_unwarping_model_name=None,
-        # textline orientation classification
-        # (corrects the orientation of text lines)
-        use_textline_orientation=False,
-        # text detection (locating and marking text-containing regions in images)
-        text_detection_model_name="PP-OCRv5_mobile_det",
-        text_detection_model_dir=str(settings.OCR_DETECTION_MODEL_DIR),
-        # text recognition
-        text_recognition_model_name="PP-OCRv5_mobile_rec",
-        text_recognition_model_dir=str(settings.OCR_RECOGNITION_MODEL_DIR),
-        # other params
-        device="cpu",
-        cpu_threads=settings.THREAD_COUNT,
-        enable_hpi=False,  # enable high-performance inference
-        precision="fp16",  # set to "fp16" for acceleration
-        lang="en",
-    )
-
-
 def read_card(
-    paddleocr: PaddleOCR, card_image: np.ndarray, *, debug: bool = False
+    ocr: pp_ocr.PPOCR, card_image: np.ndarray, *, debug: bool = False
 ) -> Reading:
     """Read the name and the collector information off a card image.
 
     Args:
-        paddleocr: The model from load_paddleocr.
+        ocr: The models from pp_ocr.load_pp_ocr.
         card_image: Card image (BGR format from OpenCV).
         debug: When True, the reading holds a ReadingDebug.
 
     Raises:
-        RuntimeError: If PaddleOCR fails.
+        RuntimeError: If OCR fails.
     """
     # crop the name and the collector information
     name_crop = _crop(card_image, NAME_ROI)
@@ -130,18 +99,17 @@ def read_card(
         interpolation=cv2.INTER_CUBIC,
     )
 
-    # make both crops large enough for PaddleOCR's text detection
+    # make both crops large enough for text detection
     name_crop = _ensure_min_dim(name_crop, _MIN_DIM)
     collector_information_crop = _ensure_min_dim(collector_information_crop, _MIN_DIM)
 
-    # read both crops in one batched predict call
-    raw_results = paddleocr.predict(
-        [name_crop, collector_information_crop], text_det_thresh=0.05
-    )
-    texts_name: list[str] = raw_results[0]["rec_texts"]
-    texts: list[str] = raw_results[1]["rec_texts"]
-    boxes: list[tuple[int, int, int, int]] = raw_results[1]["rec_boxes"].tolist()
-    scores: list[float] = raw_results[1]["rec_scores"]
+    # read both crops; onnxruntime's errors don't derive from RuntimeError
+    try:
+        name_lines = pp_ocr.read_text(ocr, name_crop)
+        lines = pp_ocr.read_text(ocr, collector_information_crop)
+    except Exception as e:
+        raise RuntimeError(f"{type(e).__name__}: {e}") from e
+    texts, boxes, scores = lines.texts, lines.boxes, lines.scores
 
     # drop flavor-text tokens: tokens near the top of the crop and not in the
     # far-right column (where P/T is) are flavor text that bled into it
@@ -160,7 +128,7 @@ def read_card(
     power, toughness = ocr_extraction.extract_power_toughness(texts)
 
     return Reading(
-        name=ocr_extraction.extract_card_name(texts_name),
+        name=ocr_extraction.extract_card_name(name_lines.texts),
         possible_set_codes=ocr_extraction.extract_possible_set_codes(texts),
         collector_number=collector_number,
         base_set_size=base_set_size,
@@ -170,7 +138,7 @@ def read_card(
         toughness=toughness,
         debug=(
             ReadingDebug(
-                annotated_image=_annotated_image(raw_results),
+                collector_information_crop=collector_information_crop,
                 texts=texts,
                 scores=scores,
                 boxes=boxes,
@@ -199,15 +167,3 @@ def _ensure_min_dim(img: np.ndarray, min_dim: int) -> np.ndarray:
     new_h = max(min_dim, round(h * scale))
     new_w = max(min_dim, round(w * scale))
     return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
-
-
-def _annotated_image(raw_results) -> Image.Image | None:
-    """PaddleOCR's annotated collector information crop, if any."""
-    try:
-        return raw_results[1].img["ocr_res_img"]
-    except Exception:
-        logger.warning(
-            "No annotated image in the OCR result; continuing without it",
-            exc_info=True,
-        )
-        return None

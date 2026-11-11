@@ -16,9 +16,9 @@ dependencies = [
     "sqlmodel>=0.0.31",
     "tqdm>=4.67.1",
     "opencv-contrib-python==4.10.0.84",
-    "paddlepaddle==3.2.0",
     "onnxruntime>=1.23.2",
-    "paddleocr>=3.3.3",
+    "pyclipper>=1.4.0",
+    "pyyaml>=6.0.2",
     "rapidfuzz>=3.14.3",
     "rich>=14.3.2",
     "streamlit>=1.54.0",
@@ -70,7 +70,6 @@ build-backend = "uv_build"
 package = true
 
 [tool.uv.sources]
-paddlepaddle = { index = "paddle" }
 torch = [
   { index = "pytorch-cpu" },
 ]
@@ -78,14 +77,6 @@ torchvision = [
   { index = "pytorch-cpu" },
 ]
 clip = { git = "https://github.com/openai/CLIP" }
-
-[[tool.uv.index]]
-# Optional name for the index.
-name = "paddle"
-# Required URL for the index.
-url = "https://www.paddlepaddle.org.cn/packages/stable/cpu/"
-# Prevent other packages from being installed from this index unless explicitly pinned to it.
-explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cpu"

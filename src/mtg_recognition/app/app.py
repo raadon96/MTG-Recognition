@@ -1,5 +1,6 @@
 import contextlib
 
+import cv2
 import pandas as pd
 import streamlit as st
 
@@ -221,13 +222,17 @@ def display_recognized_detail(result: Recognized, debug: bool):
         if best_printing.image_url:
             st.markdown(f"[Scryfall]({best_printing.image_url})")
 
-    # Debug expanders: annotated crop, raw OCR output, reading vs. best printing
+    # Debug expanders: the crop OCR read with its boxes, raw OCR output, reading
+    # vs. best printing
     if debug and reading_debug is not None:
-        if reading_debug.annotated_image is not None:
-            with st.expander(
-                "🔬 Annotated Information Below the Text Box", expanded=True
-            ):
-                st.image(reading_debug.annotated_image, width="stretch")
+        with st.expander(
+            "🔬 Information Below the Text Box — OCR Boxes (flavor-text filtered)",
+            expanded=True,
+        ):
+            crop = reading_debug.collector_information_crop.copy()
+            for x1, y1, x2, y2 in reading_debug.boxes:
+                cv2.rectangle(crop, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            st.image(crop, channels="BGR", width="stretch")
 
         with st.expander(
             "📄 Information Below the Text Box — OCR Tokens (flavor-text filtered)",

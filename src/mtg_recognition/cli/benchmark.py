@@ -32,6 +32,7 @@ from mtg_recognition.benchmark.results import (
     validate_manifest,
     write_results,
 )
+from mtg_recognition.engine import pipeline
 from mtg_recognition.reference.catalog import (
     Printing,
     SqliteCardCatalog,
@@ -83,15 +84,11 @@ def run() -> None:
         raise SystemExit(1)
 
     # recognise each query image at the pipeline's defaults
-    # imported here, not at the top: importing PaddleOCR takes seconds and prints
-    # a message, which every other `mtg` command would pay for
-    from mtg_recognition.engine.pipeline import Pipeline
-
-    pipeline = Pipeline()
+    recognizer = pipeline.Pipeline()
     images: dict[str, ImageOutcome] = {}
     for idx, (image, label) in enumerate(sorted(manifest.items()), 1):
         start = time.perf_counter()
-        recognition = pipeline.recognize(DATASET_ROOT / image)
+        recognition = recognizer.recognize(DATASET_ROOT / image)
         runtime_s = time.perf_counter() - start
 
         best = [
