@@ -22,7 +22,8 @@ from pathlib import Path
 # ultralytics would otherwise pip-install what it finds missing
 os.environ["YOLO_AUTOINSTALL"] = "false"
 
-from ultralytics import YOLO  # noqa: E402
+# only the export group installs ultralytics, so ty can't find it in the dev venv
+from ultralytics import YOLO  # noqa: E402  # ty: ignore[unresolved-import]
 
 PROMPTS = ["book cover", "art work"]
 WEIGHTS = "yoloe-11s-seg.pt"

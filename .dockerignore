@@ -43,7 +43,7 @@ data/benchmark/
 data/scratch/
 data/examples/
 notebooks/
-scratch/
+.scratch/
 input/
 output/
 .notes/
