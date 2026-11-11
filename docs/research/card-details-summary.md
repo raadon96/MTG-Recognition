@@ -170,8 +170,8 @@ The other common layouts (transform, modal_dfc, saga, class, case, mutate, proto
 
 1. **The catalog isn't what the card shows.** A List card is `PLST HOP-128` with base set size 5,075 in the catalog, but prints `HOP 128/169`. A prerelease promo `PKHM 214p` prints `KHM 214/285`; the catalog's base set size for PKHM is 1. Printings whose derived value differs from the catalog's: set code 11,215, collector number 17,128, base set size 10,512, year 14,436 (#201).
 2. **The year on the card isn't the set's year.** Secret Lair prints 2023 to 2026, where the catalog has 2019; Time Spiral Remastered prints 2020, the catalog 2021; all 20 List samples print another year than the catalog's 2020. 13,553 printings have an `originalReleaseDate` in another year than their set. Older frames print a range (`1993-2001`), and OCR often reads only the start. #206 decided to store the end year and to count the year as found when the reading holds the end year or the start followed by a dash (`1993-`).
-3. **The frame doesn't tell the collector style.** 4.2% of printings carry a frame older than their set's date: The List, Remasters, Masters Editions, 30A, Secret Lair. A 1997-frame card from 2023 prints a collector number but no base set size. 2,276 Magic Online promos carry the 2015 frame with a 2002 date.
-4. **Two-name cards have one name in the catalog.** Both printings of `Bonecrusher Giant // Stomp` carry the full name, the same collector number and the same image (split, adventure, aftermath, flip, prepare). The catalog's name is "A // B", so reading only the first name scores about half.
+3. **The frame doesn't tell the collector style.** 4.2% of printings are drawn in a frame older than their set's date: The List, Remasters, Masters Editions, 30A, Secret Lair. A 1997-frame card from 2023 prints a collector number but no base set size. 2,276 Magic Online promos are drawn in the 2015 frame with a 2002 date.
+4. **Two-name cards have one name in the catalog.** Both printings of `Bonecrusher Giant // Stomp` hold the full name, the same collector number and the same image (split, adventure, aftermath, flip, prepare). The catalog's name is "A // B", so reading only the first name scores about half.
 5. **The big name may not be the card's name.** 3,231 paper printings (3,398 printings in the catalog, 2.9%) have a flavor name: the large name is the flavor name, and the card name is printed small below it, at 0.11 to 0.14 of the card's height, outside the name crop.
 6. **Other text sits in the collector information crop.** The last line of flavor or rules text (on 5 to 12 of 20 samples in most 2015-frame groups), the MDFC hint bar (20 of 20), licensing lines (MARVEL, SQUARE ENIX), playtest marks, and the grey back-face power/toughness on transform fronts (CR 712.2c).
 7. **Many printings show exactly the same details.** An expansion card and its prerelease, promo-pack and List versions differ only by a stamp; pre-Exodus reprints share name and artist across many sets. 29.1% of paper printings can only be told apart by the picture, and the rules make no difference there (issue #202).
@@ -202,7 +202,7 @@ Written before the prototype ran. What #197 and #206 decided afterwards is in [D
 ### Verified
 
 - Every label: counted over all 106,466 paper printings in AllPrintings, with the rules of #201, which were checked against 540 + 2,734 OCR readings of reference images there.
-- Every crop and read count: measured on #193's 540 readings of reference images by the production OCR model, with tokens matched against the rules' values for set code, collector number, base set size and year, and #193's matching for name, second name, artist and power/toughness.
+- Every crop and read count: measured on #193's 540 readings of reference images by the production OCR model, with tokens matched against the rules' values for set code, collector number, base set size and year, and #193's comparison for name, second name, artist and power/toughness.
 - Power/toughness is in AllPrintings for creatures and vehicles: a card has `power` or `toughness` exactly when the card prints them.
 
 ### Assumed
@@ -220,16 +220,16 @@ Map #189 went on after this summary was written. Its decisions are recorded in #
 - **No hand-kept table for the 35 sets the rules get wrong** (#206). The catalog stores the rules' values. Where the card shows something else, the right printing misses that one detail. Example: *Jhoira's Timebug* in TSR shows `© 2020`, the rule gives 2021, and it still wins 5 of 6 details against 2 of 5 for the TSP original.
 - **World Championship decks stay candidates** (#206). They get the values of the original printing, found by name, artist and collector number. For the 28 printings whose original isn't found, the set code, collector number, base set size and year are empty, so they count as not shown. On a tie, the tie-break prefers the original, so a photo of a World Championship card comes back as its original printing.
 - **Range years store the end year** (#206). For `© 1993-2003` the printed year is 2003. Scoring counts the year as found when the reading holds the end year, or the start year followed by a dash (`1993-`).
-- **Scoring is candidate-driven, without positions** (#197). For each candidate, scoring looks for each detail the printing shows on the card in the raw text of the reading. A detail it doesn't show is left out. The score is the weighted average over the details it shows. Section 5's idea of telling details apart by line inside the collector information crop was not adopted.
+- **Scoring is candidate-driven, without positions** (#197, #210). For each candidate, scoring looks for each detail the printing shows on the card in the raw text of the reading. A detail it doesn't show is left out. The score is the weighted average over the details it shows (name 2, artist 0.5, the rest 1). Section 5's idea of telling details apart by line inside the collector information crop was not adopted.
 - **Two names and flavor names** (#197). The name is scored as the best of the printing's names: each face of `A // B`, and the flavor name (traps 4 and 5).
 - **Ties** (#197). Among equal scores, the plain printing comes first, then pHash order. The plain printing shows its own details (not The List, not a promo showing its parent's details, not a World Championship deck), and its collector number has no suffix (`254★`, `71z`).
-- **The crops stay as they are** (#210), so table B's gaps and the 1993 frame's cut name remain. Rotating the name crop for split cards, battles and planes is out of scope (#189): 93 of 100 sampled split cards show the same details as another printing of their name, so it would help tell the card apart, but not the printing. Revisit it as a normal issue if a split-card photo fails the benchmark.
+- **The crops stay as they are** (#210), so table B's gaps and the 1993 frame's cut name remain. Rotating the name crop for split cards is out of scope (#189): 93 of 100 sampled split cards show the same details as another printing of their name, so it would help tell the card apart, but not the printing. Revisit it as a normal issue if a split-card photo fails the benchmark.
 
 ## Open questions
 
 Still open at the end of map #189:
 
-1. Do physical List cards print the same year as their reference images? (#201, B1). The rules use the List card's own year.
+1. Do physical List cards print the same year as their reference images? (#201, B1). The rules give the original set's year.
 2. Does `use_textline_orientation=True` read the flip cards' upside-down second name and power/toughness, and at what cost in time? (#193)
 3. How far do segmentation's card edges drift from the reference images' edges (C2)?
 4. Does pHash separate printings that show the same details? (#202, outside the map)
