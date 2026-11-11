@@ -218,7 +218,7 @@ def build_catalog(allprintings_path: Path, catalog_path: Path) -> str:
                         name=row.faceName if double_faced else row.name,
                         manaCost=row.manaCost,
                         type=row.type,
-                        number=row.number,
+                        collectorNumber=row.number,
                         baseSetSize=own_set.base_set_size,
                         setCode=row.setCode,
                         url=(
