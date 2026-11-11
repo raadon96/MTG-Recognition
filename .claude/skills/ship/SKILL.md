@@ -18,22 +18,23 @@ Work out what to do from the current branch (`git branch --show-current`, empty 
 | `dev` | Release PR open | Waits for CI, asks whether to merge |
 | `main` or detached HEAD | Any | Stops and says why |
 
-On a feature branch, follow Pull requests: from step 1 with no PR yet, from step 2 with a PR open. On `dev`, follow Releases: from step 1 with no release PR yet, from step 5 with a release PR open.
+On a feature branch, follow Pull requests: from step 1 with no PR yet, from step 3 with a PR open. On `dev`, follow Releases: from step 1 with no release PR yet, from step 5 with a release PR open.
 
 ## `/ship merge`
 
-The `merge` argument counts as the user having already said "merge": don't ask again once CI passes, and go on to merge. On a release, this includes tagging and publishing. It never skips the version confirmation. If CI fails, stop and report it, as in step 2 of Pull requests.
+The `merge` argument counts as the user having already said "merge": don't ask again once CI passes, and go on to merge. On a release, this includes tagging and publishing. It never skips the version confirmation. If CI fails, stop and report it, as in step 3 of Pull requests.
 
 ## Pull requests
 
 Feature PRs go into `dev` and are squash-merged, with GitHub's default commit message: the PR title followed by `(#<pr>)`.
 
-1. Write the PR body: if `mattpocock-skills:pr` is in the available skills, call the Skill tool with it first and follow it. Then open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, e.g. `fix: read the collector number from the right crop (#42)`. When there is an issue, end the title with `(#<issue>)` and start the body with `Closes #<issue>` and a blank line.
-2. Wait for CI: `gh pr checks <pr> --watch`. This can take several minutes; if no checks are reported yet, wait a few seconds and retry. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix. If CI passes and the user hasn't already said "merge", ask whether to merge, and stop unless they say yes.
-3. `gh pr merge <pr> --squash`
-4. `git switch dev && git pull`
-5. Delete the branch: `git push origin --delete <branch>`, then `git branch -D <branch>` (`-D` because git doesn't recognize a squash-merged branch as merged). If the branch is checked out in a worktree, run `git worktree remove <path>` first.
-6. If the branch name has an issue number, close the issue: `gh issue close <issue> --comment "Done in #<pr>."` GitHub only closes issues for merges into `main`. If the PR body says the work is partial, leave the issue open and tell the user.
+1. Write the PR body: if `mattpocock-skills:pr` is in the available skills, call the Skill tool with it and follow it. When there is an issue, start the body with `Closes #<issue>` and a blank line.
+2. Open the PR against `dev`: always pass `gh pr create --base dev`. Title it as a conventional commit, e.g. `fix: read the collector number from the right crop (#42)`. When there is an issue, end the title with `(#<issue>)`.
+3. Wait for CI: `gh pr checks <pr> --watch`. This can take several minutes; if no checks are reported yet, wait a few seconds and retry. If a check fails, stop and report the check and the relevant log lines; don't merge and don't start a fix. If CI passes and the user hasn't already said "merge", ask whether to merge, and stop unless they say yes.
+4. `gh pr merge <pr> --squash`
+5. `git switch dev && git pull`
+6. Delete the branch: `git push origin --delete <branch>`, then `git branch -D <branch>` (`-D` because git doesn't recognize a squash-merged branch as merged). If the branch is checked out in a worktree, run `git worktree remove <path>` first.
+7. If the branch name has an issue number, close the issue: `gh issue close <issue> --comment "Done in #<pr>."` GitHub only closes issues for merges into `main`. If the PR body says the work is partial, leave the issue open and tell the user.
 
 ## Releases
 
