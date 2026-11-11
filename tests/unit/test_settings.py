@@ -23,3 +23,12 @@ def test_thread_count_is_read_from_the_environment(monkeypatch):
     monkeypatch.setenv("THREAD_COUNT", "8")
 
     assert Settings(_env_file=None).THREAD_COUNT == 8
+
+
+def test_openmp_uses_the_thread_count(monkeypatch):
+    # Settings writes OMP_NUM_THREADS to os.environ; monkeypatch restores it
+    monkeypatch.setenv("OMP_NUM_THREADS", "")
+
+    Settings(_env_file=None, THREAD_COUNT=6)
+
+    assert os.environ["OMP_NUM_THREADS"] == "6"

@@ -33,9 +33,10 @@ class Settings(BaseSettings):
     MODELS_DIR: Path = Path("models")
 
     # --- Inference ---
-    # CPU threads for PaddleOCR, torch and OpenCV. Their defaults (PaddleOCR 10,
-    # torch one per core) oversubscribe the CPU: 4 measured 1.3x faster with the
-    # same results (#194), 8 the same as 4, 16 about 2x slower (#198).
+    # CPU threads for PaddleOCR, OpenMP, onnxruntime and OpenCV. Their defaults
+    # (PaddleOCR 10, the others one per core) oversubscribe the CPU: 4 measured
+    # 1.3x faster with the same results (#194), 8 the same as 4, 16 about 2x
+    # slower (#198).
     THREAD_COUNT: int = 4
 
     # --- Third-party env vars (pushed to os.environ on instantiation) ---
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
 
     @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
-        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.pt"
+        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.onnx"
 
     @property
     def OCR_DETECTION_MODEL_DIR(self) -> Path:
@@ -64,6 +65,9 @@ class Settings(BaseSettings):
         os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = str(
             self.PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK
         )
+        # OpenMP reads its thread count once, when paddle first loads it. torch
+        # used to set it; without it, the benchmark ran 1.3x slower (#214).
+        os.environ["OMP_NUM_THREADS"] = str(self.THREAD_COUNT)
         # rembg looks for its model files in U2NET_HOME
         os.environ["U2NET_HOME"] = str(self.SEGMENTATION_MODEL_DIR)
         return self

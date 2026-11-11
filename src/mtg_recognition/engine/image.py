@@ -11,8 +11,7 @@ from PIL import Image, ImageOps
 from mtg_recognition.settings import settings
 
 # OpenCV's thread count is process-wide, and every recognition path prepares its
-# query image through this module. Loading YOLOE changes it, so segmentation's
-# _yolo_model sets it again.
+# query image through this module.
 cv2.setNumThreads(settings.THREAD_COUNT)
 
 # All types accepted by prepare_image

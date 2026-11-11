@@ -15,12 +15,6 @@ dependencies = [
     "pydantic-settings>=2.12.0",
     "sqlmodel>=0.0.31",
     "tqdm>=4.67.1",
-    "ftfy>=6.3.1",
-    "regex>=2026.2.28",
-    "clip==1.0",
-    "torch>=2.10.0",
-    "torchvision>=0.25.0",
-    "ultralytics>=8.4.1",
     "opencv-contrib-python==4.10.0.84",
     "paddlepaddle==3.2.0",
     "onnxruntime>=1.23.2",
@@ -55,6 +49,17 @@ dev = [
     "import-linter>=2.15",
     "pre-commit>=4.7.0",
     "pre-commit-hooks>=6.0.0",
+]
+# Only for scripts/export_segmentation.py: `uv run --group export ...`.
+# ultralytics is fixed because a new version can change the exported model
+# (docs/adr/0007).
+export = [
+    "ultralytics==8.4.21",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "clip==1.0",
+    "onnx>=1.19.0",
+    "onnxslim>=0.1.71",
 ]
 
 [build-system]

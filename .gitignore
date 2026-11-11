@@ -26,10 +26,9 @@ mobileclip_blt.ts
 
 # Experimentation & prototyping
 notebooks/
-scratch/
+.scratch/
 input/
 test/
-scripts/
 runs/
 output/
 **/results

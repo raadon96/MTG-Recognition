@@ -7,12 +7,10 @@ contrast-enhanced copy is only for finding the cards.
 from __future__ import annotations
 
 from functools import cache
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 import cv2
 import numpy as np
-
-from mtg_recognition.settings import settings
 
 from .corners import (
     CARD_ASPECT_RATIO,
@@ -21,10 +19,10 @@ from .corners import (
     valid_aspect_ratio,
 )
 from .warp import upright_card_image, warp_card
+from .yolo import yolo_outlines, yolo_session
 
 if TYPE_CHECKING:
     from rembg.sessions.base import BaseSession
-    from ultralytics import YOLO
 
 SegmentationMode = Literal["auto", "yolo", "rembg"]
 
@@ -39,16 +37,6 @@ _BYPASS_BORDER_PCT = 0.05
 # scans with the scanner bed have a bright border (mean ≈ 148–240).
 # A threshold of 100 sits in the middle of the 96-point gap between groups.
 _BYPASS_BORDER_MAX_MEAN = 100
-
-_YOLO_CLASSES = ["book cover", "art work"]
-_YOLO_PREDICT_KWARGS: dict[str, Any] = {
-    "conf": 0.1,  # Higher confidence to filter weak overlaps
-    "iou": 0.0,  # Lower IoU for more aggressive suppression
-    "agnostic_nms": True,  # Prevent overlaps between different classes
-    "overlap_mask": False,  # Ensure masks do not overlap at the pixel level
-    "max_det": 50,
-    "verbose": False,
-}
 
 # "silueta" separates cards from the background best of rembg's models
 _REMBG_MODEL = "silueta"
@@ -96,10 +84,8 @@ def segment(
 
     # YOLO
     enhanced_image = enhance_contrast(query_image)
-    result = _yolo_model().predict(enhanced_image, **_YOLO_PREDICT_KWARGS)[0]
-    outlines = result.masks.xy if result.masks is not None else []
     card_images = []
-    for outline in outlines:
+    for outline in yolo_outlines(yolo_session(), enhanced_image):
         corners = card_corners_from_outline(query_image, outline)
         if corners is not None:
             card_images.append(warp_card(query_image, corners))
@@ -179,27 +165,6 @@ def enhance_contrast(img: np.ndarray) -> np.ndarray:
 
     merged = cv2.merge([l_gamma, a, b])
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
-
-
-@cache
-def _yolo_model() -> YOLO:
-    import torch
-    from ultralytics import YOLO
-
-    model = YOLO(str(settings.YOLO_SEG_MODEL_PATH), task="segment")
-    if model.model is None:
-        raise ValueError(
-            f"Failed to load YOLO model from {settings.YOLO_SEG_MODEL_PATH}"
-        )
-    model.set_classes(_YOLO_CLASSES)
-
-    # ultralytics sets OpenCV to no threading when imported, and torch to
-    # min(8, cores - 1) threads when its first predict picks the device. Run that
-    # predict on a blank image now, then set both thread counts.
-    model.predict(np.zeros((64, 64, 3), np.uint8), **_YOLO_PREDICT_KWARGS)
-    torch.set_num_threads(settings.THREAD_COUNT)
-    cv2.setNumThreads(settings.THREAD_COUNT)
-    return model
 
 
 def box_card_images(
