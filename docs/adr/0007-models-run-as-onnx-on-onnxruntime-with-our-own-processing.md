@@ -4,13 +4,7 @@ The engine runs its models as ONNX files committed under `models/*/prod`, on onn
 
 ## Segmentation
 
-YOLOE-11s runs as `models/segmentation/prod/yoloe-11s-seg.onnx`, written by `scripts/export_segmentation.py`:
-
-```bash
-uv run --group export python scripts/export_segmentation.py
-```
-
-The script sets the prompts (`book cover`, `art work`), which fuses them into the weights, and writes a dynamic export (opset 20, `agnostic_nms`, `imgsz` 640). The text encoder (MobileCLIP, 600 MB) is needed only to set the prompts, so it no longer loads at runtime. A static (square) export pads query images differently from ultralytics and changes results, so the export is dynamic (#195). The script runs again when the prompts, the model or the ultralytics version change, and its output is committed.
+YOLOE-11s runs as `models/segmentation/prod/yoloe-11s-seg.onnx`, written by `scripts/export_segmentation.py`; its docstring gives the command. The script sets the prompts (`book cover`, `art work`), which fuses them into the weights, and writes a dynamic export (opset 20, `agnostic_nms`, `imgsz` 640). The text encoder (MobileCLIP, 600 MB) is needed only to set the prompts, so it no longer loads at runtime. A static (square) export pads query images differently from ultralytics and changes results, so the export is dynamic (#195). The script runs again when the prompts, the model or the ultralytics version change, and its output is committed.
 
 The `export` dependency group holds ultralytics, torch, torchvision, clip, onnx and onnxslim, with the PyTorch CPU index and the clip git source. `uv sync --dev` doesn't install it, and the Docker image doesn't have it.
 
@@ -23,6 +17,13 @@ The `export` dependency group holds ultralytics, torch, torchvision, clip, onnx 
 - Ultralytics' code and weights are AGPL-3.0. That covers the YOLOE weights, the export made from them, and `merge_multi_segment`, copied into `yolo.py`.
 - The MobileCLIP text encoders are licensed for research use only. The export holds the prompts' embeddings, not the encoder.
 - Shipping the weights to browsers distributes them, so the app must then be AGPL-3.0, or run under an Ultralytics Enterprise licence.
+
+## Considered Options
+
+- **Keep ultralytics at runtime**: the same results, but torch, torchvision, clip and ultralytics stay in the image (1.4 GB of the 4.8 GB Docker image, #214), the model takes 1.2 s instead of 0.1 s to load and about 420 MB more memory (#195), and the browser port would still need its own processing.
+- **ultralytics' own ONNX path**: it still needs ultralytics and torch installed, and doesn't let the thread count be set (#195).
+- **A static (square) export**: changes results (#195).
+- **YOLOE-26n**: a quarter of the size, but 3 benchmark images worse (#195); not adopted.
 
 ## Consequences
 

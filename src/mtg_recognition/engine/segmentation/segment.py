@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, Literal
 import cv2
 import numpy as np
 
-from mtg_recognition.settings import settings
-
 from .corners import (
     CARD_ASPECT_RATIO,
     card_corners_from_outline,
@@ -21,10 +19,9 @@ from .corners import (
     valid_aspect_ratio,
 )
 from .warp import upright_card_image, warp_card
-from .yolo import load_yolo_session, yolo_outlines
+from .yolo import yolo_outlines, yolo_session
 
 if TYPE_CHECKING:
-    import onnxruntime as ort
     from rembg.sessions.base import BaseSession
 
 SegmentationMode = Literal["auto", "yolo", "rembg"]
@@ -88,7 +85,7 @@ def segment(
     # YOLO
     enhanced_image = enhance_contrast(query_image)
     card_images = []
-    for outline in yolo_outlines(_yolo_session(), enhanced_image):
+    for outline in yolo_outlines(yolo_session(), enhanced_image):
         corners = card_corners_from_outline(query_image, outline)
         if corners is not None:
             card_images.append(warp_card(query_image, corners))
@@ -168,11 +165,6 @@ def enhance_contrast(img: np.ndarray) -> np.ndarray:
 
     merged = cv2.merge([l_gamma, a, b])
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
-
-
-@cache
-def _yolo_session() -> ort.InferenceSession:
-    return load_yolo_session(str(settings.YOLO_SEG_MODEL_PATH), settings.THREAD_COUNT)
 
 
 def box_card_images(

@@ -14,7 +14,7 @@ _INPUT_SHAPE = (480, 640)
 _PROTOS_SHAPE = (32, 120, 160)
 
 
-def test_letterbox_scales_the_long_side_to_640_and_pads_to_a_multiple_of_32():
+def test_the_model_input_has_a_long_side_of_640_and_grey_padding_to_a_multiple_of_32():
     query_image = np.zeros((530, 1000, 3), dtype=np.uint8)
 
     padded = letterbox(query_image)
@@ -26,7 +26,7 @@ def test_letterbox_scales_the_long_side_to_640_and_pads_to_a_multiple_of_32():
     assert (padded[345:] == 114).all()
 
 
-def test_letterbox_leaves_an_image_already_at_input_size_unchanged():
+def test_an_image_already_at_the_model_input_size_is_left_unchanged():
     query_image = np.random.default_rng(0).integers(0, 256, (640, 480, 3), np.uint8)
 
     assert np.array_equal(letterbox(query_image), query_image)

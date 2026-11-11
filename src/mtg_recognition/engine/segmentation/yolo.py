@@ -7,9 +7,13 @@ letterbox, run, filter by confidence, NMS, decode the masks, trace and scale
 the outlines back to the image.
 """
 
+from functools import cache
+
 import cv2
 import numpy as np
 import onnxruntime as ort
+
+from mtg_recognition.settings import settings
 
 # The model's input: the long side scaled to 640, the short side padded with
 # grey to the next multiple of the model's stride
@@ -25,11 +29,14 @@ _IOU = 0.0
 _MAX_DETECTIONS = 50
 
 
-def load_yolo_session(path: str, threads: int) -> ort.InferenceSession:
+@cache
+def yolo_session() -> ort.InferenceSession:
     options = ort.SessionOptions()
-    options.intra_op_num_threads = threads
+    options.intra_op_num_threads = settings.THREAD_COUNT
     options.inter_op_num_threads = 1
-    return ort.InferenceSession(path, options, providers=["CPUExecutionProvider"])
+    return ort.InferenceSession(
+        settings.YOLO_SEG_MODEL_PATH, options, providers=["CPUExecutionProvider"]
+    )
 
 
 def yolo_outlines(session: ort.InferenceSession, image: np.ndarray) -> list[np.ndarray]:
@@ -88,7 +95,7 @@ def outlines_from_output(
     kept = _nms(boxes, scores)[:_MAX_DETECTIONS]
     boxes, coefficients = boxes[kept], detections[kept, 4 + prompts :]
 
-    c, mh, mw = protos.shape
+    n_protos, mh, mw = protos.shape
     ih, iw = input_shape
     h, w = image_shape
     gain = min(ih / h, iw / w)
@@ -96,7 +103,7 @@ def outlines_from_output(
     for box, coeffs in zip(boxes, coefficients, strict=True):
         # mask: coefficients times prototypes, zeroed outside the box at
         # prototype size, upsampled to the input size, thresholded at logit 0
-        mask = (coeffs @ protos.reshape(c, -1)).reshape(mh, mw)
+        mask = (coeffs @ protos.reshape(n_protos, -1)).reshape(mh, mw)
         x1, y1, x2, y2 = np.round(box * [mw / iw, mh / ih, mw / iw, mh / ih]).astype(
             int
         )
@@ -115,7 +122,7 @@ def outlines_from_output(
         )
         if len(contours) > 1:
             outline = np.concatenate(
-                _merge_multi_segment([c.reshape(-1, 2) for c in contours])
+                _merge_multi_segment([contour.reshape(-1, 2) for contour in contours])
             ).astype(np.float32)
         else:
             outline = contours[0].reshape(-1, 2).astype(np.float32)
