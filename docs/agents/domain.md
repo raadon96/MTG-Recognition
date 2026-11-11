@@ -7,6 +7,7 @@ How the engineering skills should consume this repo's domain documentation when 
 - **`GLOSSARY.md`** at the repo root, or
 - **`GLOSSARY-MAP.md`** at the repo root if it exists: it points at one `GLOSSARY.md` per context. Read each one relevant to the topic.
 - **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+- **`docs/research/card-details-summary.md`**: what each printing shows on the card, by frame, collector style and layout, and where each detail sits relative to the name crop and the collector information crop. Read it before working on scoring, the reading or the catalog's printed values. It is a copy dated with its MTGJSON release, and its HTML page `card-details-summary.html` shows the same tables on annotated cards.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
