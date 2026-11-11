@@ -24,6 +24,8 @@ from mtg_recognition.benchmark.results import (
 )
 from mtg_recognition.cli import cli
 from mtg_recognition.cli.benchmark import comparison_report, totals_line
+from mtg_recognition.engine import pipeline
+from mtg_recognition.engine.pipeline import RecognitionResult
 from mtg_recognition.reference.catalog import CatalogPrinting
 from mtg_recognition.reference.layout import ReferenceData
 
@@ -272,6 +274,30 @@ def _write_catalog(root) -> None:
         )
         session.commit()
     engine.dispose()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("without_git", [False, True], ids=["git", "no git"])
+def test_run_outside_a_git_repository_records_an_unknown_commit(
+    in_tmp, monkeypatch, without_git
+) -> None:
+    class StubPipeline:
+        def recognize(self, query_image, debug=False):
+            return RecognitionResult(cards=[], error=None)
+
+    _write_catalog(in_tmp)
+    DATASET_ROOT.mkdir(parents=True)
+    (DATASET_ROOT / "bolt.jpg").write_bytes(b"")
+    (DATASET_ROOT / MANIFEST_NAME).write_text(json.dumps({"bolt.jpg": [BOLT]}))
+    # on the pipeline module: `mtg benchmark run` imports Pipeline when it runs
+    monkeypatch.setattr(pipeline, "Pipeline", StubPipeline)
+    if without_git:
+        # as in the Docker image
+        monkeypatch.setenv("PATH", "")
+
+    CliRunner().invoke(cli, ["benchmark", "run"])
+
+    assert read_results(LATEST_PATH).commit == "unknown"
 
 
 @pytest.mark.unit
