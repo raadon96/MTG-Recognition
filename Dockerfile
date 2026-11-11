@@ -4,8 +4,6 @@ FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    UV_LINK_MODE=copy \
-    UV_PROJECT_ENVIRONMENT=/app/.venv \
     PATH="/app/.venv/bin:${PATH}" \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_SERVER_PORT=8501
@@ -13,25 +11,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Sets runtime/build environment variables:
     # - PYTHONDONTWRITEBYTECODE=1: avoid .pyc files
     # - PYTHONUNBUFFERED=1: immediate logs to stdout/stderr
-    # - UV_LINK_MODE=copy: uv copies files instead of hard-link behavior (safer in Docker layers)
-    # - UV_PROJECT_ENVIRONMENT=/app/.venv: tell uv to use /app/.venv
-    # - PATH="/app/.venv/bin:${PATH}": make venv binaries default (python, streamlit, etc.)
+    # - PATH="/app/.venv/bin:${PATH}": make venv binaries default (python, streamlit, mtg, etc.)
     # - Streamlit host/port defaults
 
 WORKDIR /app
 # All following relative paths are under /app.
 
-RUN groupadd --system --gid 10001 appuser \
-    && useradd --system --uid 10001 --gid appuser --create-home --home-dir /home/appuser appuser
-# Create unpriviledged (i.e. non-root) user for security
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
-# Copies uv and uvx binaries from official uv image into your image (no separate install step needed)
-
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    git \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
@@ -41,18 +28,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Installs system libraries:
-#     - git (needed for pip install git+...)
+#     - curl (downloads the PaddleX font below)
 #     - OpenCV/ML runtime libs (libgl1, libglib2.0-0, etc.)
 #     Cleans apt cache at end to keep image smaller.
+# No git here: only the build stage needs it, and `mtg benchmark run` records an
+# unknown commit without it.
 
 
-FROM base AS deps
-# Create a dependency-only stage.
+FROM base AS build
+# Builds the venv. Only the finished venv leaves this stage, so uv and git stay
+# out of the runtime image.
+
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+# git: uv installs clip from its git repository.
+
+ENV UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+
+# - UV_LINK_MODE=copy: uv copies files from its cache instead of linking them (the cache is a mount, gone after the RUN)
+# - UV_PROJECT_ENVIRONMENT=/app/.venv: tell uv to use /app/.venv
+
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /usr/local/bin/
+# uv at a fixed version, so that builds can be repeated.
 
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
-
+# Dependencies first, in their own layer, so a change to src doesn't install them again.
 # What --mount=type=cache means
 #     - This is a BuildKit cache mount available only during that RUN.
 #     - It mounts a persistent cache directory at /root/.cache/uv.
@@ -65,50 +68,51 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 #     - --no-dev: skip dev deps
 #     - --no-install-project: install dependencies only (not local package yet)
 
+COPY README.md ./
+COPY src ./src
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
+# Installs the project (mtg-recognition) into the venv, as an editable install
+# that points at /app/src, which the runtime stage copies to the same path.
+
 
 FROM base AS runtime
 
 ENV ULTRALYTICS_ASSET_CACHE_DIR=/home/appuser/.cache/ultralytics-assets
 # Set env var directory to mount Docker volume
 
-COPY --from=deps /app/.venv /app/.venv
-# Copy prebuilt virtualenv from deps stage (fast, reusable).
+RUN groupadd --system --gid 10001 appuser \
+    && useradd --system --uid 10001 --gid appuser --create-home --home-dir /home/appuser appuser
+# Create unpriviledged (i.e. non-root) user for security
 
-COPY pyproject.toml uv.lock ./
-COPY README.md ./
+COPY --from=build --chown=appuser:appuser /app/.venv /app/.venv
+# The finished venv, owned by appuser as it is copied. A `chown -R` afterwards
+# would store the whole venv a second time, in its own layer.
+
 COPY src ./src
-# Copy project metadata + source
+# The source, which the editable install in the venv points at
 
 COPY data/reference/catalog.sqlite ./data/reference/catalog.sqlite
 # Copy the catalog, which holds the pHashes
 
 COPY models/segmentation/prod ./models/segmentation/prod
-# COPY mobileclip_blt.ts ./
-# COPY mobileclip2_b.ts ./
-# Copy segmentation models and mobileclip files
+# Copy segmentation models
 
 COPY models/ocr/prod ./models/ocr/prod
 # Copy OCR models
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-# Copy startup script (entry point) into the image.
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
-# Again uses build cache mount for uv cache.
-# This installs your local project (mtg-recognition) into the venv in runtime stage.
-
-# RUN --mount=type=cache,target=/root/.cache/uv \
-#     uv run paddlex --install hpi-cpu
-# Install PaddleX CPU high-performance inference plugin in the uv-managed environment.
-
-RUN mkdir -p "${ULTRALYTICS_ASSET_CACHE_DIR}" \
-    && mkdir -p /home/appuser/.paddlex/fonts \
+RUN mkdir -p "${ULTRALYTICS_ASSET_CACHE_DIR}" /home/appuser/.paddlex/fonts /app/output \
     && curl -fsSL https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/simfang.ttf \
        -o /home/appuser/.paddlex/fonts/simfang.ttf \
-    && chown -R appuser:appuser /app /home/appuser/.cache /home/appuser/.paddlex
-# Create cache directory and give ownership to appuser, so downloads can write there.
+    && ln -s "${ULTRALYTICS_ASSET_CACHE_DIR}/mobileclip_blt.ts" /app/mobileclip_blt.ts \
+    && ln -s "${ULTRALYTICS_ASSET_CACHE_DIR}/mobileclip2_b.ts" /app/mobileclip2_b.ts \
+    && chown -R appuser:appuser /home/appuser/.cache /home/appuser/.paddlex /app/output
+# Only the folders the app writes to change owner:
+#     - the ultralytics asset cache, where the volume keeps the MobileCLIP files
+#       between containers. ultralytics downloads them into the working directory,
+#       so /app/<file> links into the cache, and the download goes there.
+#     - the PaddleX font folder
+#     - /app/output, where `mtg benchmark run` writes its results
 
 USER appuser
 # Run as unpriviledged (i.e. non-root) user
@@ -118,9 +122,6 @@ EXPOSE 8501
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD /app/.venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)"
-
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-# Set start-up script as ENTRYPOINT, so it runs on every container start before Streamlit.
 
 CMD ["/app/.venv/bin/streamlit", "run", "src/mtg_recognition/app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
 # Container startup command:

@@ -276,17 +276,25 @@ def _printing_names(uuids: Sequence[str | None], printings: dict[str, Printing])
 
 def _commit() -> str:
     """The commit the results are made at, with `-dirty` when tracked files have
-    uncommitted changes, which the results then reflect too.
+    uncommitted changes, which the results then reflect too, and `unknown` outside
+    a git repository or without git, as in the Docker image.
     """
-    head = subprocess.run(
-        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-    ).stdout.strip()
-    status = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except FileNotFoundError:
+        click.echo("Commit unknown: git isn't installed", err=True)
+        return "unknown"
+    except subprocess.CalledProcessError as error:
+        click.echo(f"Commit unknown: {error.stderr.strip()}", err=True)
+        return "unknown"
     return f"{head}-dirty" if status else head
 
 
