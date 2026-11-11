@@ -279,9 +279,13 @@ def display_recognized_detail(result: Recognized, debug: bool):
                     ]
                 ),
             )
+            # the badges' colours, in plain CSS: background_gradient would
+            # need matplotlib
             st.dataframe(
-                score_matrix.style.background_gradient(
-                    cmap="RdYlGn", vmin=0, vmax=100
+                score_matrix.style.map(
+                    lambda score: (
+                        f"background-color: {_score_color(score)}; color: white"
+                    )
                 ).format("{:.1f}"),
                 width="stretch",
             )
