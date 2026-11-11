@@ -42,7 +42,7 @@ _BYPASS_BORDER_MAX_MEAN = 100
 
 _YOLO_CLASSES = ["book cover", "art work"]
 _YOLO_PREDICT_KWARGS: dict[str, Any] = {
-    "conf": 0.1,  # Higher confidence to filter weak overlaps
+    "conf": 0.05,  # 0.1 missed cards on the 9-card scan with border gaps (#195)
     "iou": 0.0,  # Lower IoU for more aggressive suppression
     "agnostic_nms": True,  # Prevent overlaps between different classes
     "overlap_mask": False,  # Ensure masks do not overlap at the pixel level
