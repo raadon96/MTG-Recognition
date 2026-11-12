@@ -30,7 +30,7 @@ Measured on the 1,291 card images of #196 replayed through each variant (#197), 
 - **Candidate-driven, over the details shown**, adopted: 702. Old frames gain most (1993: 20 to 41), and the artist's field score rises from 71 to 93, where the blocklist and token filter used to drop or add words.
 - **Candidate-driven, with positions** (the collector details on the bottom two lines, power/toughness in the rightmost token): 702 too, with no consistent gain across the tune and confirm halves. The copyright line reaches further right than the power/toughness, so the rightmost-token rule failed. Not adopted.
 
-The benchmark was unchanged by each variant with v6 small (255 / 257 / 257). With today's PP-OCRv5_mobile, the adopted rules leave the totals of exact printing, card count and same card name unchanged against the baseline.
+The benchmark was unchanged by each variant with v6 small (255 / 257 / 257). With PP-OCRv5_mobile, the OCR model when this was decided, the adopted rules leave the totals of exact printing, card count and same card name unchanged against the baseline.
 
 ## Consequences
 
