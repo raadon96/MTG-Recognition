@@ -39,13 +39,17 @@ def load_pipeline():
     return Pipeline(k_phash_candidates=20, k_final_results=RANKING_SIZE)
 
 
-def _score_color(score: float) -> str:
-    """Badge colour for a 0–100 score."""
+def _score_style(score: float) -> str:
+    """The CSS colours of a 0–100 score: a pale fill with dark text of the same
+    hue. White text on saturated fills fell short of WCAG AA contrast (#237); these
+    reach at least 6.5 : 1, and set both colours so they read the same in light and
+    dark themes.
+    """
     if score >= 50:
-        return "#6BA76B"
+        return "background-color: #E3F1E3; color: #2F5E2F"
     if score >= 25:
-        return "#CC9900"
-    return "#CC6600"
+        return "background-color: #FAF0D2; color: #6B5200"
+    return "background-color: #F9E1D2; color: #7A3A00"
 
 
 def create_thumbnail_grid(results: list[UploadResult]):
@@ -79,10 +83,10 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     # Color-coded score indicator (scores are 0–100)
                     score = best.score
                     st.markdown(
-                        f'<div style="background-color: {_score_color(score)}; '
+                        f'<div style="{_score_style(score)}; '
                         f"padding: 2px 6px; border-radius: 3px; "
-                        "text-align: center; font-size: 12px; font-weight: bold; "
-                        'color: white;">'
+                        "text-align: center; font-size: 12px; font-weight: bold;"
+                        '">'
                         f"{score:.1f}</div>",
                         unsafe_allow_html=True,
                     )
@@ -204,9 +208,9 @@ def display_recognized_detail(result: Recognized, debug: bool):
         # Color-coded score (scores are 0–100)
         score = best.score
         st.markdown(
-            f'<div style="background-color: {_score_color(score)}; '
+            f'<div style="{_score_style(score)}; '
             f"padding: 4px 8px; border-radius: 3px; "
-            f'text-align: center; font-weight: bold; color: white;">'
+            f'text-align: center; font-weight: bold;">'
             f"{score:.1f}</div>",
             unsafe_allow_html=True,
         )
@@ -268,17 +272,24 @@ def display_recognized_detail(result: Recognized, debug: bool):
             img_url = entry.printing.image_url
             st.image(img_url or PLACEHOLDER_IMAGE_URL)
             st.caption(f"**{entry.printing.name}**")
-            st.caption(f"Score: {entry.score:.2f}")
+            st.caption(f"Score: {entry.score:.1f}")
 
     # Debug: score matrix below the ranking
     if debug and best.breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
-            fields = [s.field for s in best.breakdown]
+            # the score first, then the field scores it is the weighted average of
+            score_columns = ["score", *(s.field for s in best.breakdown)]
             # Prefix each label with its rank so duplicate card names (reprints)
             # don't produce a non-unique index, which breaks pandas Styler. A
             # detail not shown is NaN.
             score_matrix = pd.DataFrame(
-                [{s.field: s.score for s in entry.breakdown} for entry in ranked],
+                [
+                    {
+                        "score": entry.score,
+                        **{s.field: s.score for s in entry.breakdown},
+                    }
+                    for entry in ranked
+                ],
                 index=pd.Index(
                     [
                         f"#{rank} {entry.printing.name}"
@@ -294,13 +305,9 @@ def display_recognized_detail(result: Recognized, debug: bool):
             # need matplotlib
             st.dataframe(
                 score_matrix.style.map(
-                    lambda score: (
-                        ""
-                        if pd.isna(score)
-                        else f"background-color: {_score_color(score)}; color: white"
-                    ),
-                    subset=fields,
-                ).format("{:.1f}", subset=fields, na_rep="not shown"),
+                    lambda score: "" if pd.isna(score) else _score_style(score),
+                    subset=score_columns,
+                ).format("{:.1f}", subset=score_columns, na_rep="not shown"),
                 width="stretch",
             )
 
