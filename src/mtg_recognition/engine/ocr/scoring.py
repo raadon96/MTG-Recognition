@@ -28,9 +28,13 @@ WEIGHTS = {
     "power_toughness": 1.0,
 }
 
+# the first year of every copyright range (`© 1993-2003`)
+COPYRIGHT_START = "1993"
+
 # OCR reads 0 as O or o next to a digit ("199o", "6o/350")
 _ZERO = re.compile(r"(?<=\d)[Oo]|[Oo](?=\d)")
 _DIGIT_RUN = re.compile(r"\d+")
+_YEAR = re.compile(r"(19|20)\d\d")
 _WORD = re.compile(r"[A-Z0-9]+")
 # OCR reads the slash between power and toughness as any of these
 _PT_SLASH = r"\s*[/|\\Il1)]\s*"
@@ -72,7 +76,7 @@ def rank(
             _whole_run("collector_number", printing.printed_collector_number, text),
             _base_set_size(printing, text),
             _artist(printing, text),
-            _whole_run("year", printing.printed_year, text),
+            _year(printing, text),
             _power_toughness(printing, text),
         ]
         # the name is always shown, so the weights never sum to 0
@@ -135,13 +139,36 @@ def _set_code(printing: Printing, text: _PreparedReading) -> FieldScore:
 
 
 def _whole_run(field: str, value: str | None, text: _PreparedReading) -> FieldScore:
-    """Found as a whole run of digits, so `14` isn't found in `149`; a range
-    year's end year (`1993-2001`) is one.
-    """
+    """Found as a whole run of digits, so `14` isn't found in `149`."""
     if value is None:
         return _not_shown(field)
     found = next((t for run, t in text.runs if run == value), None)
     return _found(field, value, found)
+
+
+def _year(printing: Printing, text: _PreparedReading) -> FieldScore:
+    """Found as a whole run, or as the start of a copyright range whose end OCR
+    didn't read. Older frames print `© 1993-2003`, the catalog holds the end
+    year, and OCR often reads only the start (`1993-`, `1993-20l0`). Every range
+    starts at 1993, so an open start counts for any printing that shows a year;
+    when the end was read (`1993-2003`), only that year counts.
+    """
+    year = printing.printed_year
+    if year is None:
+        return _not_shown("year")
+    found = next((t for run, t in text.runs if run == year), None)
+    if found is None:
+        # the last run is followed by nothing
+        pairs = pairwise([*text.runs, ("", "")])
+        found = next(
+            (
+                token
+                for (run, token), (next_run, _) in pairs
+                if run == COPYRIGHT_START and not _YEAR.fullmatch(next_run)
+            ),
+            None,
+        )
+    return _found("year", year, found)
 
 
 def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:

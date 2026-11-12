@@ -227,6 +227,38 @@ def test_a_year_is_not_found_inside_a_longer_run():
     assert field_scores(BOLT_M10, info=["20090"])["year"].score == 0.0
 
 
+@pytest.mark.parametrize(
+    "token",
+    [
+        "© 1993-20l0 Wizards",  # end year misread
+        "©1993–",  # en dash, end year lost
+        "© 1993 2O1I Wizards",  # dash lost
+    ],
+)
+def test_the_year_is_found_from_the_start_of_a_copyright_range(token):
+    printing = replace(BOLT_M10, printed_year="2010")
+
+    assert field_scores(printing, info=[token])["year"] == FieldScore(
+        "year", "2010", 100.0, token.replace("O", "0")
+    )
+
+
+@pytest.mark.parametrize("token", ["© 1993-2003 Wizards", "1993.2003 Wizards"])
+def test_the_start_of_a_range_whose_end_was_read_does_not_count(token):
+    # the range read is 2003's, so a printing whose range ends in 1997 misses
+    printing = replace(BOLT_M10, printed_year="1997")
+
+    assert field_scores(printing, info=[token])["year"].score == 0.0
+
+
+def test_the_start_of_a_copyright_range_is_not_found_inside_a_longer_run():
+    assert field_scores(BOLT_M10, info=["19934"])["year"].score == 0.0
+
+
+def test_the_start_of_a_copyright_range_does_not_count_for_a_printing_without_a_year():
+    assert field_scores(ALPHA_BOLT, info=["©1993-"])["year"].score is None
+
+
 # --- base set size ---
 
 
