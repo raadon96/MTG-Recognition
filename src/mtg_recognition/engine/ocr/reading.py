@@ -1,8 +1,8 @@
-"""Reading a card: what OCR finds printed on a card image (see Reading in
-GLOSSARY.md).
+"""Reading a card: the raw text OCR finds in a card image's name crop and
+collector information crop (see Reading in GLOSSARY.md).
 
-The reading reports what the card shows; comparing it with printings is scoring's
-job (`engine/ocr/scoring.py`).
+Nothing is extracted from the text here; scoring looks for each candidate's
+details in it (`engine/ocr/scoring.py`, ADR 0008).
 """
 
 from dataclasses import dataclass, field
@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 import cv2
 import numpy as np
 
-from mtg_recognition.engine.ocr import ocr_extraction, pp_ocr
+from mtg_recognition.engine.ocr import pp_ocr
 
 # OCR regions as fractions of the card image's height and width:
 # (top, bottom, left, right)
@@ -19,11 +19,6 @@ NAME_ROI = (0.04, 0.11, 0.06, 0.9)
 # Collector information (CR 213): set code, collector number, illustration credit,
 # copyright year; P/T sits at its right edge.
 COLLECTOR_INFORMATION_ROI = (0.88, 1.0, 0.05, 0.95)
-
-# for flavor text bleedthrough filtering in the collector information crop; the y
-# threshold is kept small so artist names near the top of the crop aren't discarded
-Y_TRESH_FRAC = 0.08
-X_RIGHT_FRAC = 0.90
 
 # PP-OCRv5_mobile_rec's native input height is 48 px; text below ~32 px reads worse.
 # RATIO_TEXT_TO_CROP: about how much of the collector information crop's height a
@@ -38,37 +33,17 @@ _MIN_DIM = 32
 
 
 @dataclass(frozen=True)
-class ReadingDebug:
-    """OCR artefacts from read_card for mismatch root-cause investigation, attached
-    to a Reading only when read_card is called with debug=True.
-    """
-
-    # The collector information crop OCR read, upscaled (BGR); the boxes are in
-    # its pixels.
-    collector_information_crop: np.ndarray
-    # Raw OCR tokens of the collector information (flavor-text filtered), with their
-    # confidences and boxes.
-    texts: list[str]
-    scores: list[float]
-    boxes: list[tuple[int, int, int, int]]
-
-
-@dataclass(frozen=True)
 class Reading:
-    """The details read off one card's image (see GLOSSARY.md), named after the
-    Printing fields they are compared with. None when nothing was read.
+    """The raw text of one card image's name crop and collector information crop,
+    each crop's tokens in reading order with their confidences and boxes.
     """
 
-    name: str | None = None
-    # Every token that may be the set code: OCR can't tell which one it is.
-    possible_set_codes: list[str] = field(default_factory=list)
-    collector_number: str | None = None
-    base_set_size: str | None = None
-    artist: str | None = None
-    copyright_year: str | None = None
-    power: str | None = None
-    toughness: str | None = None
-    debug: ReadingDebug | None = None
+    name: pp_ocr.TextLines
+    collector_information: pp_ocr.TextLines
+    # The collector information crop OCR read, upscaled (BGR), which its boxes are
+    # in; kept only when read_card is called with debug=True. Left out of ==, which
+    # an array can't answer with one bool.
+    collector_information_crop: np.ndarray | None = field(default=None, compare=False)
 
 
 def read_card(
@@ -79,7 +54,7 @@ def read_card(
     Args:
         ocr: The models from pp_ocr.load_pp_ocr.
         card_image: Card image (BGR format from OpenCV).
-        debug: When True, the reading holds a ReadingDebug.
+        debug: When True, the reading keeps the collector information crop.
 
     Raises:
         RuntimeError: If OCR fails.
@@ -106,46 +81,14 @@ def read_card(
     # read both crops; onnxruntime's errors don't derive from RuntimeError
     try:
         name_lines = pp_ocr.read_text(ocr, name_crop)
-        lines = pp_ocr.read_text(ocr, collector_information_crop)
+        collector_information_lines = pp_ocr.read_text(ocr, collector_information_crop)
     except Exception as e:
         raise RuntimeError(f"{type(e).__name__}: {e}") from e
-    texts, boxes, scores = lines.texts, lines.boxes, lines.scores
-
-    # drop flavor-text tokens: tokens near the top of the crop and not in the
-    # far-right column (where P/T is) are flavor text that bled into it
-    texts, boxes, scores = ocr_extraction.filter_flavor_text_zone(
-        texts,
-        boxes,
-        scores,
-        y_thresh_frac=Y_TRESH_FRAC,
-        x_right_frac=X_RIGHT_FRAC,
-    )
-
-    # extract the fields
-    collector_number, base_set_size = (
-        ocr_extraction.extract_collector_number_and_base_set_size(texts)
-    )
-    power, toughness = ocr_extraction.extract_power_toughness(texts)
 
     return Reading(
-        name=ocr_extraction.extract_card_name(name_lines.texts),
-        possible_set_codes=ocr_extraction.extract_possible_set_codes(texts),
-        collector_number=collector_number,
-        base_set_size=base_set_size,
-        artist=ocr_extraction.extract_artist_name(texts),
-        copyright_year=ocr_extraction.extract_copyright_year(texts),
-        power=power,
-        toughness=toughness,
-        debug=(
-            ReadingDebug(
-                collector_information_crop=collector_information_crop,
-                texts=texts,
-                scores=scores,
-                boxes=boxes,
-            )
-            if debug
-            else None
-        ),
+        name=name_lines,
+        collector_information=collector_information_lines,
+        collector_information_crop=collector_information_crop if debug else None,
     )
 
 

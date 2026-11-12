@@ -15,10 +15,9 @@ from mtg_recognition.app.uploads import (
     export_bytes,
     upload_results,
 )
-from mtg_recognition.engine.ocr.reading import Reading, ReadingDebug
 from mtg_recognition.engine.pipeline import CardResult, RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
-from tests.unit.engine.builders import card_image, printing
+from tests.unit.engine.builders import card_image, printing, reading
 
 NAME = "card.jpg"
 DATA = b"uploaded bytes"
@@ -97,23 +96,18 @@ def test_every_kind_of_result_holds_the_query_image(recognition):
     assert result.query_image == DATA
 
 
-def test_a_recognized_result_holds_the_readings_debug_artefacts():
-    debug = ReadingDebug(
-        collector_information_crop=np.zeros((20, 100, 3), dtype=np.uint8),
-        texts=["M10·EN"],
-        scores=[0.9],
-        boxes=[(0, 0, 9, 9)],
-    )
+def test_a_recognized_result_holds_the_reading():
+    card_reading = reading("Card p0", ["M10·EN"])
     card = CardResult(
         card_image=card_image(),
         ranked=[RankedPrinting(printing("p0"), 100.0)],
-        reading=Reading(name="Card p0", debug=debug),
+        reading=card_reading,
     )
 
     [result] = upload_results(NAME, DATA, _recognition(card))
 
     assert isinstance(result, Recognized)
-    assert result.reading_debug is debug
+    assert result.reading is card_reading
 
 
 def test_csv_export_has_one_row_per_result_with_the_best_printing():

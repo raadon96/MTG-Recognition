@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from mtg_recognition.engine.ocr.reading import ReadingDebug
+from mtg_recognition.engine.ocr.reading import Reading
 from mtg_recognition.engine.pipeline import RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
 
@@ -49,7 +49,7 @@ class Recognized:
     query_image: bytes  # as uploaded
     ranked: list[RankedPrinting]  # best first, never empty
     card_image_jpeg: bytes  # for display only
-    reading_debug: ReadingDebug | None
+    reading: Reading | None  # None when OCR failed
 
 
 @dataclass(slots=True)
@@ -92,9 +92,7 @@ def upload_results(
                     data,
                     ranked=card.ranked,
                     card_image_jpeg=_encode_jpeg(card.card_image),
-                    reading_debug=(
-                        card.reading.debug if card.reading is not None else None
-                    ),
+                    reading=card.reading,
                 )
             )
         else:

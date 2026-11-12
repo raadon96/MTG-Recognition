@@ -109,11 +109,13 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
             raw_texts: list[str] = []
             raw_scores: list[float] = []
             raw_boxes: list[tuple[int, int, int, int]] = []
-            reading_debug = card.reading.debug if card.reading is not None else None
-            if reading_debug is not None:
-                raw_texts = reading_debug.texts
-                raw_scores = reading_debug.scores
-                raw_boxes = reading_debug.boxes
+            if card.reading is not None:
+                lines = card.reading.collector_information
+                raw_texts, raw_scores, raw_boxes = (
+                    lines.texts,
+                    lines.scores,
+                    lines.boxes,
+                )
 
             # Terminal output
             prefix = f"  [card {card_idx}]" if n_cards > 1 else " "

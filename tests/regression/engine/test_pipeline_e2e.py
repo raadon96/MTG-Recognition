@@ -32,14 +32,14 @@ def test_a_card_sized_image_gives_one_card_ranking_k_final_results(pipeline):
 
 
 @pytest.mark.slow
-def test_the_reading_holds_debug_artefacts_only_in_debug_mode(pipeline):
+def test_the_reading_keeps_the_crop_only_in_debug_mode(pipeline):
     [plain] = pipeline.recognize(card_image(), debug=False).cards
     [debugged] = pipeline.recognize(card_image(), debug=True).cards
 
     assert plain.reading is not None
-    assert plain.reading.debug is None
+    assert plain.reading.collector_information_crop is None
     assert debugged.reading is not None
-    assert debugged.reading.debug is not None
+    assert debugged.reading.collector_information_crop is not None
 
 
 @pytest.mark.slow

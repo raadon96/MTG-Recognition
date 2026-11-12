@@ -188,7 +188,7 @@ class CatalogPrinting(
     # number: str = Field(default=None) # Use with composite index
     # baseSetSize: str = Field(default=None) # Use with composite index
     # The year of the set's release date, set when the catalog is built. Scoring
-    # compares it with the copyright year in a card's reading.
+    # looks for printedYear, the year the card shows, instead.
     setReleaseYear: str | None = Field(None, index=False)
     printedYear: str | None = Field(default=None)
     # shows its own details and its collector number has no suffix (`254★`)
