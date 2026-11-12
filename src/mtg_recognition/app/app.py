@@ -1,5 +1,6 @@
 import contextlib
 
+import cv2
 import pandas as pd
 import streamlit as st
 
@@ -38,13 +39,21 @@ def load_pipeline():
     return Pipeline(k_phash_candidates=20, k_final_results=RANKING_SIZE)
 
 
-def _score_color(score: float) -> str:
-    """Badge colour for a 0–100 score."""
-    if score >= 50:
-        return "#6BA76B"
-    if score >= 25:
-        return "#CC9900"
-    return "#CC6600"
+def _score_style(score: float) -> str:
+    """The CSS colours of a 0–100 score: a vibrant green, amber or red at 25%
+    opacity, with a border at 50%.
+
+    The theme's background shows through, so one fill suits light and dark themes,
+    and the text keeps the theme's colour, which reads on either (#237).
+    st.dataframe ignores the border.
+    """
+    if score >= 75:
+        rgb = "34, 197, 94"
+    elif score >= 50:
+        rgb = "245, 158, 11"
+    else:
+        rgb = "239, 68, 68"
+    return f"background-color: rgba({rgb}, 0.25); border: 1px solid rgba({rgb}, 0.5)"
 
 
 def create_thumbnail_grid(results: list[UploadResult]):
@@ -78,10 +87,10 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     # Color-coded score indicator (scores are 0–100)
                     score = best.score
                     st.markdown(
-                        f'<div style="background-color: {_score_color(score)}; '
-                        f"padding: 2px 6px; border-radius: 3px; "
-                        "text-align: center; font-size: 12px; font-weight: bold; "
-                        'color: white;">'
+                        f'<div style="{_score_style(score)}; '
+                        f"padding: 2px 6px; border-radius: 6px; "
+                        "text-align: center; font-size: 12px; font-weight: bold;"
+                        '">'
                         f"{score:.1f}</div>",
                         unsafe_allow_html=True,
                     )
@@ -174,7 +183,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     ranked = result.ranked
     best = ranked[0]
     best_printing = best.printing
-    reading_debug = result.reading_debug
+    reading = result.reading
 
     # Main layout: 3 columns for images + 1 column for metadata
     col1, col2, col3, col4 = st.columns([1.2, 1.2, 1.2, 1])
@@ -203,9 +212,9 @@ def display_recognized_detail(result: Recognized, debug: bool):
         # Color-coded score (scores are 0–100)
         score = best.score
         st.markdown(
-            f'<div style="background-color: {_score_color(score)}; '
-            f"padding: 4px 8px; border-radius: 3px; "
-            f'text-align: center; font-weight: bold; color: white;">'
+            f'<div style="{_score_style(score)}; '
+            f"padding: 4px 8px; border-radius: 6px; "
+            f'text-align: center; font-weight: bold;">'
             f"{score:.1f}</div>",
             unsafe_allow_html=True,
         )
@@ -221,36 +230,40 @@ def display_recognized_detail(result: Recognized, debug: bool):
         if best_printing.image_url:
             st.markdown(f"[Scryfall]({best_printing.image_url})")
 
-    # Debug expanders: annotated crop, raw OCR output, reading vs. best printing
-    if debug and reading_debug is not None:
-        if reading_debug.annotated_image is not None:
+    # Debug expanders: the crop OCR read with its boxes, the reading's raw text,
+    # and what scoring looked for in it for the best printing
+    if debug and reading is not None:
+        if reading.collector_information_crop is not None:
             with st.expander(
-                "🔬 Annotated Information Below the Text Box", expanded=True
+                "🔬 Information Below the Text Box — OCR Boxes", expanded=True
             ):
-                st.image(reading_debug.annotated_image, width="stretch")
+                crop = reading.collector_information_crop.copy()
+                for x1, y1, x2, y2 in reading.collector_information.boxes:
+                    cv2.rectangle(crop, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                st.image(crop, channels="BGR", width="stretch")
 
-        with st.expander(
-            "📄 Information Below the Text Box — OCR Tokens (flavor-text filtered)",
-            expanded=True,
-        ):
-            st.json(dict(text=reading_debug.texts), width="stretch")
+        with st.expander("📄 Reading — OCR Tokens", expanded=True):
+            st.json(
+                {
+                    "name": reading.name.texts,
+                    "collector information": reading.collector_information.texts,
+                },
+                width="stretch",
+            )
 
     if debug and best.breakdown:
         with st.expander("📊 Table 1 — Reading vs. Best Printing", expanded=True):
-            df_prop = (
-                pd.DataFrame(
-                    [
-                        {
-                            "field": s.field,
-                            "read": s.read,
-                            "best printing": s.printed,
-                        }
-                        for s in best.breakdown
-                    ]
-                )
-                .set_index("field")
-                .astype(str)
-            )
+            df_prop = pd.DataFrame(
+                [
+                    {
+                        "field": s.field,
+                        "looked for": s.value or "",
+                        "found in": s.text or "",
+                        "score": ("not shown" if s.score is None else f"{s.score:.1f}"),
+                    }
+                    for s in best.breakdown
+                ]
+            ).set_index("field")
             st.dataframe(df_prop, width="stretch")
 
     # Show the ranking below
@@ -263,27 +276,63 @@ def display_recognized_detail(result: Recognized, debug: bool):
             img_url = entry.printing.image_url
             st.image(img_url or PLACEHOLDER_IMAGE_URL)
             st.caption(f"**{entry.printing.name}**")
-            st.caption(f"Score: {entry.score:.2f}")
+            st.caption(f"Score: {entry.score:.1f}")
 
     # Debug: score matrix below the ranking
     if debug and best.breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
+            # The score first, then the field scores it is the weighted average of.
             # Prefix each label with its rank so duplicate card names (reprints)
-            # don't produce a non-unique index, which breaks pandas Styler.
-            score_matrix = pd.DataFrame(
-                [{s.field: s.score for s in entry.breakdown} for entry in ranked],
+            # don't produce a non-unique index, which breaks pandas Styler. A
+            # detail not shown is NaN.
+            scores = pd.DataFrame(
+                [
+                    {
+                        "score": entry.score,
+                        **{s.field: s.score for s in entry.breakdown},
+                    }
+                    for entry in ranked
+                ],
                 index=pd.Index(
                     [
                         f"#{rank} {entry.printing.name}"
                         for rank, entry in enumerate(ranked, 1)
                     ]
                 ),
+                dtype=float,
             )
+            # st.dataframe shows NaN as "None" whatever the Styler's na_rep, so the
+            # table holds the text to show, coloured from the numbers. The badges'
+            # colours, in plain CSS: background_gradient would need matplotlib.
+            styles = scores.map(lambda s: "" if pd.isna(s) else _score_style(s))
+            score_matrix = scores.map(
+                lambda s: "not shown" if pd.isna(s) else f"{s:.1f}"
+            )
+            score_matrix["decided by tie-break"] = [
+                "yes" if entry.decided_by_tie_break else "" for entry in ranked
+            ]
             st.dataframe(
-                score_matrix.style.background_gradient(
-                    cmap="RdYlGn", vmin=0, vmax=100
-                ).format("{:.1f}"),
+                score_matrix.style.apply(
+                    lambda _: styles, axis=None, subset=list(scores.columns)
+                ),
                 width="stretch",
+            )
+
+            # legend: what each colour and "not shown" mean
+            chips = " ".join(
+                f'<span style="{_score_style(score)}; padding: 1px 8px; '
+                f'border-radius: 6px;">{label}</span>'
+                for score, label in [
+                    (75, "75 and above"),
+                    (50, "50 to 75"),
+                    (0, "below 50"),
+                ]
+            )
+            st.markdown(
+                f'<span style="font-size: 0.875rem;">{chips} &nbsp;·&nbsp; '
+                "<i>not shown</i>: the printing doesn't show this detail on the "
+                "card, so it doesn't count towards the score</span>",
+                unsafe_allow_html=True,
             )
 
 

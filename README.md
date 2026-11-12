@@ -53,7 +53,6 @@ http://localhost:8501
 
 - The first startup may take longer while models and services initialize.
 - The container runs as a non-root user and includes a Docker healthcheck.
-- MobileCLIP assets are persisted in a named Docker volume (`mtg_ultra_cache`), so large files are downloaded once and reused across restarts.
 - Press `Ctrl+C` to stop when running in the foreground.
 
 ### Useful Commands

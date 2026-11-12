@@ -17,31 +17,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 # All following relative paths are under /app.
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    libgl1 \
-    libglib2.0-0 \
-    libgomp1 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Installs system libraries:
-#     - curl (downloads the PaddleX font below)
-#     - OpenCV/ML runtime libs (libgl1, libglib2.0-0, etc.)
-#     Cleans apt cache at end to keep image smaller.
-# No git here: only the build stage needs it, and `mtg benchmark run` records an
-# unknown commit without it.
+# No system packages: opencv-python-headless needs no GUI libraries, and numba
+# (through rembg) uses its own thread pool without libgomp1. No git either:
+# `mtg benchmark run` records an unknown commit without it.
 
 
 FROM base AS build
-# Builds the venv. Only the finished venv leaves this stage, so uv and git stay
-# out of the runtime image.
-
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-# git: uv installs clip from its git repository.
+# Builds the venv. Only the finished venv leaves this stage, so uv stays out of
+# the runtime image.
 
 ENV UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/app/.venv
@@ -78,9 +61,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM base AS runtime
 
-ENV ULTRALYTICS_ASSET_CACHE_DIR=/home/appuser/.cache/ultralytics-assets
-# Set env var directory to mount Docker volume
-
 RUN groupadd --system --gid 10001 appuser \
     && useradd --system --uid 10001 --gid appuser --create-home --home-dir /home/appuser appuser
 # Create unpriviledged (i.e. non-root) user for security
@@ -101,18 +81,9 @@ COPY models/segmentation/prod ./models/segmentation/prod
 COPY models/ocr/prod ./models/ocr/prod
 # Copy OCR models
 
-RUN mkdir -p "${ULTRALYTICS_ASSET_CACHE_DIR}" /home/appuser/.paddlex/fonts /app/output \
-    && curl -fsSL https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/simfang.ttf \
-       -o /home/appuser/.paddlex/fonts/simfang.ttf \
-    && ln -s "${ULTRALYTICS_ASSET_CACHE_DIR}/mobileclip_blt.ts" /app/mobileclip_blt.ts \
-    && ln -s "${ULTRALYTICS_ASSET_CACHE_DIR}/mobileclip2_b.ts" /app/mobileclip2_b.ts \
-    && chown -R appuser:appuser /home/appuser/.cache /home/appuser/.paddlex /app/output
-# Only the folders the app writes to change owner:
-#     - the ultralytics asset cache, where the volume keeps the MobileCLIP files
-#       between containers. ultralytics downloads them into the working directory,
-#       so /app/<file> links into the cache, and the download goes there.
-#     - the PaddleX font folder
-#     - /app/output, where `mtg benchmark run` writes its results
+RUN mkdir -p /app/output && chown appuser:appuser /app/output
+# Only the folder the app writes to changes owner: /app/output, where
+# `mtg benchmark run` writes its results
 
 USER appuser
 # Run as unpriviledged (i.e. non-root) user

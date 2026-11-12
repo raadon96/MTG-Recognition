@@ -8,17 +8,11 @@ from click.testing import CliRunner
 
 from mtg_recognition.cli import cli
 from mtg_recognition.engine import pipeline
-from mtg_recognition.engine.ocr.reading import ReadingDebug
+from mtg_recognition.engine.ocr.pp_ocr import TextLines
 from mtg_recognition.engine.pipeline import CardResult, RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
-from tests.unit.engine.builders import card_image, printing, reading_of
+from tests.unit.engine.builders import card_image, printing, reading
 
-DEBUG = ReadingDebug(
-    annotated_image=None,
-    texts=["Card p0"],
-    scores=[0.99],
-    boxes=[(0, 0, 10, 10)],
-)
 ONE_CARD = RecognitionResult(
     cards=[
         CardResult(
@@ -27,7 +21,10 @@ ONE_CARD = RecognitionResult(
                 RankedPrinting(printing("p0"), 100.0),
                 RankedPrinting(printing("p3"), 40.0),
             ],
-            reading=replace(reading_of(printing("p0")), debug=DEBUG),
+            reading=replace(
+                reading("Card p0"),
+                collector_information=TextLines(["Card p0"], [0.99], [(0, 0, 10, 10)]),
+            ),
         )
     ],
     error=None,
@@ -102,7 +99,7 @@ def test_cli_writes_the_ocr_fallback_to_the_output_json(monkeypatch, tmp_path):
                 card_image=card_image(3),
                 ranked=[RankedPrinting(printing("p0"), 0.0)],
                 reading=None,
-                ocr_error="RuntimeError: paddle exploded",
+                ocr_error="RuntimeError: OCR exploded",
             )
         ],
         error=None,
@@ -113,7 +110,7 @@ def test_cli_writes_the_ocr_fallback_to_the_output_json(monkeypatch, tmp_path):
     assert result.exit_code == 0, result.output
     [query_image] = json.loads(output.read_text())
     [card] = query_image["cards"]
-    assert card["ocr_error"] == "RuntimeError: paddle exploded"
+    assert card["ocr_error"] == "RuntimeError: OCR exploded"
 
 
 def test_cli_reports_an_error_without_a_card_count(monkeypatch, tmp_path):

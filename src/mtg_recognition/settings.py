@@ -32,8 +32,11 @@ class Settings(BaseSettings):
     MTGJSON_URL: str = "https://mtgjson.com/api/v5/AllPrintings.sqlite.zip"
     MODELS_DIR: Path = Path("models")
 
-    # --- Third-party env vars (pushed to os.environ on instantiation) ---
-    PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
+    # --- Inference ---
+    # CPU threads for onnxruntime, OpenCV and numba. Their defaults (one per
+    # core) oversubscribe the CPU: 4 measured 1.3x faster with the same results
+    # (#194), 8 the same as 4, 16 about 2x slower (#198).
+    THREAD_COUNT: int = 4
 
     # --- Derived paths (reference data paths: reference.layout.ReferenceData) ---
     @property
@@ -42,7 +45,7 @@ class Settings(BaseSettings):
 
     @property
     def YOLO_SEG_MODEL_PATH(self) -> Path:
-        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.pt"
+        return self.SEGMENTATION_MODEL_DIR / "yoloe-11s-seg.onnx"
 
     @property
     def OCR_DETECTION_MODEL_DIR(self) -> Path:
@@ -50,14 +53,14 @@ class Settings(BaseSettings):
 
     @property
     def OCR_RECOGNITION_MODEL_DIR(self) -> Path:
-        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv5_mobile_rec"
+        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv6_tiny_rec"
 
     @model_validator(mode="after")
     def _apply_third_party_env_vars(self) -> "Settings":
         """Push third-party vars to os.environ so libraries read them at import time."""
-        os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = str(
-            self.PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK
-        )
+        # numba (through rembg) reads its thread count once, when it is first
+        # imported. It ignores OMP_NUM_THREADS, even when it runs on OpenMP.
+        os.environ["NUMBA_NUM_THREADS"] = str(self.THREAD_COUNT)
         # rembg looks for its model files in U2NET_HOME
         os.environ["U2NET_HOME"] = str(self.SEGMENTATION_MODEL_DIR)
         return self

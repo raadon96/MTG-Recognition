@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from mtg_recognition.cli.segment import query_image_paths
+from mtg_recognition.engine import pipeline
 
 
 @click.command(name="recognize")
@@ -67,11 +68,7 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
     if output_file is not None:
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # imported here, not at the top: importing PaddleOCR takes seconds and prints
-    # a message, which every other `mtg` command would pay for
-    from mtg_recognition.engine.pipeline import Pipeline
-
-    pipeline = Pipeline(k_phash_candidates=k_phash, k_final_results=k)
+    recognizer = pipeline.Pipeline(k_phash_candidates=k_phash, k_final_results=k)
     total = len(img_paths)
     all_results: list[dict] = []
 
@@ -82,7 +79,7 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
         except ValueError:
             img_display = img_abs
 
-        recognition = pipeline.recognize(img_path, debug=True)
+        recognition = recognizer.recognize(img_path, debug=True)
         if recognition.error is not None:
             click.echo(
                 f"[{idx}/{total}] {img_display}  ERROR: {recognition.error}", err=True
@@ -112,11 +109,13 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
             raw_texts: list[str] = []
             raw_scores: list[float] = []
             raw_boxes: list[tuple[int, int, int, int]] = []
-            reading_debug = card.reading.debug if card.reading is not None else None
-            if reading_debug is not None:
-                raw_texts = reading_debug.texts
-                raw_scores = reading_debug.scores
-                raw_boxes = reading_debug.boxes
+            if card.reading is not None:
+                lines = card.reading.collector_information
+                raw_texts, raw_scores, raw_boxes = (
+                    lines.texts,
+                    lines.scores,
+                    lines.boxes,
+                )
 
             # Terminal output
             prefix = f"  [card {card_idx}]" if n_cards > 1 else " "

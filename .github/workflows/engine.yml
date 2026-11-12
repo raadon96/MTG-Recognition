@@ -62,17 +62,6 @@ jobs:
           path: data/benchmark
           key: ${{ steps.dataset.outputs.cache-primary-key }}
 
-      # Files the libraries download on first use: ultralytics' text encoder for
-      # the YOLOE classes, into the working directory, and PaddleX's font. They
-      # change only with the library versions. The rembg model is committed.
-      - id: model-downloads
-        uses: actions/cache/restore@v6
-        with:
-          path: |
-            mobileclip_blt.ts
-            ~/.paddlex/fonts
-          key: model-downloads-${{ hashFiles('uv.lock') }}
-
       - run: uv run pytest -m slow
 
       # Runs even when a slow test fails, so one run reports both.
@@ -84,12 +73,3 @@ jobs:
         with:
           name: benchmark-latest
           path: output/benchmark/latest.json
-
-      # After the tests and the benchmark, which are what download the files.
-      - if: ${{ !cancelled() && steps.model-downloads.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: |
-            mobileclip_blt.ts
-            ~/.paddlex/fonts
-          key: ${{ steps.model-downloads.outputs.cache-primary-key }}

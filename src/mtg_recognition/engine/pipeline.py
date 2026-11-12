@@ -5,7 +5,8 @@ import numpy as np
 from mtg_recognition.engine.image import ImageSource, prepare_image
 from mtg_recognition.engine.matching.phash import load_phashes, shortlist
 from mtg_recognition.engine.ocr import scoring
-from mtg_recognition.engine.ocr.reading import Reading, load_paddleocr, read_card
+from mtg_recognition.engine.ocr.pp_ocr import load_pp_ocr
+from mtg_recognition.engine.ocr.reading import Reading, read_card
 from mtg_recognition.engine.ranking import RankedPrinting
 from mtg_recognition.engine.segmentation import segment
 from mtg_recognition.reference.catalog import SqliteCardCatalog
@@ -60,7 +61,7 @@ class Pipeline:
         reference = ReferenceData.default()
         self.phashes = load_phashes(reference)
         self.catalog = SqliteCardCatalog(reference.catalog_path)
-        self.paddleocr = load_paddleocr()
+        self.ocr = load_pp_ocr()
 
     def recognize(
         self, query_image: ImageSource, debug: bool = False
@@ -74,7 +75,8 @@ class Pipeline:
         Args:
             query_image: A path, encoded bytes, a file-like upload, a PIL image or an
                 already-decoded BGR array.
-            debug: When True, each reading holds read_card's debug artefacts.
+            debug: When True, each reading keeps the collector information
+                crop OCR read.
         """
         try:
             # prepare and segment the query image
@@ -96,27 +98,26 @@ class Pipeline:
                     card_results.append(CardResult(card_image, ranked=[], reading=None))
                     continue
 
-                # read the card; when OCR fails, the empty reading scores every
-                # candidate 0 and ties keep pHash order, so the ranking falls
-                # back to pHash alone
-                reading: Reading | None = None
-                ocr_error: str | None = None
+                # read the card and rank the candidates by its reading; when OCR
+                # fails, the ranking falls back to pHash order, every score 0
                 try:
-                    reading = read_card(self.paddleocr, card_image, debug=debug)
+                    reading = read_card(self.ocr, card_image, debug=debug)
                 except RuntimeError as e:
-                    ocr_error = f"{type(e).__name__}: {e}"
-
-                # rank the candidates by the card's reading
-                ranked = scoring.rank(
-                    reading if reading is not None else Reading(),
-                    candidates,
-                    k=self.k_final_results,
-                )
-                card_results.append(
-                    CardResult(
-                        card_image, ranked=ranked, reading=reading, ocr_error=ocr_error
+                    ranked = [
+                        RankedPrinting(p, 0.0)
+                        for p in candidates[: self.k_final_results]
+                    ]
+                    card_results.append(
+                        CardResult(
+                            card_image,
+                            ranked=ranked,
+                            reading=None,
+                            ocr_error=f"{type(e).__name__}: {e}",
+                        )
                     )
-                )
+                    continue
+                ranked = scoring.rank(reading, candidates, k=self.k_final_results)
+                card_results.append(CardResult(card_image, ranked, reading))
         except Exception as e:
             return RecognitionResult(cards=[], error=f"{type(e).__name__}: {e}")
         return RecognitionResult(cards=card_results, error=None)
