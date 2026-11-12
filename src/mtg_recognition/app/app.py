@@ -47,9 +47,9 @@ def _score_style(score: float) -> str:
     and the text keeps the theme's colour, which reads on either (#237).
     st.dataframe ignores the border.
     """
-    if score >= 50:
+    if score >= 75:
         rgb = "34, 197, 94"
-    elif score >= 25:
+    elif score >= 50:
         rgb = "245, 158, 11"
     else:
         rgb = "239, 68, 68"
@@ -323,9 +323,9 @@ def display_recognized_detail(result: Recognized, debug: bool):
                 f'<span style="{_score_style(score)}; padding: 1px 8px; '
                 f'border-radius: 6px;">{label}</span>'
                 for score, label in [
-                    (50, "50 and above"),
-                    (25, "25 to 50"),
-                    (0, "below 25"),
+                    (75, "75 and above"),
+                    (50, "50 to 75"),
+                    (0, "below 50"),
                 ]
             )
             st.markdown(
