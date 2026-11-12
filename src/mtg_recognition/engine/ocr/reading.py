@@ -28,8 +28,9 @@ RATIO_TEXT_TO_CROP = 0.15
 MIN_UPSCALE = 1.0
 MAX_UPSCALE = 4.0
 
-# PP-OCR's text detection model requires both dimensions >= 32 px.
-_MIN_DIM = 32
+# Text detection needs both sides >= 32 px, and misses the name's text below about
+# 64 px; detection_input only scales down, so the crops are scaled up here.
+_MIN_SIDE = 64
 
 
 @dataclass(frozen=True)
@@ -75,8 +76,8 @@ def read_card(
     )
 
     # make both crops large enough for text detection
-    name_crop = _ensure_min_dim(name_crop, _MIN_DIM)
-    collector_information_crop = _ensure_min_dim(collector_information_crop, _MIN_DIM)
+    name_crop = _ensure_min_dim(name_crop, _MIN_SIDE)
+    collector_information_crop = _ensure_min_dim(collector_information_crop, _MIN_SIDE)
 
     # read both crops; onnxruntime's errors don't derive from RuntimeError
     try:

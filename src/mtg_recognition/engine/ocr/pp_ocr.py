@@ -3,7 +3,8 @@
 The models are the official ONNX exports of PP-OCRv5_mobile_det and
 PP-OCRv6_tiny_rec (#218). The pre- and post-processing are ours, copied from
 PaddleX's OCR pipeline with the settings PaddleOCR ran with, so the texts, scores
-and boxes are the same as it gave (#199, docs/adr/0007): resize and normalise,
+and boxes were the same as it gave (#199, docs/adr/0007), until #219 changed the
+detection resize: resize and normalise,
 detect, DB post-processing, reading order, straighten each line, recognise in
 batches, CTC decoding.
 """
@@ -19,10 +20,12 @@ import yaml
 
 from mtg_recognition.settings import settings
 
-# Detection input: the short side scaled up to at least 64 px, the long side down
-# to at most 4000 px, both rounded to multiples of 32; ImageNet normalisation
-_DET_MIN_SIDE = 64
-_DET_MAX_SIDE = 4000
+# Detection input: the long side scaled down to at most 960 px (PaddleX's
+# limit_side_len 960, limit_type max), both sides rounded to multiples of 32;
+# ImageNet normalisation. Detecting on the upscaled collector information crop at
+# full size changed no benchmark result and was slower (docs/adr/0007);
+# recognition still reads each line from the full-size image.
+_DET_MAX_SIDE = 960
 _DET_STRIDE = 32
 _DET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 _DET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
@@ -130,11 +133,8 @@ def detection_input(image: np.ndarray) -> np.ndarray:
 
     # scale, then round both sides to multiples of the stride
     h, w = image.shape[:2]
-    ratio = _DET_MIN_SIDE / min(h, w) if min(h, w) < _DET_MIN_SIDE else 1.0
+    ratio = min(1.0, _DET_MAX_SIDE / max(h, w))
     resize_h, resize_w = int(h * ratio), int(w * ratio)
-    if max(resize_h, resize_w) > _DET_MAX_SIDE:
-        ratio = _DET_MAX_SIDE / max(resize_h, resize_w)
-        resize_h, resize_w = int(resize_h * ratio), int(resize_w * ratio)
     resize_h = max(round(resize_h / _DET_STRIDE) * _DET_STRIDE, _DET_STRIDE)
     resize_w = max(round(resize_w / _DET_STRIDE) * _DET_STRIDE, _DET_STRIDE)
     if (resize_h, resize_w) != (h, w):

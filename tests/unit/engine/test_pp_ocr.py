@@ -50,19 +50,20 @@ def test_a_line_of_blanks_reads_as_empty_with_score_0():
     assert ctc_decode(probs, _CHARACTERS) == ("", 0.0)
 
 
-def test_a_small_crop_is_scaled_up_to_a_64_px_short_side_in_multiples_of_32():
-    crop = np.zeros((40, 300, 3), dtype=np.uint8)
+def test_a_crop_longer_than_960_px_is_scaled_down_to_960_in_multiples_of_32():
+    # about the size of the upscaled collector information crop
+    crop = np.zeros((320, 1700, 3), dtype=np.uint8)
 
     tensor = detection_input(crop)
 
-    # 300 * 64 / 40 = 480
-    assert tensor.shape == (1, 3, 64, 480)
+    # 320 * 960 / 1700 = 180.7, rounded to 192
+    assert tensor.shape == (1, 3, 192, 960)
 
 
-def test_a_crop_already_large_enough_is_only_rounded_to_multiples_of_32():
-    crop = np.zeros((100, 1000, 3), dtype=np.uint8)
+def test_a_small_crop_keeps_its_size_rounded_to_multiples_of_32():
+    crop = np.zeros((40, 300, 3), dtype=np.uint8)
 
-    assert detection_input(crop).shape == (1, 3, 96, 992)
+    assert detection_input(crop).shape == (1, 3, 32, 288)
 
 
 def test_a_bright_region_of_the_text_map_gives_a_grown_line_in_image_pixels():
