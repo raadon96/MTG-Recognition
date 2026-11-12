@@ -104,6 +104,10 @@ _Avoid_: properties, OCR result, printing properties
 How well a card's reading agrees with the details a printing shows on the card, from 0 to 100; higher is better.
 _Avoid_: confidence (it is not a probability), distance
 
+**Coverage**:
+The share of the runs of digits in a card's collector information that a printing explains with its shown collector number, base set size or year, from 0 to 100. It counts towards the score like a detail, and is left out when the collector information holds no digits.
+_Avoid_: explained digits, digit score
+
 **Similarity**:
 How alike a card image looks to a printing's reference image, from 0 to 1; higher is more alike. It shortlists candidates and is never shown as a score.
 _Avoid_: score, confidence
