@@ -367,7 +367,10 @@ def test_an_open_copyright_start_is_explained_for_a_printing_that_shows_a_year()
 
 
 def test_an_open_copyright_start_is_not_explained_for_a_printing_without_a_year():
-    assert field_scores(ALPHA_BOLT, info=["©1993-"])["coverage"].score == 0.0
+    # shows a number and size, so only the missing year leaves 1993 unexplained
+    no_year = replace(BOLT_M10, printed_year=None)
+
+    assert field_scores(no_year, info=["©1993-"])["coverage"].score == 0.0
 
 
 def test_a_copyright_start_followed_by_a_year_is_not_explained():

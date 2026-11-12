@@ -3,7 +3,7 @@ GLOSSARY.md).
 
 Each detail a candidate shows on the card is looked for in the reading's raw text;
 a detail it doesn't show is left out of its score (ADR 0008). Coverage then counts
-how many of the collector information's digit runs the candidate explains
+how many of the collector information's runs of digits the candidate explains
 (ADR 0009).
 """
 
@@ -54,6 +54,8 @@ class _PreparedReading:
     # token, in reading order
     tokens: list[str]
     runs: list[tuple[str, str]]
+    # each run with the next one; the last run is followed by ("", "")
+    run_pairs: list[tuple[tuple[str, str], tuple[str, str]]]
     words: list[tuple[str, str]]
     # the tokens joined, and the same lower-cased with punctuation as spaces,
     # character for character, so a stretch of one is the same stretch of the other
@@ -98,11 +100,13 @@ def _prepare(reading: Reading) -> _PreparedReading:
     name = " ".join(reading.name.texts)
     tokens = [_read_zeros(t) for t in reading.collector_information.texts]
     collector_information = " ".join(tokens)
+    runs = [(r.lstrip("0") or "0", t) for t in tokens for r in _DIGIT_RUN.findall(t)]
     return _PreparedReading(
         name=name,
         name_processed=utils.default_process(name),
         tokens=tokens,
-        runs=[(r.lstrip("0") or "0", t) for t in tokens for r in _DIGIT_RUN.findall(t)],
+        runs=runs,
+        run_pairs=list(pairwise([*runs, ("", "")])),
         words=[(w, t) for t in tokens for w in _WORD.findall(t.upper())],
         collector_information=collector_information,
         collector_information_folded="".join(
@@ -162,12 +166,10 @@ def _year(printing: Printing, text: _PreparedReading) -> FieldScore:
         return _not_shown("year")
     found = next((t for run, t in text.runs if run == year), None)
     if found is None:
-        # the last run is followed by nothing
-        pairs = pairwise([*text.runs, ("", "")])
         found = next(
             (
                 token
-                for (run, token), (next_run, _) in pairs
+                for (run, token), (next_run, _) in text.run_pairs
                 if _is_open_copyright_start(run, next_run)
             ),
             None,
@@ -188,9 +190,8 @@ def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:
     # the size is shown only after a number
     if size is None or number is None:
         return _not_shown("base_set_size")
-    glued = _glued(number, size)
-    # the last run is followed by nothing
-    for (run, token), (next_run, next_token) in pairwise([*text.runs, ("", "")]):
+    glued = _glued_pattern(number, size)
+    for (run, token), (next_run, next_token) in text.run_pairs:
         if (run, next_run) == (number, size):
             found = token if token == next_token else f"{token} {next_token}"
             return _found("base_set_size", size, found)
@@ -199,7 +200,7 @@ def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:
     return _found("base_set_size", size, None)
 
 
-def _glued(number: str, size: str) -> re.Pattern[str]:
+def _glued_pattern(number: str, size: str) -> re.Pattern[str]:
     """The number and size read as one run: the slash lost or read as 1."""
     return re.compile(rf"{re.escape(number)}1?0*{re.escape(size)}")
 
@@ -233,7 +234,7 @@ def _power_toughness(printing: Printing, text: _PreparedReading) -> FieldScore:
 
 
 def _coverage(printing: Printing, text: _PreparedReading) -> FieldScore:
-    """The share of the collector information's digit runs that the printing
+    """The share of the collector information's runs of digits that the printing
     explains: its number, base set size or year, by the rules used to find them.
     A printing that shows few details otherwise has few ways to lose, so it can
     win when OCR misses something (ADR 0009). Power/toughness digits stay
@@ -241,10 +242,10 @@ def _coverage(printing: Printing, text: _PreparedReading) -> FieldScore:
     """
     if not text.runs:
         return _not_shown("coverage")
-    # the last run is followed by nothing
-    pairs = pairwise([*text.runs, ("", "")])
     explained = [
-        run for (run, _), (next_run, _) in pairs if _explains(printing, run, next_run)
+        run
+        for (run, _), (next_run, _) in text.run_pairs
+        if _explains(printing, run, next_run)
     ]
     runs = [run for run, _ in text.runs]
     return FieldScore(
@@ -256,8 +257,9 @@ def _coverage(printing: Printing, text: _PreparedReading) -> FieldScore:
 
 
 def _explains(printing: Printing, run: str, next_run: str) -> bool:
-    """Whether a run of digits is the printing's shown year, number or base set
-    size, found as `_year`, `_whole_run` and `_base_set_size` find them.
+    """Whether a run of digits is the printing's shown year (or an open copyright
+    start, as `_year` finds it), its number, its base set size anywhere when the
+    number is shown, or the number and size glued together.
     """
     year = printing.printed_year
     if year is not None and (run == year or _is_open_copyright_start(run, next_run)):
@@ -270,7 +272,7 @@ def _explains(printing: Printing, run: str, next_run: str) -> bool:
         return True
     # the size is shown only after a number
     return size is not None and (
-        run == size or _glued(number, size).fullmatch(run) is not None
+        run == size or _glued_pattern(number, size).fullmatch(run) is not None
     )
 
 
