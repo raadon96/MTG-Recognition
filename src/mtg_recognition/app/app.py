@@ -281,12 +281,11 @@ def display_recognized_detail(result: Recognized, debug: bool):
     # Debug: score matrix below the ranking
     if debug and best.breakdown:
         with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
-            # the score first, then the field scores it is the weighted average of
-            score_columns = ["score", *(s.field for s in best.breakdown)]
+            # The score first, then the field scores it is the weighted average of.
             # Prefix each label with its rank so duplicate card names (reprints)
             # don't produce a non-unique index, which breaks pandas Styler. A
             # detail not shown is NaN.
-            score_matrix = pd.DataFrame(
+            scores = pd.DataFrame(
                 [
                     {
                         "score": entry.score,
@@ -302,17 +301,38 @@ def display_recognized_detail(result: Recognized, debug: bool):
                 ),
                 dtype=float,
             )
+            # st.dataframe shows NaN as "None" whatever the Styler's na_rep, so the
+            # table holds the text to show, coloured from the numbers. The badges'
+            # colours, in plain CSS: background_gradient would need matplotlib.
+            styles = scores.map(lambda s: "" if pd.isna(s) else _score_style(s))
+            score_matrix = scores.map(
+                lambda s: "not shown" if pd.isna(s) else f"{s:.1f}"
+            )
             score_matrix["decided by tie-break"] = [
                 "yes" if entry.decided_by_tie_break else "" for entry in ranked
             ]
-            # the badges' colours, in plain CSS: background_gradient would
-            # need matplotlib
             st.dataframe(
-                score_matrix.style.map(
-                    lambda score: "" if pd.isna(score) else _score_style(score),
-                    subset=score_columns,
-                ).format("{:.1f}", subset=score_columns, na_rep="not shown"),
+                score_matrix.style.apply(
+                    lambda _: styles, axis=None, subset=list(scores.columns)
+                ),
                 width="stretch",
+            )
+
+            # legend: what each colour and "not shown" mean
+            chips = " ".join(
+                f'<span style="{_score_style(score)}; padding: 1px 8px; '
+                f'border-radius: 6px;">{label}</span>'
+                for score, label in [
+                    (50, "50 and above"),
+                    (25, "25 to 50"),
+                    (0, "below 25"),
+                ]
+            )
+            st.markdown(
+                f'<span style="font-size: 0.875rem;">{chips} &nbsp;·&nbsp; '
+                "<i>not shown</i>: the printing doesn't show this detail on the "
+                "card, so it doesn't count towards the score</span>",
+                unsafe_allow_html=True,
             )
 
 
