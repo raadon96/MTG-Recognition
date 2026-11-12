@@ -40,16 +40,20 @@ def load_pipeline():
 
 
 def _score_style(score: float) -> str:
-    """The CSS colours of a 0–100 score: a pale fill with dark text of the same
-    hue. White text on saturated fills fell short of WCAG AA contrast (#237); these
-    reach at least 6.5 : 1, and set both colours so they read the same in light and
-    dark themes.
+    """The CSS colours of a 0–100 score: a vibrant green, amber or red at 25%
+    opacity, with a border at 50%.
+
+    The theme's background shows through, so one fill suits light and dark themes,
+    and the text keeps the theme's colour, which reads on either (#237).
+    st.dataframe ignores the border.
     """
     if score >= 50:
-        return "background-color: #E3F1E3; color: #2F5E2F"
-    if score >= 25:
-        return "background-color: #FAF0D2; color: #6B5200"
-    return "background-color: #F9E1D2; color: #7A3A00"
+        rgb = "34, 197, 94"
+    elif score >= 25:
+        rgb = "245, 158, 11"
+    else:
+        rgb = "239, 68, 68"
+    return f"background-color: rgba({rgb}, 0.25); border: 1px solid rgba({rgb}, 0.5)"
 
 
 def create_thumbnail_grid(results: list[UploadResult]):
@@ -84,7 +88,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     score = best.score
                     st.markdown(
                         f'<div style="{_score_style(score)}; '
-                        f"padding: 2px 6px; border-radius: 3px; "
+                        f"padding: 2px 6px; border-radius: 6px; "
                         "text-align: center; font-size: 12px; font-weight: bold;"
                         '">'
                         f"{score:.1f}</div>",
@@ -209,7 +213,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
         score = best.score
         st.markdown(
             f'<div style="{_score_style(score)}; '
-            f"padding: 4px 8px; border-radius: 3px; "
+            f"padding: 4px 8px; border-radius: 6px; "
             f'text-align: center; font-weight: bold;">'
             f"{score:.1f}</div>",
             unsafe_allow_html=True,
