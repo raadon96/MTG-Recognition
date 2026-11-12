@@ -107,16 +107,17 @@ def test_a_detail_the_printing_does_not_show_is_left_out_of_its_score():
         "base_set_size",
         "year",
         "power_toughness",
+        "coverage",
     ]
 
 
 def test_the_score_is_the_weighted_average_of_the_details_shown():
-    # name 100 (x2), number 100, size 0, year 0, artist 100 (x0.5)
+    # name 100 (x2), number 100, size 0, year 0, artist 100 (x0.5), coverage 100
     [ranked] = rank(
         reading("Lightning Bolt", ["146", "Christopher Moeller"]), [BOLT_M10], k=1
     )
 
-    assert ranked.score == pytest.approx((200 + 100 + 50) / 5.5)
+    assert ranked.score == pytest.approx((200 + 100 + 50 + 100) / 6.5)
 
 
 def test_the_field_score_holds_the_value_looked_for_its_score_and_the_text():
@@ -132,6 +133,7 @@ def test_the_field_score_holds_the_value_looked_for_its_score_and_the_text():
         FieldScore("artist", "Christopher Moeller", 100.0, "Christopher Moeller"),
         FieldScore("year", "2009", 100.0, "™ & © 2009 Wizards"),
         FieldScore("power_toughness", None, None, None),
+        FieldScore("coverage", "146 249 2009", 100.0, "146 249 2009"),
     ]
 
 
@@ -317,6 +319,73 @@ def test_power_toughness_counts_towards_the_score():
     ranked = rank(card_reading, [BOLT_M10, GRIZZLY], k=2)
 
     assert ranked[0].printing == GRIZZLY
+
+
+# --- coverage ---
+
+
+def test_a_printing_that_shows_fewer_details_loses_when_it_explains_no_digits():
+    # #234's Example 1: OCR missed the year, and Alpha shows no number to miss
+    card_reading = reading("Lightning Bolt", ["146/249", "Illus. Christopher Moeler"])
+
+    ranked = rank(card_reading, [ALPHA_BOLT, BOLT_M10], k=2)
+
+    assert [r.printing for r in ranked] == [BOLT_M10, ALPHA_BOLT]
+
+
+def test_coverage_is_not_shown_when_the_reading_holds_no_digits():
+    # #234's Example 2
+    [ranked] = rank(reading("Lightning Bolt", ["Christopher Rush"]), [ALPHA_BOLT], k=1)
+
+    assert {s.field: s for s in ranked.breakdown}["coverage"] == FieldScore(
+        "coverage", None, None, None
+    )
+    assert ranked.score == 100.0
+
+
+def test_coverage_holds_the_runs_explained_its_share_and_every_run_read():
+    # the number and size are explained; power/toughness stays unexplained
+    scores = field_scores(BOLT_M10, info=["0146/249", "2/2"])
+
+    assert scores["coverage"] == FieldScore("coverage", "146 249", 50.0, "146 249 2 2")
+
+
+@pytest.mark.parametrize("run", ["146", "249", "2009"])
+def test_a_run_equal_to_the_number_the_size_or_the_year_is_explained(run):
+    assert field_scores(BOLT_M10, info=[run, "77"])["coverage"].score == 50.0
+
+
+@pytest.mark.parametrize("run", ["146249", "1461249"])
+def test_the_number_and_size_glued_together_is_explained(run):
+    assert field_scores(BOLT_M10, info=[run])["coverage"].score == 100.0
+
+
+def test_an_open_copyright_start_is_explained_for_a_printing_that_shows_a_year():
+    scores = field_scores(replace(BOLT_M10, printed_year="2003"), info=["©1993-"])
+
+    assert scores["coverage"].score == 100.0
+
+
+def test_an_open_copyright_start_is_not_explained_for_a_printing_without_a_year():
+    assert field_scores(ALPHA_BOLT, info=["©1993-"])["coverage"].score == 0.0
+
+
+def test_a_copyright_start_followed_by_a_year_is_not_explained():
+    scores = field_scores(replace(BOLT_M10, printed_year="1997"), info=["©1993-2003"])
+
+    assert scores["coverage"].score == 0.0
+
+
+def test_a_number_does_not_explain_a_longer_run():
+    fourteen = replace(BOLT_M10, printed_collector_number="14")
+
+    assert field_scores(fourteen, info=["149"])["coverage"].score == 0.0
+
+
+def test_a_size_without_a_number_shown_is_not_explained():
+    no_number = replace(BOLT_M10, printed_collector_number=None)
+
+    assert field_scores(no_number, info=["249"])["coverage"].score == 0.0
 
 
 # --- ranking ---

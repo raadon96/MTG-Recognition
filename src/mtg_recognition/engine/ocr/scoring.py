@@ -2,7 +2,9 @@
 GLOSSARY.md).
 
 Each detail a candidate shows on the card is looked for in the reading's raw text;
-a detail it doesn't show is left out of its score (ADR 0008).
+a detail it doesn't show is left out of its score (ADR 0008). Coverage then counts
+how many of the collector information's digit runs the candidate explains
+(ADR 0009).
 """
 
 import re
@@ -26,6 +28,7 @@ WEIGHTS = {
     "artist": 0.5,
     "year": 1.0,
     "power_toughness": 1.0,
+    "coverage": 1.0,
 }
 
 # the first year of every copyright range (`© 1993-2003`)
@@ -78,6 +81,7 @@ def rank(
             _artist(printing, text),
             _year(printing, text),
             _power_toughness(printing, text),
+            _coverage(printing, text),
         ]
         # the name is always shown, so the weights never sum to 0
         shown = [(WEIGHTS[s.field], s.score) for s in breakdown if s.score is not None]
@@ -164,11 +168,15 @@ def _year(printing: Printing, text: _PreparedReading) -> FieldScore:
             (
                 token
                 for (run, token), (next_run, _) in pairs
-                if run == COPYRIGHT_START and not _YEAR.fullmatch(next_run)
+                if _is_open_copyright_start(run, next_run)
             ),
             None,
         )
     return _found("year", year, found)
+
+
+def _is_open_copyright_start(run: str, next_run: str) -> bool:
+    return run == COPYRIGHT_START and not _YEAR.fullmatch(next_run)
 
 
 def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:
@@ -180,7 +188,7 @@ def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:
     # the size is shown only after a number
     if size is None or number is None:
         return _not_shown("base_set_size")
-    glued = re.compile(rf"{re.escape(number)}1?0*{re.escape(size)}")
+    glued = _glued(number, size)
     # the last run is followed by nothing
     for (run, token), (next_run, next_token) in pairwise([*text.runs, ("", "")]):
         if (run, next_run) == (number, size):
@@ -189,6 +197,11 @@ def _base_set_size(printing: Printing, text: _PreparedReading) -> FieldScore:
         if glued.fullmatch(run):
             return _found("base_set_size", size, token)
     return _found("base_set_size", size, None)
+
+
+def _glued(number: str, size: str) -> re.Pattern[str]:
+    """The number and size read as one run: the slash lost or read as 1."""
+    return re.compile(rf"{re.escape(number)}1?0*{re.escape(size)}")
 
 
 def _artist(printing: Printing, text: _PreparedReading) -> FieldScore:
@@ -217,6 +230,48 @@ def _power_toughness(printing: Printing, text: _PreparedReading) -> FieldScore:
     )
     found = next((t for t in text.tokens if pattern.search(t)), None)
     return _found("power_toughness", f"{power}/{toughness}", found)
+
+
+def _coverage(printing: Printing, text: _PreparedReading) -> FieldScore:
+    """The share of the collector information's digit runs that the printing
+    explains: its number, base set size or year, by the rules used to find them.
+    A printing that shows few details otherwise has few ways to lose, so it can
+    win when OCR misses something (ADR 0009). Power/toughness digits stay
+    unexplained: counting them never helped.
+    """
+    if not text.runs:
+        return _not_shown("coverage")
+    # the last run is followed by nothing
+    pairs = pairwise([*text.runs, ("", "")])
+    explained = [
+        run for (run, _), (next_run, _) in pairs if _explains(printing, run, next_run)
+    ]
+    runs = [run for run, _ in text.runs]
+    return FieldScore(
+        "coverage",
+        " ".join(explained),
+        100.0 * len(explained) / len(runs),
+        " ".join(runs),
+    )
+
+
+def _explains(printing: Printing, run: str, next_run: str) -> bool:
+    """Whether a run of digits is the printing's shown year, number or base set
+    size, found as `_year`, `_whole_run` and `_base_set_size` find them.
+    """
+    year = printing.printed_year
+    if year is not None and (run == year or _is_open_copyright_start(run, next_run)):
+        return True
+    number = printing.printed_collector_number
+    size = printing.printed_base_set_size
+    if number is None:
+        return False
+    if run == number:
+        return True
+    # the size is shown only after a number
+    return size is not None and (
+        run == size or _glued(number, size).fullmatch(run) is not None
+    )
 
 
 def _not_shown(field: str) -> FieldScore:

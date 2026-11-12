@@ -36,6 +36,6 @@ The benchmark was unchanged by each variant with v6 small (255 / 257 / 257). Wit
 
 - No list of OCR misreads is kept apart from the slash characters of power/toughness. The extraction module and its tests are gone.
 - One token can count as two details. A power/toughness of `2/2` read as `212` is also collector number 212, so a printing numbered 212 gains a detail it isn't showing. This decides one benchmark photo (`6_photos_single_card_textured_bg/b845b1d7…`) wrongly, between two plain printings that tie.
-- When OCR misses details, a printing that shows fewer of them can score higher, since a detail it doesn't show isn't counted against it.
+- When OCR misses details, a printing that shows fewer of them can score higher, since a detail it doesn't show isn't counted against it. ADR 0009 answers this: coverage counts the digits a printing doesn't explain against it.
 - Split cards still can't be told apart by name: their names are sideways, outside the name crop.
 - On an OCR failure there is no reading, and the ranking is the candidates in pHash order, every score 0.
