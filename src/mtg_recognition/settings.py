@@ -53,7 +53,7 @@ class Settings(BaseSettings):
 
     @property
     def OCR_RECOGNITION_MODEL_DIR(self) -> Path:
-        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv5_mobile_rec"
+        return self.MODELS_DIR / "ocr" / "prod" / "PP-OCRv6_tiny_rec"
 
     @model_validator(mode="after")
     def _apply_third_party_env_vars(self) -> "Settings":

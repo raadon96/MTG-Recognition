@@ -14,7 +14,7 @@ The `export` dependency group holds ultralytics, torch, torchvision, clip, onnx 
 
 ## OCR
 
-PP-OCRv5_mobile runs as the official ONNX exports of its detection and recognition models (`PaddlePaddle/PP-OCRv5_mobile_det_onnx` at revision `e6f4fa8` and `PaddlePaddle/PP-OCRv5_mobile_rec_onnx` at `ed152b8`, on Hugging Face), committed as `models/ocr/prod/*/inference.onnx` with the `inference.yml` beside each. Recognition's `inference.yml` holds the character dictionary. paddlepaddle, paddleocr and paddlex are not dependencies, not even for development: the exports are downloaded as published, so nothing of Paddle's is needed to write them.
+OCR runs PP-OCRv5_mobile detection and PP-OCRv6 tiny recognition, as their official ONNX exports (`PaddlePaddle/PP-OCRv5_mobile_det_onnx` at revision `e6f4fa8` and `PaddlePaddle/PP-OCRv6_tiny_rec_onnx` at `2612ab3`, on Hugging Face), committed as `models/ocr/prod/*/inference.onnx` with the `inference.yml` beside each. Recognition's `inference.yml` holds the character dictionary, which belongs to that model. PP-OCRv6 tiny recognition replaced PP-OCRv5_mobile's (`ed152b8`): it is 4.5 MB against 16.5 MB, and moved the benchmark from 254 to 255 exact printings with no image worse (#218). PP-OCRv6 small is the more accurate choice, to revisit if telling printings apart becomes the limit (#207). paddlepaddle, paddleocr and paddlex are not dependencies, not even for development: the exports are downloaded as published, so nothing of Paddle's is needed to write them.
 
 `engine/ocr/pp_ocr.py` copies the steps of PaddleX's OCR pipeline with the settings PaddleOCR ran with: detection resize (short side at least 64 px, both sides rounded to multiples of 32) with ImageNet normalisation; DB post-processing at `thresh` 0.05, `box_thresh` 0.6 and `unclip_ratio` 1.5; boxes sorted into reading order; rotated crops; recognition in batches of 6, each padded to its widest line, since the padding changes the output; CTC decoding. There is no document unwarping, no textline orientation, no `fp16` and no high-performance inference. On all 1,291 card images of #196 its tokens, boxes and readings are the same as PaddleOCR's (#199), and on all 276 card images of the benchmark query images the tokens and readings are the same, boxes the same to the pixel, and scores within 0.0003 (#215).
 
@@ -24,7 +24,7 @@ OpenCV stays at 4.10: under OpenCV 5 the same code reads 13 of 80 card images di
 
 - Ultralytics' code and weights are AGPL-3.0. That covers the YOLOE weights, the export made from them, and `merge_multi_segment`, copied into `yolo.py`.
 - The MobileCLIP text encoders are licensed for research use only. The export holds the prompts' embeddings, not the encoder.
-- PP-OCRv5_mobile's weights and exports, and PaddleX's code our OCR processing copies, are Apache-2.0.
+- PP-OCRv5_mobile's and PP-OCRv6 tiny's weights and exports, and PaddleX's code our OCR processing copies, are Apache-2.0.
 - Shipping the weights to browsers distributes them, so the app must then be AGPL-3.0, or run under an Ultralytics Enterprise licence.
 
 ## Considered Options

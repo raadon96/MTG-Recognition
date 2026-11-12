@@ -20,7 +20,7 @@ NAME_ROI = (0.04, 0.11, 0.06, 0.9)
 # copyright year; P/T sits at its right edge.
 COLLECTOR_INFORMATION_ROI = (0.88, 1.0, 0.05, 0.95)
 
-# PP-OCRv5_mobile_rec's native input height is 48 px; text below ~32 px reads worse.
+# PP-OCR recognition's native input height is 48 px; text below ~32 px reads worse.
 # RATIO_TEXT_TO_CROP: about how much of the collector information crop's height a
 # text line takes up.
 TARGET_TEXT_HEIGHT = 48

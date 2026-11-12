@@ -1,11 +1,11 @@
-"""PP-OCRv5_mobile on onnxruntime: the text lines in an image, and what each says.
+"""PP-OCR on onnxruntime: the text lines in an image, and what each says.
 
 The models are the official ONNX exports of PP-OCRv5_mobile_det and
-PP-OCRv5_mobile_rec. The pre- and post-processing are ours, copied from PaddleX's
-OCR pipeline with the settings PaddleOCR ran with, so the texts, scores and boxes
-are the same as it gave (#199, docs/adr/0007): resize and normalise, detect, DB
-post-processing, reading order, straighten each line, recognise in batches, CTC
-decoding.
+PP-OCRv6_tiny_rec (#218). The pre- and post-processing are ours, copied from
+PaddleX's OCR pipeline with the settings PaddleOCR ran with, so the texts, scores
+and boxes are the same as it gave (#199, docs/adr/0007): resize and normalise,
+detect, DB post-processing, reading order, straighten each line, recognise in
+batches, CTC decoding.
 """
 
 import math
