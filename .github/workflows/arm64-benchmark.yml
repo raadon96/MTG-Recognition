@@ -1,0 +1,40 @@
+name: arm64-benchmark
+
+# Throwaway: answers #255, whether recognition on linux/arm64 gives the same
+# results as the baseline. Lives only on the research/arm64-benchmark branch.
+on:
+  push:
+    branches: [research/arm64-benchmark]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.2
+
+      - run: uname -m && uv sync --locked --dev
+
+      - run: uv run python -c "import onnxruntime, cv2, numpy; print(onnxruntime.__version__, onnxruntime.get_available_providers(), cv2.__version__, numpy.__version__)"
+
+      - run: |
+          uv run dvc remote modify --local origin gdrive_use_service_account true
+          uv run dvc pull data/benchmark.dvc
+        env:
+          GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
+
+      - run: uv run pytest -m slow
+
+      - if: ${{ !cancelled() }}
+        run: uv run mtg benchmark run
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-latest-arm64
+          path: output/benchmark/latest.json
