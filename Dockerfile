@@ -94,7 +94,10 @@ EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD /app/.venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)"
 
-CMD ["/app/.venv/bin/streamlit", "run", "src/mtg_recognition/app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+CMD ["mtg", "app"]
 # Container startup command:
-# - uses venv Streamlit directly
-# - runs your app on all interfaces (0.0.0.0) so host port mapping works.
+# - `mtg app` replaces itself with Streamlit, so Streamlit runs as process 1 and
+#   receives `docker stop`'s signal directly; the exec (JSON) form is required for that
+# - STREAMLIT_SERVER_ADDRESS and STREAMLIT_SERVER_PORT above set the address and port
+# - CMD only, no ENTRYPOINT, so `docker run <image> mtg benchmark run` or
+#   `docker run -it <image> bash` replace it without --entrypoint

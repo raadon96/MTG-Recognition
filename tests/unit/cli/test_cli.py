@@ -10,7 +10,7 @@ from mtg_recognition.cli import cli
 @pytest.mark.parametrize(
     ("group", "commands"),
     [
-        ([], ["recognize", "segment", "reference", "benchmark"]),
+        ([], ["recognize", "segment", "app", "reference", "benchmark"]),
         (["reference"], ["status", "update", "build", "download-images"]),
     ],
 )
