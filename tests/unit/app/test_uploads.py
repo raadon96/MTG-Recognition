@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import pytest
+from PIL import ExifTags, Image
 
 from mtg_recognition.app.uploads import (
     Failed,
@@ -20,7 +21,8 @@ from mtg_recognition.engine.ranking import RankedPrinting
 from tests.unit.engine.builders import card_image, printing, reading
 
 NAME = "card.jpg"
-DATA = b"uploaded bytes"
+# A phone photo's size, so the display copy is smaller than what was uploaded.
+DATA = cv2.imencode(".jpg", np.full((3000, 2000, 3), 128, np.uint8))[1].tobytes()
 ERROR = RecognitionResult(cards=[], error="RuntimeError: model exploded")
 NO_CARD = RecognitionResult(cards=[], error=None)
 
@@ -54,13 +56,14 @@ def test_a_card_without_candidates_is_not_recognized_and_holds_no_card_image():
 
     [result] = upload_results(NAME, DATA, _recognition(card))
 
-    assert result == NotRecognized(NAME, DATA)
+    assert isinstance(result, NotRecognized)
 
 
 def test_a_recognition_failure_holds_its_error_message():
     [result] = upload_results(NAME, DATA, ERROR)
 
-    assert result == Failed(NAME, DATA, "RuntimeError: model exploded")
+    assert isinstance(result, Failed)
+    assert result.error_message == "RuntimeError: model exploded"
 
 
 def test_one_result_per_card_in_the_order_found():
@@ -90,10 +93,37 @@ def test_a_recognized_result_holds_the_card_image_as_jpeg():
 
 
 @pytest.mark.parametrize("recognition", [_recognition(_card()), NO_CARD, ERROR])
-def test_every_kind_of_result_holds_the_query_image(recognition):
+def test_every_kind_of_result_holds_the_query_image_as_a_jpeg_at_most_800_pixels(
+    recognition,
+):
     [result] = upload_results(NAME, DATA, recognition)
 
-    assert result.query_image == DATA
+    decoded = cv2.imdecode(
+        np.frombuffer(result.query_image_jpeg, np.uint8), cv2.IMREAD_COLOR
+    )
+    assert decoded.shape == (800, 533, 3)
+
+
+def test_a_failure_on_an_unreadable_query_image_holds_no_query_image():
+    [result] = upload_results(NAME, b"not an image", ERROR)
+
+    assert isinstance(result, Failed)
+    assert result.query_image_jpeg is None
+
+
+def test_the_query_image_is_turned_upright_by_its_exif_orientation():
+    # a landscape photo whose EXIF says to rotate it 90° to show it upright
+    exif = Image.Exif()
+    exif[ExifTags.Base.Orientation] = 6
+    buffer = io.BytesIO()
+    Image.new("RGB", (1200, 900)).save(buffer, "JPEG", exif=exif)
+
+    [result] = upload_results(NAME, buffer.getvalue(), NO_CARD)
+
+    decoded = cv2.imdecode(
+        np.frombuffer(result.query_image_jpeg, np.uint8), cv2.IMREAD_COLOR
+    )
+    assert decoded.shape == (800, 600, 3)
 
 
 def test_a_recognized_result_holds_the_reading():

@@ -1,5 +1,3 @@
-import contextlib
-
 import cv2
 import pandas as pd
 import streamlit as st
@@ -14,6 +12,7 @@ from mtg_recognition.app.uploads import (
     upload_results,
 )
 from mtg_recognition.engine.pipeline import Pipeline
+from mtg_recognition.reference.catalog import Printing
 from mtg_recognition.settings import settings
 
 RANKING_SIZE = 5
@@ -56,6 +55,17 @@ def _score_style(score: float) -> str:
     return f"background-color: rgba({rgb}, 0.25); border: 1px solid rgba({rgb}, 0.5)"
 
 
+@st.fragment
+def results_view(results: list[UploadResult], debug: bool):
+    """The grid, or the detail view of the selected result. A fragment, so
+    navigating between results reruns only this, not the sidebar.
+    """
+    if st.session_state.selected_result_idx is None:
+        create_thumbnail_grid(results)
+    else:
+        display_upload_detail_view(results, st.session_state.selected_result_idx, debug)
+
+
 def create_thumbnail_grid(results: list[UploadResult]):
     """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
@@ -77,9 +87,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                 case Recognized():
                     best = result.ranked[0]
                     best_printing = best.printing
-                    # Display the best printing's reference image
-                    img_url = best_printing.image_url
-                    st.image(img_url or PLACEHOLDER_IMAGE_URL)
+                    st.image(_small_image_url(best_printing))
 
                     # Display card name
                     st.markdown(f"**{best_printing.name}**")
@@ -100,21 +108,37 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     )
 
                 case NotRecognized():
+                    st.image(result.query_image_jpeg)
                     st.caption("❌ No Match")
 
                 case Failed():
+                    if result.query_image_jpeg is not None:
+                        st.image(result.query_image_jpeg)
                     st.caption("⚠️ Error")
 
             st.caption(f"📄 {filename}")
 
-            # View Details button
-            if st.button(
+            st.button(
                 "Details",
                 key=f"detail_btn_{idx}",
                 width="stretch",
-            ):
-                st.session_state.selected_result_idx = idx
-                st.rerun()
+                on_click=_select_result,
+                args=(idx,),
+            )
+
+
+def _select_result(idx: int | None) -> None:
+    """Show the result at idx in the detail view, or the grid for None."""
+    st.session_state.selected_result_idx = idx
+
+
+def _small_image_url(printing: Printing) -> str:
+    """The reference image at Scryfall's small size, 146×204 and about 10 KB, for
+    thumbnails; the catalog holds the normal size.
+    """
+    if printing.image_url is None:
+        return PLACEHOLDER_IMAGE_URL
+    return printing.image_url.replace("/normal/", "/small/")
 
 
 def display_upload_detail_view(
@@ -126,20 +150,22 @@ def display_upload_detail_view(
     def _nav_bar(key_suffix: str) -> None:
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
-            if st.button(
-                "← Back to Results", key=f"back_{key_suffix}", width="stretch"
-            ):
-                st.session_state.selected_result_idx = None
-                st.rerun()
+            st.button(
+                "← Back to Results",
+                key=f"back_{key_suffix}",
+                width="stretch",
+                on_click=_select_result,
+                args=(None,),
+            )
         with col_prev:
-            if st.button(
+            st.button(
                 "◀",
                 key=f"prev_{key_suffix}",
                 disabled=selected_idx == 0,
                 width="stretch",
-            ):
-                st.session_state.selected_result_idx = selected_idx - 1
-                st.rerun()
+                on_click=_select_result,
+                args=(selected_idx - 1,),
+            )
         with col_pos:
             st.markdown(
                 "<p style='text-align:center; margin:0; padding-top:6px; "
@@ -148,14 +174,14 @@ def display_upload_detail_view(
                 unsafe_allow_html=True,
             )
         with col_next:
-            if st.button(
+            st.button(
                 "▶",
                 key=f"next_{key_suffix}",
                 disabled=selected_idx == len(results) - 1,
                 width="stretch",
-            ):
-                st.session_state.selected_result_idx = selected_idx + 1
-                st.rerun()
+                on_click=_select_result,
+                args=(selected_idx + 1,),
+            )
 
     _nav_bar("top")
 
@@ -165,13 +191,11 @@ def display_upload_detail_view(
         case Recognized():
             display_recognized_detail(result, debug)
         case NotRecognized():
-            st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
             st.warning("Not recognized: no printing was found for this image.")
         case Failed():
-            # An unreadable or oversized query image is one reason to fail, and st.image
-            # raises on it, which would stop the rest of the page rendering.
-            with contextlib.suppress(Exception):
-                st.image(result.query_image, width=QUERY_IMAGE_WIDTH)
+            if result.query_image_jpeg is not None:
+                st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
             st.error("Failed: this image could not be processed.")
 
     # Bottom navigation bar — same controls as top, so no scrolling required
@@ -191,7 +215,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     # Column 1: query image
     with col1:
         st.caption("**Original Image**")
-        st.image(result.query_image)
+        st.image(result.query_image_jpeg)
 
     # Column 2: card image
     with col2:
@@ -201,8 +225,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     # Column 3: the best printing's reference image
     with col3:
         st.caption("**Best Match**")
-        img_url = best_printing.image_url
-        st.image(img_url or PLACEHOLDER_IMAGE_URL)
+        st.image(best_printing.image_url or PLACEHOLDER_IMAGE_URL)
 
     # Column 4: Metadata
     with col4:
@@ -273,8 +296,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     ranking_cols = st.columns(RANKING_SIZE)
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
-            img_url = entry.printing.image_url
-            st.image(img_url or PLACEHOLDER_IMAGE_URL)
+            st.image(_small_image_url(entry.printing))
             st.caption(f"**{entry.printing.name}**")
             st.caption(f"Score: {entry.score:.1f}")
 
@@ -401,7 +423,9 @@ def main():
                     )
                 st.session_state.upload_results = results
                 st.session_state.selected_result_idx = None
-                st.rerun()
+                # the results show below in this same run
+                progress_placeholder.empty()
+                progress_bar.empty()
 
             except Exception as e:
                 st.error(f"❌ Processing failed: {str(e)}")
@@ -413,14 +437,7 @@ def main():
     if st.session_state.upload_results:
         results = st.session_state.upload_results
 
-        # Detail view
-        if st.session_state.selected_result_idx is not None:
-            display_upload_detail_view(
-                results, st.session_state.selected_result_idx, debug
-            )
-        else:
-            # Grid view
-            create_thumbnail_grid(results)
+        results_view(results, debug)
 
         # Export and Clear Results in sidebar
         st.sidebar.markdown("---")
@@ -442,12 +459,16 @@ def main():
         )
 
         st.sidebar.markdown("---")
-        if st.sidebar.button("🗑️ Clear All Results", width="stretch"):
-            st.session_state.upload_results = None
-            st.session_state.selected_result_idx = None
-            # Clear the file uploader by resetting the key
-            st.session_state.uploader_key += 1
-            st.rerun()
+        st.sidebar.button(
+            "🗑️ Clear All Results", width="stretch", on_click=_clear_results
+        )
+
+
+def _clear_results() -> None:
+    st.session_state.upload_results = None
+    st.session_state.selected_result_idx = None
+    # a new key gives a new, empty file uploader
+    st.session_state.uploader_key += 1
 
 
 if __name__ == "__main__":
