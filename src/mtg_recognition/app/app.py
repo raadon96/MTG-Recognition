@@ -127,7 +127,7 @@ def display_upload_detail_view(
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
             if st.button(
-                "← Back to Results", key=f"back_{key_suffix}", use_container_width=True
+                "← Back to Results", key=f"back_{key_suffix}", width="stretch"
             ):
                 st.session_state.selected_result_idx = None
                 st.rerun()
@@ -136,7 +136,7 @@ def display_upload_detail_view(
                 "◀",
                 key=f"prev_{key_suffix}",
                 disabled=selected_idx == 0,
-                use_container_width=True,
+                width="stretch",
             ):
                 st.session_state.selected_result_idx = selected_idx - 1
                 st.rerun()
@@ -152,7 +152,7 @@ def display_upload_detail_view(
                 "▶",
                 key=f"next_{key_suffix}",
                 disabled=selected_idx == len(results) - 1,
-                use_container_width=True,
+                width="stretch",
             ):
                 st.session_state.selected_result_idx = selected_idx + 1
                 st.rerun()
