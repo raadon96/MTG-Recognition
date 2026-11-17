@@ -2,7 +2,7 @@
 
 import click
 
-from mtg_recognition.cli import benchmark, recognize, reference, segment
+from mtg_recognition.cli import app, benchmark, recognize, reference, segment
 
 
 @click.group()
@@ -13,4 +13,5 @@ def cli() -> None:
 cli.add_command(reference.reference)
 cli.add_command(segment.segment)
 cli.add_command(recognize.recognize)
+cli.add_command(app.app)
 cli.add_command(benchmark.benchmark)
