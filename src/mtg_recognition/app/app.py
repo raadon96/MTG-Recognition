@@ -55,17 +55,6 @@ def _score_style(score: float) -> str:
     return f"background-color: rgba({rgb}, 0.25); border: 1px solid rgba({rgb}, 0.5)"
 
 
-@st.fragment
-def results_view(results: list[UploadResult], debug: bool):
-    """The grid, or the detail view of the selected result. A fragment, so
-    navigating between results reruns only this, not the sidebar.
-    """
-    if st.session_state.selected_result_idx is None:
-        create_thumbnail_grid(results)
-    else:
-        display_upload_detail_view(results, st.session_state.selected_result_idx, debug)
-
-
 def create_thumbnail_grid(results: list[UploadResult]):
     """Create an interactive grid view of upload results."""
     st.subheader(f"📊 Results: {len(results)} cards processed")
@@ -108,7 +97,8 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     )
 
                 case NotRecognized():
-                    st.image(result.query_image_jpeg)
+                    if result.query_image_jpeg is not None:
+                        st.image(result.query_image_jpeg)
                     st.caption("❌ No Match")
 
                 case Failed():
@@ -191,7 +181,8 @@ def display_upload_detail_view(
         case Recognized():
             display_recognized_detail(result, debug)
         case NotRecognized():
-            st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
+            if result.query_image_jpeg is not None:
+                st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
             st.warning("Not recognized: no printing was found for this image.")
         case Failed():
             if result.query_image_jpeg is not None:
@@ -215,7 +206,8 @@ def display_recognized_detail(result: Recognized, debug: bool):
     # Column 1: query image
     with col1:
         st.caption("**Original Image**")
-        st.image(result.query_image_jpeg)
+        if result.query_image_jpeg is not None:
+            st.image(result.query_image_jpeg)
 
     # Column 2: card image
     with col2:
@@ -462,6 +454,17 @@ def main():
         st.sidebar.button(
             "🗑️ Clear All Results", width="stretch", on_click=_clear_results
         )
+
+
+@st.fragment
+def results_view(results: list[UploadResult], debug: bool):
+    """The grid, or the detail view of the selected result. A fragment, so
+    navigating between results reruns only this, not the sidebar.
+    """
+    if st.session_state.selected_result_idx is None:
+        create_thumbnail_grid(results)
+    else:
+        display_upload_detail_view(results, st.session_state.selected_result_idx, debug)
 
 
 def _clear_results() -> None:

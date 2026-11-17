@@ -74,8 +74,9 @@ def test_one_result_per_card_in_the_order_found():
     assert second.ranked[0].printing.uuid == "p2"
 
 
-def test_the_uploaded_filename_is_the_name_given():
-    [result] = upload_results("card.png", DATA, _recognition(_card()))
+@pytest.mark.parametrize("recognition", [_recognition(_card()), NO_CARD, ERROR])
+def test_the_uploaded_filename_is_the_name_given(recognition):
+    [result] = upload_results("card.png", DATA, recognition)
 
     assert result.uploaded_filename == "card.png"
 
@@ -104,10 +105,10 @@ def test_every_kind_of_result_holds_the_query_image_as_a_jpeg_at_most_800_pixels
     assert decoded.shape == (800, 533, 3)
 
 
-def test_a_failure_on_an_unreadable_query_image_holds_no_query_image():
-    [result] = upload_results(NAME, b"not an image", ERROR)
+@pytest.mark.parametrize("recognition", [_recognition(_card()), NO_CARD, ERROR])
+def test_a_query_image_that_cannot_be_decoded_for_display_leaves_none(recognition):
+    [result] = upload_results(NAME, b"not an image", recognition)
 
-    assert isinstance(result, Failed)
     assert result.query_image_jpeg is None
 
 
