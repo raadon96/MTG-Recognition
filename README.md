@@ -130,5 +130,5 @@ When the code that builds the catalog changes but the MTGJSON release doesn't, t
 #### 6. Run Streamlit app
 
 ```bash
-uv run streamlit run src/mtg_recognition/app/app.py
+uv run mtg app
 ```

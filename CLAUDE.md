@@ -24,6 +24,7 @@ src/mtg_recognition/
 └── cli/           the `mtg` group and its commands; the only package that imports Click
     ├── recognize.py     `mtg recognize`
     ├── segment.py       `mtg segment`
+    ├── app.py           `mtg app`
     ├── reference.py     `mtg reference status`, `mtg reference update`, `mtg reference build`, `mtg reference download-images`
     └── benchmark.py     `mtg benchmark run`, `mtg benchmark update-baseline`, `mtg benchmark status`
 data/reference/    the reference data
@@ -117,7 +118,8 @@ uv run pre-commit run --all-files    # run the commit hooks by hand
 uv run dvc pull                      # test images; required before running tests
 uv run pytest
 uv run lint-imports                  # contracts: the layers, the engine stages independent, only the CLI imports Click
-uv run mtg --help                    # recognize, segment, reference, benchmark
+uv run mtg --help                    # recognize, segment, app, reference, benchmark
+uv run mtg app                       # start the web app on localhost:8501; extra options go to `streamlit run`
 uv run mtg reference status          # the catalog's MTGJSON release against the latest one
 uv run mtg reference update          # build the reference data from the latest MTGJSON release; nothing when the catalog already is it
 uv run mtg reference build           # rebuild the catalog's own release, reusing AllPrintings and unchanged pHashes (--no-cache: reuse nothing)

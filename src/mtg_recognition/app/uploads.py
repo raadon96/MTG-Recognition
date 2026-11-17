@@ -9,13 +9,20 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageOps
 
 from mtg_recognition.engine.ocr.reading import Reading
 from mtg_recognition.engine.pipeline import RecognitionResult
 from mtg_recognition.engine.ranking import RankedPrinting
 
-# Quality of the card image's display copy; recognition never sees it.
+# Quality of the display copies of the card image and query image; recognition
+# never sees them.
 _DISPLAY_JPEG_QUALITY = 90
+
+# In pixels, the longest side of the query image's display copy: twice the width
+# the app shows it at, so it stays crisp on high-density screens. A phone photo
+# as uploaded is several MB, sent again on every script run that shows it.
+_QUERY_IMAGE_MAX_DIMENSION = 800
 
 EXPORT_FORMATS = {  # format -> (MIME type, file name)
     "CSV": ("text/csv", "results.csv"),
@@ -46,7 +53,7 @@ class Recognized:
     """A card found in an uploaded query image, with its ranking."""
 
     uploaded_filename: str
-    query_image: bytes  # as uploaded
+    query_image_jpeg: bytes | None  # for display only; None when it can't be decoded
     ranked: list[RankedPrinting]  # best first, never empty
     card_image_jpeg: bytes  # for display only
     reading: Reading | None  # None when OCR failed
@@ -57,7 +64,7 @@ class NotRecognized:
     """A query image with no card, or a card with no candidates."""
 
     uploaded_filename: str
-    query_image: bytes  # as uploaded
+    query_image_jpeg: bytes | None  # for display only; None when it can't be decoded
 
 
 @dataclass(slots=True)
@@ -65,7 +72,7 @@ class Failed:
     """A query image that recognition could not process."""
 
     uploaded_filename: str
-    query_image: bytes  # as uploaded
+    query_image_jpeg: bytes | None  # for display only; None when it can't be decoded
     error_message: str
 
 
@@ -78,10 +85,18 @@ def upload_results(
     """The results of recognizing one uploaded query image: one per card found, or a
     single one for a query image with no card or an error.
     """
+    # An unreadable or oversized query image is one reason recognition fails; when
+    # only Pillow can't decode it, the result shows no query image rather than
+    # failing the whole upload.
+    try:
+        query_image_jpeg = _encode_query_image(data)
+    except (OSError, Image.DecompressionBombError):
+        query_image_jpeg = None
+
     if recognition.error is not None:
-        return [Failed(name, data, recognition.error)]
+        return [Failed(name, query_image_jpeg, recognition.error)]
     if not recognition.cards:
-        return [NotRecognized(name, data)]
+        return [NotRecognized(name, query_image_jpeg)]
 
     results: list[UploadResult] = []
     for card in recognition.cards:
@@ -89,14 +104,14 @@ def upload_results(
             results.append(
                 Recognized(
                     name,
-                    data,
+                    query_image_jpeg,
                     ranked=card.ranked,
                     card_image_jpeg=_encode_jpeg(card.card_image),
                     reading=card.reading,
                 )
             )
         else:
-            results.append(NotRecognized(name, data))
+            results.append(NotRecognized(name, query_image_jpeg))
     return results
 
 
@@ -157,6 +172,22 @@ def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
                 raise ValueError(f"unknown format {export_format!r}")
     except Exception as e:
         raise RuntimeError(f"Export failed: {e}") from e
+
+
+def _encode_query_image(data: bytes) -> bytes:
+    """The query image's display copy: turned upright by its EXIF orientation, as
+    the browser would show the upload, and shrunk to _QUERY_IMAGE_MAX_DIMENSION.
+    """
+    size = (_QUERY_IMAGE_MAX_DIMENSION, _QUERY_IMAGE_MAX_DIMENSION)
+    with Image.open(io.BytesIO(data)) as image:
+        # a JPEG decodes straight at a fraction of its size: 43 ms instead of 80 ms
+        # for a 12 MP phone photo
+        image.draft("RGB", size)
+        upright = ImageOps.exif_transpose(image).convert("RGB")
+    upright.thumbnail(size)
+    buffer = io.BytesIO()
+    upright.save(buffer, "JPEG", quality=_DISPLAY_JPEG_QUALITY)
+    return buffer.getvalue()
 
 
 def _encode_jpeg(img: np.ndarray) -> bytes:
