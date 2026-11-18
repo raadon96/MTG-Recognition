@@ -77,7 +77,7 @@ uv run mtg benchmark run
 
 - The `engine` workflow runs the slow tests and the benchmark on every pull request, except those that change only Markdown files, `docs/` or `.claude/`. Those report no `engine` check at all, so don't make it a required check.
 - It uploads the results as the `benchmark-latest` artifact.
-- A GitHub runner and a laptop give the same results ([#146](https://github.com/raadon96/MTG-Recognition/issues/146)), so record baselines locally. If CI fails on a baseline that passes locally, results depend on the machine again: open an issue, and commit neither result as the baseline until it is fixed.
+- A GitHub runner and a laptop give the same results, so record baselines locally. If CI fails on a baseline that passes locally, results depend on the machine again: open an issue, and commit neither result as the baseline until it is fixed.
 
 ## Docker image
 
