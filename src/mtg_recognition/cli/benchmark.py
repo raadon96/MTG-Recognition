@@ -49,10 +49,19 @@ def benchmark() -> None:
 @benchmark.command(name="run")
 def run() -> None:
     """Recognise every labelled query image, write the results to
-    output/benchmark/latest.json and compare them with the baseline.
+    output/benchmark/latest.json and compare them with the baseline,
+    data/benchmark-baseline.json.
 
-    Exits non-zero when the manifest doesn't match the dataset, or when the results
-    differ from the baseline in exact printing or card count, better or worse.
+    Needs the dataset: `uv run dvc pull data/benchmark.dvc`. Before loading any
+    model, checks data/benchmark/manifest.json against the images and the
+    catalog: every image labelled, every label's image present, every UUID in
+    the catalog.
+
+    Prints the query images whose result changed from the baseline, and the
+    totals. Exits non-zero when the manifest doesn't match the dataset, or when
+    the results differ from the baseline in exact printing or card count, better
+    or worse. To accept a change, run `uv run mtg benchmark update-baseline` and
+    commit data/benchmark-baseline.json in the same PR.
     """
     run_at = datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -131,6 +140,10 @@ def run() -> None:
 def update_baseline() -> None:
     """Copy the latest results onto the baseline, without recognising anything.
     Commit data/benchmark-baseline.json afterwards.
+
+    Record the baseline on your own machine: a GitHub runner and a laptop give the
+    same results, so a baseline that passes locally and fails in CI is a bug to
+    report, not a result to commit.
     """
     if not LATEST_PATH.exists():
         click.echo(
@@ -154,6 +167,15 @@ def update_baseline() -> None:
 def status(latest: bool, failures: bool) -> None:
     """Summarise the baseline or the latest results, without recognising anything
     or writing to disk.
+
+    Prints the commit, date, MTGJSON version, totals and runtime of the baseline,
+    or with --latest of the latest results, and, when both files exist, whether
+    the latest results match the baseline.
+
+    --failures adds a table of the failing query images: the query image, the
+    printings of its label, the printings recognised in it, one per line, and
+    the recognition error when there is one. The labels come from the manifest,
+    so they show as `unknown` until the dataset is pulled.
     """
     # read the results to summarise
     if latest:

@@ -28,6 +28,9 @@ def status() -> None:
     """Show the catalog's MTGJSON release, the printings without a pHash, the
     images on disk and the latest MTGJSON release, then whether the catalog is
     the latest release.
+
+    Ends with one verdict: up to date, outdated (with the command to run), or
+    unknown when MTGJSON can't be reached.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -53,6 +56,15 @@ def update(workers: int) -> None:
     """Build the reference data from the latest MTGJSON release: the catalog,
     then the missing reference images, then the pHashes of the printings that
     don't have one yet. Does nothing when the catalog already is that release.
+
+    AllPrintings is kept in data/reference/mtgjson/. A printing keeps its pHash
+    from the previous catalog when its image URL is unchanged; only the other
+    printings are hashed, and only their reference images missing from disk are
+    downloaded, to data/reference/images/. Hashing every printing, with no pHash
+    to reuse, downloads about 116k reference images, 12 GB.
+
+    Reference images that fail to download or hash are written to
+    data/reference/image_errors.log, which is removed when a run has none.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -73,8 +85,21 @@ def update(workers: int) -> None:
 def build(no_cache: bool, workers: int) -> None:
     """Build the reference data again from the catalog's own MTGJSON release, for
     when the code that builds the catalog changed. Reuses the AllPrintings on
-    disk, and the pHash of each printing whose image URL is unchanged. Never
-    changes which release the catalog is.
+    disk without reaching MTGJSON, and the pHash of each printing whose image URL
+    is unchanged. Never changes which release the catalog is.
+
+    With --no-cache, or when the AllPrintings on disk is another release or
+    absent, AllPrintings is downloaded, which works only while the catalog's
+    release is MTGJSON's latest: MTGJSON publishes no older release. Otherwise
+    the command fails, naming `mtg reference update`, and changes nothing.
+    Reference images that fail to download or hash are written to
+    data/reference/image_errors.log, which is removed when a run has none.
+
+    Example: Scryfall replaced a preview image under the same URL, so the reused
+    pHash is out of date:
+
+    \b
+    uv run mtg reference build --no-cache
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -89,6 +114,17 @@ def download_images() -> None:
     """Download the reference images missing from disk for the printings in the
     committed catalog. Changes nothing else: the catalog, its pHashes and
     AllPrintings stay as they are.
+
+    Neither recognition nor the tests need the reference images, only the
+    pHashes in the catalog; download them to look at them, for example to
+    compare a card image with its candidates' reference images while debugging
+    matching.
+
+    The images go to data/reference/images/: about 116k images, 12 GB, on a first
+    run; a second run downloads only what is still missing. Failed downloads are
+    written to data/reference/download_errors.log, which is removed when a run
+    has none; data/reference/image_errors.log, the log of `mtg reference update`
+    and `mtg reference build`, stays as it is.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
