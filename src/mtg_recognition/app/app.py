@@ -333,7 +333,8 @@ def display_recognized_detail(result: Recognized, debug: bool):
     ranking_cols = st.columns(RANKING_SIZE)
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
-            _reference_image(entry.printing.image_url, small=True)
+            # the normal size, so an expanded image isn't a 146-pixel thumbnail
+            _reference_image(entry.printing.image_url, small=False)
             st.caption(f"**{entry.printing.name}**")
             st.caption(f"Score: {entry.score:.1f}")
 
