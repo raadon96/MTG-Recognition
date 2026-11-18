@@ -1,6 +1,6 @@
 # Maintaining the benchmark dataset
 
-How the DVC remote for `data/benchmark/` and `data/scratch/` is set up, and the tasks only the maintainer does. Contributors only need [CONTRIBUTING.md](../../CONTRIBUTING.md#dataset-setup); the reasons behind this setup are in [ADR 0001](../adr/0001-benchmark-dataset-on-google-drive-via-dvc.md).
+How the DVC remote for `data/benchmark/` and `data/scratch/` is set up, and the tasks only the maintainer does. Contributors only need [CONTRIBUTING.md › The dataset](../../CONTRIBUTING.md#the-dataset); the reasons behind this setup are in [ADR 0001](../adr/0001-benchmark-dataset-on-google-drive-via-dvc.md).
 
 ## Who is who
 
@@ -20,7 +20,7 @@ Use the dataset account for Drive, and your personal account for the Cloud conso
 1. As your personal account, open [Service accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=mtg-recognition-2026) → `dataset-reader` → **Keys** → **Add key** → **Create new key** → **JSON**.
 2. Write down the key ID (shown in the Keys tab) next to the contributor's name, e.g. in a password manager note. The Keys tab has no names, so this note is the only way to tell keys apart later.
 3. Send them the JSON file over a private channel (a password manager share, or a direct message), never in an issue, PR or commit. Delete your local copy; if they lose the key, create a new one.
-4. Point them at [CONTRIBUTING.md › Dataset Setup](../../CONTRIBUTING.md#dataset-setup).
+4. Point them at [CONTRIBUTING.md › The dataset](../../CONTRIBUTING.md#the-dataset).
 
 ## Offboard a contributor, or respond to a leaked key
 
@@ -34,9 +34,32 @@ Create a key as in onboarding, then `gh secret set GDRIVE_CREDENTIALS_DATA < key
 
 ## Push new images
 
-See [CONTRIBUTING.md › Adding New Benchmark Images](../../CONTRIBUTING.md#adding-new-benchmark-images). Contributors can't push, so they send you their images and you add them.
+Contributors can't push, so they send you their images and you add them.
 
-When DVC opens the browser to sign in, pick the **dataset account**. If you pick your personal account, the push fails with "File not found", because your personal account can't see the folder.
+### Set up pushing, once
+
+You push through the `mtg-recognition` OAuth app, signed in as the dataset account. Put the client secret in the gitignored local config:
+
+```bash
+uv run dvc remote modify --local origin gdrive_client_secret '<client-secret>'
+```
+
+The first push opens Google's consent screen in the browser. Pick the **dataset account**, click Advanced → Go to mtg-recognition (the app is unverified on purpose, see ADR 0001), and tick both Drive permissions. If you pick your personal account, the push fails with "File not found", because your personal account can't see the folder. DVC caches the sign-in at `~/.cache/pydrive2fs/<client_id>/default.json`, so later pushes run without a browser.
+
+### Add the images
+
+1. Put each image in a category folder under `data/benchmark/`, such as `data/benchmark/1_photos_single_card/`, or, for a query image that fails recognition and isn't part of the benchmark, in a folder under `data/scratch/`. Don't add an image byte-identical to one already in either dataset. Name it like the existing files, usually after the UUID of its printing.
+2. Label each new benchmark image in `data/benchmark/manifest.json` with the UUIDs of the printings of the cards in it (`[]` for none): `mtg benchmark run` refuses to run on an unlabelled image.
+3. Hash the folders again, push the new files, and commit the updated pointer files, on a branch off `dev`:
+
+   ```bash
+   uv run dvc add data/benchmark data/scratch
+   uv run dvc push
+   git add data/benchmark.dvc data/scratch.dvc
+   git commit -m "data: add benchmark images for <description>"
+   ```
+
+   `dvc push` uploads only the files the remote doesn't hold yet. The committed pointer files are what make later `dvc pull`s fetch the new images.
 
 ## Regular checks
 

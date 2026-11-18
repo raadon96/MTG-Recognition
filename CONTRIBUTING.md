@@ -1,116 +1,95 @@
-# Contributing to Decksray MTG Recognition
+# Contributing to MTG Recognition
 
-This guide covers everything a new collaborator or contributor needs to set up the development environment, pull the benchmark and scratch datasets, and share new benchmark images.
+How to set up the code, run the tests and the benchmark, and send changes. To run the app without changing it, see the [README](README.md).
 
-## Development Setup
+## Quick Start
 
-Install the dependencies and the git hooks:
+You need git and [uv](https://docs.astral.sh/uv/getting-started/installation/); Docker is needed only to build the image. You don't need a dataset key to get started.
 
 ```bash
-uv sync --dev
-uv run pre-commit install
+git clone https://github.com/raadon96/MTG-Recognition.git
+cd MTG-Recognition
+uv sync --dev                  # Python and the locked dependencies
+uv run pre-commit install      # run the checks on every commit
+uv run pytest -m "not slow"    # the fast tests
+uv run mtg app                 # the web app, at http://localhost:8501
+docker compose up --build      # or the app from the Docker image, as users run it
 ```
 
-Every commit then runs `ruff check --fix`, `ruff format`, `lint-imports`, `ty check` and the fast tests (`pytest -m "not slow"`), and commits to `main` are refused. Run the hooks by hand with `uv run pre-commit run --all-files`.
+The hooks refuse commits to `main`, run `ruff check --fix` and `ruff format` on every commit, and run `lint-imports`, `ty check` and the fast tests on commits that change Python files, `pyproject.toml` or `uv.lock`. `uv run pre-commit run --all-files` runs them all by hand.
 
-If `pre-commit install` refuses because `core.hooksPath` is set, check where it points (`git config --show-origin core.hooksPath`). If it is the default `.git/hooks`, run `git config --unset-all core.hooksPath` first.
+The catalog, `data/reference/catalog.sqlite`, is committed, so recognition works right after cloning.
 
-## Dataset Setup
+## Branches and pull requests
 
-The test and benchmark dataset is versioned with [DVC](https://dvc.org/) and hosted in a Google Drive folder owned by a Google account that holds nothing but the dataset ([ADR 0001](docs/adr/0001-benchmark-dataset-on-google-drive-via-dvc.md)). Contributors and CI pull with a read-only key; only the maintainer pushes.
+- Branch off `dev`, and open pull requests against `dev`. `main` takes releases only.
+- Name the branch `<type>/<issue>-<slug>`, with the type one of `feat`, `fix`, `refactor`, `docs`, `test` or `chore`; for example `fix/123-double-faced-cards`.
+- A pull request that changes recognition results commits the new baseline (see [The benchmark](#the-benchmark)).
 
-### One-time setup (per developer)
+## Commands
 
-Ask the maintainer for a read-only key: a JSON key file for the `dataset-reader` service account, which can view the dataset folder and nothing else. Keep it outside the repo, e.g. at `~/.config/mtg-recognition/dataset-reader.json`, then point your local DVC at it:
+Each command describes itself in full with `uv run mtg <command> --help`.
+
+| Command | What it is for |
+|---|---|
+| `mtg app` | Start the web app |
+| `mtg recognize` | Rank the printings of every card in the query images |
+| `mtg segment` | Write each card in a query image as a card image |
+| `mtg reference status` | Compare the catalog with the latest MTGJSON release |
+| `mtg reference update` | Build the reference data from the latest MTGJSON release |
+| `mtg reference build` | Rebuild the reference data from the catalog's release |
+| `mtg reference download-images` | Download the reference images missing from disk, for debugging matching |
+| `mtg benchmark run` | Recognise the benchmark and compare with the baseline |
+| `mtg benchmark update-baseline` | Copy the latest results onto the baseline |
+| `mtg benchmark status` | Summarise the baseline or the latest results |
+
+## The dataset
+
+The slow tests and the benchmark need the dataset, which DVC keeps on Google Drive ([ADR 0001](docs/adr/0001-benchmark-dataset-on-google-drive-via-dvc.md)).
+
+Ask the maintainer for a read-only key, a JSON file. Keep it outside the repo, for example at `~/.config/mtg-recognition/dataset-reader.json`, and point DVC at it:
 
 ```bash
-uv sync --dev
 uv run dvc remote modify --local origin gdrive_use_service_account true
 uv run dvc remote modify --local origin gdrive_service_account_json_file_path ~/.config/mtg-recognition/dataset-reader.json
+uv run dvc pull                # or uv run dvc pull data/benchmark.dvc for the benchmark only
 ```
 
-The `--local` flag writes to `.dvc/config.local`, which is gitignored. Never put these two settings in the committed `.dvc/config`: the maintainer pushes through OAuth, not the service account. The committed `.dvc/config` already holds the remote name (`origin`), its URL (`gdrive://<folder-id>`) and the public `gdrive_client_id`.
+`--local` writes the two settings to the gitignored `.dvc/config.local`; never put them in the committed `.dvc/config`.
 
-### Pull the dataset
+The pull fills `data/benchmark/` with the labelled query images, and `data/scratch/` with query images that fail recognition, kept for debugging.
+
+To add query images, open an issue and share them with the maintainer, who adds them as described in [Maintaining the benchmark dataset](docs/guides/dataset-maintenance.md#push-new-images). The key is read-only, so you can't push them yourself.
+
+## The benchmark
 
 ```bash
-uv run dvc pull
+uv run pytest -m slow
+uv run mtg benchmark run
 ```
 
-The pull fills `data/benchmark/` with the 7 image categories, and `data/scratch/` with query images that fail recognition, kept for debugging (`error/`, `failure_cases/`, `uncommon_layout/`). To fetch only the benchmark, run `uv run dvc pull data/benchmark.dvc`. The key is read-only: `dvc push` with it fails with "Insufficient permissions for the specified parent".
+1. The run fails on any change in exact printing or card count, better or worse.
+2. Look at the failing images with `uv run mtg benchmark status --latest --failures`.
+3. If the change is wanted, run `uv run mtg benchmark update-baseline`.
+4. Commit `data/benchmark-baseline.json` in the same pull request.
 
-### Run the benchmark
+## The benchmark in CI
 
-```bash
-uv run mtg benchmark run               # recognise every labelled image, compare with the baseline
-uv run mtg benchmark update-baseline   # adopt the latest results as the baseline
-uv run mtg benchmark status            # summarise the baseline, without recognising anything
-uv run mtg benchmark status --latest   # summarise the latest results instead
-uv run mtg benchmark status --failures # also list the images that fail exact printing or card count
-```
+- The `engine` workflow runs the slow tests and the benchmark on every pull request, except those that change only Markdown files, `docs/` or `.claude/`. Those report no `engine` check at all, so don't make it a required check.
+- It uploads the results as the `benchmark-latest` artifact.
+- A GitHub runner and a laptop give the same results, so record baselines locally. If CI fails on a baseline that passes locally, results depend on the machine again: open an issue, and commit neither result as the baseline until it is fixed.
 
-`run` checks `data/benchmark/manifest.json` against the images and the catalog, recognises each image, writes the results to `output/benchmark/latest.json` and prints the images that flipped against the baseline, `data/benchmark-baseline.json`. It exits non-zero on any change in exact printing or card count, better or worse. To accept a change, run `update-baseline` and commit the baseline in the same PR. `status` prints the commit, date, MTGJSON version, totals and runtime of the baseline (or, with `--latest`, of the latest results) and, when both files exist, whether the latest results match the baseline. `--failures` prints a table of the failing images, with the printings of each label and the recognised printings one per line, and the recognition error when there is one; the labels come from the manifest, so they show as `unknown` until the dataset is pulled.
+## Docker image
 
-### Download the reference images
-
-```bash
-uv run mtg reference download-images
-```
-
-Matching compares pHashes stored in the catalog, so the reference images aren't needed to recognise cards or run the tests. To compare a card image with its candidates' reference images while debugging matching, `download-images` fills `data/reference/images/` with the images missing for the printings in the committed catalog (about 116k images and 12 GB on a first run). It leaves the catalog unchanged, unlike `mtg reference update`, which may download a newer MTGJSON release and rebuild it, and `mtg reference build`, which rebuilds it from its own release.
-
-### The benchmark in CI
-
-The `engine` workflow (`.github/workflows/engine.yml`) runs `pytest -m slow` and `mtg benchmark run` on every PR, except PRs that only change Markdown files, `docs/` or `.claude/`. It pulls `data/benchmark.dvc` with the `dataset-reader` key in the `GDRIVE_CREDENTIALS_DATA` secret, and uploads `output/benchmark/latest.json` as the `benchmark-latest` artifact. It caches the dataset, keyed on the hash of `data/benchmark.dvc`; that is the only cache the workflow saves itself (setup-uv's package cache, keyed on `uv.lock`, is saved by the `checks` workflow on every push to `dev` and `main`). A PR can restore its own caches, those of its base branch and those of `main`, the default branch, which every branch can read. So a push to `dev` or `main` that changes `data/benchmark.dvc`, such as a merged PR or a release, starts the workflow on that branch by itself, and that run saves the new dataset cache for the PRs into it. GitHub deletes a cache that no run has restored for 7 days, so the workflow also runs on `main` on Mondays and Thursdays at 04:17 UTC: those runs keep `main`'s dataset cache from expiring, and check `main` against changes from outside the repo, such as a new runner image or expired Drive credentials. You can still start a run by hand (Actions → engine → Run workflow). A docs-only PR reports no `engine` check at all, so don't make it a required check.
-
-A GitHub runner and a laptop must give the same results. At the same commit, runners on three CPU models (AMD EPYC 7763, 9V74 and 9V45) and a laptop gave the same results on all 257 benchmark images, apart from runtimes (#146). So record baselines locally with `mtg benchmark update-baseline` and commit them, as above. If the engine job fails on a baseline that passes locally, results depend on the machine again: that is a bug. Open an issue, and don't commit either result as the baseline until it is fixed. #146 found the last such bug: tied pHash similarities came back in an order that depended on the CPU.
-
-## Adding New Benchmark Images
-
-Only the maintainer can push to the dataset folder. To contribute images, open an issue or PR describing them and share them with the maintainer, who adds them as follows.
-
-### Maintainer setup
-
-The maintainer pushes through the project's OAuth client, signed in as the dataset account. Put the client secret in the local config:
-
-```bash
-uv run dvc remote modify --local origin gdrive_client_secret '<client-secret>'
-```
-
-The first push opens Google's consent screen in the browser: pick the dataset account (not a personal one), click Advanced → Go to mtg-recognition (the app is unverified on purpose, see ADR 0001), and tick both Drive permissions. DVC caches the token at `~/.cache/pydrive2fs/<client_id>/default.json`, so later pushes run without a browser.
-
-### 1. Drop the new images under `data/benchmark/` or `data/scratch/`
-
-Place new images in the appropriate category folder (e.g. `data/benchmark/1_photos_single_card/`). Query images that fail recognition and aren't part of the benchmark go in a `data/scratch/` folder instead. Don't add an image that is byte-identical to one already in either dataset. Filenames are typically the card UUID — see existing files for examples. Label each new image in `data/benchmark/manifest.json` with the UUIDs of the cards in it (`[]` for none): `mtg benchmark run` refuses to run on an unlabelled image.
-
-### 2. Re-track and push
-
-```bash
-uv run dvc add data/benchmark data/scratch
-uv run dvc push
-git add data/benchmark.dvc data/scratch.dvc
-git commit -m "data: add benchmark images for <description>"
-```
-
-`dvc add` re-hashes each folder, updating its pointer (`data/benchmark.dvc`, `data/scratch.dvc`) with the new content hash. `dvc push` uploads only the new blobs (existing blobs are deduplicated by MD5). The `git commit` of the updated pointers is what tells future `dvc pull`s to fetch the new images.
-
-### 3. Open a PR
-
-Push your branch and open a pull request. Reviewers will `git pull && uv run dvc pull` to fetch your additions before reviewing.
+The `docker` workflow builds the image on each pull request that changes what it is built from, and checks that it serves the web app and recognises a card. Each `v*` tag publishes the image to `ghcr.io/raadon96/mtg-recognition`, for `linux/amd64` and `linux/arm64`.
 
 ## Troubleshooting
 
-### `dvc pull` says "File not found: <folder-id>"
-The service account can't see the dataset folder: the key is for another account, or the folder isn't shared with `dataset-reader` as Viewer. The share must be on the folder the remote URL points at, not on the `files` folder inside it. Ask the maintainer.
-
-### `module 'OpenSSL.crypto' has no attribute 'sign'`
-Your environment has pyOpenSSL 24.3 or later, which PyDrive2's service-account sign-in can't use. PyDrive2 1.21.3 requires an older one; run `uv sync --dev` to get the locked versions.
-
-### `invalid_grant: Token has been expired or revoked` (maintainer)
-The cached OAuth token is no longer valid. Delete `~/.cache/pydrive2fs/<client_id>/default.json` and push again, signing in as the dataset account.
-
-### `dvc pull` says "no data to pull"
-The `data/benchmark.dvc` and `data/scratch.dvc` files are missing from your branch. Run `git pull` to fetch the latest pointer files.
-
-### `dvc pull` says "file not found in remote"
-The maintainer hasn't pushed the data that `data/benchmark.dvc` or `data/scratch.dvc` points to yet. Ask them to push it.
+| Error | Cause and fix |
+|---|---|
+| `pre-commit install` refuses because `core.hooksPath` is set | Check where it points with `git config --show-origin core.hooksPath`. If it is the default `.git/hooks`, run `git config --unset-all core.hooksPath`, then install again |
+| `dvc pull` says "File not found: <folder-id>" | The key can't see the dataset folder: it is for another account, or the folder isn't shared with it. Ask the maintainer |
+| `module 'OpenSSL.crypto' has no attribute 'sign'` | pyOpenSSL 24.3 or later is installed, which the Google Drive sign-in can't use. Run `uv sync --dev` to get the locked versions |
+| `dvc pull` says "no data to pull" | `data/benchmark.dvc` and `data/scratch.dvc` are missing from your branch. Run `git pull` |
+| `dvc pull` says "file not found in remote" | The maintainer hasn't pushed the data those files point to yet. Ask them to |
+| `dvc push` says "Insufficient permissions for the specified parent" | The key is read-only. Share the images with the maintainer instead |
