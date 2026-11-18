@@ -2,6 +2,7 @@
 
 import io
 import json
+from dataclasses import replace
 
 import cv2
 import numpy as np
@@ -14,6 +15,7 @@ from mtg_recognition.app.uploads import (
     NotRecognized,
     Recognized,
     export_bytes,
+    scryfall_card_url,
     upload_results,
 )
 from mtg_recognition.engine.pipeline import CardResult, RecognitionResult
@@ -160,6 +162,7 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing():
         "Base Set Size",
         "Artist",
         "Scryfall URL",
+        "Image URL",
     ]
     assert df.to_dict("records") == [
         {
@@ -173,6 +176,7 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing():
             "Base Set Size": "100",
             "Artist": "Artist",
             "Scryfall URL": "",
+            "Image URL": "",
         },
         {
             "Uploaded Filename": "card.jpg",
@@ -185,6 +189,7 @@ def test_csv_export_has_one_row_per_result_with_the_best_printing():
             "Base Set Size": "",
             "Artist": "",
             "Scryfall URL": "",
+            "Image URL": "",
         },
     ]
 
@@ -208,6 +213,7 @@ def test_excel_export_has_one_row_per_result_with_the_best_printing():
         "Base Set Size",
         "Artist",
         "Scryfall URL",
+        "Image URL",
     ]
     assert df["Status"].tolist() == ["success", "error"]
     assert df["Card Name"][0] == "Card p0"
@@ -240,6 +246,7 @@ def test_json_export_has_one_item_per_result_with_the_best_printing():
         "base_set_size": None,
         "artist": None,
         "scryfall_url": None,
+        "image_url": None,
     }
     assert items == [
         {
@@ -253,6 +260,7 @@ def test_json_export_has_one_item_per_result_with_the_best_printing():
             "base_set_size": "100",
             "artist": "Artist",
             "scryfall_url": None,
+            "image_url": None,
             "error_message": None,
         },
         {
@@ -279,5 +287,46 @@ def test_json_export_has_one_item_per_result_with_the_best_printing():
         "base_set_size",
         "artist",
         "scryfall_url",
+        "image_url",
         "error_message",
     ]
+
+
+def test_a_card_whose_ocr_failed_holds_the_ocr_error():
+    card = CardResult(
+        card_image=card_image(),
+        ranked=[RankedPrinting(printing("p0"), 0.0)],
+        reading=None,
+        ocr_error="RuntimeError: OCR exploded",
+    )
+
+    [result] = upload_results(NAME, DATA, _recognition(card))
+
+    assert isinstance(result, Recognized)
+    assert result.ocr_error == "RuntimeError: OCR exploded"
+
+
+def test_the_scryfall_card_page_is_named_by_the_image_url_s_file_name():
+    image_url = (
+        "https://cards.scryfall.io/normal/front/f/6/"
+        "f6555d1f-d4cf-41f7-99d3-88fd53e75457.jpg?1562550034"
+    )
+
+    assert scryfall_card_url(image_url) == (
+        "https://scryfall.com/card/f6555d1f-d4cf-41f7-99d3-88fd53e75457"
+    )
+
+
+def test_export_holds_the_scryfall_card_page_and_the_image_url():
+    image_url = "https://cards.scryfall.io/normal/front/a/b/abc-123.jpg"
+    card = CardResult(
+        card_image=card_image(),
+        ranked=[RankedPrinting(replace(printing("p0"), image_url=image_url), 100.0)],
+        reading=None,
+    )
+    results = upload_results(NAME, DATA, _recognition(card))
+
+    [item] = json.loads(export_bytes(results, "JSON"))
+
+    assert item["scryfall_url"] == "https://scryfall.com/card/abc-123"
+    assert item["image_url"] == image_url

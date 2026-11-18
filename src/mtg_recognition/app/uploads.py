@@ -5,6 +5,8 @@ app.
 import io
 import json
 from dataclasses import dataclass
+from pathlib import PurePosixPath
+from urllib.parse import urlparse
 
 import cv2
 import numpy as np
@@ -45,6 +47,7 @@ _EXPORT_COLUMNS = {
     "base_set_size": "Base Set Size",
     "artist": "Artist",
     "scryfall_url": "Scryfall URL",
+    "image_url": "Image URL",
 }
 
 
@@ -56,7 +59,9 @@ class Recognized:
     query_image_jpeg: bytes | None  # for display only; None when it can't be decoded
     ranked: list[RankedPrinting]  # best first, never empty
     card_image_jpeg: bytes  # for display only
-    reading: Reading | None  # None when OCR failed
+    reading: Reading | None  # None when OCR failed, with ocr_error set
+    # set when OCR failed, so the ranking is ordered by similarity, every score 0
+    ocr_error: str | None = None
 
 
 @dataclass(slots=True)
@@ -108,6 +113,7 @@ def upload_results(
                     ranked=card.ranked,
                     card_image_jpeg=_encode_jpeg(card.card_image),
                     reading=card.reading,
+                    ocr_error=card.ocr_error,
                 )
             )
         else:
@@ -139,7 +145,9 @@ def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
                     row["collector_number"] = best.printing.collector_number
                     row["base_set_size"] = best.printing.base_set_size
                     row["artist"] = best.printing.artist
-                    row["scryfall_url"] = best.printing.image_url
+                    if best.printing.image_url is not None:
+                        row["scryfall_url"] = scryfall_card_url(best.printing.image_url)
+                        row["image_url"] = best.printing.image_url
                 case NotRecognized():
                     row["status"] = "not_recognized"
                 case Failed():
@@ -172,6 +180,16 @@ def export_bytes(results: list[UploadResult], export_format: str) -> bytes:
                 raise ValueError(f"unknown format {export_format!r}")
     except Exception as e:
         raise RuntimeError(f"Export failed: {e}") from e
+
+
+def scryfall_card_url(image_url: str) -> str:
+    """The printing's page on Scryfall, from its image URL in the catalog.
+
+    The image's file name is the printing's Scryfall ID, and
+    scryfall.com/card/<id> redirects to the printing's page.
+    """
+    scryfall_id = PurePosixPath(urlparse(image_url).path).stem
+    return f"https://scryfall.com/card/{scryfall_id}"
 
 
 def _encode_query_image(data: bytes) -> bytes:
