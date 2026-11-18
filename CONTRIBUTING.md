@@ -4,7 +4,7 @@ How to set up the code, run the tests and the benchmark, and send changes. To ru
 
 ## Quick Start
 
-You need git, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Docker only to build the image. No dataset key is needed.
+You need git and [uv](https://docs.astral.sh/uv/getting-started/installation/); Docker is needed only to build the image. You don't need a dataset key to get started.
 
 ```bash
 git clone https://github.com/raadon96/MTG-Recognition.git
@@ -16,7 +16,7 @@ uv run mtg app                 # the web app, at http://localhost:8501
 docker compose up --build      # or the app from the Docker image, as users run it
 ```
 
-Every commit runs `ruff check --fix`, `ruff format`, `lint-imports`, `ty check` and the fast tests, and refuses commits to `main`; `uv run pre-commit run --all-files` runs them by hand.
+The hooks refuse commits to `main`, run `ruff check --fix` and `ruff format` on every commit, and run `lint-imports`, `ty check` and the fast tests on commits that change Python files, `pyproject.toml` or `uv.lock`. `uv run pre-commit run --all-files` runs them all by hand.
 
 The catalog, `data/reference/catalog.sqlite`, is committed, so recognition works right after cloning.
 
@@ -68,7 +68,7 @@ uv run pytest -m slow
 uv run mtg benchmark run
 ```
 
-1. `mtg benchmark run` fails on any change in exact printing or card count, better or worse.
+1. The run fails on any change in exact printing or card count, better or worse.
 2. Look at the failing images with `uv run mtg benchmark status --latest --failures`.
 3. If the change is wanted, run `uv run mtg benchmark update-baseline`.
 4. Commit `data/benchmark-baseline.json` in the same pull request.

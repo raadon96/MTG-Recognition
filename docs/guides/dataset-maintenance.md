@@ -48,8 +48,8 @@ The first push opens Google's consent screen in the browser. Pick the **dataset 
 
 ### Add the images
 
-1. Put each image in a category folder under `data/benchmark/`, such as `data/benchmark/1_photos_single_card/`, or, for a query image that fails recognition and isn't part of the benchmark, in a folder under `data/scratch/`. Don't add an image byte-identical to one already in either dataset. Name it like the existing files, usually after the card's UUID.
-2. Label each new benchmark image in `data/benchmark/manifest.json` with the UUIDs of the cards in it (`[]` for none): `mtg benchmark run` refuses to run on an unlabelled image.
+1. Put each image in a category folder under `data/benchmark/`, such as `data/benchmark/1_photos_single_card/`, or, for a query image that fails recognition and isn't part of the benchmark, in a folder under `data/scratch/`. Don't add an image byte-identical to one already in either dataset. Name it like the existing files, usually after the UUID of its printing.
+2. Label each new benchmark image in `data/benchmark/manifest.json` with the UUIDs of the printings of the cards in it (`[]` for none): `mtg benchmark run` refuses to run on an unlabelled image.
 3. Hash the folders again, push the new files, and commit the updated pointer files, on a branch off `dev`:
 
    ```bash

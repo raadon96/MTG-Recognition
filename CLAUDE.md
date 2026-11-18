@@ -129,6 +129,6 @@ uv run mtg benchmark run             # recognise the labelled images; non-zero o
 uv run mtg benchmark update-baseline # copy output/benchmark/latest.json onto data/benchmark-baseline.json
 ```
 
-Test images are DVC-tracked on Google Drive; setup: `CONTRIBUTING.md`; adding images and the remote: `docs/guides/dataset-maintenance.md`.
+The benchmark and scratch images are DVC-tracked on Google Drive; setup: `CONTRIBUTING.md`; adding images and the remote: `docs/guides/dataset-maintenance.md`.
 
 `data/reference/catalog.sqlite` (each printing's details and pHash, and the MTGJSON version) is committed; change it only through `mtg reference update` or `mtg reference build`. `data/benchmark-baseline.json` is committed; change it only through `mtg benchmark update-baseline`.
