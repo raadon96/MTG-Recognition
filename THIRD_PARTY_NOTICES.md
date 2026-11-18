@@ -1,8 +1,8 @@
 # Third-party notices
 
-The repository and the Docker image ship the models below, which other projects
-publish. The repository itself is licensed under AGPL-3.0-only (see `LICENSE` and
-`docs/adr/0010-licensed-under-agpl-3-0-only.md`).
+The repository and the Docker image ship the models and code below, which other
+projects publish. The repository itself is licensed under AGPL-3.0-only (see
+`LICENSE` and `docs/adr/0010-licensed-under-agpl-3-0-only.md`).
 
 ## Models
 
@@ -29,11 +29,12 @@ publish. The repository itself is licensed under AGPL-3.0-only (see `LICENSE` an
 - File: `models/segmentation/prod/silueta.onnx`
 - Source: <https://github.com/danielgatis/rembg/releases/download/v0.0.0/silueta.onnx>,
   as rembg downloads it (MD5 `55e59e0d8062d2f5d013f4725ee84782`)
-- Licence: Apache-2.0. silueta is U²-Net (<https://github.com/xuebinqin/U-2-Net>,
-  Apache-2.0) reduced to 43 MB by Kikedao, who shared it in
-  <https://github.com/xuebinqin/U-2-Net/issues/295> for inclusion in U²-Net's
-  pretrained models; no other licence is stated for it. rembg, which publishes the
-  ONNX file, is MIT-licensed.
+- Licence: not stated; taken as Apache-2.0. silueta is U²-Net
+  (<https://github.com/xuebinqin/U-2-Net>, Apache-2.0) reduced to 43 MB by Kikedao,
+  who shared it in <https://github.com/xuebinqin/U-2-Net/issues/295> and offered it
+  for U²-Net's pretrained models, which never added it. Neither that issue nor
+  rembg, which publishes the ONNX file and is itself MIT-licensed, states a licence
+  for the model.
 - Copyright: none given by the source
 
 ### YOLOE-11s
@@ -55,6 +56,13 @@ publish. The repository itself is licensed under AGPL-3.0-only (see `LICENSE` an
 - Source: <https://github.com/PaddlePaddle/PaddleX>
 - Licence: Apache-2.0
 - Copyright: Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
+
+### Ultralytics
+
+- Files: `src/mtg_recognition/engine/segmentation/yolo.py` copies
+  `merge_multi_segment` from ultralytics 8.4.21 (`ultralytics.data.converter`)
+- Source: <https://github.com/ultralytics/ultralytics>
+- Licence: AGPL-3.0, the repository's own licence; the text is in `LICENSE`
 
 ## Apache License 2.0
 
