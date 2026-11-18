@@ -1,0 +1,31 @@
+name: docker-cache-cleanup
+
+# Each write of the registry cache leaves the previous cache as an untagged
+# version of ghcr.io/raadon96/mtg-recognition-cache, so the package grows
+# without end. This deletes those untagged versions, keeping the most recent
+# few, which a running build may still be reading.
+#
+# It must never run on ghcr.io/raadon96/mtg-recognition: there, the untagged
+# versions are the per-platform images that each release's tags point to, and
+# deleting them breaks the releases. So the package is set here, not taken as
+# an input.
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-name: mtg-recognition-cache
+          package-type: container
+          delete-only-untagged-versions: "true"
+          min-versions-to-keep: 4
