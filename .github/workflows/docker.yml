@@ -1,0 +1,60 @@
+name: docker
+
+# Builds the image and checks that it serves the web app and recognises a card.
+# Runs only on changes to what the image is built from: an allowlist, unlike
+# the engine workflow, because the Dockerfile copies named paths, and a build
+# takes several minutes. A path the Dockerfile starts copying belongs here too,
+# except README.md, LICENSE and THIRD_PARTY_NOTICES.md: left out on purpose,
+# so a docs-only PR doesn't build the image.
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      # The dependencies installed into the image's venv.
+      - pyproject.toml
+      - uv.lock
+      # Copied into the image.
+      - "src/**"
+      - "models/**"
+      - data/reference/catalog.sqlite
+      # Streamlit reads its configuration from here; none is committed yet.
+      - ".streamlit/**"
+      # This workflow, and the build and checks it runs.
+      - .github/workflows/docker.yml
+      - ".github/actions/docker-image/**"
+      # The query image the check recognises.
+      - "tests/regression/matching/fixtures/**"
+
+# packages: write is for the registry cache only; nothing pushes the image
+# itself from a pull request.
+permissions:
+  contents: read
+  packages: write
+
+# Same settings as the checks workflow: a new PR commit cancels the run on the
+# previous one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # A PR from a fork gets a read-only token, so it reads the cache without
+      # logging in and doesn't write it.
+      - if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ./.github/actions/docker-image
+        with:
+          platform: linux/amd64
+          write-cache: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
