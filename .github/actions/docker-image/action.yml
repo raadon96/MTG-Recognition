@@ -1,0 +1,47 @@
+name: Build and check the Docker image
+description: >
+  Builds the image for one platform into the local Docker engine, without
+  pushing it, then checks it with check-image.sh. The pull request workflow and
+  the release workflow both run it, so they check the image the same way.
+
+inputs:
+  platform:
+    description: The platform to build, such as linux/amd64. Run on a runner of that platform, so the checks run natively.
+    required: true
+  write-cache:
+    description: >
+      "true" to write the layers to the registry cache. Requires a login to
+      ghcr.io with packages write.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # The default docker driver can't export a registry cache.
+    - uses: docker/setup-buildx-action@v4
+
+    # One cache tag per platform, such as amd64, so the platforms' builds don't
+    # overwrite each other's cache.
+    - id: cache
+      shell: bash
+      run: echo "ref=ghcr.io/raadon96/mtg-recognition-cache:${PLATFORM#*/}" >> "$GITHUB_OUTPUT"
+      env:
+        PLATFORM: ${{ inputs.platform }}
+
+    # The cache is in the registry rather than the Actions cache, so image
+    # layers never evict the benchmark dataset cache. It's a separate package,
+    # so ghcr.io/raadon96/mtg-recognition shows only release tags. A missing
+    # cache only prints a warning; ignore-error does the same for a failed
+    # write, so runs pass before the cache package exists.
+    - uses: docker/build-push-action@v7
+      with:
+        context: .
+        platforms: ${{ inputs.platform }}
+        tags: mtg-recognition:check
+        load: true
+        push: false
+        cache-from: type=registry,ref=${{ steps.cache.outputs.ref }}
+        cache-to: ${{ inputs.write-cache == 'true' && format('type=registry,ref={0},mode=max,ignore-error=true', steps.cache.outputs.ref) || '' }}
+
+    - shell: bash
+      run: '"$GITHUB_ACTION_PATH/check-image.sh" mtg-recognition:check'
