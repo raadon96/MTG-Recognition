@@ -54,4 +54,8 @@ When the user says yes to merging the release PR, or ran `/ship merge`:
 2. Tag the merge commit: `git switch main && git pull && git tag -a v<version> -m v<version> && git push origin v<version>`. A `v*` tag can't be moved or deleted once pushed.
 3. `gh release create v<version> --generate-notes`
 4. Bring `dev` up to `main`: `git switch dev && git merge --ff-only main && git push`
-5. Watch the publish of the Docker image, which the tag started: find the run with `gh run list --workflow docker.yml --event push --branch v<version> --json databaseId --jq '.[0].databaseId'` (retry after a few seconds if it isn't listed yet), then `gh run watch <run> --exit-status`. This takes several minutes. If it passes, report the published tags, `ghcr.io/raadon96/mtg-recognition:<version>` and `:latest`. If it fails, report the failing job and step, with the relevant lines of `gh run view <run> --log-failed`, and tell the user they can rerun the publish from the tag: `gh workflow run docker.yml --ref v<version> -f tag=v<version>`. Don't start a fix.
+5. Watch the publish of the Docker image, which the tag started:
+   - Find the run: `gh run list --workflow docker.yml --event push --branch v<version> --json databaseId --jq '.[0].databaseId'`. If it isn't listed yet, wait a few seconds and retry.
+   - Watch it: `gh run watch <run> --exit-status`. This takes several minutes.
+   - If it passes, report the published tags: `ghcr.io/raadon96/mtg-recognition:<version>` and `:latest`.
+   - If it fails, report the failing job and step, with the relevant lines of `gh run view <run> --log-failed`, and tell the user they can rerun the publish from the tag: `gh workflow run docker.yml --ref v<version> -f tag=v<version>`. Don't start a fix.

@@ -92,6 +92,7 @@ jobs:
   metadata:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
     outputs:
@@ -100,9 +101,14 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
     steps:
       # Without a semver tag, the metadata would hold only latest, and the run
-      # would publish latest with no version.
-      - name: Check the tag and the ref it runs from
+      # would publish latest with no version. The image goes into buildx's
+      # comma-separated outputs, so it must be a plain image name.
+      - name: Check the tag, the image and the ref it runs from
         run: |
+          if [[ ! $IMAGE =~ ^ghcr\.io/raadon96/[a-z0-9._-]+$ || $IMAGE == ghcr.io/raadon96/mtg-recognition-cache ]]; then
+            echo "::error::The image '$IMAGE' isn't an image of ghcr.io/raadon96 other than the cache."
+            exit 1
+          fi
           if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::The tag '$TAG' isn't a version such as v0.6.0."
             exit 1
@@ -115,9 +121,10 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
 
-      # Tags: X.Y.Z and latest, with no X.Y and no dev. The labels go on each
-      # platform's image; the annotations, at the index level, go on the
-      # manifest, where GHCR reads them.
+      # Tags: X.Y.Z and latest, with no X.Y and no dev. A prerelease tag, such
+      # as a test's v0.0.0-test, doesn't move latest. The labels go on each
+      # platform's image; the same list, as annotations at the index level,
+      # goes on the manifest, where GHCR reads them.
       - id: meta
         uses: docker/metadata-action@v6
         env:
@@ -127,17 +134,13 @@ jobs:
           flavor: latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ env.TAG }}
-            type=raw,value=latest
-          labels: |
+            type=raw,value=latest,enable=${{ !contains(env.TAG, '-') }}
+          labels: &oci-labels |
             org.opencontainers.image.title=MTG Recognition
             org.opencontainers.image.description=Recognises Magic: The Gathering cards in a photo and finds each card's printing.
             org.opencontainers.image.source=https://github.com/raadon96/MTG-Recognition
             org.opencontainers.image.licenses=AGPL-3.0-only
-          annotations: |
-            org.opencontainers.image.title=MTG Recognition
-            org.opencontainers.image.description=Recognises Magic: The Gathering cards in a photo and finds each card's printing.
-            org.opencontainers.image.source=https://github.com/raadon96/MTG-Recognition
-            org.opencontainers.image.licenses=AGPL-3.0-only
+          annotations: *oci-labels
 
   # Each platform is built and checked natively, as on pull requests. Nothing
   # is pushed until both platforms pass.
@@ -153,8 +156,10 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
+            arch: amd64
             runner: ubuntu-24.04
           - platform: linux/arm64
+            arch: arm64
             runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v7
@@ -172,9 +177,24 @@ jobs:
           platform: ${{ matrix.platform }}
           write-cache: "true"
 
-  # Builds each platform again, from the cache the check just wrote, so its
-  # layers are the ones checked, and pushes it by digest, with no tag. The
-  # labels change only the image's config.
+      # The push job compares its build's layers with these.
+      - name: Write the checked image's layers to a file
+        run: docker inspect -f '{{json .RootFS.Layers}}' mtg-recognition:check > "$RUNNER_TEMP/layers.json"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: layers-${{ matrix.arch }}
+          path: ${{ runner.temp }}/layers.json
+          if-no-files-found: error
+          retention-days: 1
+
+  # Builds each platform again, from the cache the check just wrote, and
+  # pushes it by digest, with no tag, only if its layers are the ones checked.
+  # The labels change only the image's config. The layers differ when the
+  # build missed the cache: a failed cache write, a pull request's build
+  # writing the cache in between, or a new python base image. Rerun the
+  # publish then.
+  # Its matrix lists the same platforms as the check job's.
   push:
     needs: [metadata, check]
     runs-on: ${{ matrix.runner }}
@@ -204,7 +224,31 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
-      # The provenance comes from the attestation on the manifest instead of
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ needs.metadata.outputs.labels }}
+          tags: mtg-recognition:release
+          load: true
+          push: false
+          cache-from: type=registry,ref=ghcr.io/raadon96/mtg-recognition-cache:${{ matrix.arch }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: layers-${{ matrix.arch }}
+          path: ${{ runner.temp }}/checked
+
+      - name: Compare the layers with the checked image's
+        run: |
+          docker inspect -f '{{json .RootFS.Layers}}' mtg-recognition:release > "$RUNNER_TEMP/layers.json"
+          if ! diff -q "$RUNNER_TEMP/checked/layers.json" "$RUNNER_TEMP/layers.json" >/dev/null; then
+            echo "::error::The build's layers differ from the checked image's, so it missed the cache. Rerun the publish."
+            exit 1
+          fi
+
+      # Builds from this job's builder, which already holds every layer. The
+      # provenance comes from the attestation on the manifest instead of
       # buildx's own, which GHCR lists as an extra unknown/unknown platform.
       - id: build
         uses: docker/build-push-action@v7
@@ -213,7 +257,6 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ needs.metadata.outputs.labels }}
           provenance: false
-          cache-from: type=registry,ref=ghcr.io/raadon96/mtg-recognition-cache:${{ matrix.arch }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Write the digest to a file
