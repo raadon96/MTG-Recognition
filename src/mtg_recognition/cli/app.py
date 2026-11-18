@@ -15,10 +15,10 @@ import click
 @click.command(name="app", context_settings={"ignore_unknown_options": True})
 @click.argument("streamlit_args", nargs=-1, type=click.UNPROCESSED)
 def app(streamlit_args: tuple[str, ...]) -> None:
-    """Start the web app; extra options go to `streamlit run`.
+    """Start the web app on http://localhost:8501.
 
-    The app is served on http://localhost:8501; set another port with
-    --server.port.
+    Extra options go to `streamlit run`, such as --server.port to change the
+    port.
 
     Examples:
 

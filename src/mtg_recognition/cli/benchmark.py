@@ -43,25 +43,22 @@ from mtg_recognition.reference.layout import ReferenceData
 
 @click.group(name="benchmark")
 def benchmark() -> None:
-    """Measure recognition on the benchmark and compare it with the baseline."""
+    """Score recognition on the benchmark against the baseline."""
 
 
 @benchmark.command(name="run")
 def run() -> None:
-    """Recognise every labelled query image, write the results to
-    output/benchmark/latest.json and compare them with the baseline,
-    data/benchmark-baseline.json.
+    """Recognise the benchmark and compare with the baseline.
 
-    Needs the dataset: `uv run dvc pull data/benchmark.dvc`. Before loading any
-    model, checks data/benchmark/manifest.json against the images and the
-    catalog: every image labelled, every label's image present, every UUID in
-    the catalog.
+    Needs the dataset: `uv run dvc pull data/benchmark.dvc`. First checks
+    data/benchmark/manifest.json against the images and the catalog. Writes the
+    results to output/benchmark/latest.json and prints the query images whose
+    result changed from data/benchmark-baseline.json.
 
-    Prints the query images whose result changed from the baseline, and the
-    totals. Exits non-zero when the manifest doesn't match the dataset, or when
-    the results differ from the baseline in exact printing or card count, better
-    or worse. To accept a change, run `uv run mtg benchmark update-baseline` and
-    commit data/benchmark-baseline.json in the same PR.
+    Exits non-zero on a manifest problem, or on any change in exact printing or
+    card count, better or worse. To accept a change, run
+    `uv run mtg benchmark update-baseline` and commit the baseline in the same
+    PR.
     """
     run_at = datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -138,12 +135,9 @@ def run() -> None:
 
 @benchmark.command(name="update-baseline")
 def update_baseline() -> None:
-    """Copy the latest results onto the baseline, without recognising anything.
-    Commit data/benchmark-baseline.json afterwards.
+    """Copy the latest results onto the baseline.
 
-    Record the baseline on your own machine: a GitHub runner and a laptop give the
-    same results, so a baseline that passes locally and fails in CI is a bug to
-    report, not a result to commit.
+    Recognises nothing. Commit data/benchmark-baseline.json afterwards.
     """
     if not LATEST_PATH.exists():
         click.echo(
@@ -162,20 +156,18 @@ def update_baseline() -> None:
 @click.option(
     "--failures",
     is_flag=True,
-    help="List the query images that fail exact printing or card count.",
+    help=(
+        "List the query images that fail exact printing or card count, with "
+        "their label, the recognised printings and the error. Labels show as "
+        "`unknown` until the dataset is pulled."
+    ),
 )
 def status(latest: bool, failures: bool) -> None:
-    """Summarise the baseline or the latest results, without recognising anything
-    or writing to disk.
+    """Summarise the baseline or the latest results.
 
-    Prints the commit, date, MTGJSON version, totals and runtime of the baseline,
-    or with --latest of the latest results, and, when both files exist, whether
-    the latest results match the baseline.
-
-    --failures adds a table of the failing query images: the query image, the
-    printings of its label, the printings recognised in it, one per line, and
-    the recognition error when there is one. The labels come from the manifest,
-    so they show as `unknown` until the dataset is pulled.
+    Prints the commit, date, MTGJSON version, totals and runtime, and whether
+    the latest results match the baseline. Recognises nothing and writes
+    nothing.
     """
     # read the results to summarise
     if latest:

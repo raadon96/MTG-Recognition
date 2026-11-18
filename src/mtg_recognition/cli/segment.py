@@ -43,18 +43,16 @@ from mtg_recognition.settings import settings
     ),
 )
 def segment(input_path: Path, output_dir: Path, mode: SegmentationMode) -> None:
-    """Write each card image found in a query image to the output directory.
+    """Write each card in a query image as a card image.
 
-    A query image with one card gives `<name>.jpg`; one with several cards gives
-    `<name>_0.jpg`, `<name>_1.jpg` and so on. Query images that can't be read or
-    hold no card are skipped with a message.
+    One card gives `<name>.jpg`; several give `<name>_0.jpg`, `<name>_1.jpg` and
+    so on. Query images that can't be read or hold no card are skipped.
 
     Examples:
 
     \b
     uv run mtg segment -i photo.jpg -o output/segment --mode yolo
-    uv run mtg segment -i data/benchmark/1_photos_single_card \\
-        -o output/segment/1_photos_single_card
+    uv run mtg segment -i data/benchmark/1_photos_single_card -o output/segment
     """
     img_paths = query_image_paths(input_path)
     if not img_paths:
