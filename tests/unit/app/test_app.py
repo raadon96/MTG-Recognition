@@ -2,6 +2,7 @@
 script, such as a runtime dependency gone missing (#214), fails a test.
 """
 
+import importlib.util
 from dataclasses import replace
 from pathlib import Path
 
@@ -133,3 +134,24 @@ def test_the_sidebar_names_the_licence_and_links_the_source(monkeypatch):
     assert "AGPL-3.0" in footer
     assert "https://github.com/raadon96/MTG-Recognition" in footer
     assert "Fan Content Policy" in footer
+
+
+def test_results_from_before_a_code_change_are_dropped(monkeypatch):
+    # When app code changes, Streamlit imports uploads.py again before the next
+    # run, so the results in session state are instances of the old classes.
+    # A second copy of the module stands for the old one.
+    spec = importlib.util.spec_from_file_location(
+        "old_uploads", APP_SCRIPT.parent / "uploads.py"
+    )
+    assert spec is not None and spec.loader is not None
+    old_uploads = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(old_uploads)
+    monkeypatch.setattr("mtg_recognition.engine.pipeline.Pipeline", FakePipeline)
+    at = AppTest.from_file(APP_SCRIPT).run()
+    at.session_state["upload_results"] = [old_uploads.NotRecognized("a.png", None)]
+
+    at.run()
+
+    assert not at.exception
+    assert at.session_state["upload_results"] is None
+    assert any("Recognize cards" in i.value for i in at.info)

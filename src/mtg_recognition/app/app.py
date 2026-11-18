@@ -409,6 +409,15 @@ def main():
     if "uploader_key" not in st.session_state:
         st.session_state.uploader_key = 0
 
+    # When app code changes, Streamlit imports uploads.py again before this run,
+    # so results kept from before are instances of the old classes and match no
+    # case in the views; drop them
+    results = st.session_state.upload_results
+    if results and not isinstance(results[0], UploadResult):
+        st.session_state.upload_results = None
+        st.session_state.selected_result_idx = None
+        st.info("The app was updated. Click Recognize cards to see the results again.")
+
     # Upload
     # ADR 0004: the app encourages a plain, bright background but doesn't require one
     st.sidebar.info(
