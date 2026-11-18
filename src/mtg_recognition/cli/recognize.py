@@ -45,11 +45,10 @@ from mtg_recognition.engine import pipeline
     help="Number of printings in each card's ranking.",
 )
 def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) -> None:
-    """Run the full MTG card recognition pipeline on one query image or a directory.
+    """Rank the printings of every card in the query images.
 
-    Always segments the query image (the segmentor's bypass path handles
-    pre-cropped scans without running any model). Results are printed
-    incrementally. Pass -o to also save all results to a single JSON file.
+    Prints each query image's results as it goes; -o also writes them all to
+    one JSON file. Pre-cropped card scans work too.
 
     Examples:
 
@@ -57,8 +56,6 @@ def recognize(input_path: Path, output_file: Path | None, k_phash: int, k: int) 
     uv run mtg recognize -i card.jpg -o runs/output.json
     uv run mtg recognize \\
         -i data/benchmark/6_photos_single_card_textured_bg -k 3 --k-phash 20
-    uv run mtg recognize \\
-        -i data/benchmark/1_photos_single_card -o output/results.json
     """
     img_paths = query_image_paths(input_path)
     if not img_paths:

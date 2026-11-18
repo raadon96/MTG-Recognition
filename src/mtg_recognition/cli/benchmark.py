@@ -43,16 +43,22 @@ from mtg_recognition.reference.layout import ReferenceData
 
 @click.group(name="benchmark")
 def benchmark() -> None:
-    """Measure recognition on the benchmark and compare it with the baseline."""
+    """Score recognition on the benchmark against the baseline."""
 
 
 @benchmark.command(name="run")
 def run() -> None:
-    """Recognise every labelled query image, write the results to
-    output/benchmark/latest.json and compare them with the baseline.
+    """Recognise the benchmark and compare with the baseline.
 
-    Exits non-zero when the manifest doesn't match the dataset, or when the results
-    differ from the baseline in exact printing or card count, better or worse.
+    Needs the dataset: `uv run dvc pull data/benchmark.dvc`. First checks
+    data/benchmark/manifest.json against the images and the catalog. Writes the
+    results to output/benchmark/latest.json and prints the query images whose
+    result changed from data/benchmark-baseline.json.
+
+    Exits non-zero on a manifest problem, or on any change in exact printing or
+    card count, better or worse. To accept a change, run
+    `uv run mtg benchmark update-baseline` and commit the baseline in the same
+    PR.
     """
     run_at = datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -129,8 +135,9 @@ def run() -> None:
 
 @benchmark.command(name="update-baseline")
 def update_baseline() -> None:
-    """Copy the latest results onto the baseline, without recognising anything.
-    Commit data/benchmark-baseline.json afterwards.
+    """Copy the latest results onto the baseline.
+
+    Recognises nothing. Commit data/benchmark-baseline.json afterwards.
     """
     if not LATEST_PATH.exists():
         click.echo(
@@ -149,11 +156,18 @@ def update_baseline() -> None:
 @click.option(
     "--failures",
     is_flag=True,
-    help="List the query images that fail exact printing or card count.",
+    help=(
+        "List the query images that fail exact printing or card count, with "
+        "their label, the recognised printings and the error. Labels show as "
+        "`unknown` until the dataset is pulled."
+    ),
 )
 def status(latest: bool, failures: bool) -> None:
-    """Summarise the baseline or the latest results, without recognising anything
-    or writing to disk.
+    """Summarise the baseline or the latest results.
+
+    Prints the commit, date, MTGJSON version, totals and runtime, and whether
+    the latest results match the baseline. Recognises nothing and writes
+    nothing.
     """
     # read the results to summarise
     if latest:
