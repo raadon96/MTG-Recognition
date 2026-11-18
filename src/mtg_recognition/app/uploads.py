@@ -59,8 +59,8 @@ class Recognized:
     query_image_jpeg: bytes | None  # for display only; None when it can't be decoded
     ranked: list[RankedPrinting]  # best first, never empty
     card_image_jpeg: bytes  # for display only
-    reading: Reading | None  # None when OCR failed
-    # set when OCR failed, so the ranking is in pHash order with every score 0
+    reading: Reading | None  # None when OCR failed, with ocr_error set
+    # set when OCR failed, so the ranking is ordered by similarity, every score 0
     ocr_error: str | None = None
 
 

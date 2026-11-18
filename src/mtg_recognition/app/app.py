@@ -25,7 +25,7 @@ QUERY_IMAGE_WIDTH = 400
 # Above this many uploads, warn that recognition may take several minutes.
 LARGE_UPLOAD_COUNT = 100
 
-OCR_FAILED = "Text not read; ordered by similarity only"
+OCR_FAILED_CAPTION = "Text not read; ordered by similarity only"
 
 SCORE_TOOLTIP = "Match score, 0–100"
 
@@ -88,10 +88,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                 case Recognized():
                     best = result.ranked[0]
                     best_printing = best.printing
-                    if best_printing.image_url is None:
-                        st.caption("No image")
-                    else:
-                        st.image(_small_image_url(best_printing.image_url))
+                    _reference_image(best_printing.image_url, small=True)
 
                     # Display card name
                     st.markdown(f"**{best_printing.name}**")
@@ -111,7 +108,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                         f"{best_printing.set_code} #{best_printing.collector_number}"
                     )
                     if result.ocr_error is not None:
-                        st.caption(OCR_FAILED)
+                        st.caption(OCR_FAILED_CAPTION)
 
                 case NotRecognized():
                     if result.query_image_jpeg is not None:
@@ -121,7 +118,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                 case Failed():
                     if result.query_image_jpeg is not None:
                         st.image(result.query_image_jpeg)
-                    st.caption(f"Error: {result.error_message}")
+                    st.caption(f"Error: {_first_line(result.error_message)}")
 
             st.caption(filename)
 
@@ -139,11 +136,25 @@ def _select_result(idx: int | None) -> None:
     st.session_state.selected_result_idx = idx
 
 
-def _small_image_url(image_url: str) -> str:
-    """The reference image at Scryfall's small size, 146×204 and about 10 KB, for
-    thumbnails; the catalog holds the normal size.
+def _reference_image(image_url: str | None, small: bool) -> None:
+    """Show a printing's reference image, or "No image" for a printing without one.
+
+    small shows Scryfall's small size, 146×204 and about 10 KB, for thumbnails;
+    the catalog holds the normal size.
     """
-    return image_url.replace("/normal/", "/small/")
+    if image_url is None:
+        st.caption("No image")
+    elif small:
+        st.image(image_url.replace("/normal/", "/small/"))
+    else:
+        st.image(image_url)
+
+
+def _first_line(message: str) -> str:
+    """A message's first line: an exception's message, such as one from
+    onnxruntime, can run over several lines.
+    """
+    return message.splitlines()[0] if message else message
 
 
 def _score_legend() -> str:
@@ -216,7 +227,7 @@ def display_upload_detail_view(
         case Failed():
             if result.query_image_jpeg is not None:
                 st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
-            st.error(f"Error: {result.error_message}")
+            st.error(f"Error: {_first_line(result.error_message)}")
 
     # Bottom navigation bar — same controls as top, so no scrolling required
     st.markdown("---")
@@ -246,10 +257,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     # Column 3: the best printing's reference image
     with col3:
         st.caption("**Best match**")
-        if best_printing.image_url is None:
-            st.caption("No image")
-        else:
-            st.image(best_printing.image_url)
+        _reference_image(best_printing.image_url, small=False)
 
     # Column 4: Metadata
     with col4:
@@ -266,7 +274,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
             unsafe_allow_html=True,
         )
         if result.ocr_error is not None:
-            st.caption(OCR_FAILED)
+            st.caption(OCR_FAILED_CAPTION)
 
         st.divider()
         st.caption(f"**Set:** {best_printing.set_code}")
@@ -325,10 +333,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
     ranking_cols = st.columns(RANKING_SIZE)
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
-            if entry.printing.image_url is None:
-                st.caption("No image")
-            else:
-                st.image(_small_image_url(entry.printing.image_url))
+            _reference_image(entry.printing.image_url, small=True)
             st.caption(f"**{entry.printing.name}**")
             st.caption(f"Score: {entry.score:.1f}")
 
@@ -453,7 +458,9 @@ def main():
             except Exception as e:
                 # the user sees one line; the traceback goes to the server log
                 logger.exception("Recognizing the uploads failed")
-                st.error(f"Recognition failed: {type(e).__name__}: {e}")
+                st.error(
+                    f"Recognition failed: {_first_line(f'{type(e).__name__}: {e}')}"
+                )
 
     # Display results if available
     if st.session_state.upload_results:

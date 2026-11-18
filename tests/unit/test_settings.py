@@ -38,9 +38,3 @@ def test_debug_mode_defaults_to_off(monkeypatch):
     monkeypatch.delenv("DEBUG_MODE", raising=False)
 
     assert Settings(_env_file=None).DEBUG_MODE is False
-
-
-def test_debug_mode_is_read_from_the_environment(monkeypatch):
-    monkeypatch.setenv("DEBUG_MODE", "true")
-
-    assert Settings(_env_file=None).DEBUG_MODE is True

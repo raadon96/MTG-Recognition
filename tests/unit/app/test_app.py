@@ -5,6 +5,7 @@ script, such as a runtime dependency gone missing (#214), fails a test.
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 import mtg_recognition.app
@@ -17,7 +18,7 @@ from tests.unit.engine.builders import card_image, card_png, printing
 APP_SCRIPT = Path(mtg_recognition.app.__file__).parent / "app.py"
 
 
-def _recognised_card() -> RecognitionResult:
+def _recognition_of_one_card() -> RecognitionResult:
     ranked = [
         RankedPrinting(
             printing("p1"),
@@ -46,7 +47,7 @@ class FakePipeline:
     or the reference data; a test sets the result.
     """
 
-    recognition = _recognised_card()
+    recognition = _recognition_of_one_card()
 
     def __init__(self, **_options):
         pass
@@ -56,7 +57,7 @@ class FakePipeline:
 
 
 def _recognise(monkeypatch, recognition: RecognitionResult) -> AppTest:
-    """The app after recognising two query images, each to recognition."""
+    """The app after recognising two query images, each as recognition."""
     # The app script takes no pipeline to pass a fake through, so replace Pipeline
     # in its module; the script imports it each time it runs, so it gets the fake.
     monkeypatch.setattr("mtg_recognition.engine.pipeline.Pipeline", FakePipeline)
@@ -74,7 +75,7 @@ def _recognise(monkeypatch, recognition: RecognitionResult) -> AppTest:
 
 
 def test_a_recognised_card_s_detail_view_shows_table_2(monkeypatch):
-    at = _recognise(monkeypatch, _recognised_card())
+    at = _recognise(monkeypatch, _recognition_of_one_card())
     # Table 2 only shows in debug mode
     at.sidebar.toggle[0].set_value(True).run()
 
@@ -87,17 +88,18 @@ def test_a_recognised_card_s_detail_view_shows_table_2(monkeypatch):
     assert any("Score matrix" in e.label for e in at.expander)
 
 
-def test_debug_mode_starts_off_unless_set(monkeypatch):
+@pytest.mark.parametrize("debug_mode", [False, True])
+def test_debug_mode_starts_as_the_setting_says(monkeypatch, debug_mode):
     monkeypatch.setattr("mtg_recognition.engine.pipeline.Pipeline", FakePipeline)
-    monkeypatch.setattr(settings, "DEBUG_MODE", False)
+    monkeypatch.setattr(settings, "DEBUG_MODE", debug_mode)
 
     at = AppTest.from_file(APP_SCRIPT).run()
 
-    assert at.sidebar.toggle[0].value is False
+    assert at.sidebar.toggle[0].value is debug_mode
 
 
 def test_a_card_whose_ocr_failed_says_so_on_its_tile_and_detail_view(monkeypatch):
-    [card] = _recognised_card().cards
+    [card] = _recognition_of_one_card().cards
     card = replace(card, ocr_error="RuntimeError: OCR exploded")
     at = _recognise(monkeypatch, RecognitionResult(cards=[card], error=None))
 
@@ -110,7 +112,8 @@ def test_a_card_whose_ocr_failed_says_so_on_its_tile_and_detail_view(monkeypatch
 
 
 def test_a_failed_upload_result_shows_its_error_in_one_line(monkeypatch):
-    failure = RecognitionResult(cards=[], error="RuntimeError: model exploded")
+    error = "RuntimeError: model exploded\nat node 7"
+    failure = RecognitionResult(cards=[], error=error)
     at = _recognise(monkeypatch, failure)
 
     assert any(c.value == "Error: RuntimeError: model exploded" for c in at.caption)
