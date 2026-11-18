@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 25
     MAX_IMAGE_DIMENSION: int = 2048  # Constrain longest edge
 
+    # --- App ---
+    # The starting value of the app's debug mode toggle
+    DEBUG_MODE: bool = False
+
     # --- Data paths ---
     DATA_DIR: Path = Path("data")
     # DATA_DIR: Path = Path("scratch/test_download")

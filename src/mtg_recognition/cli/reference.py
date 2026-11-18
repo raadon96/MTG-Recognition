@@ -25,9 +25,12 @@ def reference() -> None:
 
 @reference.command(name="status")
 def status() -> None:
-    """Show the catalog's MTGJSON release, the printings without a pHash, the
-    images on disk and the latest MTGJSON release, then whether the catalog is
-    the latest release.
+    """Compare the catalog with the latest MTGJSON release.
+
+    Shows the catalog's release, the printings without a pHash, AllPrintings,
+    the reference images on disk and the latest release, then: up to date,
+    outdated (with the command to run), or unknown when MTGJSON can't be
+    reached.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -50,9 +53,13 @@ workers_option = click.option(
 @reference.command(name="update")
 @workers_option
 def update(workers: int) -> None:
-    """Build the reference data from the latest MTGJSON release: the catalog,
-    then the missing reference images, then the pHashes of the printings that
-    don't have one yet. Does nothing when the catalog already is that release.
+    """Build the reference data from the latest MTGJSON release.
+
+    Does nothing when the catalog already is that release. Keeps AllPrintings in
+    data/reference/mtgjson/. Hashes only the printings without a reusable pHash
+    (new, or image URL changed), and downloads their missing reference images
+    to data/reference/images/; with no pHash to reuse, that is about 116k
+    images, 12 GB. Failures go to data/reference/image_errors.log.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -67,14 +74,26 @@ def update(workers: int) -> None:
     "--no-cache",
     is_flag=True,
     default=False,
-    help="Download AllPrintings and every image again and recompute every pHash.",
+    help=(
+        "Reuse nothing: download AllPrintings and every image again and "
+        "recompute every pHash. Needs the release to be MTGJSON's latest."
+    ),
 )
 @workers_option
 def build(no_cache: bool, workers: int) -> None:
-    """Build the reference data again from the catalog's own MTGJSON release, for
-    when the code that builds the catalog changed. Reuses the AllPrintings on
-    disk, and the pHash of each printing whose image URL is unchanged. Never
-    changes which release the catalog is.
+    """Rebuild the reference data from the catalog's release.
+
+    For when the code that builds the catalog changed; the release stays the
+    same. Reuses AllPrintings on disk when it is that release, and the pHash of
+    each printing whose image URL is unchanged. Downloading AllPrintings works
+    only while the release is MTGJSON's latest; otherwise the command fails,
+    changing nothing, and names `mtg reference update`. Failures go to
+    data/reference/image_errors.log.
+
+    Example, after Scryfall replaced an image under the same URL:
+
+    \b
+    uv run mtg reference build --no-cache
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:
@@ -86,9 +105,13 @@ def build(no_cache: bool, workers: int) -> None:
 
 @reference.command(name="download-images")
 def download_images() -> None:
-    """Download the reference images missing from disk for the printings in the
-    committed catalog. Changes nothing else: the catalog, its pHashes and
-    AllPrintings stay as they are.
+    """Download the reference images missing from disk.
+
+    Recognition and the tests don't need them; they help when debugging
+    matching. Leaves the catalog, its pHashes and AllPrintings as they are. A
+    first run downloads about 116k images, 12 GB, to data/reference/images/;
+    later runs only what is missing. Failures go to
+    data/reference/download_errors.log, removed after a run without any.
     """
     reference = ReferenceData.default()
     with _exit_on_error(), sync.make_client() as client:

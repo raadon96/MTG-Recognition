@@ -32,3 +32,9 @@ def test_numba_uses_the_thread_count(monkeypatch):
     Settings(_env_file=None, THREAD_COUNT=6)
 
     assert os.environ["NUMBA_NUM_THREADS"] == "6"
+
+
+def test_debug_mode_defaults_to_off(monkeypatch):
+    monkeypatch.delenv("DEBUG_MODE", raising=False)
+
+    assert Settings(_env_file=None).DEBUG_MODE is False
