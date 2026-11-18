@@ -1,0 +1,9 @@
+# Streamlit reads this from the working directory: the repo root for `mtg app`,
+# and /app in the Docker image.
+
+[client]
+# hide the developer options, such as "Clear cache", from the app's users
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false

@@ -18,7 +18,7 @@ on:
       - "src/**"
       - "models/**"
       - data/reference/catalog.sqlite
-      # Streamlit reads its configuration from here; none is committed yet.
+      # Streamlit's configuration, copied into the image.
       - ".streamlit/**"
       # This workflow, and the build and checks it runs.
       - .github/workflows/docker.yml

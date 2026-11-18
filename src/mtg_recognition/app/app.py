@@ -1,3 +1,5 @@
+import logging
+
 import cv2
 import pandas as pd
 import streamlit as st
@@ -9,22 +11,31 @@ from mtg_recognition.app.uploads import (
     Recognized,
     UploadResult,
     export_bytes,
+    scryfall_card_url,
     upload_results,
 )
 from mtg_recognition.engine.pipeline import Pipeline
-from mtg_recognition.reference.catalog import Printing
 from mtg_recognition.settings import settings
 
 RANKING_SIZE = 5
 
-PLACEHOLDER_IMAGE_URL = "https://via.placeholder.com/300x420?text=No+Image"
-
 # In pixels: at full width a phone photo would fill several screens.
 QUERY_IMAGE_WIDTH = 400
 
+# Above this many uploads, warn that recognition may take several minutes.
+LARGE_UPLOAD_COUNT = 100
+
+OCR_FAILED = "Text not read; ordered by similarity only"
+
+SCORE_TOOLTIP = "Match score, 0–100"
+
+SOURCE_URL = "https://github.com/raadon96/MTG-Recognition"
+
+logger = logging.getLogger(__name__)
+
 # --- Streamlit Page Config ---
 st.set_page_config(
-    page_title="MTGC Recognizer",
+    page_title="MTG Recognition",
     page_icon="🎴",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -57,7 +68,8 @@ def _score_style(score: float) -> str:
 
 def create_thumbnail_grid(results: list[UploadResult]):
     """Create an interactive grid view of upload results."""
-    st.subheader(f"📊 Results: {len(results)} cards processed")
+    st.subheader(f"Results: {len(results)} cards")
+    st.markdown(_score_legend(), unsafe_allow_html=True)
 
     # Create columns for grid (6 cards per row - smaller thumbnails)
     cols_per_row = 6
@@ -76,7 +88,10 @@ def create_thumbnail_grid(results: list[UploadResult]):
                 case Recognized():
                     best = result.ranked[0]
                     best_printing = best.printing
-                    st.image(_small_image_url(best_printing))
+                    if best_printing.image_url is None:
+                        st.caption("No image")
+                    else:
+                        st.image(_small_image_url(best_printing.image_url))
 
                     # Display card name
                     st.markdown(f"**{best_printing.name}**")
@@ -84,7 +99,7 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     # Color-coded score indicator (scores are 0–100)
                     score = best.score
                     st.markdown(
-                        f'<div style="{_score_style(score)}; '
+                        f'<div title="{SCORE_TOOLTIP}" style="{_score_style(score)}; '
                         f"padding: 2px 6px; border-radius: 6px; "
                         "text-align: center; font-size: 12px; font-weight: bold;"
                         '">'
@@ -95,18 +110,20 @@ def create_thumbnail_grid(results: list[UploadResult]):
                     st.caption(
                         f"{best_printing.set_code} #{best_printing.collector_number}"
                     )
+                    if result.ocr_error is not None:
+                        st.caption(OCR_FAILED)
 
                 case NotRecognized():
                     if result.query_image_jpeg is not None:
                         st.image(result.query_image_jpeg)
-                    st.caption("❌ No Match")
+                    st.caption("No match")
 
                 case Failed():
                     if result.query_image_jpeg is not None:
                         st.image(result.query_image_jpeg)
-                    st.caption("⚠️ Error")
+                    st.caption(f"Error: {result.error_message}")
 
-            st.caption(f"📄 {filename}")
+            st.caption(filename)
 
             st.button(
                 "Details",
@@ -122,13 +139,25 @@ def _select_result(idx: int | None) -> None:
     st.session_state.selected_result_idx = idx
 
 
-def _small_image_url(printing: Printing) -> str:
+def _small_image_url(image_url: str) -> str:
     """The reference image at Scryfall's small size, 146×204 and about 10 KB, for
     thumbnails; the catalog holds the normal size.
     """
-    if printing.image_url is None:
-        return PLACEHOLDER_IMAGE_URL
-    return printing.image_url.replace("/normal/", "/small/")
+    return image_url.replace("/normal/", "/small/")
+
+
+def _score_legend() -> str:
+    """The score colours' meaning, as HTML chips in the badges' colours."""
+    chips = " ".join(
+        f'<span style="{_score_style(score)}; padding: 1px 8px; '
+        f'border-radius: 6px;">{label}</span>'
+        for score, label in [
+            (75, "75 and above"),
+            (50, "50 to 75"),
+            (0, "below 50"),
+        ]
+    )
+    return f'<span style="font-size: 0.875rem;">Match score: {chips}</span>'
 
 
 def display_upload_detail_view(
@@ -141,7 +170,7 @@ def display_upload_detail_view(
         col_back, col_prev, col_pos, col_next = st.columns([3, 1, 2, 1])
         with col_back:
             st.button(
-                "← Back to Results",
+                "← Back to results",
                 key=f"back_{key_suffix}",
                 width="stretch",
                 on_click=_select_result,
@@ -175,7 +204,7 @@ def display_upload_detail_view(
 
     _nav_bar("top")
 
-    st.subheader(f"📋 {result.uploaded_filename}")
+    st.subheader(result.uploaded_filename)
 
     match result:
         case Recognized():
@@ -187,7 +216,7 @@ def display_upload_detail_view(
         case Failed():
             if result.query_image_jpeg is not None:
                 st.image(result.query_image_jpeg, width=QUERY_IMAGE_WIDTH)
-            st.error("Failed: this image could not be processed.")
+            st.error(f"Error: {result.error_message}")
 
     # Bottom navigation bar — same controls as top, so no scrolling required
     st.markdown("---")
@@ -205,59 +234,67 @@ def display_recognized_detail(result: Recognized, debug: bool):
 
     # Column 1: query image
     with col1:
-        st.caption("**Original Image**")
+        st.caption("**Your photo**")
         if result.query_image_jpeg is not None:
             st.image(result.query_image_jpeg)
 
     # Column 2: card image
     with col2:
-        st.caption("**Warped Image**")
+        st.caption("**Detected card**")
         st.image(result.card_image_jpeg)
 
     # Column 3: the best printing's reference image
     with col3:
-        st.caption("**Best Match**")
-        st.image(best_printing.image_url or PLACEHOLDER_IMAGE_URL)
+        st.caption("**Best match**")
+        if best_printing.image_url is None:
+            st.caption("No image")
+        else:
+            st.image(best_printing.image_url)
 
     # Column 4: Metadata
     with col4:
-        st.caption("**Card Info**")
+        st.caption("**Card info**")
         st.markdown(f"**{best_printing.name}**")
 
         # Color-coded score (scores are 0–100)
         score = best.score
         st.markdown(
-            f'<div style="{_score_style(score)}; '
+            f'<div title="{SCORE_TOOLTIP}" style="{_score_style(score)}; '
             f"padding: 4px 8px; border-radius: 6px; "
             f'text-align: center; font-weight: bold;">'
             f"{score:.1f}</div>",
             unsafe_allow_html=True,
         )
+        if result.ocr_error is not None:
+            st.caption(OCR_FAILED)
 
         st.divider()
         st.caption(f"**Set:** {best_printing.set_code}")
         st.caption(
-            f"**Collector Number:** "
+            f"**Collector number:** "
             f"{best_printing.collector_number}/{best_printing.base_set_size}"
         )
         st.caption(f"**Artist:** {best_printing.artist or 'Unknown'}")
 
-        if best_printing.image_url:
-            st.markdown(f"[Scryfall]({best_printing.image_url})")
+        if best_printing.image_url is not None:
+            st.markdown(
+                f"[Scryfall page]({scryfall_card_url(best_printing.image_url)}) · "
+                f"[Image]({best_printing.image_url})"
+            )
 
     # Debug expanders: the crop OCR read with its boxes, the reading's raw text,
     # and what scoring looked for in it for the best printing
     if debug and reading is not None:
         if reading.collector_information_crop is not None:
             with st.expander(
-                "🔬 Information Below the Text Box — OCR Boxes", expanded=True
+                "Information below the text box — OCR boxes", expanded=True
             ):
                 crop = reading.collector_information_crop.copy()
                 for x1, y1, x2, y2 in reading.collector_information.boxes:
                     cv2.rectangle(crop, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 st.image(crop, channels="BGR", width="stretch")
 
-        with st.expander("📄 Reading — OCR Tokens", expanded=True):
+        with st.expander("Reading — OCR tokens", expanded=True):
             st.json(
                 {
                     "name": reading.name.texts,
@@ -267,7 +304,7 @@ def display_recognized_detail(result: Recognized, debug: bool):
             )
 
     if debug and best.breakdown:
-        with st.expander("📊 Table 1 — Reading vs. Best Printing", expanded=True):
+        with st.expander("Table 1 — Reading vs. best printing", expanded=True):
             df_prop = pd.DataFrame(
                 [
                     {
@@ -283,18 +320,21 @@ def display_recognized_detail(result: Recognized, debug: bool):
 
     # Show the ranking below
     st.markdown("---")
-    st.subheader(f"Top {RANKING_SIZE} Matches")
+    st.subheader(f"Top {RANKING_SIZE} printings")
 
     ranking_cols = st.columns(RANKING_SIZE)
     for col_idx, entry in enumerate(ranked):
         with ranking_cols[col_idx]:
-            st.image(_small_image_url(entry.printing))
+            if entry.printing.image_url is None:
+                st.caption("No image")
+            else:
+                st.image(_small_image_url(entry.printing.image_url))
             st.caption(f"**{entry.printing.name}**")
             st.caption(f"Score: {entry.score:.1f}")
 
     # Debug: score matrix below the ranking
     if debug and best.breakdown:
-        with st.expander("📈 Table 2 — Score Matrix (ranking)", expanded=True):
+        with st.expander("Table 2 — Score matrix (ranking)", expanded=True):
             # The score first, then the field scores it is the weighted average of.
             # Prefix each label with its rank so duplicate card names (reprints)
             # don't produce a non-unique index, which breaks pandas Styler. A
@@ -333,34 +373,27 @@ def display_recognized_detail(result: Recognized, debug: bool):
             )
 
             # legend: what each colour and "not shown" mean
-            chips = " ".join(
-                f'<span style="{_score_style(score)}; padding: 1px 8px; '
-                f'border-radius: 6px;">{label}</span>'
-                for score, label in [
-                    (75, "75 and above"),
-                    (50, "50 to 75"),
-                    (0, "below 50"),
-                ]
-            )
             st.markdown(
-                f'<span style="font-size: 0.875rem;">{chips} &nbsp;·&nbsp; '
-                "<i>not shown</i>: the printing doesn't show this detail on the "
-                "card, so it doesn't count towards the score</span>",
+                f"{_score_legend()} &nbsp;·&nbsp; "
+                '<span style="font-size: 0.875rem;"><i>not shown</i>: the '
+                "printing doesn't show this detail on the card, so it doesn't "
+                "count towards the score</span>",
                 unsafe_allow_html=True,
             )
 
 
 def main():
-    st.title("Decksray MTGC Recognizer")
+    st.title("MTG Recognition")
     st.markdown(
-        "Upload or capture a Magic: The Gathering card image for instant recognition."
+        "Upload photos or scans of Magic: The Gathering cards to find each card's "
+        "exact printing."
     )
 
     pipeline = load_pipeline()
 
     # Sidebar options
-    st.sidebar.header("⚙️ Import")
-    debug = st.sidebar.toggle("🔬 Debug Mode", value=True)
+    st.sidebar.header("Import")
+    debug = st.sidebar.toggle("Debug mode", value=settings.DEBUG_MODE)
 
     # Initialize session state for upload results
     if "upload_results" not in st.session_state:
@@ -373,7 +406,7 @@ def main():
     # Upload
     # ADR 0004: the app encourages a plain, bright background but doesn't require one
     st.sidebar.info(
-        "📷 For best results, photograph cards in good light on a bright plain "
+        "For best results, photograph cards in good light on a bright plain "
         "surface, such as a white desk, and avoid glare and reflections, "
         "especially on foils. Scans work as they are."
     )
@@ -381,23 +414,21 @@ def main():
         label="Upload multiple card images",
         type=["jpg", "jpeg", "png", "bmp"],
         accept_multiple_files=True,
-        help="Upload multiple Magic card images",
+        help="JPG, PNG or BMP. A photo may hold several cards.",
         max_upload_size=settings.MAX_UPLOAD_SIZE_MB,
         key=f"file_uploader{st.session_state.uploader_key}",
     )
 
     if uploaded_files:
-        st.sidebar.info(f"✅ {len(uploaded_files)} files selected")
+        st.sidebar.info(f"{len(uploaded_files)} files selected")
 
-        # Check file count
-        if len(uploaded_files) > 100:
+        if len(uploaded_files) > LARGE_UPLOAD_COUNT:
             st.sidebar.warning(
-                "⚠️ Processing 20-100 images at a time is recommended. "
-                "Large uploads may take several minutes."
+                f"Recognizing more than {LARGE_UPLOAD_COUNT} images may take "
+                "several minutes."
             )
 
-        # Start processing button
-        if st.sidebar.button("🚀 START PROCESSING", type="primary"):
+        if st.sidebar.button("Recognize cards", type="primary"):
             # Progress container
             progress_placeholder = st.empty()
             progress_bar = st.progress(0)
@@ -411,7 +442,7 @@ def main():
                     results.extend(upload_results(file.name, data, recognition))
                     progress_bar.progress(done / len(uploaded_files))
                     progress_placeholder.info(
-                        f"Processing: {done}/{len(uploaded_files)} images"
+                        f"Recognizing: {done}/{len(uploaded_files)} images"
                     )
                 st.session_state.upload_results = results
                 st.session_state.selected_result_idx = None
@@ -420,10 +451,9 @@ def main():
                 progress_bar.empty()
 
             except Exception as e:
-                st.error(f"❌ Processing failed: {str(e)}")
-                import traceback
-
-                st.error(traceback.format_exc())
+                # the user sees one line; the traceback goes to the server log
+                logger.exception("Recognizing the uploads failed")
+                st.error(f"Recognition failed: {type(e).__name__}: {e}")
 
     # Display results if available
     if st.session_state.upload_results:
@@ -433,7 +463,7 @@ def main():
 
         # Export and Clear Results in sidebar
         st.sidebar.markdown("---")
-        st.sidebar.subheader("📥 Export Results")
+        st.sidebar.subheader("Export results")
 
         export_format = st.sidebar.selectbox(
             "Select format:",
@@ -443,7 +473,7 @@ def main():
 
         mime, file_name = EXPORT_FORMATS[export_format]
         st.sidebar.download_button(
-            label=f"⬇️ Download {file_name}",
+            label=f"Download {file_name}",
             data=lambda: export_bytes(results, export_format),
             mime=mime,
             file_name=file_name,
@@ -451,9 +481,16 @@ def main():
         )
 
         st.sidebar.markdown("---")
-        st.sidebar.button(
-            "🗑️ Clear All Results", width="stretch", on_click=_clear_results
-        )
+        st.sidebar.button("Clear results", width="stretch", on_click=_clear_results)
+
+    # AGPL-3.0 section 13 requires offering the source to the app's users
+    st.sidebar.markdown("---")
+    st.sidebar.caption(f"MTG Recognition · AGPL-3.0 · [Source on GitHub]({SOURCE_URL})")
+    st.sidebar.caption(
+        "MTG-Recognition is unofficial Fan Content permitted under the Fan Content "
+        "Policy. Not approved/endorsed by Wizards. Portions of the materials used "
+        "are property of Wizards of the Coast. ©Wizards of the Coast LLC."
+    )
 
 
 @st.fragment

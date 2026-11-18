@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 import numpy as np
@@ -11,6 +12,8 @@ from mtg_recognition.engine.ranking import RankedPrinting
 from mtg_recognition.engine.segmentation import segment
 from mtg_recognition.reference.catalog import SqliteCardCatalog
 from mtg_recognition.reference.layout import ReferenceData
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -119,5 +122,7 @@ class Pipeline:
                 ranked = scoring.rank(reading, candidates, k=self.k_final_results)
                 card_results.append(CardResult(card_image, ranked, reading))
         except Exception as e:
+            # the result holds one line; the traceback goes to the log
+            logger.exception("Recognizing the query image failed")
             return RecognitionResult(cards=[], error=f"{type(e).__name__}: {e}")
         return RecognitionResult(cards=card_results, error=None)

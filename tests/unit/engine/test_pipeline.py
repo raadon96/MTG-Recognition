@@ -67,3 +67,15 @@ def test_a_successful_reading_is_no_ocr_fallback(monkeypatch):
 
     assert card.ocr_error is None
     assert card.reading == reading_of(printing("p0"))
+
+
+def test_a_failure_returns_one_line_and_logs_the_traceback(monkeypatch, caplog):
+    pipeline = _pipeline(monkeypatch, read_card_as_p0)
+
+    result = pipeline.recognize(b"not an image")
+
+    assert result.cards == []
+    assert result.error is not None and "\n" not in result.error
+    [record] = caplog.records
+    assert record.levelname == "ERROR"
+    assert record.exc_info is not None
