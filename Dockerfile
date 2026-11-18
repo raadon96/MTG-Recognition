@@ -72,6 +72,10 @@ COPY --from=build --chown=appuser:appuser /app/.venv /app/.venv
 COPY src ./src
 # The source, which the editable install in the venv points at
 
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
+# The licence (AGPL-3.0-only) and the notices for the shipped models, which
+# distributing the image requires
+
 COPY data/reference/catalog.sqlite ./data/reference/catalog.sqlite
 # Copy the catalog, which holds the pHashes
 

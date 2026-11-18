@@ -3,6 +3,7 @@ name = "mtg-recognition"
 version = "0.10.0"
 description = "Add your description here"
 readme = "README.md"
+license = "AGPL-3.0-only"
 authors = [
     { name = "raadon96", email = "adnen.boumessouer@gmail.com" }
 ]
